@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v4'
+const CACHE = 'fameverse-beta-v5'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -30,8 +30,6 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
-  // Launch the installed PWA from cache immediately, then refresh the shell
-  // in the background so the next launch gets the newest deployment.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE)
@@ -51,8 +49,6 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Vite production assets are content-hashed. Once downloaded, the exact URL
-  // is immutable, so cache-first avoids re-downloading JS/CSS every app launch.
   if (url.pathname.startsWith('/assets/')) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE)
@@ -66,7 +62,6 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Small shell resources use stale-while-revalidate.
   event.respondWith((async () => {
     const cache = await caches.open(CACHE)
     const cached = await cache.match(request)
