@@ -1,0 +1,173 @@
+/* Fameverse QA fixes — profile routing, creator studio, settings detail, and startup polish */
+
+.creator-hub-button {
+  width: 100%;
+  border: 1px solid rgba(183, 108, 255, .24);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.creator-hub-button > b {
+  font-size: 1.35rem;
+  color: #d6a8ff;
+}
+
+.profile-content-tabs button {
+  cursor: pointer;
+}
+
+.profile-content-tabs button:not(.active) {
+  opacity: .72;
+}
+
+.creator-studio-page {
+  padding-bottom: 120px;
+}
+
+.studio-intro,
+.settings-detail-copy {
+  margin: 0 0 18px;
+  color: #b6a9c1;
+  line-height: 1.55;
+}
+
+.studio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.studio-grid button {
+  min-height: 142px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(151, 68, 255, .16), transparent 45%),
+    rgba(255,255,255,.045);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-grid button span {
+  font-size: 1.45rem;
+}
+
+.studio-grid button strong {
+  font-size: .95rem;
+}
+
+.studio-grid button small {
+  color: #a99bb6;
+  line-height: 1.35;
+}
+
+.settings-row {
+  width: 100%;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+}
+
+.settings-row:active,
+.creator-hub-button:active,
+.studio-grid button:active,
+.profile-content-tabs button:active {
+  transform: scale(.985);
+}
+
+.top-end-live {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  background: #e7274f;
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 900;
+  box-shadow: 0 8px 24px rgba(231,39,79,.28);
+}
+
+.live-comment-composer {
+  position: absolute;
+  z-index: 26;
+  left: 14px;
+  right: 82px;
+  bottom: calc(max(16px, env(safe-area-inset-bottom) + 8px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-comment-composer input {
+  min-width: 0;
+  flex: 1;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(7, 3, 12, .66);
+  color: #fff;
+  outline: none;
+  font-size: 16px;
+  backdrop-filter: blur(16px);
+}
+
+.live-comment-composer input::placeholder {
+  color: #b4a7bd;
+}
+
+.live-comment-composer button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #8c35ff, #d45fff);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.live-comment-composer button:disabled {
+  opacity: .4;
+}
+
+.live-chat-overlay {
+  bottom: calc(max(74px, env(safe-area-inset-bottom) + 66px));
+}
+
+.live-action-rail {
+  bottom: calc(max(86px, env(safe-area-inset-bottom) + 78px));
+}
+
+.profile-empty-content {
+  min-height: 170px;
+}
+
+.settings-list > div {
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+@media (max-width: 460px) {
+  .studio-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .studio-grid button {
+    min-height: 128px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
