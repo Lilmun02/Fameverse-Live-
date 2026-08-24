@@ -6,6 +6,7 @@ import './gifts.css'
 import './live.css'
 import './foundation.css'
 import './viewport-lock.css'
+import './release.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
