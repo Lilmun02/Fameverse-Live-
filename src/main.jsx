@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import './media-session.js'
 import App from './App.jsx'
 import './styles.css'
 import './gifts.css'
