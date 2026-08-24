@@ -145,6 +145,29 @@
 
 .live-action-rail {
   bottom: calc(max(86px, env(safe-area-inset-bottom) + 78px));
+  gap: 8px;
+}
+
+.camera-off-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  background: #030106;
+}
+
+.camera-off-placeholder strong {
+  font-size: 1.2rem;
+}
+
+.camera-off-placeholder small {
+  max-width: 300px;
+  color: #b6a9c0;
+  line-height: 1.45;
 }
 
 .profile-empty-content {
@@ -163,6 +186,10 @@
   .studio-grid button {
     min-height: 128px;
     padding: 14px;
+  }
+
+  .live-action {
+    min-height: 50px;
   }
 }
 
