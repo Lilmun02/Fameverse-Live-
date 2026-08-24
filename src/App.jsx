@@ -31,8 +31,8 @@ export default function App() {
   const [coins, setCoins] = useState(loadCoins)
   const [cohost, setCohost] = useState(null)
   const [chat, setChat] = useState([
-    { id: 1, user: 'Fameverse', text: 'Beta room ready. Start a live to test the host controls.' },
-    { id: 2, user: 'Nova', text: 'This co-host layout is clean 👀' },
+    { id: 1, user: 'Fameverse', text: 'Beta room ready.' },
+    { id: 2, user: 'Nova', text: 'Testing the room 👀' },
   ])
   const [toast, setToast] = useState('')
   const [installPrompt, setInstallPrompt] = useState(null)
@@ -41,6 +41,8 @@ export default function App() {
   const [micMuted, setMicMuted] = useState(false)
   const [facingMode, setFacingMode] = useState('user')
   const [standalone, setStandalone] = useState(isRunningStandalone)
+  const [giftTrayOpen, setGiftTrayOpen] = useState(false)
+  const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
 
   const giftTimerRef = useRef(null)
   const videoRef = useRef(null)
@@ -71,20 +73,25 @@ export default function App() {
 
   useEffect(() => {
     if (!toast) return
-    const t = setTimeout(() => setToast(''), 2200)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setToast(''), 2200)
+    return () => clearTimeout(timer)
   }, [toast])
 
   useEffect(() => {
     if (!videoRef.current || !mediaStream) return
     videoRef.current.srcObject = mediaStream
     videoRef.current.play().catch(() => {})
-  }, [mediaStream, tab, cohost])
+  }, [mediaStream, tab])
 
   useEffect(() => () => {
     clearTimeout(giftTimerRef.current)
     streamRef.current?.getTracks().forEach((track) => track.stop())
   }, [])
+
+  useEffect(() => {
+    setGiftTrayOpen(false)
+    setCohostTrayOpen(false)
+  }, [tab])
 
   const viewers = useMemo(() => 0, [])
 
@@ -96,9 +103,7 @@ export default function App() {
   }
 
   const requestMedia = async (nextFacing = facingMode) => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error('unsupported')
-    }
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
 
     return navigator.mediaDevices.getUserMedia({
       video: {
@@ -119,6 +124,8 @@ export default function App() {
       stopMedia()
       setIsLive(false)
       setMicMuted(false)
+      setGiftTrayOpen(false)
+      setCohostTrayOpen(false)
       setToast('Live ended · camera and mic released')
       return
     }
@@ -130,7 +137,7 @@ export default function App() {
       setMediaStream(stream)
       setMicMuted(false)
       setIsLive(true)
-      setToast('Camera + microphone live in beta room')
+      setToast('Camera + microphone ready')
     } catch (error) {
       const denied = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError'
       const unavailable = error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError'
@@ -155,13 +162,11 @@ export default function App() {
   }
 
   const flipCamera = async () => {
+    const previousFacing = facingMode
     const nextFacing = facingMode === 'user' ? 'environment' : 'user'
     setFacingMode(nextFacing)
 
-    if (!isLive) {
-      setToast(nextFacing === 'user' ? 'Front camera selected' : 'Back camera selected')
-      return
-    }
+    if (!isLive) return
 
     setIsStartingLive(true)
     try {
@@ -172,7 +177,7 @@ export default function App() {
       setMediaStream(nextStream)
       setToast(nextFacing === 'user' ? 'Front camera' : 'Back camera')
     } catch {
-      setFacingMode(facingMode)
+      setFacingMode(previousFacing)
       setToast('Could not switch cameras')
     } finally {
       setIsStartingLive(false)
@@ -182,7 +187,7 @@ export default function App() {
   const addTestCoins = (amount) => {
     if (!ownerMode) return
     setCoins((value) => value + amount)
-    setToast(`+${amount.toLocaleString()} owner test coins`)
+    setToast(`+${amount.toLocaleString()} test coins`)
   }
 
   const showGift = (gift) => {
@@ -204,9 +209,10 @@ export default function App() {
       {
         id: Date.now(),
         user: 'INFAMOUS',
-        text: `${gift.emoji} sent a ${gift.label} (${gift.cost} ${gift.cost === 1 ? 'coin' : 'coins'})`,
+        text: `${gift.emoji} sent ${gift.label}`,
       },
     ])
+    setGiftTrayOpen(false)
     showGift(gift)
   }
 
@@ -216,7 +222,8 @@ export default function App() {
       return
     }
     setCohost(creator)
-    setToast(`${creator.name} joined as co-host`)
+    setCohostTrayOpen(false)
+    setToast(`${creator.name} added to the beta co-host slot`)
   }
 
   const installPwa = async () => {
@@ -229,8 +236,10 @@ export default function App() {
     setInstallPrompt(null)
   }
 
+  const liveMessages = chat.slice(-3)
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
       {toast && <div className="toast">{toast}</div>}
 
       {giftOverlay && giftOverlay.cost < 100 && (
@@ -255,149 +264,147 @@ export default function App() {
         </div>
       )}
 
-      <header className="topbar">
-        <div>
-          <div className="eyebrow">BETA 0.1</div>
-          <h1>FAMEVERSE <span>LIVE</span></h1>
-        </div>
-        {!standalone && <button className="install-btn" onClick={installPwa}>Install PWA</button>}
-      </header>
+      {tab !== 'live' && (
+        <header className="topbar">
+          <div>
+            <div className="eyebrow">BETA 0.1</div>
+            <h1>FAMEVERSE <span>LIVE</span></h1>
+          </div>
+          {!standalone && <button className="install-btn" onClick={installPwa}>Install PWA</button>}
+        </header>
+      )}
 
       <main>
         {tab === 'live' && (
-          <>
-            <section className="live-stage">
-              <div className="stage-top">
-                <div className="host-id">
-                  <div className="avatar owner">I</div>
-                  <div>
-                    <strong>INFAMOUS</strong>
-                    <small>Host · Owner beta</small>
-                  </div>
+          <section className={`mobile-live-shell ${isLive ? 'is-live' : 'is-preview'}`}>
+            <div className="live-video-surface">
+              {isLive && mediaStream ? (
+                <video
+                  ref={videoRef}
+                  className={`host-video immersive-video ${facingMode === 'user' ? 'mirror' : ''}`}
+                  autoPlay
+                  muted
+                  playsInline
+                />
+              ) : (
+                <div className="live-preview-placeholder">
+                  <div className="preview-brand"><span>FAMEVERSE</span> LIVE</div>
+                  <div className="preview-camera-icon">◉</div>
+                  <strong>Ready to go live?</strong>
+                  <small>Camera + microphone stay on this device during Beta 0.1.</small>
                 </div>
-                <div className="live-metrics">
-                  <span className={isLive ? 'live-pill active' : 'live-pill'}>{isLive ? 'LIVE' : 'OFFLINE'}</span>
-                  <span>👁 {viewers}</span>
+              )}
+              <div className="live-vignette" />
+            </div>
+
+            <div className="live-floating-top">
+              <div className="live-host-chip">
+                <div className="avatar owner live-avatar">I</div>
+                <div>
+                  <strong>INFAMOUS</strong>
+                  <small>Host · Owner beta</small>
                 </div>
               </div>
-
-              <div className={`video-grid ${cohost ? 'split' : ''}`}>
-                <div className="video-tile primary-tile">
-                  {isLive && mediaStream ? (
-                    <>
-                      <video ref={videoRef} className={`host-video ${facingMode === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
-                      <div className="camera-live-badge">DEVICE CAMERA · BETA</div>
-                      <div className="media-controls-float">
-                        <button className="media-pill" onClick={toggleMic}>{micMuted ? '🔇 Unmute' : '🎙️ Mute'}</button>
-                        <button className="media-pill" onClick={flipCamera} disabled={isStartingLive}>↻ Flip</button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="camera-placeholder">
-                      <div className="camera-ring">📷</div>
-                      <strong>Ready when you are</strong>
-                      <small>Go Live now opens your real camera + microphone for local beta testing.</small>
-                    </div>
-                  )}
-                  <div className="tile-label">HOST · INFAMOUS</div>
-                </div>
-
-                {cohost && (
-                  <div className="video-tile cohost-tile">
-                    <div className="camera-placeholder">
-                      <div className="avatar cohost-avatar">{cohost.name[0]}</div>
-                      <strong>{cohost.name}</strong>
-                      <small>Co-host UI slot only · realtime remote video comes with the streaming backend.</small>
-                    </div>
-                    <div className="tile-label">CO-HOST · {cohost.handle}</div>
-                  </div>
-                )}
+              <div className="live-status-cluster">
+                <span className={isLive ? 'live-pill active' : 'live-pill'}>{isLive ? 'LIVE' : 'READY'}</span>
+                <span className="viewer-chip">👁 {viewers}</span>
               </div>
+            </div>
 
-              <div className="live-controls">
-                <button className={isLive ? 'danger' : 'primary'} onClick={startLive} disabled={isStartingLive}>
-                  {isStartingLive ? 'Starting…' : isLive ? 'End Live' : 'Go Live'}
+            {cohost && isLive && (
+              <div className="cohost-floating-card">
+                <div className="avatar">{cohost.name[0]}</div>
+                <div><strong>{cohost.name}</strong><small>Co-host test slot</small></div>
+                <button onClick={() => setCohost(null)} aria-label="Remove co-host">×</button>
+              </div>
+            )}
+
+            {isLive && (
+              <div className="live-action-rail">
+                <button className="live-action" onClick={() => setGiftTrayOpen(true)}><span>🎁</span><small>Gift</small></button>
+                <button className="live-action" onClick={() => setCohostTrayOpen(true)}><span>＋</span><small>Co-host</small></button>
+                <button className="live-action" onClick={toggleMic}><span>{micMuted ? '🔇' : '🎙️'}</span><small>{micMuted ? 'Unmute' : 'Mute'}</small></button>
+                <button className="live-action" onClick={flipCamera} disabled={isStartingLive}><span>↻</span><small>Flip</small></button>
+              </div>
+            )}
+
+            {isLive && (
+              <div className="live-chat-overlay" aria-label="Live chat preview">
+                {liveMessages.map((item) => (
+                  <div className="live-chat-line" key={item.id}>
+                    <strong>{item.user}</strong><span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!isLive ? (
+              <div className="live-launch-controls">
+                <button className="go-live-main" onClick={startLive} disabled={isStartingLive}>
+                  {isStartingLive ? 'Starting…' : 'Go Live'}
                 </button>
-                {cohost ? (
-                  <button className="secondary" onClick={() => { setCohost(null); setToast('Co-host removed') }}>
-                    Remove Co-host
-                  </button>
-                ) : (
-                  <button className="secondary" onClick={() => document.getElementById('cohost-panel')?.scrollIntoView({ behavior: 'smooth' })}>
-                    Add Co-host
-                  </button>
-                )}
-                <button className="disabled" disabled>Battle · Soon</button>
+                <button className="preview-tool" onClick={flipCamera}>↻ Camera</button>
+                <button className="preview-tool" onClick={() => setGiftTrayOpen(true)}>🎁 Test Gifts</button>
               </div>
-            </section>
+            ) : (
+              <div className="live-end-controls">
+                <button className="end-live-pill" onClick={startLive}>End Live</button>
+                <span>DEVICE CAMERA · BETA</span>
+              </div>
+            )}
 
-            <section className="panel" id="cohost-panel">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">LIVE TOOLS</span>
-                  <h2>Co-host</h2>
-                </div>
-                <span className="beta-tag">BETA</span>
-              </div>
-              <p className="muted">Invite one creator into the split-screen beta room. The second slot is visual-only until realtime remote streaming is connected.</p>
-              <div className="creator-list">
-                {creators.map((creator) => (
-                  <div className="creator-row" key={creator.id}>
-                    <div className="host-id">
-                      <div className="avatar">{creator.name[0]}</div>
-                      <div>
-                        <strong>{creator.name}</strong>
-                        <small>{creator.handle} · {creator.status}</small>
-                      </div>
-                    </div>
-                    <button className="mini-btn" disabled={cohost?.id === creator.id} onClick={() => inviteCohost(creator)}>
-                      {cohost?.id === creator.id ? 'Joined' : 'Invite'}
-                    </button>
+            {giftTrayOpen && (
+              <div className="live-sheet-backdrop" onClick={() => setGiftTrayOpen(false)}>
+                <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
+                  <div className="sheet-handle" />
+                  <div className="sheet-heading">
+                    <div><span>TEST GIFTS</span><strong>Send a gift</strong></div>
+                    <div className="test-balance">🪙 {coins.toLocaleString()}</div>
                   </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel wallet-panel">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">OWNER TEST WALLET</span>
-                  <h2>{coins.toLocaleString()} coins</h2>
+                  <p>Local beta only · no real purchase, earnings, or payout.</p>
+                  <div className="live-gift-grid">
+                    {gifts.map((gift) => (
+                      <button className={`live-gift-item ${gift.cost === 100 ? 'premium-test-gift' : ''}`} key={gift.id} onClick={() => sendGift(gift)}>
+                        <span>{gift.emoji}</span>
+                        <strong>{gift.label}</strong>
+                        <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="test-wallet-row">
+                    <small>Owner testing balance</small>
+                    <button onClick={() => addTestCoins(1000)}>+1K test coins</button>
+                  </div>
                 </div>
-                <span className="owner-tag">LOCAL BETA</span>
               </div>
-              <p className="muted">Starter gifts are capped at 100 coins. Gifts under 100 use a quick sender overlay; 100-coin gifts get the premium 5–7 second treatment.</p>
-              <div className="coin-actions">
-                <button className="secondary" onClick={() => addTestCoins(1000)}>+1K Test Coins</button>
-                <button className="secondary" onClick={() => addTestCoins(10000)}>+10K Test Coins</button>
-              </div>
-              <div className="gift-grid">
-                {gifts.map((gift) => (
-                  <button className={`gift-card ${gift.cost === 100 ? 'premium-card' : ''}`} key={gift.id} onClick={() => sendGift(gift)}>
-                    <span>{gift.emoji}</span>
-                    <strong>{gift.label}</strong>
-                    <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
-                  </button>
-                ))}
-              </div>
-            </section>
+            )}
 
-            <section className="panel chat-panel">
-              <div className="section-heading"><div><span className="eyebrow">ROOM</span><h2>Live chat</h2></div></div>
-              <div className="chat-feed">
-                {chat.slice(-6).map((item) => (
-                  <div className="chat-line" key={item.id}><strong>{item.user}</strong><span>{item.text}</span></div>
-                ))}
+            {cohostTrayOpen && (
+              <div className="live-sheet-backdrop" onClick={() => setCohostTrayOpen(false)}>
+                <div className="live-sheet" onClick={(event) => event.stopPropagation()}>
+                  <div className="sheet-handle" />
+                  <div className="sheet-heading"><div><span>CO-HOST · BETA</span><strong>Invite a creator</strong></div></div>
+                  <p>Visual test slot only until realtime remote video is connected.</p>
+                  <div className="sheet-creator-list">
+                    {creators.map((creator) => (
+                      <button key={creator.id} className="sheet-creator" onClick={() => inviteCohost(creator)}>
+                        <div className="avatar">{creator.name[0]}</div>
+                        <div><strong>{creator.name}</strong><small>{creator.handle} · {creator.status}</small></div>
+                        <span>{cohost?.id === creator.id ? 'Added' : 'Invite'}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </section>
-          </>
+            )}
+          </section>
         )}
 
         {tab === 'discover' && (
           <section className="panel full-panel">
             <span className="eyebrow">DISCOVER</span>
             <h2>Live creators</h2>
-            <p className="muted">The beta discovery shell is ready for real room data later.</p>
+            <p className="muted">Discovery is still sample data in Beta 0.1.</p>
             <div className="discover-grid">
               {creators.map((creator) => (
                 <article className="discover-card" key={creator.id}>
@@ -414,7 +421,11 @@ export default function App() {
           <section className="panel full-panel profile-panel">
             <div className="profile-hero">
               <div className="avatar profile-avatar">I</div>
-              <div><span className="eyebrow">OWNER TEST PROFILE</span><h2>INFAMOUS</h2><p>@infamous · Fameverse Live beta</p></div>
+              <div>
+                <span className="eyebrow">OWNER TEST PROFILE</span>
+                <h2>INFAMOUS</h2>
+                <p>@infamous · Fameverse Live beta</p>
+              </div>
             </div>
             <div className="profile-stats">
               <div><strong>0</strong><small>Followers</small></div>
@@ -422,14 +433,14 @@ export default function App() {
               <div><strong>{coins.toLocaleString()}</strong><small>Test coins</small></div>
             </div>
             <div className="roadmap-note">
-              <strong>Not public yet</strong>
-              <p>Remote broadcasting, battles, events, real wallet accounting, creator payouts and production authentication remain future beta phases.</p>
+              <strong>Beta boundary</strong>
+              <p>Camera preview and gift interactions are test systems. Realtime remote broadcasting, purchases, creator earnings, payouts and production authentication are not enabled yet.</p>
             </div>
           </section>
         )}
       </main>
 
-      <nav className="bottom-nav" aria-label="Primary">
+      <nav className={`bottom-nav ${tab === 'live' && isLive ? 'nav-hidden-live' : ''}`} aria-label="Primary">
         <button className={tab === 'discover' ? 'active' : ''} onClick={() => setTab('discover')}><span>✦</span>Discover</button>
         <button className={tab === 'live' ? 'active center' : 'center'} onClick={() => setTab('live')}><span>●</span>Live</button>
         <button className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}><span>♙</span>Profile</button>
