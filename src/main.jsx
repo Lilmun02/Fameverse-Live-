@@ -7,6 +7,7 @@ import './live.css'
 import './foundation.css'
 import './viewport-lock.css'
 import './release.css'
+import './qa-fixes.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
