@@ -49,7 +49,7 @@ if (typeof window !== 'undefined') {
   document.addEventListener('click', (event) => {
     const button = event.target?.closest?.('button')
     if (!button || button.disabled) return
-    const label = (button.textContent || '').trim().toLowerCase()
+    const label = (button.textContent || '').replace(/\s+/g, '').toLowerCase()
     if (label !== '↻flip' && !label.endsWith('flip')) return
 
     const shell = button.closest('.mobile-live-shell')
@@ -65,10 +65,21 @@ if (typeof window !== 'undefined') {
     surface.appendChild(frame)
 
     const releaseWhenPlaying = () => {
-      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(removeFreeze, 80)))
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(removeFreeze, 140)))
     }
 
+    // The same <video> element receives the replacement stream. Do not expose
+    // the purple fallback until that replacement stream has actually begun
+    // rendering. The long timeout is only a safety cleanup for a failed flip.
     video.addEventListener('playing', releaseWhenPlaying, { once: true })
-    cleanupTimer = setTimeout(removeFreeze, 1800)
+    cleanupTimer = setTimeout(removeFreeze, 8000)
+  }, true)
+
+  document.addEventListener('click', (event) => {
+    const button = event.target?.closest?.('button')
+    const label = (button?.textContent || '').replace(/\s+/g, '').toLowerCase()
+    if (label === 'end' || label.includes('camera') || label.includes('camon')) {
+      if (!label.endsWith('flip')) removeFreeze()
+    }
   }, true)
 }
