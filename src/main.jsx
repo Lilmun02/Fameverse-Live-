@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './flip-guard.js'
+import './beta-feedback.js'
 import App from './App.jsx'
 import './styles.css'
 import './gifts.css'
@@ -10,6 +11,7 @@ import './viewport-lock.css'
 import './release.css'
 import './qa-fixes.css'
 import './live-polish.css'
+import './beta-feedback.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
