@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v3'
+const CACHE = 'fameverse-beta-v4'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -13,16 +13,70 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
+async function refreshInBackground(request, cache) {
+  try {
+    const response = await fetch(request)
+    if (response && response.ok) await cache.put(request, response.clone())
+    return response
+  } catch {
+    return null
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const copy = response.clone()
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy)).catch(() => {})
-        return response
+  const request = event.request
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
+
+  // Launch the installed PWA from cache immediately, then refresh the shell
+  // in the background so the next launch gets the newest deployment.
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE)
+      const cached = await cache.match('/index.html') || await cache.match('/')
+      const networkPromise = refreshInBackground(request, cache)
+
+      if (cached) {
+        event.waitUntil(networkPromise)
+        return cached
+      }
+
+      return (await networkPromise) || new Response('Fameverse is temporarily unavailable.', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
-  )
+    })())
+    return
+  }
+
+  // Vite production assets are content-hashed. Once downloaded, the exact URL
+  // is immutable, so cache-first avoids re-downloading JS/CSS every app launch.
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE)
+      const cached = await cache.match(request)
+      if (cached) return cached
+
+      const response = await fetch(request)
+      if (response && response.ok) await cache.put(request, response.clone())
+      return response
+    })())
+    return
+  }
+
+  // Small shell resources use stale-while-revalidate.
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE)
+    const cached = await cache.match(request)
+    const networkPromise = refreshInBackground(request, cache)
+
+    if (cached) {
+      event.waitUntil(networkPromise)
+      return cached
+    }
+
+    return (await networkPromise) || await cache.match('/index.html')
+  })())
 })
