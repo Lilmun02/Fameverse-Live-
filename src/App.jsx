@@ -7,7 +7,7 @@ const gifts = [
   { id: 'fire', emoji: '🔥', label: 'Fire', cost: 10 },
   { id: 'star', emoji: '⭐', label: 'Star', cost: 20 },
   { id: 'crown', emoji: '👑', label: 'Crown', cost: 50 },
-  { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 100, premium: true },
+  { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 100 },
 ]
 
 const legalPages = {
@@ -152,6 +152,7 @@ export default function App() {
   const [giftOverlay, setGiftOverlay] = useState(null)
   const [mediaStream, setMediaStream] = useState(null)
   const [micMuted, setMicMuted] = useState(false)
+  const [cameraOff, setCameraOff] = useState(false)
   const [facingMode, setFacingMode] = useState('user')
   const [standalone, setStandalone] = useState(isRunningStandalone)
   const [giftTrayOpen, setGiftTrayOpen] = useState(false)
@@ -161,6 +162,8 @@ export default function App() {
   const giftTimerRef = useRef(null)
   const videoRef = useRef(null)
   const streamRef = useRef(null)
+  const wakeLockRef = useRef(null)
+  const coinsRef = useRef(coins)
 
   const viewerCount = useMemo(() => 0, [])
   const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Fameverse User'
@@ -222,6 +225,7 @@ export default function App() {
   }, [session?.user?.id])
 
   useEffect(() => {
+    coinsRef.current = coins
     localStorage.setItem('fameverse-owner-test-coins', String(coins))
   }, [coins])
 
@@ -247,14 +251,18 @@ export default function App() {
   }, [toast])
 
   useEffect(() => {
-    if (!videoRef.current || !mediaStream) return
+    if (!videoRef.current || !mediaStream || cameraOff) return
+    videoRef.current.muted = true
+    videoRef.current.defaultMuted = true
+    videoRef.current.volume = 0
     videoRef.current.srcObject = mediaStream
     videoRef.current.play().catch(() => {})
-  }, [mediaStream, tab])
+  }, [mediaStream, tab, cameraOff, facingMode])
 
   useEffect(() => () => {
     clearTimeout(giftTimerRef.current)
     streamRef.current?.getTracks().forEach((track) => track.stop())
+    wakeLockRef.current?.release?.().catch?.(() => {})
   }, [])
 
   useEffect(() => {
@@ -266,6 +274,14 @@ export default function App() {
       setSettingsDetail(null)
     }
   }, [tab])
+
+  useEffect(() => {
+    const reacquire = () => {
+      if (document.visibilityState === 'visible' && isLive) acquireWakeLock()
+    }
+    document.addEventListener('visibilitychange', reacquire)
+    return () => document.removeEventListener('visibilitychange', reacquire)
+  }, [isLive])
 
   const submitAuth = async (event) => {
     event.preventDefault()
@@ -330,6 +346,33 @@ export default function App() {
     setToast('Profile saved')
   }
 
+  const acquireWakeLock = async () => {
+    if (!navigator.wakeLock?.request || document.visibilityState !== 'visible' || !isLive) return
+    if (wakeLockRef.current && !wakeLockRef.current.released) return
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen')
+      wakeLockRef.current.addEventListener?.('release', () => { wakeLockRef.current = null })
+    } catch {
+      // Best effort only. iOS can reject Wake Lock after backgrounding.
+    }
+  }
+
+  const releaseWakeLock = async () => {
+    const lock = wakeLockRef.current
+    wakeLockRef.current = null
+    if (!lock || lock.released) return
+    try { await lock.release() } catch {}
+  }
+
+  const stopMedia = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    setMediaStream(null)
+    setCameraOff(false)
+    if (videoRef.current) videoRef.current.srcObject = null
+    releaseWakeLock()
+  }
+
   const signOut = async () => {
     stopMedia()
     setIsLive(false)
@@ -340,19 +383,23 @@ export default function App() {
     setSettingsDetail(null)
   }
 
-  const stopMedia = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    streamRef.current = null
-    setMediaStream(null)
-    if (videoRef.current) videoRef.current.srcObject = null
-  }
+  const videoConstraints = (nextFacing = facingMode) => ({
+    facingMode: { ideal: nextFacing },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+  })
 
   const requestMedia = async (nextFacing = facingMode) => {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
     return navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: nextFacing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: videoConstraints(nextFacing),
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     })
+  }
+
+  const requestVideo = async (nextFacing = facingMode) => {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
+    return navigator.mediaDevices.getUserMedia({ video: videoConstraints(nextFacing), audio: false })
   }
 
   const startLive = async () => {
@@ -360,6 +407,7 @@ export default function App() {
       stopMedia()
       setIsLive(false)
       setMicMuted(false)
+      setCameraOff(false)
       setGiftTrayOpen(false)
       setCohostTrayOpen(false)
       setToast('Live ended · camera and mic released')
@@ -372,7 +420,9 @@ export default function App() {
       streamRef.current = stream
       setMediaStream(stream)
       setMicMuted(false)
+      setCameraOff(false)
       setIsLive(true)
+      setTimeout(() => acquireWakeLock(), 0)
       setToast('Camera + microphone ready')
     } catch (error) {
       const denied = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError'
@@ -392,25 +442,56 @@ export default function App() {
     const nextMuted = !micMuted
     audioTracks.forEach((track) => { track.enabled = !nextMuted })
     setMicMuted(nextMuted)
-    setToast(nextMuted ? 'Microphone muted' : 'Microphone on')
+  }
+
+  const toggleCamera = () => {
+    const videoTracks = streamRef.current?.getVideoTracks() || []
+    if (!videoTracks.length) return
+    const nextOff = !cameraOff
+    videoTracks.forEach((track) => { track.enabled = !nextOff })
+    setCameraOff(nextOff)
   }
 
   const flipCamera = async () => {
+    if (!isLive || cameraOff || isStartingLive) return
+
+    const currentStream = streamRef.current
+    if (!currentStream) return
+
     const previousFacing = facingMode
-    const nextFacing = facingMode === 'user' ? 'environment' : 'user'
-    setFacingMode(nextFacing)
-    if (!isLive) return
+    const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
+    const audioTracks = currentStream.getAudioTracks()
+    const oldVideoTracks = currentStream.getVideoTracks()
 
     setIsStartingLive(true)
+    oldVideoTracks.forEach((track) => {
+      try { currentStream.removeTrack(track) } catch {}
+      try { track.stop() } catch {}
+    })
+
     try {
-      const nextStream = await requestMedia(nextFacing)
-      nextStream.getAudioTracks().forEach((track) => { track.enabled = !micMuted })
-      stopMedia()
+      const cameraStream = await requestVideo(nextFacing)
+      const nextVideoTrack = cameraStream.getVideoTracks()[0]
+      if (!nextVideoTrack) throw new Error('camera-track-missing')
+
+      const nextStream = new MediaStream([...audioTracks, nextVideoTrack])
       streamRef.current = nextStream
+      setFacingMode(nextFacing)
       setMediaStream(nextStream)
-      setToast(nextFacing === 'user' ? 'Front camera' : 'Back camera')
     } catch {
-      setFacingMode(previousFacing)
+      try {
+        const restoreStream = await requestVideo(previousFacing)
+        const restoredVideoTrack = restoreStream.getVideoTracks()[0]
+        if (restoredVideoTrack) {
+          const restoredStream = new MediaStream([...audioTracks, restoredVideoTrack])
+          streamRef.current = restoredStream
+          setMediaStream(restoredStream)
+        } else {
+          setCameraOff(true)
+        }
+      } catch {
+        setCameraOff(true)
+      }
       setToast('Could not switch cameras')
     } finally {
       setIsStartingLive(false)
@@ -418,25 +499,38 @@ export default function App() {
   }
 
   const addTestCoins = (amount = 10000) => {
-    setCoins((value) => value + amount)
+    const next = coinsRef.current + amount
+    coinsRef.current = next
+    setCoins(next)
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
   const showGift = (gift) => {
     clearTimeout(giftTimerRef.current)
-    const duration = gift.cost === 100 ? 6000 : 1800
-    setGiftOverlay({ ...gift, sender: displayName, duration })
-    giftTimerRef.current = setTimeout(() => setGiftOverlay(null), duration)
+    const now = Date.now()
+    setGiftOverlay((previous) => {
+      const sameCombo = previous?.id === gift.id && now - (previous.lastSentAt || 0) < 2200
+      return {
+        ...gift,
+        sender: displayName,
+        duration: 1800,
+        count: sameCombo ? (previous.count || 1) + 1 : 1,
+        lastSentAt: now,
+      }
+    })
+    giftTimerRef.current = setTimeout(() => setGiftOverlay(null), 1800)
   }
 
   const sendGift = (gift) => {
-    if (coins < gift.cost) {
+    if (coinsRef.current < gift.cost) {
       setToast('Test balance empty · tap refill')
       return
     }
-    setCoins((value) => value - gift.cost)
-    setChat((items) => [...items, { id: Date.now(), user: displayName, text: `${gift.emoji} sent ${gift.label}` }])
-    setGiftTrayOpen(false)
+
+    const nextBalance = coinsRef.current - gift.cost
+    coinsRef.current = nextBalance
+    setCoins(nextBalance)
+    setChat((items) => [...items, { id: `${Date.now()}-${Math.random()}`, user: displayName, text: `${gift.emoji} sent ${gift.label}` }])
     showGift(gift)
   }
 
@@ -519,18 +613,13 @@ export default function App() {
     <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
       {toast && <div className="toast">{toast}</div>}
 
-      {giftOverlay && giftOverlay.cost < 100 && (
+      {giftOverlay && (
         <div className="gift-overlay-simple" role="status" aria-live="polite">
           <span className="gift-overlay-emoji">{giftOverlay.emoji}</span>
-          <div><strong>{giftOverlay.sender}</strong><small>sent {giftOverlay.label} · {giftOverlay.cost} {giftOverlay.cost === 1 ? 'coin' : 'coins'}</small></div>
-        </div>
-      )}
-
-      {giftOverlay && giftOverlay.cost === 100 && (
-        <div className="gift-overlay-premium" role="status" aria-live="polite">
-          <div className="premium-glow" />
-          <div className="premium-gift-visual">{giftOverlay.emoji}</div>
-          <div className="premium-gift-copy"><span>100 COIN GIFT</span><strong>{giftOverlay.sender}</strong><small>sent {giftOverlay.label}</small></div>
+          <div>
+            <strong>{giftOverlay.sender}</strong>
+            <small>sent {giftOverlay.label}{giftOverlay.count > 1 ? ` ×${giftOverlay.count}` : ''}</small>
+          </div>
         </div>
       )}
 
@@ -545,8 +634,14 @@ export default function App() {
         {tab === 'live' && (
           <section className={`mobile-live-shell ${isLive ? 'is-live' : 'is-preview'}`}>
             <div className="live-video-surface">
-              {isLive && mediaStream ? (
+              {isLive && mediaStream && !cameraOff ? (
                 <video ref={videoRef} className={`host-video immersive-video ${facingMode === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
+              ) : isLive && cameraOff ? (
+                <div className="camera-off-placeholder">
+                  <div className="preview-camera-icon">◉</div>
+                  <strong>Camera off</strong>
+                  <small>Your microphone can stay on while video is hidden.</small>
+                </div>
               ) : (
                 <div className="live-preview-placeholder">
                   <div className="preview-brand"><span>FAMEVERSE</span> LIVE</div>
@@ -580,7 +675,8 @@ export default function App() {
                 <button className="live-action" onClick={() => setGiftTrayOpen(true)}><span>🎁</span><small>Gift</small></button>
                 <button className="live-action" onClick={() => setCohostTrayOpen(true)}><span>＋</span><small>Co-host</small></button>
                 <button className="live-action" onClick={toggleMic}><span>{micMuted ? '🔇' : '🎙️'}</span><small>{micMuted ? 'Unmute' : 'Mute'}</small></button>
-                <button className="live-action" onClick={flipCamera} disabled={isStartingLive}><span>↻</span><small>Flip</small></button>
+                <button className="live-action" onClick={toggleCamera}><span>{cameraOff ? '🚫' : '📷'}</span><small>{cameraOff ? 'Cam on' : 'Camera'}</small></button>
+                <button className="live-action" onClick={flipCamera} disabled={isStartingLive || cameraOff}><span>↻</span><small>Flip</small></button>
                 <button className="live-action" onClick={shareRoom}><span>↗</span><small>Share</small></button>
               </div>
             )}
@@ -608,11 +704,11 @@ export default function App() {
               <div className="live-sheet-backdrop" onClick={() => setGiftTrayOpen(false)}>
                 <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
                   <div className="sheet-handle" />
-                  <div className="sheet-heading"><div><span>GIFTS · BETA TEST</span><strong>Send a gift</strong></div><div className="test-balance">🪙 {coins.toLocaleString()}</div></div>
-                  <p>Test currency only · no real purchase, earnings, or payout.</p>
+                  <div className="sheet-heading"><div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div><div className="test-balance">🪙 {coins.toLocaleString()}</div></div>
+                  <p>Tap repeatedly to send combos. Test currency only · no real purchase, earnings, or payout.</p>
                   <div className="live-gift-grid">
                     {gifts.map((gift) => (
-                      <button className={`live-gift-item ${gift.cost === 100 ? 'premium-test-gift' : ''}`} key={gift.id} onClick={() => sendGift(gift)}>
+                      <button className="live-gift-item" key={gift.id} onClick={() => sendGift(gift)}>
                         <span>{gift.emoji}</span><strong>{gift.label}</strong><small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
                       </button>
                     ))}
