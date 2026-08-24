@@ -1,0 +1,27 @@
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+body {
+  touch-action: pan-y;
+}
+
+.app-shell,
+main,
+.panel,
+.full-panel,
+.honest-empty-state {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.honest-empty-state strong,
+.honest-empty-state p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
