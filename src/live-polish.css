@@ -82,6 +82,33 @@
   font-size: .82rem !important;
 }
 
+/* Installed PWAs should feel like app controls, not selectable webpage content. */
+.mobile-live-shell,
+.mobile-live-shell button,
+.mobile-live-shell .live-sheet,
+.mobile-live-shell .live-gift-grid,
+.mobile-live-shell .live-gift-item,
+.mobile-live-shell .gift-overlay-simple,
+.mobile-live-shell .live-chat-overlay,
+.mobile-live-shell .live-action-rail {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mobile-live-shell button,
+.mobile-live-shell .live-gift-item {
+  touch-action: manipulation;
+}
+
+/* Text entry must remain editable/selectable. */
+.mobile-live-shell input,
+.mobile-live-shell textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
 @media (max-width: 390px) {
   .gift-overlay-simple {
     left: 16px !important;
