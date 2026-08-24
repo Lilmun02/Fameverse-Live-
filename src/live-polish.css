@@ -1,0 +1,90 @@
+/* Live QA polish: gift placement, flip continuity, and startup consistency. */
+
+.flip-freeze-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Gift confirmations belong with the lower live conversation, not at the top. */
+.gift-overlay-simple {
+  top: auto !important;
+  left: 24px !important;
+  right: auto !important;
+  bottom: calc(max(152px, env(safe-area-inset-bottom) + 144px)) !important;
+  transform: none !important;
+  width: min(calc(100vw - 128px), 360px) !important;
+  min-height: 52px;
+  padding: 9px 12px !important;
+  border-radius: 16px !important;
+  background: rgba(8, 4, 13, .82) !important;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28) !important;
+  animation: live-gift-combo 1.8s ease both !important;
+}
+
+.gift-overlay-simple .gift-overlay-emoji {
+  font-size: 1.55rem !important;
+}
+
+.gift-overlay-simple strong {
+  color: #d79aff;
+}
+
+@keyframes live-gift-combo {
+  0% { opacity: 0; transform: translateY(10px) scale(.96); }
+  12%, 78% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(.98); }
+}
+
+/* Make React's auth-loading state visually continuous with the HTML boot splash. */
+.foundation-loading {
+  position: fixed;
+  inset: 0;
+  min-height: 100dvh !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto;
+  place-content: center;
+  justify-items: center;
+  gap: 10px !important;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(145,55,255,.30), transparent 28rem),
+    linear-gradient(180deg,#10051f,#07010d 60%,#020104) !important;
+}
+
+.foundation-loading::before {
+  content: 'F';
+  width: 74px;
+  height: 74px;
+  margin-bottom: 6px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg,#7d2cff,#d05eff);
+  box-shadow: 0 18px 50px rgba(110,32,205,.34);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 950;
+}
+
+.foundation-loading strong {
+  font-size: clamp(1.5rem, 6vw, 2rem) !important;
+  line-height: 1;
+  letter-spacing: .045em;
+}
+
+.foundation-loading small {
+  margin-top: 4px;
+  color: #b5a6c1 !important;
+  font-size: .82rem !important;
+}
+
+@media (max-width: 390px) {
+  .gift-overlay-simple {
+    left: 16px !important;
+    width: min(calc(100vw - 112px), 330px) !important;
+  }
+}
