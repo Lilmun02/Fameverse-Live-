@@ -10,6 +10,54 @@ const gifts = [
   { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 100, premium: true },
 ]
 
+const legalPages = {
+  terms: {
+    eyebrow: 'TERMS OF SERVICE',
+    title: 'Fameverse beta terms',
+    intro: 'These beta terms set the ground rules for using Fameverse while the platform is being tested.',
+    sections: [
+      ['Use Fameverse lawfully', 'Do not use Fameverse to commit crimes, facilitate fraud, distribute illegal content, evade platform enforcement, or interfere with the service.'],
+      ['Your account', 'You are responsible for activity on your account and for keeping your sign-in information private. Do not impersonate another person or misrepresent your identity to deceive others.'],
+      ['Live content', 'Creators are responsible for what they stream, post, say, display, or send through Fameverse. Content may be removed or accounts restricted when platform rules are violated.'],
+      ['Beta services', 'Features may change, fail, be limited, or be removed during beta. Test coins and test gifts have no cash value and are not purchases, earnings, or payouts.'],
+    ],
+  },
+  privacy: {
+    eyebrow: 'PRIVACY POLICY',
+    title: 'Privacy in the current beta',
+    intro: 'This page describes what the current Fameverse beta actually stores and what remains on your device.',
+    sections: [
+      ['Account data', 'Fameverse currently stores account email and profile information needed to create and manage your beta account.'],
+      ['Camera and microphone', 'The current beta requests camera and microphone access when you start the local live preview. Remote broadcasting is not enabled yet.'],
+      ['Local test systems', 'Test gift balance, gift activity, and live comments are currently local test systems and are not a production creator wallet or realtime chat service.'],
+      ['Before public launch', 'Privacy controls, retention rules, support contact details, and the final production privacy policy will be completed before a broader public or monetary launch.'],
+    ],
+  },
+  use: {
+    eyebrow: 'TERMS OF USE',
+    title: 'Using Fameverse responsibly',
+    intro: 'Fameverse is being built for live entertainment, community, creativity, and legitimate creator interaction.',
+    sections: [
+      ['Be authentic', 'Do not impersonate people, run scams, manipulate users, or intentionally misrepresent gifts, earnings, rankings, partnerships, or platform status.'],
+      ['Respect consent and privacy', 'Do not expose private personal information, secretly record private communications, or pressure people into sharing personal or intimate material.'],
+      ['Protect the platform', 'Do not probe, exploit, overload, scrape, automate abuse, bypass security, or attempt to access accounts, data, or systems without authorization.'],
+      ['Age and safety', 'Age requirements and youth protections will be finalized before public launch. Beta testers should not use Fameverse to expose minors to unsafe, exploitative, or age-inappropriate interactions.'],
+    ],
+  },
+  community: {
+    eyebrow: 'COMMUNITY GUIDELINES',
+    title: 'What Fameverse will and will not tolerate',
+    intro: 'These rules apply to live streams, profiles, comments, gifts, usernames, and other community activity.',
+    sections: [
+      ['No harassment or threats', 'Targeted harassment, credible threats, stalking, bullying, coordinated abuse, or encouraging others to attack someone is not tolerated.'],
+      ['No hateful or exploitative conduct', 'Do not promote hatred against protected groups, sexual exploitation, non-consensual intimate material, or abuse involving minors.'],
+      ['No scams or dangerous deception', 'Fraud, phishing, fake giveaways, payment scams, impersonation for gain, and deceptive schemes are prohibited.'],
+      ['No doxxing', 'Do not reveal another person’s private address, phone number, financial information, credentials, or other sensitive personal data without permission.'],
+      ['Moderation', 'Fameverse may remove content, limit features, suspend accounts, or permanently remove accounts when behavior creates safety, legal, or platform-integrity risks.'],
+    ],
+  },
+}
+
 function loadCoins() {
   const saved = Number(localStorage.getItem('fameverse-owner-test-coins'))
   return Number.isFinite(saved) && saved >= 0 ? saved : 10000
@@ -23,6 +71,23 @@ function cleanUsername(value = '') {
   return value.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24)
 }
 
+function LegalPage({ page, onBack }) {
+  return (
+    <section className="panel full-panel account-panel policy-panel">
+      <button className="account-back" onClick={onBack}>← Settings</button>
+      <span className="eyebrow">{page.eyebrow}</span>
+      <h2>{page.title}</h2>
+      <p className="policy-intro">{page.intro}</p>
+      <div className="policy-sections">
+        {page.sections.map(([title, copy]) => (
+          <article key={title}><strong>{title}</strong><p>{copy}</p></article>
+        ))}
+      </div>
+      <div className="policy-beta-note">Beta draft · final legal review and production policies are required before a monetary or broad public launch.</div>
+    </section>
+  )
+}
+
 export default function App() {
   const [authReady, setAuthReady] = useState(false)
   const [session, setSession] = useState(null)
@@ -33,6 +98,7 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState('')
   const [tab, setTab] = useState('live')
   const [profileMode, setProfileMode] = useState('view')
+  const [policyPage, setPolicyPage] = useState(null)
   const [isLive, setIsLive] = useState(false)
   const [isStartingLive, setIsStartingLive] = useState(false)
   const [coins, setCoins] = useState(loadCoins)
@@ -47,7 +113,6 @@ export default function App() {
   const [standalone, setStandalone] = useState(isRunningStandalone)
   const [giftTrayOpen, setGiftTrayOpen] = useState(false)
   const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
-  const [commentTrayOpen, setCommentTrayOpen] = useState(false)
   const [profileDraft, setProfileDraft] = useState({ display_name: '', username: '', bio: '' })
 
   const giftTimerRef = useRef(null)
@@ -58,21 +123,21 @@ export default function App() {
   const displayName = profile?.display_name || session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = profile?.username ? `@${profile.username}` : '@newuser'
   const initial = displayName.trim().charAt(0).toUpperCase() || 'F'
+  const joinedLabel = profile?.created_at
+    ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(profile.created_at))
+    : 'Beta 2026'
 
   useEffect(() => {
     let mounted = true
-
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return
       setSession(data.session)
       setAuthReady(true)
     })
-
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
       setAuthReady(true)
     })
-
     return () => {
       mounted = false
       authListener.subscription.unsubscribe()
@@ -84,7 +149,6 @@ export default function App() {
       setProfile(null)
       return
     }
-
     let active = true
     const loadProfile = async () => {
       const { data, error } = await supabase
@@ -92,21 +156,14 @@ export default function App() {
         .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
         .eq('id', session.user.id)
         .single()
-
       if (!active) return
       if (error) {
         setToast('Signed in · profile is still initializing')
         return
       }
-
       setProfile(data)
-      setProfileDraft({
-        display_name: data.display_name || '',
-        username: data.username || '',
-        bio: data.bio || '',
-      })
+      setProfileDraft({ display_name: data.display_name || '', username: data.username || '', bio: data.bio || '' })
     }
-
     loadProfile()
     return () => { active = false }
   }, [session?.user?.id])
@@ -122,10 +179,8 @@ export default function App() {
     }
     const displayMode = window.matchMedia?.('(display-mode: standalone)')
     const updateStandalone = () => setStandalone(isRunningStandalone())
-
     window.addEventListener('beforeinstallprompt', handler)
     displayMode?.addEventListener?.('change', updateStandalone)
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
       displayMode?.removeEventListener?.('change', updateStandalone)
@@ -152,54 +207,47 @@ export default function App() {
   useEffect(() => {
     setGiftTrayOpen(false)
     setCohostTrayOpen(false)
-    setCommentTrayOpen(false)
-    if (tab !== 'profile') setProfileMode('view')
+    if (tab !== 'profile') {
+      setProfileMode('view')
+      setPolicyPage(null)
+    }
   }, [tab])
 
   const submitAuth = async (event) => {
     event.preventDefault()
     setAuthMessage('')
-
     if (!authForm.email || !authForm.password) {
       setAuthMessage('Email and password are required.')
       return
     }
-
     if (authMode === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email: authForm.email.trim(),
         password: authForm.password,
         options: { data: { display_name: authForm.displayName.trim() || 'Fameverse User' } },
       })
-
       if (error) {
         setAuthMessage(error.message)
         return
       }
-
-      if (!data.session) setAuthMessage('Account created. Check your email to confirm, then sign in.')
-      else setAuthMessage('Account created.')
+      setAuthMessage(data.session ? 'Account created.' : 'Account created. Sign in to continue.')
       return
     }
-
     const { error } = await supabase.auth.signInWithPassword({
       email: authForm.email.trim(),
       password: authForm.password,
     })
-
     if (error) setAuthMessage(error.message)
   }
 
   const saveProfile = async (event) => {
     event.preventDefault()
     if (!session?.user?.id) return
-
     const nextUsername = cleanUsername(profileDraft.username)
     if (profileDraft.username && nextUsername.length < 3) {
       setToast('Username must be at least 3 characters')
       return
     }
-
     setProfileBusy(true)
     const { data, error } = await supabase
       .from('profiles')
@@ -211,13 +259,11 @@ export default function App() {
       .eq('id', session.user.id)
       .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
       .single()
-
     setProfileBusy(false)
     if (error) {
       setToast(error.code === '23505' ? 'That username is already taken' : 'Could not save profile')
       return
     }
-
     setProfile(data)
     setProfileDraft({ display_name: data.display_name || '', username: data.username || '', bio: data.bio || '' })
     setProfileMode('view')
@@ -230,6 +276,7 @@ export default function App() {
     await supabase.auth.signOut()
     setTab('live')
     setProfileMode('view')
+    setPolicyPage(null)
   }
 
   const stopMedia = () => {
@@ -241,18 +288,9 @@ export default function App() {
 
   const requestMedia = async (nextFacing = facingMode) => {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
-
     return navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: nextFacing },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
+      video: { facingMode: { ideal: nextFacing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     })
   }
 
@@ -263,11 +301,9 @@ export default function App() {
       setMicMuted(false)
       setGiftTrayOpen(false)
       setCohostTrayOpen(false)
-      setCommentTrayOpen(false)
       setToast('Live ended · camera and mic released')
       return
     }
-
     setIsStartingLive(true)
     try {
       const stream = await requestMedia(facingMode)
@@ -279,7 +315,6 @@ export default function App() {
     } catch (error) {
       const denied = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError'
       const unavailable = error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError'
-
       if (denied) setToast('Allow Camera + Microphone for Fameverse in iPhone settings')
       else if (unavailable) setToast('No camera or microphone was found')
       else if (error?.message === 'unsupported') setToast('This browser does not support live camera access')
@@ -303,7 +338,6 @@ export default function App() {
     const nextFacing = facingMode === 'user' ? 'environment' : 'user'
     setFacingMode(nextFacing)
     if (!isLive) return
-
     setIsStartingLive(true)
     try {
       const nextStream = await requestMedia(nextFacing)
@@ -337,7 +371,6 @@ export default function App() {
       setToast('Test balance empty · tap refill')
       return
     }
-
     setCoins((value) => value - gift.cost)
     setChat((items) => [...items, { id: Date.now(), user: displayName, text: `${gift.emoji} sent ${gift.label}` }])
     setGiftTrayOpen(false)
@@ -350,16 +383,10 @@ export default function App() {
     if (!text) return
     setChat((items) => [...items, { id: Date.now(), user: displayName, text }])
     setCommentText('')
-    setCommentTrayOpen(false)
   }
 
   const shareRoom = async () => {
-    const shareData = {
-      title: 'Fameverse Live Beta',
-      text: `${displayName} is testing Fameverse Live.`,
-      url: window.location.href,
-    }
-
+    const shareData = { title: 'Fameverse Live Beta', text: `${displayName} is testing Fameverse Live.`, url: window.location.href }
     try {
       if (navigator.share) await navigator.share(shareData)
       else {
@@ -391,9 +418,9 @@ export default function App() {
         <div className="auth-brand"><span>FAMEVERSE</span> LIVE <b>BETA 0.2</b></div>
         <section className="auth-card">
           <div>
-            <span className="eyebrow">ACCOUNT FOUNDATION</span>
+            <span className="eyebrow">ACCOUNT</span>
             <h1>{authMode === 'signup' ? 'Create your Fameverse account' : 'Welcome back'}</h1>
-            <p>Real beta accounts are now connected to Fameverse's own backend.</p>
+            <p>Sign in to your Fameverse beta account.</p>
           </div>
           <form className="auth-form" onSubmit={submitAuth}>
             {authMode === 'signup' && (
@@ -412,7 +439,7 @@ export default function App() {
     )
   }
 
-  const liveMessages = chat.slice(-4)
+  const liveMessages = chat.slice(-5)
 
   return (
     <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
@@ -463,8 +490,14 @@ export default function App() {
                 <div><strong>{displayName}</strong><small>{username}</small></div>
               </div>
               <div className="live-status-cluster">
-                <span className={isLive ? 'live-pill active' : 'live-pill'}>{isLive ? 'LIVE' : 'READY'}</span>
-                <span className="viewer-chip">👁 {viewerCount}</span>
+                {isLive ? (
+                  <>
+                    <span className="viewer-chip">👁 {viewerCount}</span>
+                    <button className="top-end-live" onClick={startLive}>End</button>
+                  </>
+                ) : (
+                  <><span className="live-pill">READY</span><span className="viewer-chip">👁 {viewerCount}</span></>
+                )}
               </div>
             </div>
 
@@ -472,7 +505,6 @@ export default function App() {
               <div className="live-action-rail">
                 <button className="live-action" onClick={() => setGiftTrayOpen(true)}><span>🎁</span><small>Gift</small></button>
                 <button className="live-action" onClick={() => setCohostTrayOpen(true)}><span>＋</span><small>Co-host</small></button>
-                <button className="live-action" onClick={() => setCommentTrayOpen(true)}><span>💬</span><small>Comment</small></button>
                 <button className="live-action" onClick={toggleMic}><span>{micMuted ? '🔇' : '🎙️'}</span><small>{micMuted ? 'Unmute' : 'Mute'}</small></button>
                 <button className="live-action" onClick={flipCamera} disabled={isStartingLive}><span>↻</span><small>Flip</small></button>
                 <button className="live-action" onClick={shareRoom}><span>↗</span><small>Share</small></button>
@@ -492,15 +524,18 @@ export default function App() {
                 <button className="preview-tool" onClick={() => setGiftTrayOpen(true)}>🎁 Test Gifts</button>
               </div>
             ) : (
-              <div className="live-end-controls"><button className="end-live-pill" onClick={startLive}>End Live</button><span>DEVICE CAMERA · BETA</span></div>
+              <form className="live-comment-composer" onSubmit={submitComment}>
+                <input value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength={160} placeholder="Add comment…" aria-label="Add comment" />
+                <button type="submit" aria-label="Send comment" disabled={!commentText.trim()}>↑</button>
+              </form>
             )}
 
             {giftTrayOpen && (
               <div className="live-sheet-backdrop" onClick={() => setGiftTrayOpen(false)}>
                 <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
                   <div className="sheet-handle" />
-                  <div className="sheet-heading"><div><span>TEST GIFTS</span><strong>Send a gift</strong></div><div className="test-balance">🪙 {coins.toLocaleString()}</div></div>
-                  <p>Beta test currency only · no real purchase, earnings, or payout.</p>
+                  <div className="sheet-heading"><div><span>GIFTS · BETA TEST</span><strong>Send a gift</strong></div><div className="test-balance">🪙 {coins.toLocaleString()}</div></div>
+                  <p>Test currency only · no real purchase, earnings, or payout.</p>
                   <div className="live-gift-grid">
                     {gifts.map((gift) => (
                       <button className={`live-gift-item ${gift.cost === 100 ? 'premium-test-gift' : ''}`} key={gift.id} onClick={() => sendGift(gift)}>
@@ -518,20 +553,9 @@ export default function App() {
                 <div className="live-sheet" onClick={(event) => event.stopPropagation()}>
                   <div className="sheet-handle" />
                   <div className="sheet-heading"><div><span>CO-HOST</span><strong>No requests yet</strong></div></div>
-                  <p>Fake co-host accounts are gone. Share this beta with a tester now; realtime co-host requests/video are the next room-backend milestone.</p>
-                  <button className="sheet-primary-action" onClick={shareRoom}>Share beta link</button>
+                  <p>Realtime co-host requests and remote video are still being connected. No fake users are shown.</p>
+                  <button className="sheet-primary-action" onClick={shareRoom}>Share live link</button>
                 </div>
-              </div>
-            )}
-
-            {commentTrayOpen && (
-              <div className="live-sheet-backdrop" onClick={() => setCommentTrayOpen(false)}>
-                <form className="live-sheet comment-sheet" onSubmit={submitComment} onClick={(event) => event.stopPropagation()}>
-                  <div className="sheet-handle" />
-                  <div className="sheet-heading"><div><span>COMMENT TEST</span><strong>Add a comment</strong></div></div>
-                  <input autoFocus value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength={160} placeholder="Say something…" />
-                  <button className="sheet-primary-action" type="submit">Post comment</button>
-                </form>
               </div>
             )}
           </section>
@@ -542,28 +566,43 @@ export default function App() {
             <span className="eyebrow">DISCOVER</span>
             <h2>Live creators</h2>
             <div className="honest-empty-state">
-              <div>✦</div><strong>No public live rooms yet</strong><p>Sample creators were removed. Real creators will appear here when realtime rooms and the FYP are connected.</p>
+              <div>✦</div><strong>No public live rooms yet</strong><p>Real creators will appear here when realtime rooms and the Fameverse FYP are connected.</p>
             </div>
           </section>
         )}
 
         {tab === 'profile' && profileMode === 'view' && (
-          <section className="panel full-panel profile-panel">
-            <div className="profile-hero">
-              <div className="avatar profile-avatar">{initial}</div>
-              <div><span className="eyebrow">BETA PROFILE</span><h2>{displayName}</h2><p>{username}</p></div>
+          <section className="panel full-panel profile-panel refined-profile">
+            <div className="profile-toolbar">
+              <span className="profile-brand">FAMEVERSE</span>
+              <button aria-label="Settings" onClick={() => setProfileMode('settings')}>⚙</button>
             </div>
-            {profile?.bio && <p className="profile-bio">{profile.bio}</p>}
-            <div className="profile-stats">
+            <div className="profile-cover">
+              <div className="avatar profile-avatar refined-avatar">{initial}</div>
+            </div>
+            <div className="profile-identity">
+              <span className="creator-badge">BETA CREATOR</span>
+              <h2>{displayName}</h2>
+              <p>{username}</p>
+              <p className="profile-bio">{profile?.bio || 'Add a bio so viewers know who you are.'}</p>
+              <div className="profile-meta"><span>Joined {joinedLabel}</span><span>Live creator</span></div>
+            </div>
+            <div className="profile-stats refined-stats">
               <div><strong>0</strong><small>Followers</small></div>
               <div><strong>0</strong><small>Following</small></div>
-              <div><strong>{coins.toLocaleString()}</strong><small>Test coins</small></div>
+              <div><strong>0</strong><small>Likes</small></div>
             </div>
-            <div className="profile-actions">
-              <button onClick={() => setProfileMode('edit')}>Edit profile</button>
-              <button onClick={() => setProfileMode('settings')}>Settings</button>
+            <div className="profile-actions refined-actions">
+              <button className="primary-profile-action" onClick={() => setProfileMode('edit')}>Edit profile</button>
+              <button onClick={shareRoom}>Share profile</button>
             </div>
-            <div className="roadmap-note"><strong>Beta boundary</strong><p>Your account and profile are now real backend data. Camera preview, comments and gifts are still local test systems while realtime rooms are built.</p></div>
+            <div className="creator-hub-card">
+              <div><span>CREATOR HUB</span><strong>Live Studio</strong><small>Manage your creator identity and future live tools.</small></div>
+              <button onClick={() => setTab('live')}>→</button>
+            </div>
+            <div className="profile-content-tabs"><button className="active">Clips</button><button>Replays</button><button>Gifts</button></div>
+            <div className="profile-empty-content"><span>✦</span><strong>Your creator content will live here</strong><p>Clips, replays, and public gift activity arrive with the next creator-content phase.</p></div>
+            <div className="compact-beta-note">Beta: test coins remain local and are not displayed as public creator earnings.</div>
           </section>
         )}
 
@@ -580,17 +619,34 @@ export default function App() {
           </section>
         )}
 
-        {tab === 'profile' && profileMode === 'settings' && (
-          <section className="panel full-panel account-panel">
+        {tab === 'profile' && profileMode === 'settings' && !policyPage && (
+          <section className="panel full-panel account-panel settings-home">
             <button className="account-back" onClick={() => setProfileMode('view')}>← Profile</button>
-            <span className="eyebrow">SETTINGS</span><h2>Account</h2>
-            <div className="settings-list">
-              <div><span>Email</span><strong>{session.user.email}</strong></div>
-              <div><span>Privacy</span><strong>More controls tomorrow</strong></div>
-              <div><span>Notifications</span><strong>Coming in account refinement</strong></div>
+            <span className="eyebrow">SETTINGS & SAFETY</span><h2>Settings</h2>
+            <div className="settings-section">
+              <strong className="settings-section-title">Account</strong>
+              <button className="settings-row"><span><b>Email</b><small>{session.user.email}</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setProfileMode('edit')}><span><b>Edit profile</b><small>Name, username and bio</small></span><i>›</i></button>
+              <button className="settings-row"><span><b>Privacy</b><small>More controls arriving before public launch</small></span><i>›</i></button>
+              <button className="settings-row"><span><b>Notifications</b><small>Creator and live alerts coming next</small></span><i>›</i></button>
+            </div>
+            <div className="settings-section">
+              <strong className="settings-section-title">Rules & legal</strong>
+              <button className="settings-row" onClick={() => setPolicyPage('terms')}><span><b>Terms of Service</b><small>Platform and account rules</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setPolicyPage('privacy')}><span><b>Privacy Policy</b><small>What the beta stores and uses</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setPolicyPage('use')}><span><b>Terms of Use</b><small>Responsible platform use</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setPolicyPage('community')}><span><b>Community Guidelines</b><small>What Fameverse will and will not tolerate</small></span><i>›</i></button>
+            </div>
+            <div className="settings-section">
+              <strong className="settings-section-title">Beta</strong>
+              <div className="settings-info-card"><b>Current testing boundary</b><p>Accounts and profiles use the Fameverse backend. Camera preview, comments and gifts are still test systems while realtime rooms, moderation and creator money systems are built.</p></div>
             </div>
             <button className="signout-button" onClick={signOut}>Sign out</button>
           </section>
+        )}
+
+        {tab === 'profile' && profileMode === 'settings' && policyPage && (
+          <LegalPage page={legalPages[policyPage]} onBack={() => setPolicyPage(null)} />
         )}
       </main>
 
