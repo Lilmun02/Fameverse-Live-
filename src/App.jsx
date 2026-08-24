@@ -25,12 +25,12 @@ const legalPages = {
   privacy: {
     eyebrow: 'PRIVACY POLICY',
     title: 'Privacy in the current beta',
-    intro: 'This page describes what the current Fameverse beta actually stores and what remains on your device.',
+    intro: 'This beta notice describes what Fameverse currently stores and what remains on your device.',
     sections: [
       ['Account data', 'Fameverse currently stores account email and profile information needed to create and manage your beta account.'],
-      ['Camera and microphone', 'The current beta requests camera and microphone access when you start the local live preview. Remote broadcasting is not enabled yet.'],
+      ['Camera and microphone', 'Fameverse requests camera and microphone access only when you start the local live preview. Remote broadcasting is not enabled yet.'],
       ['Local test systems', 'Test gift balance, gift activity, and live comments are currently local test systems and are not a production creator wallet or realtime chat service.'],
-      ['Before public launch', 'Privacy controls, retention rules, support contact details, and the final production privacy policy will be completed before a broader public or monetary launch.'],
+      ['Before public launch', 'Privacy controls, retention rules, support contact details, and final production policies still require completion and legal review before a broad public or monetary launch.'],
     ],
   },
   use: {
@@ -41,13 +41,13 @@ const legalPages = {
       ['Be authentic', 'Do not impersonate people, run scams, manipulate users, or intentionally misrepresent gifts, earnings, rankings, partnerships, or platform status.'],
       ['Respect consent and privacy', 'Do not expose private personal information, secretly record private communications, or pressure people into sharing personal or intimate material.'],
       ['Protect the platform', 'Do not probe, exploit, overload, scrape, automate abuse, bypass security, or attempt to access accounts, data, or systems without authorization.'],
-      ['Age and safety', 'Age requirements and youth protections will be finalized before public launch. Beta testers should not use Fameverse to expose minors to unsafe, exploitative, or age-inappropriate interactions.'],
+      ['Age and safety', 'Age requirements and youth protections will be finalized before public launch. Beta testers must not use Fameverse to expose minors to unsafe, exploitative, or age-inappropriate interactions.'],
     ],
   },
   community: {
     eyebrow: 'COMMUNITY GUIDELINES',
     title: 'What Fameverse will and will not tolerate',
-    intro: 'These rules apply to live streams, profiles, comments, gifts, usernames, and other community activity.',
+    intro: 'These beta rules apply to live streams, profiles, comments, gifts, usernames, and other community activity.',
     sections: [
       ['No harassment or threats', 'Targeted harassment, credible threats, stalking, bullying, coordinated abuse, or encouraging others to attack someone is not tolerated.'],
       ['No hateful or exploitative conduct', 'Do not promote hatred against protected groups, sexual exploitation, non-consensual intimate material, or abuse involving minors.'],
@@ -56,6 +56,12 @@ const legalPages = {
       ['Moderation', 'Fameverse may remove content, limit features, suspend accounts, or permanently remove accounts when behavior creates safety, legal, or platform-integrity risks.'],
     ],
   },
+}
+
+const creatorContent = {
+  clips: ['Clips', 'Short highlights from your lives will appear here.'],
+  replays: ['Replays', 'Saved live replays will appear here when cloud rooms are connected.'],
+  gifts: ['Gifts', 'Public gift history will appear here after the production wallet is built.'],
 }
 
 function loadCoins() {
@@ -88,6 +94,41 @@ function LegalPage({ page, onBack }) {
   )
 }
 
+function SettingsDetail({ type, email, onBack }) {
+  const content = {
+    account: {
+      eyebrow: 'ACCOUNT',
+      title: 'Account details',
+      body: 'Your Fameverse beta account is active and connected to the Fameverse backend.',
+      rows: [['Email', email], ['Account status', 'Active beta account'], ['Password & security', 'Security controls expand before public testing']],
+    },
+    privacyControls: {
+      eyebrow: 'PRIVACY',
+      title: 'Privacy controls',
+      body: 'These controls are intentionally limited during the private beta. The production privacy center will add audience, discoverability, blocking, and data controls.',
+      rows: [['Profile visibility', 'Private beta default'], ['Live visibility', 'Local preview only'], ['Direct messages', 'Not enabled']],
+    },
+    notifications: {
+      eyebrow: 'NOTIFICATIONS',
+      title: 'Notifications',
+      body: 'Push notifications are not enabled in this beta yet. We will add granular creator, live, follow, gift, and safety notification controls.',
+      rows: [['Live alerts', 'Coming soon'], ['Creator activity', 'Coming soon'], ['Safety notices', 'Coming soon']],
+    },
+  }[type]
+
+  return (
+    <section className="panel full-panel account-panel">
+      <button className="account-back" onClick={onBack}>← Settings</button>
+      <span className="eyebrow">{content.eyebrow}</span>
+      <h2>{content.title}</h2>
+      <p className="settings-detail-copy">{content.body}</p>
+      <div className="settings-list">
+        {content.rows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+      </div>
+    </section>
+  )
+}
+
 export default function App() {
   const [authReady, setAuthReady] = useState(false)
   const [session, setSession] = useState(null)
@@ -99,6 +140,8 @@ export default function App() {
   const [tab, setTab] = useState('live')
   const [profileMode, setProfileMode] = useState('view')
   const [policyPage, setPolicyPage] = useState(null)
+  const [settingsDetail, setSettingsDetail] = useState(null)
+  const [creatorTab, setCreatorTab] = useState('clips')
   const [isLive, setIsLive] = useState(false)
   const [isStartingLive, setIsStartingLive] = useState(false)
   const [coins, setCoins] = useState(loadCoins)
@@ -133,11 +176,13 @@ export default function App() {
       if (!mounted) return
       setSession(data.session)
       setAuthReady(true)
-    })
+    }).catch(() => setAuthReady(true))
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
       setAuthReady(true)
     })
+
     return () => {
       mounted = false
       authListener.subscription.unsubscribe()
@@ -149,6 +194,7 @@ export default function App() {
       setProfile(null)
       return
     }
+
     let active = true
     const loadProfile = async () => {
       const { data, error } = await supabase
@@ -156,14 +202,21 @@ export default function App() {
         .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
         .eq('id', session.user.id)
         .single()
+
       if (!active) return
       if (error) {
         setToast('Signed in · profile is still initializing')
         return
       }
+
       setProfile(data)
-      setProfileDraft({ display_name: data.display_name || '', username: data.username || '', bio: data.bio || '' })
+      setProfileDraft({
+        display_name: data.display_name || '',
+        username: data.username || '',
+        bio: data.bio || '',
+      })
     }
+
     loadProfile()
     return () => { active = false }
   }, [session?.user?.id])
@@ -210,6 +263,7 @@ export default function App() {
     if (tab !== 'profile') {
       setProfileMode('view')
       setPolicyPage(null)
+      setSettingsDetail(null)
     }
   }, [tab])
 
@@ -220,6 +274,7 @@ export default function App() {
       setAuthMessage('Email and password are required.')
       return
     }
+
     if (authMode === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email: authForm.email.trim(),
@@ -233,6 +288,7 @@ export default function App() {
       setAuthMessage(data.session ? 'Account created.' : 'Account created. Sign in to continue.')
       return
     }
+
     const { error } = await supabase.auth.signInWithPassword({
       email: authForm.email.trim(),
       password: authForm.password,
@@ -243,11 +299,13 @@ export default function App() {
   const saveProfile = async (event) => {
     event.preventDefault()
     if (!session?.user?.id) return
+
     const nextUsername = cleanUsername(profileDraft.username)
     if (profileDraft.username && nextUsername.length < 3) {
       setToast('Username must be at least 3 characters')
       return
     }
+
     setProfileBusy(true)
     const { data, error } = await supabase
       .from('profiles')
@@ -260,10 +318,12 @@ export default function App() {
       .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
       .single()
     setProfileBusy(false)
+
     if (error) {
       setToast(error.code === '23505' ? 'That username is already taken' : 'Could not save profile')
       return
     }
+
     setProfile(data)
     setProfileDraft({ display_name: data.display_name || '', username: data.username || '', bio: data.bio || '' })
     setProfileMode('view')
@@ -277,6 +337,7 @@ export default function App() {
     setTab('live')
     setProfileMode('view')
     setPolicyPage(null)
+    setSettingsDetail(null)
   }
 
   const stopMedia = () => {
@@ -304,6 +365,7 @@ export default function App() {
       setToast('Live ended · camera and mic released')
       return
     }
+
     setIsStartingLive(true)
     try {
       const stream = await requestMedia(facingMode)
@@ -338,6 +400,7 @@ export default function App() {
     const nextFacing = facingMode === 'user' ? 'environment' : 'user'
     setFacingMode(nextFacing)
     if (!isLive) return
+
     setIsStartingLive(true)
     try {
       const nextStream = await requestMedia(nextFacing)
@@ -386,7 +449,11 @@ export default function App() {
   }
 
   const shareRoom = async () => {
-    const shareData = { title: 'Fameverse Live Beta', text: `${displayName} is testing Fameverse Live.`, url: window.location.href }
+    const shareData = {
+      title: 'Fameverse Live Beta',
+      text: `${displayName} is testing Fameverse Live.`,
+      url: window.location.href,
+    }
     try {
       if (navigator.share) await navigator.share(shareData)
       else {
@@ -408,8 +475,14 @@ export default function App() {
     setInstallPrompt(null)
   }
 
+  const openProfileMode = (mode) => {
+    setPolicyPage(null)
+    setSettingsDetail(null)
+    setProfileMode(mode)
+  }
+
   if (!authReady) {
-    return <div className="foundation-loading"><strong>FAMEVERSE <span>LIVE</span></strong><small>Loading beta…</small></div>
+    return <div className="foundation-loading"><strong>FAMEVERSE <span>LIVE</span></strong><small>Opening your account…</small></div>
   }
 
   if (!session) {
@@ -440,6 +513,7 @@ export default function App() {
   }
 
   const liveMessages = chat.slice(-5)
+  const [creatorSectionTitle, creatorSectionCopy] = creatorContent[creatorTab]
 
   return (
     <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
@@ -575,11 +649,13 @@ export default function App() {
           <section className="panel full-panel profile-panel refined-profile">
             <div className="profile-toolbar">
               <span className="profile-brand">FAMEVERSE</span>
-              <button aria-label="Settings" onClick={() => setProfileMode('settings')}>⚙</button>
+              <button aria-label="Settings" onClick={() => openProfileMode('settings')}>⚙</button>
             </div>
+
             <div className="profile-cover">
               <div className="avatar profile-avatar refined-avatar">{initial}</div>
             </div>
+
             <div className="profile-identity">
               <span className="creator-badge">BETA CREATOR</span>
               <h2>{displayName}</h2>
@@ -587,28 +663,63 @@ export default function App() {
               <p className="profile-bio">{profile?.bio || 'Add a bio so viewers know who you are.'}</p>
               <div className="profile-meta"><span>Joined {joinedLabel}</span><span>Live creator</span></div>
             </div>
+
             <div className="profile-stats refined-stats">
               <div><strong>0</strong><small>Followers</small></div>
               <div><strong>0</strong><small>Following</small></div>
               <div><strong>0</strong><small>Likes</small></div>
             </div>
+
             <div className="profile-actions refined-actions">
-              <button className="primary-profile-action" onClick={() => setProfileMode('edit')}>Edit profile</button>
+              <button className="primary-profile-action" onClick={() => openProfileMode('edit')}>Edit profile</button>
               <button onClick={shareRoom}>Share profile</button>
             </div>
-            <div className="creator-hub-card">
-              <div><span>CREATOR HUB</span><strong>Live Studio</strong><small>Manage your creator identity and future live tools.</small></div>
-              <button onClick={() => setTab('live')}>→</button>
+
+            <button className="creator-hub-card creator-hub-button" onClick={() => openProfileMode('studio')}>
+              <div><span>CREATOR HUB</span><strong>Creator Studio</strong><small>Manage your live setup, creator tools and beta status.</small></div>
+              <b>→</b>
+            </button>
+
+            <div className="profile-content-tabs" role="tablist" aria-label="Creator content">
+              {Object.keys(creatorContent).map((key) => (
+                <button key={key} className={creatorTab === key ? 'active' : ''} onClick={() => setCreatorTab(key)}>{creatorContent[key][0]}</button>
+              ))}
             </div>
-            <div className="profile-content-tabs"><button className="active">Clips</button><button>Replays</button><button>Gifts</button></div>
-            <div className="profile-empty-content"><span>✦</span><strong>Your creator content will live here</strong><p>Clips, replays, and public gift activity arrive with the next creator-content phase.</p></div>
+
+            <div className="profile-empty-content">
+              <span>{creatorTab === 'gifts' ? '🎁' : creatorTab === 'replays' ? '↻' : '✦'}</span>
+              <strong>{creatorSectionTitle}</strong>
+              <p>{creatorSectionCopy}</p>
+            </div>
+
             <div className="compact-beta-note">Beta: test coins remain local and are not displayed as public creator earnings.</div>
+          </section>
+        )}
+
+        {tab === 'profile' && profileMode === 'studio' && (
+          <section className="panel full-panel account-panel creator-studio-page">
+            <button className="account-back" onClick={() => openProfileMode('view')}>← Profile</button>
+            <span className="eyebrow">CREATOR STUDIO · BETA</span>
+            <h2>Creator Studio</h2>
+            <p className="studio-intro">Your creator workspace stays inside Profile. Nothing here should throw you back into Live unless you choose to open the live setup.</p>
+
+            <div className="studio-grid">
+              <button onClick={() => setTab('live')}><span>●</span><strong>Open live setup</strong><small>Camera, microphone, gifts and live controls</small></button>
+              <button onClick={() => { setCreatorTab('clips'); setProfileMode('view') }}><span>✦</span><strong>Clips</strong><small>Creator clips are being connected</small></button>
+              <button onClick={() => { setCreatorTab('replays'); setProfileMode('view') }}><span>↻</span><strong>Replays</strong><small>Replay library arrives with real rooms</small></button>
+              <button onClick={() => { setCreatorTab('gifts'); setProfileMode('view') }}><span>🎁</span><strong>Gift activity</strong><small>Test gifts now, production wallet later</small></button>
+            </div>
+
+            <div className="settings-info-card">
+              <b>Creator status</b>
+              <p>Account and profile are real backend data. Remote broadcasting, creator earnings, payouts, analytics and moderation dashboards are still under construction.</p>
+            </div>
           </section>
         )}
 
         {tab === 'profile' && profileMode === 'edit' && (
           <section className="panel full-panel account-panel">
-            <button className="account-back" onClick={() => setProfileMode('view')}>← Profile</button>
+            <button className="account-back" onClick={() => openProfileMode('view')}>← Profile</button>
             <span className="eyebrow">EDIT PROFILE</span><h2>Make it yours</h2>
             <form className="profile-edit-form" onSubmit={saveProfile}>
               <label>Display name<input value={profileDraft.display_name} onChange={(event) => setProfileDraft({ ...profileDraft, display_name: event.target.value })} maxLength={40} /></label>
@@ -619,17 +730,19 @@ export default function App() {
           </section>
         )}
 
-        {tab === 'profile' && profileMode === 'settings' && !policyPage && (
+        {tab === 'profile' && profileMode === 'settings' && !policyPage && !settingsDetail && (
           <section className="panel full-panel account-panel settings-home">
-            <button className="account-back" onClick={() => setProfileMode('view')}>← Profile</button>
+            <button className="account-back" onClick={() => openProfileMode('view')}>← Profile</button>
             <span className="eyebrow">SETTINGS & SAFETY</span><h2>Settings</h2>
+
             <div className="settings-section">
               <strong className="settings-section-title">Account</strong>
-              <button className="settings-row"><span><b>Email</b><small>{session.user.email}</small></span><i>›</i></button>
-              <button className="settings-row" onClick={() => setProfileMode('edit')}><span><b>Edit profile</b><small>Name, username and bio</small></span><i>›</i></button>
-              <button className="settings-row"><span><b>Privacy</b><small>More controls arriving before public launch</small></span><i>›</i></button>
-              <button className="settings-row"><span><b>Notifications</b><small>Creator and live alerts coming next</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setSettingsDetail('account')}><span><b>Account details</b><small>{session.user.email}</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => openProfileMode('edit')}><span><b>Edit profile</b><small>Name, username and bio</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setSettingsDetail('privacyControls')}><span><b>Privacy</b><small>Beta privacy controls and status</small></span><i>›</i></button>
+              <button className="settings-row" onClick={() => setSettingsDetail('notifications')}><span><b>Notifications</b><small>Live and creator alert status</small></span><i>›</i></button>
             </div>
+
             <div className="settings-section">
               <strong className="settings-section-title">Rules & legal</strong>
               <button className="settings-row" onClick={() => setPolicyPage('terms')}><span><b>Terms of Service</b><small>Platform and account rules</small></span><i>›</i></button>
@@ -637,16 +750,22 @@ export default function App() {
               <button className="settings-row" onClick={() => setPolicyPage('use')}><span><b>Terms of Use</b><small>Responsible platform use</small></span><i>›</i></button>
               <button className="settings-row" onClick={() => setPolicyPage('community')}><span><b>Community Guidelines</b><small>What Fameverse will and will not tolerate</small></span><i>›</i></button>
             </div>
+
             <div className="settings-section">
               <strong className="settings-section-title">Beta</strong>
               <div className="settings-info-card"><b>Current testing boundary</b><p>Accounts and profiles use the Fameverse backend. Camera preview, comments and gifts are still test systems while realtime rooms, moderation and creator money systems are built.</p></div>
             </div>
+
             <button className="signout-button" onClick={signOut}>Sign out</button>
           </section>
         )}
 
         {tab === 'profile' && profileMode === 'settings' && policyPage && (
           <LegalPage page={legalPages[policyPage]} onBack={() => setPolicyPage(null)} />
+        )}
+
+        {tab === 'profile' && profileMode === 'settings' && settingsDetail && (
+          <SettingsDetail type={settingsDetail} email={session.user.email} onBack={() => setSettingsDetail(null)} />
         )}
       </main>
 
