@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const creators = [
   { id: 1, name: 'Nova', handle: '@nova', viewers: 128, status: 'Live now' },
@@ -8,8 +8,11 @@ const creators = [
 
 const gifts = [
   { id: 'rose', emoji: '🌹', label: 'Rose', cost: 1 },
-  { id: 'crown', emoji: '👑', label: 'Crown', cost: 250 },
-  { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 1000 },
+  { id: 'heart', emoji: '💜', label: 'Heart', cost: 5 },
+  { id: 'fire', emoji: '🔥', label: 'Fire', cost: 10 },
+  { id: 'star', emoji: '⭐', label: 'Star', cost: 20 },
+  { id: 'crown', emoji: '👑', label: 'Crown', cost: 50 },
+  { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 100, premium: true },
 ]
 
 function loadCoins() {
@@ -28,6 +31,8 @@ export default function App() {
   ])
   const [toast, setToast] = useState('')
   const [installPrompt, setInstallPrompt] = useState(null)
+  const [giftOverlay, setGiftOverlay] = useState(null)
+  const giftTimerRef = useRef(null)
 
   const ownerMode = true // Local beta only. Replace with backend role check before production.
 
@@ -50,6 +55,8 @@ export default function App() {
     return () => clearTimeout(t)
   }, [toast])
 
+  useEffect(() => () => clearTimeout(giftTimerRef.current), [])
+
   const viewers = useMemo(() => (isLive ? 42 + (cohost ? 27 : 0) : 0), [isLive, cohost])
 
   const startLive = () => {
@@ -63,17 +70,29 @@ export default function App() {
     setToast(`+${amount.toLocaleString()} owner test coins`)
   }
 
+  const showGift = (gift) => {
+    clearTimeout(giftTimerRef.current)
+    const duration = gift.cost === 100 ? 6000 : 1800
+    setGiftOverlay({ ...gift, sender: 'INFAMOUS', duration })
+    giftTimerRef.current = setTimeout(() => setGiftOverlay(null), duration)
+  }
+
   const sendGift = (gift) => {
     if (coins < gift.cost) {
       setToast('Not enough test coins')
       return
     }
+
     setCoins((value) => value - gift.cost)
     setChat((items) => [
       ...items,
-      { id: Date.now(), user: 'INFAMOUS', text: `${gift.emoji} sent a ${gift.label} (${gift.cost} test ${gift.cost === 1 ? 'coin' : 'coins'})` },
+      {
+        id: Date.now(),
+        user: 'INFAMOUS',
+        text: `${gift.emoji} sent a ${gift.label} (${gift.cost} ${gift.cost === 1 ? 'coin' : 'coins'})`,
+      },
     ])
-    setToast(`${gift.label} sent`)
+    showGift(gift)
   }
 
   const inviteCohost = (creator) => {
@@ -98,6 +117,28 @@ export default function App() {
   return (
     <div className="app-shell">
       {toast && <div className="toast">{toast}</div>}
+
+      {giftOverlay && giftOverlay.cost < 100 && (
+        <div className="gift-overlay-simple" role="status" aria-live="polite">
+          <span className="gift-overlay-emoji">{giftOverlay.emoji}</span>
+          <div>
+            <strong>{giftOverlay.sender}</strong>
+            <small>sent {giftOverlay.label} · {giftOverlay.cost} {giftOverlay.cost === 1 ? 'coin' : 'coins'}</small>
+          </div>
+        </div>
+      )}
+
+      {giftOverlay && giftOverlay.cost === 100 && (
+        <div className="gift-overlay-premium" role="status" aria-live="polite">
+          <div className="premium-glow" />
+          <div className="premium-gift-visual">{giftOverlay.emoji}</div>
+          <div className="premium-gift-copy">
+            <span>100 COIN GIFT</span>
+            <strong>{giftOverlay.sender}</strong>
+            <small>sent {giftOverlay.label}</small>
+          </div>
+        </div>
+      )}
 
       <header className="topbar">
         <div>
@@ -203,14 +244,14 @@ export default function App() {
                 </div>
                 <span className="owner-tag">LOCAL BETA</span>
               </div>
-              <p className="muted">These are test-only coins stored on this device. They are not purchased currency and will be replaced by a secure backend-authorized owner wallet before production.</p>
+              <p className="muted">Starter gifts are capped at 100 coins. Gifts under 100 use a quick sender overlay; 100-coin gifts get the premium 5–7 second treatment.</p>
               <div className="coin-actions">
                 <button className="secondary" onClick={() => addTestCoins(1000)}>+1K Test Coins</button>
                 <button className="secondary" onClick={() => addTestCoins(10000)}>+10K Test Coins</button>
               </div>
               <div className="gift-grid">
                 {gifts.map((gift) => (
-                  <button className="gift-card" key={gift.id} onClick={() => sendGift(gift)}>
+                  <button className={`gift-card ${gift.cost === 100 ? 'premium-card' : ''}`} key={gift.id} onClick={() => sendGift(gift)}>
                     <span>{gift.emoji}</span>
                     <strong>{gift.label}</strong>
                     <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
