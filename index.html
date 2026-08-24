@@ -10,9 +10,34 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <title>Fameverse Live — Beta</title>
+    <style>
+      html, body { margin: 0; min-height: 100%; background: #07010d; }
+      #root { min-height: 100vh; }
+      .boot-splash {
+        position: fixed; inset: 0; display: grid; place-items: center;
+        background:
+          radial-gradient(circle at 50% 36%, rgba(145,55,255,.28), transparent 28rem),
+          linear-gradient(180deg,#10051f,#07010d 60%,#020104);
+        color: #fff; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      }
+      .boot-splash > div { text-align: center; }
+      .boot-mark {
+        width: 58px; height: 58px; margin: 0 auto 16px; border-radius: 18px;
+        display: grid; place-items: center; font-size: 1.55rem; font-weight: 900;
+        background: linear-gradient(145deg,#7d2cff,#d05eff);
+        box-shadow: 0 18px 50px rgba(110,32,205,.34);
+      }
+      .boot-splash strong { display:block; letter-spacing:.12em; font-size:.92rem; }
+      .boot-splash strong span { color:#c45cff; }
+      .boot-splash small { display:block; margin-top:8px; color:#a99ab8; font-size:.72rem; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-splash" aria-label="Opening Fameverse">
+        <div><div class="boot-mark">F</div><strong>FAMEVERSE <span>LIVE</span></strong><small>Opening…</small></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
