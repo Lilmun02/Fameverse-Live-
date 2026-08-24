@@ -20,9 +20,14 @@ function loadCoins() {
   return Number.isFinite(saved) && saved >= 0 ? saved : 5000
 }
 
+function isRunningStandalone() {
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true
+}
+
 export default function App() {
   const [tab, setTab] = useState('live')
   const [isLive, setIsLive] = useState(false)
+  const [isStartingLive, setIsStartingLive] = useState(false)
   const [coins, setCoins] = useState(loadCoins)
   const [cohost, setCohost] = useState(null)
   const [chat, setChat] = useState([
@@ -32,7 +37,14 @@ export default function App() {
   const [toast, setToast] = useState('')
   const [installPrompt, setInstallPrompt] = useState(null)
   const [giftOverlay, setGiftOverlay] = useState(null)
+  const [mediaStream, setMediaStream] = useState(null)
+  const [micMuted, setMicMuted] = useState(false)
+  const [facingMode, setFacingMode] = useState('user')
+  const [standalone, setStandalone] = useState(isRunningStandalone)
+
   const giftTimerRef = useRef(null)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
 
   const ownerMode = true // Local beta only. Replace with backend role check before production.
 
@@ -45,8 +57,16 @@ export default function App() {
       event.preventDefault()
       setInstallPrompt(event)
     }
+    const displayMode = window.matchMedia?.('(display-mode: standalone)')
+    const updateStandalone = () => setStandalone(isRunningStandalone())
+
     window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+    displayMode?.addEventListener?.('change', updateStandalone)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+      displayMode?.removeEventListener?.('change', updateStandalone)
+    }
   }, [])
 
   useEffect(() => {
@@ -55,13 +75,108 @@ export default function App() {
     return () => clearTimeout(t)
   }, [toast])
 
-  useEffect(() => () => clearTimeout(giftTimerRef.current), [])
+  useEffect(() => {
+    if (!videoRef.current || !mediaStream) return
+    videoRef.current.srcObject = mediaStream
+    videoRef.current.play().catch(() => {})
+  }, [mediaStream, tab, cohost])
 
-  const viewers = useMemo(() => (isLive ? 42 + (cohost ? 27 : 0) : 0), [isLive, cohost])
+  useEffect(() => () => {
+    clearTimeout(giftTimerRef.current)
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+  }, [])
 
-  const startLive = () => {
-    setIsLive((value) => !value)
-    setToast(isLive ? 'Live ended' : 'You are live — beta test mode')
+  const viewers = useMemo(() => 0, [])
+
+  const stopMedia = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    setMediaStream(null)
+    if (videoRef.current) videoRef.current.srcObject = null
+  }
+
+  const requestMedia = async (nextFacing = facingMode) => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('unsupported')
+    }
+
+    return navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: nextFacing },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    })
+  }
+
+  const startLive = async () => {
+    if (isLive) {
+      stopMedia()
+      setIsLive(false)
+      setMicMuted(false)
+      setToast('Live ended · camera and mic released')
+      return
+    }
+
+    setIsStartingLive(true)
+    try {
+      const stream = await requestMedia(facingMode)
+      streamRef.current = stream
+      setMediaStream(stream)
+      setMicMuted(false)
+      setIsLive(true)
+      setToast('Camera + microphone live in beta room')
+    } catch (error) {
+      const denied = error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError'
+      const unavailable = error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError'
+
+      if (denied) setToast('Allow Camera + Microphone for Fameverse in iPhone settings')
+      else if (unavailable) setToast('No camera or microphone was found')
+      else if (error?.message === 'unsupported') setToast('This browser does not support live camera access')
+      else setToast('Could not start camera · try reopening the PWA')
+    } finally {
+      setIsStartingLive(false)
+    }
+  }
+
+  const toggleMic = () => {
+    const audioTracks = streamRef.current?.getAudioTracks() || []
+    if (!audioTracks.length) return
+
+    const nextMuted = !micMuted
+    audioTracks.forEach((track) => { track.enabled = !nextMuted })
+    setMicMuted(nextMuted)
+    setToast(nextMuted ? 'Microphone muted' : 'Microphone on')
+  }
+
+  const flipCamera = async () => {
+    const nextFacing = facingMode === 'user' ? 'environment' : 'user'
+    setFacingMode(nextFacing)
+
+    if (!isLive) {
+      setToast(nextFacing === 'user' ? 'Front camera selected' : 'Back camera selected')
+      return
+    }
+
+    setIsStartingLive(true)
+    try {
+      const nextStream = await requestMedia(nextFacing)
+      nextStream.getAudioTracks().forEach((track) => { track.enabled = !micMuted })
+      stopMedia()
+      streamRef.current = nextStream
+      setMediaStream(nextStream)
+      setToast(nextFacing === 'user' ? 'Front camera' : 'Back camera')
+    } catch {
+      setFacingMode(facingMode)
+      setToast('Could not switch cameras')
+    } finally {
+      setIsStartingLive(false)
+    }
   }
 
   const addTestCoins = (amount) => {
@@ -106,7 +221,7 @@ export default function App() {
 
   const installPwa = async () => {
     if (!installPrompt) {
-      setToast('Use your browser Add to Home Screen option on iPhone')
+      setToast('Use Safari Share → Add to Home Screen on iPhone')
       return
     }
     await installPrompt.prompt()
@@ -145,7 +260,7 @@ export default function App() {
           <div className="eyebrow">BETA 0.1</div>
           <h1>FAMEVERSE <span>LIVE</span></h1>
         </div>
-        <button className="install-btn" onClick={installPwa}>Install PWA</button>
+        {!standalone && <button className="install-btn" onClick={installPwa}>Install PWA</button>}
       </header>
 
       <main>
@@ -168,11 +283,22 @@ export default function App() {
 
               <div className={`video-grid ${cohost ? 'split' : ''}`}>
                 <div className="video-tile primary-tile">
-                  <div className="camera-placeholder">
-                    <div className="camera-ring">📷</div>
-                    <strong>{isLive ? 'Camera preview' : 'Ready when you are'}</strong>
-                    <small>Real video transport comes with the streaming backend phase.</small>
-                  </div>
+                  {isLive && mediaStream ? (
+                    <>
+                      <video ref={videoRef} className={`host-video ${facingMode === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
+                      <div className="camera-live-badge">DEVICE CAMERA · BETA</div>
+                      <div className="media-controls-float">
+                        <button className="media-pill" onClick={toggleMic}>{micMuted ? '🔇 Unmute' : '🎙️ Mute'}</button>
+                        <button className="media-pill" onClick={flipCamera} disabled={isStartingLive}>↻ Flip</button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="camera-placeholder">
+                      <div className="camera-ring">📷</div>
+                      <strong>Ready when you are</strong>
+                      <small>Go Live now opens your real camera + microphone for local beta testing.</small>
+                    </div>
+                  )}
                   <div className="tile-label">HOST · INFAMOUS</div>
                 </div>
 
@@ -181,7 +307,7 @@ export default function App() {
                     <div className="camera-placeholder">
                       <div className="avatar cohost-avatar">{cohost.name[0]}</div>
                       <strong>{cohost.name}</strong>
-                      <small>Co-host beta slot connected</small>
+                      <small>Co-host UI slot only · realtime remote video comes with the streaming backend.</small>
                     </div>
                     <div className="tile-label">CO-HOST · {cohost.handle}</div>
                   </div>
@@ -189,8 +315,8 @@ export default function App() {
               </div>
 
               <div className="live-controls">
-                <button className={isLive ? 'danger' : 'primary'} onClick={startLive}>
-                  {isLive ? 'End Live' : 'Go Live'}
+                <button className={isLive ? 'danger' : 'primary'} onClick={startLive} disabled={isStartingLive}>
+                  {isStartingLive ? 'Starting…' : isLive ? 'End Live' : 'Go Live'}
                 </button>
                 {cohost ? (
                   <button className="secondary" onClick={() => { setCohost(null); setToast('Co-host removed') }}>
@@ -213,7 +339,7 @@ export default function App() {
                 </div>
                 <span className="beta-tag">BETA</span>
               </div>
-              <p className="muted">Invite one creator into the split-screen beta room. Host and co-host roles stay clearly separated.</p>
+              <p className="muted">Invite one creator into the split-screen beta room. The second slot is visual-only until realtime remote streaming is connected.</p>
               <div className="creator-list">
                 {creators.map((creator) => (
                   <div className="creator-row" key={creator.id}>
@@ -224,11 +350,7 @@ export default function App() {
                         <small>{creator.handle} · {creator.status}</small>
                       </div>
                     </div>
-                    <button
-                      className="mini-btn"
-                      disabled={cohost?.id === creator.id}
-                      onClick={() => inviteCohost(creator)}
-                    >
+                    <button className="mini-btn" disabled={cohost?.id === creator.id} onClick={() => inviteCohost(creator)}>
                       {cohost?.id === creator.id ? 'Joined' : 'Invite'}
                     </button>
                   </div>
@@ -261,18 +383,10 @@ export default function App() {
             </section>
 
             <section className="panel chat-panel">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">ROOM</span>
-                  <h2>Live chat</h2>
-                </div>
-              </div>
+              <div className="section-heading"><div><span className="eyebrow">ROOM</span><h2>Live chat</h2></div></div>
               <div className="chat-feed">
                 {chat.slice(-6).map((item) => (
-                  <div className="chat-line" key={item.id}>
-                    <strong>{item.user}</strong>
-                    <span>{item.text}</span>
-                  </div>
+                  <div className="chat-line" key={item.id}><strong>{item.user}</strong><span>{item.text}</span></div>
                 ))}
               </div>
             </section>
@@ -300,11 +414,7 @@ export default function App() {
           <section className="panel full-panel profile-panel">
             <div className="profile-hero">
               <div className="avatar profile-avatar">I</div>
-              <div>
-                <span className="eyebrow">OWNER TEST PROFILE</span>
-                <h2>INFAMOUS</h2>
-                <p>@infamous · Fameverse Live beta</p>
-              </div>
+              <div><span className="eyebrow">OWNER TEST PROFILE</span><h2>INFAMOUS</h2><p>@infamous · Fameverse Live beta</p></div>
             </div>
             <div className="profile-stats">
               <div><strong>0</strong><small>Followers</small></div>
@@ -313,7 +423,7 @@ export default function App() {
             </div>
             <div className="roadmap-note">
               <strong>Not public yet</strong>
-              <p>Battles, events, real wallet accounting, real streaming transport, creator payouts and production authentication remain future beta phases.</p>
+              <p>Remote broadcasting, battles, events, real wallet accounting, creator payouts and production authentication remain future beta phases.</p>
             </div>
           </section>
         )}
