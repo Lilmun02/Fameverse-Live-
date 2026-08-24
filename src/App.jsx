@@ -7,7 +7,7 @@ const creators = [
 ]
 
 const gifts = [
-  { id: 'rose', emoji: '🌹', label: 'Rose', cost: 25 },
+  { id: 'rose', emoji: '🌹', label: 'Rose', cost: 1 },
   { id: 'crown', emoji: '👑', label: 'Crown', cost: 250 },
   { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 1000 },
 ]
@@ -71,7 +71,7 @@ export default function App() {
     setCoins((value) => value - gift.cost)
     setChat((items) => [
       ...items,
-      { id: Date.now(), user: 'INFAMOUS', text: `${gift.emoji} sent a ${gift.label} (${gift.cost} test coins)` },
+      { id: Date.now(), user: 'INFAMOUS', text: `${gift.emoji} sent a ${gift.label} (${gift.cost} test ${gift.cost === 1 ? 'coin' : 'coins'})` },
     ])
     setToast(`${gift.label} sent`)
   }
@@ -213,7 +213,7 @@ export default function App() {
                   <button className="gift-card" key={gift.id} onClick={() => sendGift(gift)}>
                     <span>{gift.emoji}</span>
                     <strong>{gift.label}</strong>
-                    <small>{gift.cost} coins</small>
+                    <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
                   </button>
                 ))}
               </div>
