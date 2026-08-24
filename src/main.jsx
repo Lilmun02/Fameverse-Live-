@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import './flip-guard.js'
 import App from './App.jsx'
 import './styles.css'
 import './gifts.css'
@@ -8,6 +9,7 @@ import './foundation.css'
 import './viewport-lock.css'
 import './release.css'
 import './qa-fixes.css'
+import './live-polish.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
