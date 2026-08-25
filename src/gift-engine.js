@@ -16,26 +16,12 @@ const giftRegistry = Object.freeze({
 
 let activeGift = null
 let lastGift = { id: null, at: 0, count: 0 }
-let previewObserver = null
-let pendingPlayTimer = null
 
 function isLiveActive() {
   return Boolean(document.querySelector('.mobile-live-shell.is-live'))
 }
 
-function findGiftTrayBackdrop() {
-  return Array.from(document.querySelectorAll('.live-sheet-backdrop'))
-    .find((backdrop) => backdrop.querySelector('.gift-test-sheet')) || null
-}
-
-function closeGiftTray() {
-  const backdrop = findGiftTrayBackdrop()
-  if (backdrop) backdrop.click()
-}
-
 function cleanupActiveGift() {
-  clearTimeout(pendingPlayTimer)
-  pendingPlayTimer = null
   if (!activeGift) return
 
   clearTimeout(activeGift.timer)
@@ -78,7 +64,7 @@ function buildVideoScene(config, meta, comboCount) {
   const metaBar = document.createElement('div')
   metaBar.className = 'fv-gift-meta'
   metaBar.innerHTML = `
-    <span class="fv-gift-meta-icon">🏡</span>
+    <span class="fv-gift-meta-icon" aria-hidden="true">F</span>
     <div>
       <strong>${escapeText(meta.sender || 'Fameverse Creator')}</strong>
       <small>sent ${escapeText(config.label)}${comboCount > 1 ? ` · ×${comboCount}` : ''}</small>
@@ -95,7 +81,9 @@ function playGift(giftKey, meta = {}) {
   if (!config || !isLiveActive()) return false
 
   const now = performance.now()
-  const comboCount = lastGift.id === config.id && now - lastGift.at < 2200 ? lastGift.count + 1 : 1
+  const fallbackCombo = lastGift.id === config.id && now - lastGift.at < 2200 ? lastGift.count + 1 : 1
+  const requestedCombo = Number(meta.comboCount)
+  const comboCount = Number.isFinite(requestedCombo) && requestedCombo > 0 ? requestedCombo : fallbackCombo
   lastGift = { id: config.id, at: now, count: comboCount }
 
   cleanupActiveGift()
@@ -119,98 +107,13 @@ function playGift(giftKey, meta = {}) {
   return true
 }
 
-function scheduleWelcomeGift(meta = {}) {
-  if (!isLiveActive()) {
-    closeGiftTray()
-    return false
-  }
-
-  closeGiftTray()
-  clearTimeout(pendingPlayTimer)
-  pendingPlayTimer = window.setTimeout(() => {
-    pendingPlayTimer = null
-    playGift('welcomeToFameverse', meta)
-  }, 180)
-  return true
-}
-
-function addWelcomeGiftButton() {
-  const grid = document.querySelector('.live-gift-grid')
-  if (!grid) return
-
-  const existing = grid.querySelector('[data-fv-gift-preview]')
-  if (!isLiveActive()) {
-    existing?.remove()
-    return
-  }
-  if (existing) return
-
-  const button = document.createElement('button')
-  button.type = 'button'
-  button.className = 'live-gift-item fv-gift-preview-item'
-  button.dataset.fvGiftPreview = 'welcomeToFameverse'
-  button.setAttribute('aria-label', 'Send Welcome to Fameverse gift for 100 test coins')
-  button.innerHTML = '<span>🏡</span><strong>Welcome</strong><small>100 coins</small>'
-  button.addEventListener('click', (event) => {
-    event.preventDefault()
-    event.stopPropagation()
-    scheduleWelcomeGift({ sender: 'Engine Preview' })
-  })
-  grid.appendChild(button)
-}
-
-function syncGiftUi() {
-  const live = isLiveActive()
-
-  document.querySelectorAll('.live-launch-controls .preview-tool').forEach((button) => {
-    if (button.textContent?.includes('Test Gifts')) button.hidden = true
-  })
-
-  if (!live) {
-    closeGiftTray()
-    cleanupActiveGift()
-  }
-
-  addWelcomeGiftButton()
-}
-
-function startPreviewObserver() {
-  if (previewObserver || !document.body) return
-  previewObserver = new MutationObserver(() => requestAnimationFrame(syncGiftUi))
-  previewObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
-  syncGiftUi()
-}
-
-document.addEventListener('click', (event) => {
-  const giftButton = event.target.closest?.('.live-gift-item')
-  if (!giftButton) return
-
-  if (!isLiveActive()) {
-    event.preventDefault()
-    event.stopImmediatePropagation()
-    closeGiftTray()
-    return
-  }
-
-  if (!giftButton.dataset.fvGiftPreview) {
-    window.setTimeout(closeGiftTray, 0)
-  }
-}, true)
-
 document.addEventListener('fameverse:gift', (event) => {
   const detail = event.detail || {}
-  if (detail.id) {
-    closeGiftTray()
-    window.setTimeout(() => playGift(detail.id, detail), 180)
-  }
+  if (detail.id) playGift(detail.id, detail)
 })
-
-document.addEventListener('DOMContentLoaded', startPreviewObserver, { once: true })
-if (document.readyState !== 'loading') startPreviewObserver()
 
 window.FameverseGiftEngine = Object.freeze({
   play: playGift,
-  playWelcome: scheduleWelcomeGift,
   registry: giftRegistry,
   stop: cleanupActiveGift,
 })
