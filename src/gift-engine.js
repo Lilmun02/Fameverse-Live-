@@ -1,83 +1,52 @@
 import './gift-engine.css'
 
+const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
+
 const giftRegistry = Object.freeze({
-  farmhouseWelcome: {
-    id: 'farmhouse-welcome',
-    label: 'Farmhouse Welcome',
-    tier: 'medium',
-    duration: 4200,
-    art: '/gifts/farmhouse-welcome.svg',
-    effect: 'farmhouse-welcome',
-    sound: 'welcome-chime',
+  welcomeToFameverse: {
+    id: 'welcome-to-fameverse',
+    label: 'Welcome to Fameverse',
+    tier: 'premium',
+    duration: 6400,
+    cost: 100,
+    video: GROK_WELCOME_VIDEO,
+    effect: 'video-cinematic',
   },
 })
 
 let activeGift = null
 let lastGift = { id: null, at: 0, count: 0 }
 let previewObserver = null
+let pendingPlayTimer = null
+
+function isLiveActive() {
+  return Boolean(document.querySelector('.mobile-live-shell.is-live'))
+}
+
+function findGiftTrayBackdrop() {
+  return Array.from(document.querySelectorAll('.live-sheet-backdrop'))
+    .find((backdrop) => backdrop.querySelector('.gift-test-sheet')) || null
+}
+
+function closeGiftTray() {
+  const backdrop = findGiftTrayBackdrop()
+  if (backdrop) backdrop.click()
+}
 
 function cleanupActiveGift() {
+  clearTimeout(pendingPlayTimer)
+  pendingPlayTimer = null
   if (!activeGift) return
+
   clearTimeout(activeGift.timer)
-  activeGift.stopAudio?.()
+  if (activeGift.video) {
+    try { activeGift.video.pause() } catch {}
+    activeGift.video.removeAttribute('src')
+    try { activeGift.video.load() } catch {}
+  }
   activeGift.root?.remove()
   activeGift = null
   document.documentElement.classList.remove('fv-gift-engine-active')
-}
-
-function makeParticles(count = 18) {
-  return Array.from({ length: count }, (_, index) => {
-    const particle = document.createElement('i')
-    particle.className = 'fv-gift-particle'
-    particle.style.setProperty('--fv-x', `${8 + ((index * 37) % 84)}%`)
-    particle.style.setProperty('--fv-y', `${14 + ((index * 29) % 68)}%`)
-    particle.style.setProperty('--fv-delay', `${(index % 7) * 90}ms`)
-    particle.style.setProperty('--fv-size', `${5 + (index % 4) * 2}px`)
-    return particle
-  })
-}
-
-function buildFarmhouseScene(config, meta, comboCount) {
-  const root = document.createElement('div')
-  root.className = 'fv-gift-engine'
-  root.dataset.giftId = config.id
-  root.setAttribute('role', 'status')
-  root.setAttribute('aria-live', 'polite')
-
-  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  if (reducedMotion) root.classList.add('fv-reduced-motion')
-
-  const scene = document.createElement('div')
-  scene.className = 'fv-farmhouse-scene'
-
-  const glow = document.createElement('div')
-  glow.className = 'fv-farmhouse-glow'
-
-  const art = document.createElement('img')
-  art.className = 'fv-farmhouse-art'
-  art.src = config.art
-  art.alt = ''
-  art.decoding = 'async'
-  art.draggable = false
-
-  const host = document.createElement('div')
-  host.className = 'fv-welcome-host'
-  host.innerHTML = '<span class="fv-host-head"></span><span class="fv-host-body"></span><span class="fv-host-arm"></span>'
-
-  const message = document.createElement('div')
-  message.className = 'fv-welcome-copy'
-  message.innerHTML = `
-    <span class="fv-welcome-kicker">FAMEVERSE GIFT</span>
-    <strong>WELCOME TO FAMEVERSE</strong>
-    <small>${escapeText(meta.sender || 'Fameverse Creator')}${comboCount > 1 ? ` · COMBO ×${comboCount}` : ''}</small>
-  `
-
-  const floorGlow = document.createElement('div')
-  floorGlow.className = 'fv-floor-glow'
-
-  scene.append(glow, floorGlow, art, host, message, ...makeParticles(reducedMotion ? 8 : 20))
-  root.append(scene)
-  return root
 }
 
 function escapeText(value) {
@@ -86,81 +55,44 @@ function escapeText(value) {
   return node.innerHTML
 }
 
-function playWelcomeChime() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext
-  if (!AudioContextClass) return () => {}
+function buildVideoScene(config, meta, comboCount) {
+  const root = document.createElement('div')
+  root.className = 'fv-gift-engine fv-video-gift'
+  root.dataset.giftId = config.id
+  root.setAttribute('role', 'status')
+  root.setAttribute('aria-live', 'polite')
 
-  let context
-  const nodes = []
-  let closeTimer
+  const video = document.createElement('video')
+  video.className = 'fv-gift-video'
+  video.src = config.video
+  video.preload = 'auto'
+  video.playsInline = true
+  video.autoplay = false
+  video.controls = false
+  video.loop = false
+  video.muted = false
+  video.volume = 0.78
+  video.setAttribute('playsinline', '')
+  video.setAttribute('webkit-playsinline', '')
 
-  try {
-    context = new AudioContextClass()
-    context.resume?.().catch?.(() => {})
+  const metaBar = document.createElement('div')
+  metaBar.className = 'fv-gift-meta'
+  metaBar.innerHTML = `
+    <span class="fv-gift-meta-icon">🏡</span>
+    <div>
+      <strong>${escapeText(meta.sender || 'Fameverse Creator')}</strong>
+      <small>sent ${escapeText(config.label)}${comboCount > 1 ? ` · ×${comboCount}` : ''}</small>
+    </div>
+  `
 
-    const master = context.createGain()
-    master.gain.setValueAtTime(0.0001, context.currentTime)
-    master.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.025)
-    master.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 1.15)
-    master.connect(context.destination)
-    nodes.push(master)
-
-    const notes = [392, 523.25, 659.25]
-    notes.forEach((frequency, index) => {
-      const oscillator = context.createOscillator()
-      const gain = context.createGain()
-      const start = context.currentTime + index * 0.12
-      const end = start + 0.62
-
-      oscillator.type = index === 0 ? 'triangle' : 'sine'
-      oscillator.frequency.setValueAtTime(frequency, start)
-      gain.gain.setValueAtTime(0.0001, start)
-      gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.38 : 0.24, start + 0.02)
-      gain.gain.exponentialRampToValueAtTime(0.0001, end)
-      oscillator.connect(gain)
-      gain.connect(master)
-      oscillator.start(start)
-      oscillator.stop(end)
-      nodes.push(oscillator, gain)
-    })
-
-    const sweep = context.createOscillator()
-    const sweepGain = context.createGain()
-    sweep.type = 'sine'
-    sweep.frequency.setValueAtTime(170, context.currentTime)
-    sweep.frequency.exponentialRampToValueAtTime(520, context.currentTime + 0.42)
-    sweepGain.gain.setValueAtTime(0.0001, context.currentTime)
-    sweepGain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.04)
-    sweepGain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.48)
-    sweep.connect(sweepGain)
-    sweepGain.connect(master)
-    sweep.start()
-    sweep.stop(context.currentTime + 0.5)
-    nodes.push(sweep, sweepGain)
-
-    closeTimer = window.setTimeout(() => {
-      context?.close?.().catch?.(() => {})
-      context = null
-    }, 1500)
-  } catch {
-    context?.close?.().catch?.(() => {})
-    context = null
-  }
-
-  return () => {
-    clearTimeout(closeTimer)
-    nodes.forEach((node) => {
-      try { node.disconnect?.() } catch {}
-      try { node.stop?.() } catch {}
-    })
-    context?.close?.().catch?.(() => {})
-    context = null
-  }
+  video.addEventListener('ended', cleanupActiveGift, { once: true })
+  root.append(video, metaBar)
+  return { root, video }
 }
 
 function playGift(giftKey, meta = {}) {
   const config = giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey)
-  if (!config) return false
+  if (!config || !isLiveActive()) return false
 
   const now = performance.now()
   const comboCount = lastGift.id === config.id && now - lastGift.at < 2200 ? lastGift.count + 1 : 1
@@ -168,52 +100,109 @@ function playGift(giftKey, meta = {}) {
 
   cleanupActiveGift()
 
-  const root = config.effect === 'farmhouse-welcome'
-    ? buildFarmhouseScene(config, meta, comboCount)
+  const scene = config.effect === 'video-cinematic'
+    ? buildVideoScene(config, meta, comboCount)
     : null
-  if (!root) return false
+  if (!scene) return false
 
   document.documentElement.classList.add('fv-gift-engine-active')
-  document.body.appendChild(root)
+  document.body.appendChild(scene.root)
 
-  const stopAudio = config.sound === 'welcome-chime' ? playWelcomeChime() : () => {}
   const timer = window.setTimeout(cleanupActiveGift, config.duration)
-  activeGift = { root, timer, stopAudio, id: config.id }
+  activeGift = { ...scene, timer, id: config.id }
+
+  const start = scene.video.play()
+  start?.catch?.(() => {
+    scene.video.muted = true
+    scene.video.play().catch(() => cleanupActiveGift())
+  })
   return true
 }
 
-function addPreviewGiftButton() {
+function scheduleWelcomeGift(meta = {}) {
+  if (!isLiveActive()) {
+    closeGiftTray()
+    return false
+  }
+
+  closeGiftTray()
+  clearTimeout(pendingPlayTimer)
+  pendingPlayTimer = window.setTimeout(() => {
+    pendingPlayTimer = null
+    playGift('welcomeToFameverse', meta)
+  }, 180)
+  return true
+}
+
+function addWelcomeGiftButton() {
   const grid = document.querySelector('.live-gift-grid')
-  if (!grid || grid.querySelector('[data-fv-gift-preview]')) return
+  if (!grid) return
+
+  const existing = grid.querySelector('[data-fv-gift-preview]')
+  if (!isLiveActive()) {
+    existing?.remove()
+    return
+  }
+  if (existing) return
 
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'live-gift-item fv-gift-preview-item'
-  button.dataset.fvGiftPreview = 'farmhouseWelcome'
-  button.setAttribute('aria-label', 'Preview Farmhouse Welcome gift engine')
-  button.innerHTML = '<span>🏡</span><strong>Farmhouse</strong><small>ENGINE TEST</small>'
+  button.dataset.fvGiftPreview = 'welcomeToFameverse'
+  button.setAttribute('aria-label', 'Send Welcome to Fameverse gift for 100 test coins')
+  button.innerHTML = '<span>🏡</span><strong>Welcome</strong><small>100 coins</small>'
   button.addEventListener('click', (event) => {
     event.preventDefault()
     event.stopPropagation()
-    playGift('farmhouseWelcome', { sender: 'Engine Preview' })
+    scheduleWelcomeGift({ sender: 'Engine Preview' })
   })
   grid.appendChild(button)
 }
 
-function schedulePreviewButton() {
-  requestAnimationFrame(addPreviewGiftButton)
+function syncGiftUi() {
+  const live = isLiveActive()
+
+  document.querySelectorAll('.live-launch-controls .preview-tool').forEach((button) => {
+    if (button.textContent?.includes('Test Gifts')) button.hidden = true
+  })
+
+  if (!live) {
+    closeGiftTray()
+    cleanupActiveGift()
+  }
+
+  addWelcomeGiftButton()
 }
 
 function startPreviewObserver() {
   if (previewObserver || !document.body) return
-  previewObserver = new MutationObserver(schedulePreviewButton)
-  previewObserver.observe(document.body, { childList: true, subtree: true })
-  schedulePreviewButton()
+  previewObserver = new MutationObserver(() => requestAnimationFrame(syncGiftUi))
+  previewObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
+  syncGiftUi()
 }
+
+document.addEventListener('click', (event) => {
+  const giftButton = event.target.closest?.('.live-gift-item')
+  if (!giftButton) return
+
+  if (!isLiveActive()) {
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    closeGiftTray()
+    return
+  }
+
+  if (!giftButton.dataset.fvGiftPreview) {
+    window.setTimeout(closeGiftTray, 0)
+  }
+}, true)
 
 document.addEventListener('fameverse:gift', (event) => {
   const detail = event.detail || {}
-  if (detail.id) playGift(detail.id, detail)
+  if (detail.id) {
+    closeGiftTray()
+    window.setTimeout(() => playGift(detail.id, detail), 180)
+  }
 })
 
 document.addEventListener('DOMContentLoaded', startPreviewObserver, { once: true })
@@ -221,6 +210,7 @@ if (document.readyState !== 'loading') startPreviewObserver()
 
 window.FameverseGiftEngine = Object.freeze({
   play: playGift,
+  playWelcome: scheduleWelcomeGift,
   registry: giftRegistry,
   stop: cleanupActiveGift,
 })
