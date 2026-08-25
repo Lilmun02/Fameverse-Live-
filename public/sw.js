@@ -1,5 +1,5 @@
-const CACHE = 'fameverse-beta-v9'
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
+const CACHE = 'fameverse-beta-v10'
+const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/gifts/farmhouse-welcome.svg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)))
