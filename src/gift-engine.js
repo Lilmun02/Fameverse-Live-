@@ -41,6 +41,13 @@ function escapeText(value) {
   return node.innerHTML
 }
 
+function updateMeta(metaBar, config, meta, comboCount) {
+  const sender = metaBar.querySelector('strong')
+  const summary = metaBar.querySelector('small')
+  if (sender) sender.textContent = meta.sender || 'Fameverse Creator'
+  if (summary) summary.textContent = `sent ${config.label}${comboCount > 1 ? ` · ×${comboCount}` : ''}`
+}
+
 function buildVideoScene(config, meta, comboCount) {
   const root = document.createElement('div')
   root.className = 'fv-gift-engine fv-video-gift'
@@ -73,7 +80,7 @@ function buildVideoScene(config, meta, comboCount) {
 
   video.addEventListener('ended', cleanupActiveGift, { once: true })
   root.append(video, metaBar)
-  return { root, video }
+  return { root, video, metaBar }
 }
 
 function playGift(giftKey, meta = {}) {
@@ -86,6 +93,14 @@ function playGift(giftKey, meta = {}) {
   const comboCount = Number.isFinite(requestedCombo) && requestedCombo > 0 ? requestedCombo : fallbackCombo
   lastGift = { id: config.id, at: now, count: comboCount }
 
+  if (activeGift?.id === config.id && comboCount > 1) {
+    activeGift.comboCount = comboCount
+    updateMeta(activeGift.metaBar, config, meta, comboCount)
+    clearTimeout(activeGift.timer)
+    activeGift.timer = window.setTimeout(cleanupActiveGift, config.duration)
+    return true
+  }
+
   cleanupActiveGift()
 
   const scene = config.effect === 'video-cinematic'
@@ -97,7 +112,7 @@ function playGift(giftKey, meta = {}) {
   document.body.appendChild(scene.root)
 
   const timer = window.setTimeout(cleanupActiveGift, config.duration)
-  activeGift = { ...scene, timer, id: config.id }
+  activeGift = { ...scene, timer, id: config.id, comboCount }
 
   const start = scene.video.play()
   start?.catch?.(() => {

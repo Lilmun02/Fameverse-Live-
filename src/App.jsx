@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
 
+const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
+
 const gifts = [
+  {
+    id: 'welcome-to-fameverse',
+    label: 'Welcome to Fameverse',
+    cost: 100,
+    activityEmoji: '✦',
+    rendererId: 'welcome-to-fameverse',
+    video: GROK_WELCOME_VIDEO,
+    thumbnailTime: 2.6,
+    cinematic: true,
+  },
   { id: 'rose', emoji: '🌹', label: 'Rose', cost: 1 },
   { id: 'heart', emoji: '💜', label: 'Heart', cost: 5 },
   { id: 'fire', emoji: '🔥', label: 'Fire', cost: 10 },
   { id: 'star', emoji: '⭐', label: 'Star', cost: 20 },
   { id: 'crown', emoji: '👑', label: 'Crown', cost: 50 },
-  { id: 'dragon', emoji: '🐉', label: 'Dragon', cost: 100 },
 ]
 
 const legalPages = {
@@ -75,6 +86,12 @@ function isRunningStandalone() {
 
 function cleanUsername(value = '') {
   return value.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24)
+}
+
+function seekGiftThumbnail(event, seconds = 0) {
+  const video = event.currentTarget
+  if (!Number.isFinite(seconds) || seconds <= 0) return
+  try { video.currentTime = seconds } catch {}
 }
 
 function LegalPage({ page, onBack }) {
@@ -150,6 +167,7 @@ export default function App() {
   const [toast, setToast] = useState('')
   const [installPrompt, setInstallPrompt] = useState(null)
   const [giftOverlay, setGiftOverlay] = useState(null)
+  const [premiumRepeat, setPremiumRepeat] = useState(null)
   const [mediaStream, setMediaStream] = useState(null)
   const [micMuted, setMicMuted] = useState(false)
   const [cameraOff, setCameraOff] = useState(false)
@@ -160,6 +178,8 @@ export default function App() {
   const [profileDraft, setProfileDraft] = useState({ display_name: '', username: '', bio: '' })
 
   const giftTimerRef = useRef(null)
+  const premiumRepeatTimerRef = useRef(null)
+  const premiumComboRef = useRef({ id: null, at: 0, count: 0 })
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const wakeLockRef = useRef(null)
@@ -261,6 +281,8 @@ export default function App() {
 
   useEffect(() => () => {
     clearTimeout(giftTimerRef.current)
+    clearTimeout(premiumRepeatTimerRef.current)
+    window.FameverseGiftEngine?.stop?.()
     streamRef.current?.getTracks().forEach((track) => track.stop())
     wakeLockRef.current?.release?.().catch?.(() => {})
   }, [])
@@ -274,6 +296,14 @@ export default function App() {
       setSettingsDetail(null)
     }
   }, [tab])
+
+  useEffect(() => {
+    if (isLive) return
+    clearTimeout(premiumRepeatTimerRef.current)
+    setPremiumRepeat(null)
+    premiumComboRef.current = { id: null, at: 0, count: 0 }
+    window.FameverseGiftEngine?.stop?.()
+  }, [isLive])
 
   useEffect(() => {
     const reacquire = () => {
@@ -404,6 +434,9 @@ export default function App() {
 
   const startLive = async () => {
     if (isLive) {
+      window.FameverseGiftEngine?.stop?.()
+      clearTimeout(premiumRepeatTimerRef.current)
+      setPremiumRepeat(null)
       stopMedia()
       setIsLive(false)
       setMicMuted(false)
@@ -522,6 +555,12 @@ export default function App() {
   }
 
   const sendGift = (gift) => {
+    if (!isLive) {
+      setGiftTrayOpen(false)
+      setToast('Start Live before sending gifts')
+      return
+    }
+
     if (coinsRef.current < gift.cost) {
       setToast('Test balance empty · tap refill')
       return
@@ -530,7 +569,30 @@ export default function App() {
     const nextBalance = coinsRef.current - gift.cost
     coinsRef.current = nextBalance
     setCoins(nextBalance)
-    setChat((items) => [...items, { id: `${Date.now()}-${Math.random()}`, user: displayName, text: `${gift.emoji} sent ${gift.label}` }])
+
+    const activityEmoji = gift.activityEmoji || gift.emoji || '✦'
+    setChat((items) => [...items, { id: `${Date.now()}-${Math.random()}`, user: displayName, text: `${activityEmoji} sent ${gift.label}` }])
+
+    if (gift.rendererId) {
+      const now = Date.now()
+      const previous = premiumComboRef.current
+      const sameCombo = previous.id === gift.id && now - previous.at < 2200
+      const comboCount = sameCombo ? previous.count + 1 : 1
+      premiumComboRef.current = { id: gift.id, at: now, count: comboCount }
+
+      setGiftTrayOpen(false)
+      setPremiumRepeat({ ...gift, comboCount })
+      clearTimeout(premiumRepeatTimerRef.current)
+      premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
+
+      window.setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('fameverse:gift', {
+          detail: { id: gift.rendererId, sender: displayName, comboCount },
+        }))
+      }, 140)
+      return
+    }
+
     showGift(gift)
   }
 
@@ -623,6 +685,24 @@ export default function App() {
         </div>
       )}
 
+      {isLive && premiumRepeat && (
+        <div className="gift-repeat-dock" role="group" aria-label={`Repeat ${premiumRepeat.label}`}>
+          <video
+            className="gift-repeat-thumb"
+            src={`${premiumRepeat.video}#t=${premiumRepeat.thumbnailTime || 0}`}
+            muted
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={(event) => seekGiftThumbnail(event, premiumRepeat.thumbnailTime)}
+          />
+          <div className="gift-repeat-copy">
+            <strong>{premiumRepeat.label}</strong>
+            <small>{premiumRepeat.cost} coins · combo ×{premiumRepeat.comboCount}</small>
+          </div>
+          <button type="button" onClick={() => sendGift(premiumRepeat)}>Send again</button>
+        </div>
+      )}
+
       {tab !== 'live' && (
         <header className="topbar">
           <div><div className="beta-chip">BETA 0.2</div><h1>FAMEVERSE <span>LIVE</span></h1></div>
@@ -670,7 +750,7 @@ export default function App() {
               </div>
             </div>
 
-            {isLive && (
+            {isLive && !premiumRepeat && (
               <div className="live-action-rail">
                 <button className="live-action" onClick={() => setGiftTrayOpen(true)}><span>🎁</span><small>Gift</small></button>
                 <button className="live-action" onClick={() => setCohostTrayOpen(true)}><span>＋</span><small>Co-host</small></button>
@@ -690,8 +770,7 @@ export default function App() {
             {!isLive ? (
               <div className="live-launch-controls">
                 <button className="go-live-main" onClick={startLive} disabled={isStartingLive}>{isStartingLive ? 'Starting…' : 'Go Live'}</button>
-                <button className="preview-tool" onClick={flipCamera}>↻ Camera</button>
-                <button className="preview-tool" onClick={() => setGiftTrayOpen(true)}>🎁 Test Gifts</button>
+                <button className="preview-tool preview-tool-wide" onClick={flipCamera}>↻ Camera</button>
               </div>
             ) : (
               <form className="live-comment-composer" onSubmit={submitComment}>
@@ -700,16 +779,33 @@ export default function App() {
               </form>
             )}
 
-            {giftTrayOpen && (
+            {isLive && giftTrayOpen && !premiumRepeat && (
               <div className="live-sheet-backdrop" onClick={() => setGiftTrayOpen(false)}>
                 <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
                   <div className="sheet-handle" />
                   <div className="sheet-heading"><div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div><div className="test-balance">🪙 {coins.toLocaleString()}</div></div>
-                  <p>Tap repeatedly to send combos. Test currency only · no real purchase, earnings, or payout.</p>
+                  <p>Tap simple gifts repeatedly. Cinematic gifts collapse to a compact combo control so the animation stays visible.</p>
                   <div className="live-gift-grid">
                     {gifts.map((gift) => (
-                      <button className="live-gift-item" key={gift.id} onClick={() => sendGift(gift)}>
-                        <span>{gift.emoji}</span><strong>{gift.label}</strong><small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
+                      <button
+                        className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''}`}
+                        key={gift.id}
+                        onClick={() => sendGift(gift)}
+                      >
+                        {gift.video ? (
+                          <video
+                            className="live-gift-thumbnail"
+                            src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
+                          />
+                        ) : (
+                          <span>{gift.emoji}</span>
+                        )}
+                        <strong>{gift.label}</strong>
+                        <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
                       </button>
                     ))}
                   </div>

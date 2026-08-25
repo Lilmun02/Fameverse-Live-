@@ -13,6 +13,7 @@ import './release.css'
 import './qa-fixes.css'
 import './live-polish.css'
 import './beta-feedback.css'
+import './gift-ui.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
