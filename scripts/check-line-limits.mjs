@@ -4,6 +4,19 @@ import { extname, join, relative } from 'node:path'
 const ROOT = new URL('../src/', import.meta.url)
 const MAX_LINES = 450
 const CHECKED_EXTENSIONS = new Set(['.js', '.jsx', '.css'])
+const FORBIDDEN_ACTIVE_IMPORTS = ['legacy/disabled', 'media-session.js', 'flip-guard.js']
+const REQUIRED_GUARDS = [
+  {
+    file: 'services/supabase.js',
+    snippets: ['AUTH_STARTUP_TIMEOUT_MS = 3500', 'Promise.race'],
+    message: 'FAM-9 bounded auth startup guard is missing.',
+  },
+  {
+    file: 'hooks/useLiveMedia.js',
+    snippets: ['MEDIA_HEALTH_INTERVAL_MS = 4000', "videoTrack.readyState !== 'ended'"],
+    message: 'FAM-8 React-owned live media health guard is missing.',
+  },
+]
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -21,12 +34,32 @@ async function walk(directory) {
 const sourceRoot = ROOT.pathname
 const files = await walk(sourceRoot)
 const violations = []
+const architectureViolations = []
 
 for (const file of files) {
   const content = await readFile(file, 'utf8')
+  const rel = relative(sourceRoot, file).replaceAll('\\', '/')
   const lines = content === '' ? 0 : content.split(/\r?\n/).length
+
   if (lines > MAX_LINES) {
-    violations.push({ file: relative(sourceRoot, file), lines })
+    violations.push({ file: rel, lines })
+  }
+
+  if (!rel.startsWith('legacy/disabled/')) {
+    for (const forbidden of FORBIDDEN_ACTIVE_IMPORTS) {
+      const importPattern = new RegExp(`(?:import|from)\\s*['\"][^'\"]*${forbidden.replace('.', '\\.')}[^'\"]*['\"]`)
+      if (importPattern.test(content)) {
+        architectureViolations.push(`src/${rel} imports disabled legacy media code (${forbidden}).`)
+      }
+    }
+  }
+}
+
+for (const guard of REQUIRED_GUARDS) {
+  const filePath = join(sourceRoot, guard.file)
+  const content = await readFile(filePath, 'utf8')
+  if (!guard.snippets.every((snippet) => content.includes(snippet))) {
+    architectureViolations.push(`${guard.message} Expected in src/${guard.file}`)
   }
 }
 
@@ -35,8 +68,17 @@ if (violations.length) {
   for (const violation of violations) {
     console.error(`- src/${violation.file}: ${violation.lines} lines`)
   }
-  console.error('Split the file by responsibility before merging or deploying.')
+}
+
+if (architectureViolations.length) {
+  console.error('Fameverse architecture guard failed:')
+  for (const violation of architectureViolations) console.error(`- ${violation}`)
+}
+
+if (violations.length || architectureViolations.length) {
+  console.error('Split or repair the affected responsibility before merging or deploying.')
   process.exit(1)
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
+console.log('Architecture guard passed: startup timeout + React-owned media health active; disabled media wrappers are not imported.')
