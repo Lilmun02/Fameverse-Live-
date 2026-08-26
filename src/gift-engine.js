@@ -15,13 +15,14 @@ const giftRegistry = Object.freeze({
 })
 
 let activeGift = null
+let giftQueue = []
 let lastGift = { id: null, at: 0, count: 0 }
 
 function isLiveActive() {
   return Boolean(document.querySelector('.mobile-live-shell.is-live'))
 }
 
-function cleanupActiveGift() {
+function destroyActiveScene() {
   if (!activeGift) return
 
   clearTimeout(activeGift.timer)
@@ -32,6 +33,11 @@ function cleanupActiveGift() {
   }
   activeGift.root?.remove()
   activeGift = null
+}
+
+function stopGiftEngine() {
+  giftQueue = []
+  destroyActiveScene()
   document.documentElement.classList.remove('fv-gift-engine-active')
 }
 
@@ -39,34 +45,6 @@ function escapeText(value) {
   const node = document.createElement('span')
   node.textContent = String(value ?? '')
   return node.innerHTML
-}
-
-function updateMeta(metaBar, config, meta, comboCount) {
-  const sender = metaBar.querySelector('strong')
-  const summary = metaBar.querySelector('small')
-  if (sender) sender.textContent = meta.sender || 'Fameverse Creator'
-  if (summary) summary.textContent = `sent ${config.label}${comboCount > 1 ? ` · ×${comboCount}` : ''}`
-}
-
-function armFallbackCleanup(config, queuedReplays = 0) {
-  if (!activeGift) return
-  clearTimeout(activeGift.timer)
-  activeGift.timer = window.setTimeout(
-    cleanupActiveGift,
-    config.duration * (queuedReplays + 1) + 1200,
-  )
-}
-
-function replayQueuedGift(config) {
-  if (!activeGift?.video || activeGift.pendingReplays <= 0) return false
-
-  activeGift.pendingReplays -= 1
-  try { activeGift.video.currentTime = 0 } catch {}
-  armFallbackCleanup(config, activeGift.pendingReplays)
-
-  const replay = activeGift.video.play()
-  replay?.catch?.(() => cleanupActiveGift())
-  return true
 }
 
 function buildVideoScene(config, meta, comboCount) {
@@ -103,26 +81,25 @@ function buildVideoScene(config, meta, comboCount) {
   return { root, video, metaBar }
 }
 
-function playGift(giftKey, meta = {}) {
-  const config = giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey)
-  if (!config || !isLiveActive()) return false
+function playNextQueuedGift() {
+  destroyActiveScene()
 
-  const now = performance.now()
-  const fallbackCombo = lastGift.id === config.id && now - lastGift.at < 2200 ? lastGift.count + 1 : 1
-  const requestedCombo = Number(meta.comboCount)
-  const comboCount = Number.isFinite(requestedCombo) && requestedCombo > 0 ? requestedCombo : fallbackCombo
-  lastGift = { id: config.id, at: now, count: comboCount }
-
-  if (activeGift?.id === config.id && comboCount > 1) {
-    activeGift.comboCount = comboCount
-    activeGift.pendingReplays = (activeGift.pendingReplays || 0) + 1
-    updateMeta(activeGift.metaBar, config, meta, comboCount)
-    armFallbackCleanup(config, activeGift.pendingReplays)
-    return true
+  if (!isLiveActive()) {
+    giftQueue = []
+    document.documentElement.classList.remove('fv-gift-engine-active')
+    return
   }
 
-  cleanupActiveGift()
+  const next = giftQueue.shift()
+  if (!next) {
+    document.documentElement.classList.remove('fv-gift-engine-active')
+    return
+  }
 
+  startGiftScene(next.config, next.meta, next.comboCount)
+}
+
+function startGiftScene(config, meta, comboCount) {
   const scene = config.effect === 'video-cinematic'
     ? buildVideoScene(config, meta, comboCount)
     : null
@@ -136,22 +113,40 @@ function playGift(giftKey, meta = {}) {
     timer: null,
     id: config.id,
     comboCount,
-    pendingReplays: 0,
   }
 
-  scene.video.addEventListener('ended', () => {
+  const finish = () => {
     if (!activeGift || activeGift.video !== scene.video) return
-    if (!replayQueuedGift(config)) cleanupActiveGift()
-  })
+    playNextQueuedGift()
+  }
 
-  armFallbackCleanup(config)
+  scene.video.addEventListener('ended', finish, { once: true })
+  activeGift.timer = window.setTimeout(finish, config.duration + 1200)
 
   const start = scene.video.play()
   start?.catch?.(() => {
     scene.video.muted = true
-    scene.video.play().catch(() => cleanupActiveGift())
+    scene.video.play().catch(finish)
   })
   return true
+}
+
+function playGift(giftKey, meta = {}) {
+  const config = giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey)
+  if (!config || !isLiveActive()) return false
+
+  const now = performance.now()
+  const fallbackCombo = lastGift.id === config.id && now - lastGift.at < 2200 ? lastGift.count + 1 : 1
+  const requestedCombo = Number(meta.comboCount)
+  const comboCount = Number.isFinite(requestedCombo) && requestedCombo > 0 ? requestedCombo : fallbackCombo
+  lastGift = { id: config.id, at: now, count: comboCount }
+
+  if (activeGift) {
+    giftQueue.push({ config, meta, comboCount })
+    return true
+  }
+
+  return startGiftScene(config, meta, comboCount)
 }
 
 document.addEventListener('fameverse:gift', (event) => {
@@ -162,5 +157,5 @@ document.addEventListener('fameverse:gift', (event) => {
 window.FameverseGiftEngine = Object.freeze({
   play: playGift,
   registry: giftRegistry,
-  stop: cleanupActiveGift,
+  stop: stopGiftEngine,
 })
