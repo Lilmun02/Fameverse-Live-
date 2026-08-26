@@ -8,7 +8,7 @@ const FORBIDDEN_ACTIVE_IMPORTS = ['legacy/disabled', 'media-session.js', 'flip-g
 const REQUIRED_GUARDS = [
   {
     file: 'services/supabase.js',
-    snippets: ['AUTH_STARTUP_TIMEOUT_MS = 3500', 'Promise.race'],
+    snippets: ['AUTH_STARTUP_TIMEOUT_MS = 10000', 'Promise.race'],
     message: 'FAM-9 bounded auth startup guard is missing.',
   },
   {
@@ -81,4 +81,4 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: startup timeout + React-owned media health active; disabled media wrappers are not imported.')
+console.log('Architecture guard passed: 10s max startup recovery + React-owned media health active; disabled media wrappers are not imported.')
