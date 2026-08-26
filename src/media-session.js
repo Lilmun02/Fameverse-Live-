@@ -10,6 +10,68 @@ if (typeof window !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
   let managedAudioTracks = 0
   let wakeLock = null
   let liveCaptureActive = false
+  let healthBanner = null
+  let healthTimer = null
+
+  function showMediaHealth(message, persistent = false) {
+    if (!document.body) return
+    if (!healthBanner) {
+      healthBanner = document.createElement('div')
+      healthBanner.className = 'toast fameverse-media-health'
+      healthBanner.setAttribute('role', 'status')
+      healthBanner.setAttribute('aria-live', 'polite')
+      document.body.appendChild(healthBanner)
+    }
+    healthBanner.textContent = message
+    healthBanner.hidden = false
+    if (healthTimer) clearTimeout(healthTimer)
+    if (!persistent) {
+      healthTimer = window.setTimeout(() => {
+        if (healthBanner) healthBanner.hidden = true
+      }, 3200)
+    }
+  }
+
+  function clearMediaHealth() {
+    if (healthTimer) clearTimeout(healthTimer)
+    healthTimer = null
+    if (healthBanner) healthBanner.hidden = true
+  }
+
+  function stopFalseLiveState(message) {
+    showMediaHealth(message, true)
+    window.setTimeout(() => {
+      const endButton = document.querySelector('.top-end-live')
+      if (endButton && !endButton.disabled) endButton.click()
+      window.setTimeout(clearMediaHealth, 3600)
+    }, 0)
+  }
+
+  function monitorVideoTrack(track) {
+    if (!track || track.__fameverseHealthMonitored) return track
+    track.__fameverseHealthMonitored = true
+
+    track.addEventListener?.('mute', () => {
+      if (track.readyState !== 'live') return
+      showMediaHealth('Camera temporarily unavailable · checking video…', true)
+    })
+
+    track.addEventListener?.('unmute', () => {
+      if (track.readyState !== 'live') return
+      clearMediaHealth()
+    })
+
+    track.addEventListener?.('ended', () => {
+      stopFalseLiveState('Camera connection ended · live stopped')
+    }, { once: true })
+
+    return track
+  }
+
+  function monitorStream(stream) {
+    stream?.getVideoTracks?.().forEach(monitorVideoTrack)
+    return stream
+  }
 
   async function acquireWakeLock() {
     if (!liveCaptureActive || document.visibilityState !== 'visible' || !navigator.wakeLock?.request) return
@@ -36,6 +98,7 @@ if (typeof window !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
     sourceAudioTrack = null
     managedAudioTracks = 0
     liveCaptureActive = false
+    clearMediaHealth()
     releaseWakeLock()
   }
 
@@ -72,25 +135,33 @@ if (typeof window !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
       const sourceStream = await nativeGetUserMedia(constraints)
       const audioTrack = sourceStream.getAudioTracks()[0] || null
 
-      if (!audioTrack) return sourceStream
+      if (!audioTrack) return monitorStream(sourceStream)
 
       sourceAudioTrack = audioTrack
       liveCaptureActive = true
       const returnedStream = new MediaStream()
-      sourceStream.getVideoTracks().forEach((track) => returnedStream.addTrack(track))
+      sourceStream.getVideoTracks().forEach((track) => returnedStream.addTrack(monitorVideoTrack(track)))
       const managedAudio = makeManagedAudioClone()
       if (managedAudio) returnedStream.addTrack(managedAudio)
       acquireWakeLock()
       return returnedStream
     }
 
-    // During a camera flip the app currently asks for audio + video again.
-    // Reuse the existing mic source and ask iOS only for the replacement camera.
+    // During a camera flip the app asks for video-only replacement capture.
+    // Keep monitoring each replacement track so a later device-level failure
+    // cannot leave the UI claiming a dead camera is still active.
+    if (wantsVideo && !wantsAudio) {
+      const videoStream = await nativeGetUserMedia(constraints)
+      return monitorStream(videoStream)
+    }
+
+    // If a future flow requests audio + video while the source mic remains
+    // live, reuse that source and acquire only the replacement camera.
     if (wantsAudio && wantsVideo && sourceAudioTrack?.readyState === 'live') {
       const videoOnlyConstraints = { ...constraints, audio: false }
       const videoStream = await nativeGetUserMedia(videoOnlyConstraints)
       const returnedStream = new MediaStream()
-      videoStream.getVideoTracks().forEach((track) => returnedStream.addTrack(track))
+      videoStream.getVideoTracks().forEach((track) => returnedStream.addTrack(monitorVideoTrack(track)))
       const managedAudio = makeManagedAudioClone()
       if (managedAudio) returnedStream.addTrack(managedAudio)
       acquireWakeLock()
