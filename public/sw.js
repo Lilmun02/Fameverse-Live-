@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v13'
+const CACHE = 'fameverse-beta-v14'
 const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
