@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js'
+import { supabase } from '../../services/supabase.js'
 
 const VERSION = 'beta-0.2'
 
