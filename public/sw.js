@@ -1,5 +1,5 @@
-const CACHE = 'fameverse-beta-v14'
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
+const CACHE = 'fameverse-beta-v15'
+const APP_SHELL = ['/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)))
@@ -13,9 +13,9 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-async function refreshInBackground(request, cache) {
+async function fetchAndCache(request, cache) {
   try {
-    const response = await fetch(request)
+    const response = await fetch(request, { cache: 'no-store' })
     if (response && response.ok) await cache.put(request, response.clone())
     return response
   } catch {
@@ -33,15 +33,13 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE)
-      const cached = await cache.match('/index.html') || await cache.match('/')
-      const networkPromise = refreshInBackground(request, cache)
+      const network = await fetchAndCache(request, cache)
+      if (network) return network
 
-      if (cached) {
-        event.waitUntil(networkPromise)
-        return cached
-      }
+      const cached = await cache.match(request)
+      if (cached) return cached
 
-      return (await networkPromise) || new Response('Fameverse is temporarily unavailable.', {
+      return new Response('Fameverse is temporarily unavailable.', {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       })
@@ -65,13 +63,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE)
     const cached = await cache.match(request)
-    const networkPromise = refreshInBackground(request, cache)
+    const networkPromise = fetchAndCache(request, cache)
 
     if (cached) {
       event.waitUntil(networkPromise)
       return cached
     }
 
-    return (await networkPromise) || await cache.match('/index.html')
+    return (await networkPromise) || new Response('', { status: 504 })
   })())
 })
