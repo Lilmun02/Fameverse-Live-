@@ -48,6 +48,27 @@ function updateMeta(metaBar, config, meta, comboCount) {
   if (summary) summary.textContent = `sent ${config.label}${comboCount > 1 ? ` · ×${comboCount}` : ''}`
 }
 
+function armFallbackCleanup(config, queuedReplays = 0) {
+  if (!activeGift) return
+  clearTimeout(activeGift.timer)
+  activeGift.timer = window.setTimeout(
+    cleanupActiveGift,
+    config.duration * (queuedReplays + 1) + 1200,
+  )
+}
+
+function replayQueuedGift(config) {
+  if (!activeGift?.video || activeGift.pendingReplays <= 0) return false
+
+  activeGift.pendingReplays -= 1
+  try { activeGift.video.currentTime = 0 } catch {}
+  armFallbackCleanup(config, activeGift.pendingReplays)
+
+  const replay = activeGift.video.play()
+  replay?.catch?.(() => cleanupActiveGift())
+  return true
+}
+
 function buildVideoScene(config, meta, comboCount) {
   const root = document.createElement('div')
   root.className = 'fv-gift-engine fv-video-gift'
@@ -78,7 +99,6 @@ function buildVideoScene(config, meta, comboCount) {
     </div>
   `
 
-  video.addEventListener('ended', cleanupActiveGift, { once: true })
   root.append(video, metaBar)
   return { root, video, metaBar }
 }
@@ -95,9 +115,9 @@ function playGift(giftKey, meta = {}) {
 
   if (activeGift?.id === config.id && comboCount > 1) {
     activeGift.comboCount = comboCount
+    activeGift.pendingReplays = (activeGift.pendingReplays || 0) + 1
     updateMeta(activeGift.metaBar, config, meta, comboCount)
-    clearTimeout(activeGift.timer)
-    activeGift.timer = window.setTimeout(cleanupActiveGift, config.duration)
+    armFallbackCleanup(config, activeGift.pendingReplays)
     return true
   }
 
@@ -111,8 +131,20 @@ function playGift(giftKey, meta = {}) {
   document.documentElement.classList.add('fv-gift-engine-active')
   document.body.appendChild(scene.root)
 
-  const timer = window.setTimeout(cleanupActiveGift, config.duration)
-  activeGift = { ...scene, timer, id: config.id, comboCount }
+  activeGift = {
+    ...scene,
+    timer: null,
+    id: config.id,
+    comboCount,
+    pendingReplays: 0,
+  }
+
+  scene.video.addEventListener('ended', () => {
+    if (!activeGift || activeGift.video !== scene.video) return
+    if (!replayQueuedGift(config)) cleanupActiveGift()
+  })
+
+  armFallbackCleanup(config)
 
   const start = scene.video.play()
   start?.catch?.(() => {
