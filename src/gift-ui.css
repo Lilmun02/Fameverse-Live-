@@ -3,39 +3,40 @@
 }
 
 .live-gift-item-cinematic {
-  grid-column: 1 / -1;
-  min-height: 124px;
-  grid-template-columns: 86px minmax(0, 1fr) auto;
-  place-items: center stretch;
-  gap: 12px;
-  padding: 8px 12px 8px 8px;
+  grid-column: auto;
+  min-height: unset;
+  grid-template-columns: 1fr;
+  place-items: center;
+  gap: 6px;
+  padding: 10px 8px;
   overflow: hidden;
-  border-color: rgba(211, 155, 255, .34);
-  background: linear-gradient(135deg, rgba(111, 43, 159, .26), rgba(255, 255, 255, .055));
-  text-align: left;
+  border-color: rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .055);
+  text-align: center;
 }
 
 .live-gift-thumbnail {
-  width: 86px;
-  height: 108px;
+  width: 58px;
+  height: 58px;
   display: block;
   border-radius: 14px;
   object-fit: cover;
   object-position: center;
   background: #09040e;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, .32);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
 }
 
 .live-gift-item-cinematic strong {
-  justify-self: start;
+  justify-self: center;
   align-self: center;
   max-width: 100%;
-  font-size: .88rem;
+  font-size: .78rem;
   line-height: 1.15;
+  text-align: center;
 }
 
 .live-gift-item-cinematic small {
-  justify-self: end;
+  justify-self: center;
   align-self: center;
   white-space: nowrap;
   color: #e0c7f3;
@@ -110,12 +111,12 @@
 
 @media (max-width: 380px) {
   .live-gift-item-cinematic {
-    grid-template-columns: 74px minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
   }
 
   .live-gift-thumbnail {
-    width: 74px;
-    height: 98px;
+    width: 54px;
+    height: 54px;
   }
 
   .gift-repeat-dock {
