@@ -1,4 +1,4 @@
-import './gift-engine.css'
+import '../../../styles/gifts/engine.css'
 
 const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
 
