@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { videoConstraints } from '../utils/media.js'
 
+const MEDIA_HEALTH_INTERVAL_MS = 4000
+
 export function useLiveMedia(setToast) {
   const [isLive, setIsLive] = useState(false)
   const [isStartingLive, setIsStartingLive] = useState(false)
@@ -28,12 +30,38 @@ export function useLiveMedia(setToast) {
   }, [])
 
   useEffect(() => {
-    const reacquire = () => {
-      if (document.visibilityState === 'visible' && isLive) acquireWakeLock()
+    if (!isLive) return undefined
+
+    let cameraEndedReported = false
+
+    const verifyVideoHealth = () => {
+      const stream = streamRef.current
+      if (!stream) return
+
+      const videoTrack = stream.getVideoTracks()[0]
+      if (!videoTrack || videoTrack.readyState !== 'ended') return
+
+      setCameraOff(true)
+      if (!cameraEndedReported) {
+        cameraEndedReported = true
+        setToast('Camera connection ended')
+      }
     }
-    document.addEventListener('visibilitychange', reacquire)
-    return () => document.removeEventListener('visibilitychange', reacquire)
-  }, [isLive])
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return
+      acquireWakeLock()
+      verifyVideoHealth()
+    }
+
+    const healthTimer = window.setInterval(verifyVideoHealth, MEDIA_HEALTH_INTERVAL_MS)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.clearInterval(healthTimer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [isLive, setToast])
 
   const acquireWakeLock = async () => {
     if (!navigator.wakeLock?.request || document.visibilityState !== 'visible' || !isLive) return
