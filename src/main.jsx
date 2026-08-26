@@ -1,6 +1,5 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import './media-session.js'
 import './flip-guard.js'
 import './beta-feedback.js'
 import './gift-engine.js'
