@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "check:lines": "node scripts/check-line-limits.mjs",
+    "build": "npm run check:lines && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
