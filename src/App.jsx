@@ -12,6 +12,8 @@ import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
+const SPLASH_MINIMUM_MS = 5000
+
 export default function App() {
   const [toast, setToast] = useState('')
   const [tab, setTab] = useState('live')
@@ -22,6 +24,7 @@ export default function App() {
   const [chat, setChat] = useState([])
   const [commentText, setCommentText] = useState('')
   const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
+  const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
 
   const live = useLiveMedia(setToast)
   const account = useAccount({
@@ -47,6 +50,11 @@ export default function App() {
   const pwa = usePwaInstall(setToast)
   const viewerCount = useMemo(() => 0, [])
   const liveMessages = chat.slice(-5)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSplashMinimumElapsed(true), SPLASH_MINIMUM_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -109,8 +117,16 @@ export default function App() {
     setSettingsDetail(null)
   }
 
-  if (!account.authReady) {
-    return <div className="foundation-loading"><strong>FAMEVERSE <span>LIVE</span></strong><small>Opening your account…</small></div>
+  if (!account.authReady || !splashMinimumElapsed) {
+    return (
+      <div className="boot-splash" aria-label="Opening Fameverse">
+        <div>
+          <div className="boot-mark">F</div>
+          <strong>FAMEVERSE <span>LIVE</span></strong>
+          <small>Opening your Fameverse…</small>
+        </div>
+      </div>
+    )
   }
 
   if (!account.session) {
