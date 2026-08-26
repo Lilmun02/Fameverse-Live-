@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v15'
+const CACHE = 'fameverse-beta-v16'
 const APP_SHELL = ['/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -7,10 +7,19 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
-  )
-  self.clients.claim()
+  event.waitUntil((async () => {
+    const keys = await caches.keys()
+    await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+    await self.clients.claim()
+
+    // Existing installed PWAs may currently be running the stale app shell that
+    // caused the auth splash hang. Once this worker takes control, reload those
+    // open Fameverse windows exactly once under the fresh cache strategy.
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    await Promise.all(clients.map(async (client) => {
+      try { await client.navigate(client.url) } catch {}
+    }))
+  })())
 })
 
 async function fetchAndCache(request, cache) {
