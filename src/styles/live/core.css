@@ -286,3 +286,36 @@
 .cohost-floating-card small { display: block; }
 .cohost-floating-card strong { font-size: .72rem; }
 .cohost-floating-card small { color: #bcaec7; font-size: .58rem; }
+
+.camera-switching-state {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+  background: #17191f;
+  color: #fff;
+}
+
+.camera-switching-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  font-size: 1.6rem;
+  animation: fameverse-camera-switch-spin .8s linear infinite;
+}
+
+.camera-switching-state strong { font-size: 1rem; }
+.camera-switching-state small { color: #b9bdc8; font-size: .72rem; }
+
+@keyframes fameverse-camera-switch-spin {
+  to { transform: rotate(360deg); }
+}

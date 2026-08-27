@@ -6,6 +6,7 @@ const MEDIA_HEALTH_INTERVAL_MS = 4000
 export function useLiveMedia(setToast) {
   const [isLive, setIsLive] = useState(false)
   const [isStartingLive, setIsStartingLive] = useState(false)
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
   const [mediaStream, setMediaStream] = useState(null)
   const [micMuted, setMicMuted] = useState(false)
   const [cameraOff, setCameraOff] = useState(false)
@@ -86,6 +87,7 @@ export function useLiveMedia(setToast) {
     streamRef.current = null
     setMediaStream(null)
     setCameraOff(false)
+    setIsSwitchingCamera(false)
     if (videoRef.current) videoRef.current.srcObject = null
     releaseWakeLock()
   }
@@ -167,6 +169,7 @@ export function useLiveMedia(setToast) {
     const previousFacing = facingMode
     const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
     setIsStartingLive(true)
+    setIsSwitchingCamera(true)
 
     try {
       if (typeof currentVideoTrack.applyConstraints === 'function') {
@@ -207,6 +210,7 @@ export function useLiveMedia(setToast) {
       setFacingMode(previousFacing)
       setToast('Could not switch cameras')
     } finally {
+      setIsSwitchingCamera(false)
       setIsStartingLive(false)
     }
   }
@@ -215,6 +219,7 @@ export function useLiveMedia(setToast) {
     isLive,
     setIsLive,
     isStartingLive,
+    isSwitchingCamera,
     mediaStream,
     micMuted,
     cameraOff,

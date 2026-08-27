@@ -164,6 +164,7 @@ export default function App() {
             initial={initial}
             viewerCount={viewerCount}
             isStartingLive={live.isStartingLive}
+            isSwitchingCamera={live.isSwitchingCamera}
             startLive={startLive}
             premiumRepeat={gifts.premiumRepeat}
             setGiftTrayOpen={gifts.setGiftTrayOpen}

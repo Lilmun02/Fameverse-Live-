@@ -12,6 +12,7 @@ export default function LiveScreen({
   initial,
   viewerCount,
   isStartingLive,
+  isSwitchingCamera,
   startLive,
   premiumRepeat,
   setGiftTrayOpen,
@@ -48,6 +49,13 @@ export default function LiveScreen({
             <div className="preview-camera-icon">◉</div>
             <strong>Ready to go live?</strong>
             <small>Camera + microphone stay on this device during the current beta.</small>
+          </div>
+        )}
+        {isLive && isSwitchingCamera && (
+          <div className="camera-switching-state" role="status" aria-live="polite">
+            <div className="camera-switching-icon">↻</div>
+            <strong>Switching camera</strong>
+            <small>Keeping your live session active…</small>
           </div>
         )}
         <div className="live-vignette" />
