@@ -2,28 +2,71 @@ import { useEffect, useRef, useState } from 'react'
 import { videoConstraints } from '../utils/media.js'
 
 const MEDIA_HEALTH_INTERVAL_MS = 4000
+const CAMERA_WARMUP_TIMEOUT_MS = 2500
+
+function waitForVideoFrame(video) {
+  return new Promise((resolve, reject) => {
+    let settled = false
+    const finish = (error) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
+      video.removeEventListener('loadeddata', onLoadedData)
+      video.removeEventListener('error', onError)
+      if (error) reject(error)
+      else resolve()
+    }
+    const onLoadedData = () => finish()
+    const onError = () => finish(new Error('camera-preview-error'))
+    const timeout = window.setTimeout(() => finish(new Error('camera-preview-timeout')), CAMERA_WARMUP_TIMEOUT_MS)
+
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      video.requestVideoFrameCallback(() => finish())
+      return
+    }
+
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      window.requestAnimationFrame(() => finish())
+      return
+    }
+
+    video.addEventListener('loadeddata', onLoadedData, { once: true })
+    video.addEventListener('error', onError, { once: true })
+  })
+}
+
+function configureVideo(video, stream) {
+  if (!video) return
+  video.muted = true
+  video.defaultMuted = true
+  video.volume = 0
+  video.srcObject = stream
+}
 
 export function useLiveMedia(setToast) {
   const [isLive, setIsLive] = useState(false)
   const [isStartingLive, setIsStartingLive] = useState(false)
-  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
   const [mediaStream, setMediaStream] = useState(null)
   const [micMuted, setMicMuted] = useState(false)
   const [cameraOff, setCameraOff] = useState(false)
   const [facingMode, setFacingMode] = useState('user')
+  const [activeVideoSlot, setActiveVideoSlot] = useState(0)
+  const [videoSlotFacing, setVideoSlotFacing] = useState(['user', 'environment'])
 
-  const videoRef = useRef(null)
+  const videoPrimaryRef = useRef(null)
+  const videoSecondaryRef = useRef(null)
   const streamRef = useRef(null)
   const wakeLockRef = useRef(null)
 
+  const getVideoElement = (slot) => (slot === 0 ? videoPrimaryRef.current : videoSecondaryRef.current)
+
   useEffect(() => {
-    if (!videoRef.current || !mediaStream || cameraOff) return
-    videoRef.current.muted = true
-    videoRef.current.defaultMuted = true
-    videoRef.current.volume = 0
-    videoRef.current.srcObject = mediaStream
-    videoRef.current.play().catch(() => {})
-  }, [mediaStream, cameraOff, facingMode])
+    if (!mediaStream || cameraOff) return
+    const video = getVideoElement(activeVideoSlot)
+    if (!video) return
+    configureVideo(video, mediaStream)
+    video.play().catch(() => {})
+  }, [mediaStream, cameraOff, activeVideoSlot])
 
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -34,14 +77,11 @@ export function useLiveMedia(setToast) {
     if (!isLive) return undefined
 
     let cameraEndedReported = false
-
     const verifyVideoHealth = () => {
       const stream = streamRef.current
       if (!stream) return
-
       const videoTrack = stream.getVideoTracks()[0]
       if (!videoTrack || videoTrack.readyState !== 'ended') return
-
       setCameraOff(true)
       if (!cameraEndedReported) {
         cameraEndedReported = true
@@ -57,7 +97,6 @@ export function useLiveMedia(setToast) {
 
     const healthTimer = window.setInterval(verifyVideoHealth, MEDIA_HEALTH_INTERVAL_MS)
     document.addEventListener('visibilitychange', onVisibilityChange)
-
     return () => {
       window.clearInterval(healthTimer)
       document.removeEventListener('visibilitychange', onVisibilityChange)
@@ -87,8 +126,10 @@ export function useLiveMedia(setToast) {
     streamRef.current = null
     setMediaStream(null)
     setCameraOff(false)
-    setIsSwitchingCamera(false)
-    if (videoRef.current) videoRef.current.srcObject = null
+    const primary = videoPrimaryRef.current
+    const secondary = videoSecondaryRef.current
+    if (primary) primary.srcObject = null
+    if (secondary) secondary.srcObject = null
     releaseWakeLock()
   }
 
@@ -119,6 +160,11 @@ export function useLiveMedia(setToast) {
     try {
       const stream = await requestMedia(facingMode)
       streamRef.current = stream
+      setVideoSlotFacing((slots) => {
+        const next = [...slots]
+        next[activeVideoSlot] = facingMode
+        return next
+      })
       setMediaStream(stream)
       setMicMuted(false)
       setCameraOff(false)
@@ -155,10 +201,9 @@ export function useLiveMedia(setToast) {
     setCameraOff(nextOff)
   }
 
-  // FAM-5: prefer switching the already-authorized active camera track in place.
-  // This avoids a fresh permission/device request when the browser supports it.
-  // A video-only getUserMedia fallback is kept for browsers that cannot change
-  // facingMode on the active track; microphone access is never re-requested.
+  // FAM-5: keep the current camera visibly playing while a replacement camera
+  // warms on the hidden video slot. Only swap DOM visibility after the new
+  // camera has produced a real frame; microphone access is never re-requested.
   const flipCamera = async () => {
     if (!isLive || cameraOff || isStartingLive) return
 
@@ -168,49 +213,55 @@ export function useLiveMedia(setToast) {
 
     const previousFacing = facingMode
     const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
+    const nextSlot = activeVideoSlot === 0 ? 1 : 0
+    const stagingVideo = getVideoElement(nextSlot)
+    const currentVideo = getVideoElement(activeVideoSlot)
+    let cameraStream = null
+
+    if (!stagingVideo) return
     setIsStartingLive(true)
-    setIsSwitchingCamera(true)
 
     try {
-      if (typeof currentVideoTrack.applyConstraints === 'function') {
-        try {
-          await currentVideoTrack.applyConstraints({ facingMode: { exact: nextFacing } })
-          if (currentVideoTrack.readyState === 'live') {
-            setFacingMode(nextFacing)
-            return
-          }
-        } catch {
-          // WebKit/device cannot switch this active track in place. Use the
-          // video-only fallback below without touching the microphone track.
-        }
-      }
-
-      const cameraStream = await requestVideo(nextFacing)
+      cameraStream = await requestVideo(nextFacing)
       const nextVideoTrack = cameraStream.getVideoTracks()[0]
       if (!nextVideoTrack) throw new Error('camera-track-missing')
 
+      configureVideo(stagingVideo, cameraStream)
+      await stagingVideo.play()
+      await waitForVideoFrame(stagingVideo)
+
       const audioTracks = currentStream.getAudioTracks()
       const nextStream = new MediaStream([...audioTracks, nextVideoTrack])
+      configureVideo(stagingVideo, nextStream)
+      await stagingVideo.play()
+
       streamRef.current = nextStream
-      setMediaStream(nextStream)
+      setVideoSlotFacing((slots) => {
+        const next = [...slots]
+        next[nextSlot] = nextFacing
+        return next
+      })
       setFacingMode(nextFacing)
+      setActiveVideoSlot(nextSlot)
+      setMediaStream(nextStream)
 
-      const video = videoRef.current
-      if (video) {
-        video.muted = true
-        video.defaultMuted = true
-        video.volume = 0
-        video.srcObject = nextStream
-        video.play().catch(() => {})
-      }
+      await new Promise((resolve) => {
+        window.requestAnimationFrame(() => window.requestAnimationFrame(resolve))
+      })
 
+      if (currentVideo) currentVideo.srcObject = null
       try { currentStream.removeTrack(currentVideoTrack) } catch {}
       try { currentVideoTrack.stop() } catch {}
     } catch {
+      if (stagingVideo) stagingVideo.srcObject = null
+      cameraStream?.getTracks().forEach((track) => {
+        if (track !== currentVideoTrack) {
+          try { track.stop() } catch {}
+        }
+      })
       setFacingMode(previousFacing)
       setToast('Could not switch cameras')
     } finally {
-      setIsSwitchingCamera(false)
       setIsStartingLive(false)
     }
   }
@@ -219,12 +270,14 @@ export function useLiveMedia(setToast) {
     isLive,
     setIsLive,
     isStartingLive,
-    isSwitchingCamera,
     mediaStream,
     micMuted,
     cameraOff,
     facingMode,
-    videoRef,
+    activeVideoSlot,
+    videoSlotFacing,
+    videoPrimaryRef,
+    videoSecondaryRef,
     startLive,
     toggleMic,
     toggleCamera,

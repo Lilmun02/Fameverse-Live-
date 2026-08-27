@@ -5,14 +5,15 @@ export default function LiveScreen({
   isLive,
   mediaStream,
   cameraOff,
-  facingMode,
-  videoRef,
+  activeVideoSlot,
+  videoSlotFacing,
+  videoPrimaryRef,
+  videoSecondaryRef,
   displayName,
   username,
   initial,
   viewerCount,
   isStartingLive,
-  isSwitchingCamera,
   startLive,
   premiumRepeat,
   setGiftTrayOpen,
@@ -36,7 +37,22 @@ export default function LiveScreen({
     <section className={`mobile-live-shell ${isLive ? 'is-live' : 'is-preview'}`}>
       <div className="live-video-surface">
         {isLive && mediaStream && !cameraOff ? (
-          <video ref={videoRef} className={`host-video immersive-video ${facingMode === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
+          <>
+            <video
+              ref={videoPrimaryRef}
+              className={`host-video immersive-video ${activeVideoSlot === 0 ? 'active' : 'inactive'} ${videoSlotFacing[0] === 'user' ? 'mirror' : ''}`}
+              autoPlay
+              muted
+              playsInline
+            />
+            <video
+              ref={videoSecondaryRef}
+              className={`host-video immersive-video ${activeVideoSlot === 1 ? 'active' : 'inactive'} ${videoSlotFacing[1] === 'user' ? 'mirror' : ''}`}
+              autoPlay
+              muted
+              playsInline
+            />
+          </>
         ) : isLive && cameraOff ? (
           <div className="camera-off-placeholder">
             <div className="preview-camera-icon">◉</div>
@@ -49,13 +65,6 @@ export default function LiveScreen({
             <div className="preview-camera-icon">◉</div>
             <strong>Ready to go live?</strong>
             <small>Camera + microphone stay on this device during the current beta.</small>
-          </div>
-        )}
-        {isLive && isSwitchingCamera && (
-          <div className="camera-switching-state" role="status" aria-live="polite">
-            <div className="camera-switching-icon">↻</div>
-            <strong>Switching camera</strong>
-            <small>Keeping your live session active…</small>
           </div>
         )}
         <div className="live-vignette" />
