@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { videoConstraints } from '../utils/media.js'
 
 const MEDIA_HEALTH_INTERVAL_MS = 4000
-const CAMERA_RENDER_TIMEOUT_MS = 2500
 
 export function useLiveMedia(setToast) {
   const [isLive, setIsLive] = useState(false)
@@ -104,33 +103,6 @@ export function useLiveMedia(setToast) {
     return navigator.mediaDevices.getUserMedia({ video: videoConstraints(nextFacing), audio: false })
   }
 
-  const waitForRenderableVideo = async (video) => {
-    if (!video) return
-
-    await video.play()
-    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return
-
-    await new Promise((resolve, reject) => {
-      let settled = false
-      const finish = (callback) => {
-        if (settled) return
-        settled = true
-        window.clearTimeout(timeout)
-        video.removeEventListener('loadeddata', onReady)
-        video.removeEventListener('canplay', onReady)
-        video.removeEventListener('error', onError)
-        callback()
-      }
-      const onReady = () => finish(resolve)
-      const onError = () => finish(() => reject(new Error('camera-render-failed')))
-      const timeout = window.setTimeout(() => finish(() => reject(new Error('camera-render-timeout'))), CAMERA_RENDER_TIMEOUT_MS)
-
-      video.addEventListener('loadeddata', onReady, { once: true })
-      video.addEventListener('canplay', onReady, { once: true })
-      video.addEventListener('error', onError, { once: true })
-    })
-  }
-
   const startLive = async () => {
     if (isLive) {
       stopMedia()
@@ -181,8 +153,9 @@ export function useLiveMedia(setToast) {
     setCameraOff(nextOff)
   }
 
-  // FAM-5: keep the old camera alive until the replacement is attached and
-  // render-ready. Audio is preserved and never re-requested during Flip.
+  // Official FAM-5 camera-first patch: acquire the replacement camera before
+  // retiring the active video track. Audio is deliberately preserved and is
+  // never re-requested during a camera switch.
   const flipCamera = async () => {
     if (!isLive || cameraOff || isStartingLive) return
 
@@ -193,56 +166,45 @@ export function useLiveMedia(setToast) {
     const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
     const audioTracks = currentStream.getAudioTracks()
     const oldVideoTracks = currentStream.getVideoTracks()
-    let cameraStream = null
-    let nextVideoTrack = null
 
     setIsStartingLive(true)
     try {
-      cameraStream = await requestVideo(nextFacing)
-      nextVideoTrack = cameraStream.getVideoTracks()[0]
+      const cameraStream = await requestVideo(nextFacing)
+      const nextVideoTrack = cameraStream.getVideoTracks()[0]
       if (!nextVideoTrack) throw new Error('camera-track-missing')
 
       const nextStream = new MediaStream([...audioTracks, nextVideoTrack])
-      const video = videoRef.current
+      streamRef.current = nextStream
+      setFacingMode(nextFacing)
+      setMediaStream(nextStream)
 
+      const video = videoRef.current
       if (video) {
         video.muted = true
         video.defaultMuted = true
         video.volume = 0
         video.srcObject = nextStream
-        await waitForRenderableVideo(video)
+        video.play().catch(() => {})
       }
-
-      streamRef.current = nextStream
-      setFacingMode(nextFacing)
-      setMediaStream(nextStream)
 
       oldVideoTracks.forEach((track) => {
         try { currentStream.removeTrack(track) } catch {}
         try { track.stop() } catch {}
       })
     } catch {
-      if (nextVideoTrack) {
-        try { nextVideoTrack.stop() } catch {}
-      }
-      cameraStream?.getTracks().forEach((track) => {
-        if (track !== nextVideoTrack) {
-          try { track.stop() } catch {}
+      try {
+        const restoreStream = await requestVideo(previousFacing)
+        const restoredVideoTrack = restoreStream.getVideoTracks()[0]
+        if (restoredVideoTrack) {
+          const restoredStream = new MediaStream([...audioTracks, restoredVideoTrack])
+          streamRef.current = restoredStream
+          setMediaStream(restoredStream)
+        } else {
+          setCameraOff(true)
         }
-      })
-
-      const video = videoRef.current
-      if (video) {
-        video.muted = true
-        video.defaultMuted = true
-        video.volume = 0
-        video.srcObject = currentStream
-        try { await waitForRenderableVideo(video) } catch {}
+      } catch {
+        setCameraOff(true)
       }
-
-      streamRef.current = currentStream
-      setMediaStream(currentStream)
-      setFacingMode(previousFacing)
       setToast('Could not switch cameras')
     } finally {
       setIsStartingLive(false)
