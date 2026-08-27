@@ -153,30 +153,44 @@ export function useLiveMedia(setToast) {
     setCameraOff(nextOff)
   }
 
-  // Official FAM-5 camera-first patch: acquire the replacement camera before
-  // retiring the active video track. Audio is deliberately preserved and is
-  // never re-requested during a camera switch.
+  // FAM-5: prefer switching the already-authorized active camera track in place.
+  // This avoids a fresh permission/device request when the browser supports it.
+  // A video-only getUserMedia fallback is kept for browsers that cannot change
+  // facingMode on the active track; microphone access is never re-requested.
   const flipCamera = async () => {
     if (!isLive || cameraOff || isStartingLive) return
 
     const currentStream = streamRef.current
-    if (!currentStream) return
+    const currentVideoTrack = currentStream?.getVideoTracks()[0]
+    if (!currentStream || !currentVideoTrack) return
 
     const previousFacing = facingMode
     const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
-    const audioTracks = currentStream.getAudioTracks()
-    const oldVideoTracks = currentStream.getVideoTracks()
-
     setIsStartingLive(true)
+
     try {
+      if (typeof currentVideoTrack.applyConstraints === 'function') {
+        try {
+          await currentVideoTrack.applyConstraints({ facingMode: { exact: nextFacing } })
+          if (currentVideoTrack.readyState === 'live') {
+            setFacingMode(nextFacing)
+            return
+          }
+        } catch {
+          // WebKit/device cannot switch this active track in place. Use the
+          // video-only fallback below without touching the microphone track.
+        }
+      }
+
       const cameraStream = await requestVideo(nextFacing)
       const nextVideoTrack = cameraStream.getVideoTracks()[0]
       if (!nextVideoTrack) throw new Error('camera-track-missing')
 
+      const audioTracks = currentStream.getAudioTracks()
       const nextStream = new MediaStream([...audioTracks, nextVideoTrack])
       streamRef.current = nextStream
-      setFacingMode(nextFacing)
       setMediaStream(nextStream)
+      setFacingMode(nextFacing)
 
       const video = videoRef.current
       if (video) {
@@ -187,24 +201,10 @@ export function useLiveMedia(setToast) {
         video.play().catch(() => {})
       }
 
-      oldVideoTracks.forEach((track) => {
-        try { currentStream.removeTrack(track) } catch {}
-        try { track.stop() } catch {}
-      })
+      try { currentStream.removeTrack(currentVideoTrack) } catch {}
+      try { currentVideoTrack.stop() } catch {}
     } catch {
-      try {
-        const restoreStream = await requestVideo(previousFacing)
-        const restoredVideoTrack = restoreStream.getVideoTracks()[0]
-        if (restoredVideoTrack) {
-          const restoredStream = new MediaStream([...audioTracks, restoredVideoTrack])
-          streamRef.current = restoredStream
-          setMediaStream(restoredStream)
-        } else {
-          setCameraOff(true)
-        }
-      } catch {
-        setCameraOff(true)
-      }
+      setFacingMode(previousFacing)
       setToast('Could not switch cameras')
     } finally {
       setIsStartingLive(false)
