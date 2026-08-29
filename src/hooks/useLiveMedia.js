@@ -57,6 +57,7 @@ export function useLiveMedia(setToast) {
   const videoSecondaryRef = useRef(null)
   const streamRef = useRef(null)
   const wakeLockRef = useRef(null)
+  const flipLockRef = useRef(false)
 
   const getVideoElement = (slot) => (slot === 0 ? videoPrimaryRef.current : videoSecondaryRef.current)
 
@@ -78,6 +79,7 @@ export function useLiveMedia(setToast) {
 
     let cameraEndedReported = false
     const verifyVideoHealth = () => {
+      if (flipLockRef.current) return
       const stream = streamRef.current
       if (!stream) return
       const videoTrack = stream.getVideoTracks()[0]
@@ -122,6 +124,7 @@ export function useLiveMedia(setToast) {
   }
 
   const stopMedia = () => {
+    flipLockRef.current = false
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     setMediaStream(null)
@@ -201,15 +204,19 @@ export function useLiveMedia(setToast) {
     setCameraOff(nextOff)
   }
 
-  // FAM-5: keep the current camera visibly playing while a replacement camera
-  // warms on the hidden video slot. Only swap DOM visibility after the new
-  // camera has produced a real frame; microphone access is never re-requested.
+  // FAM-5: allow only one camera handoff at a time. iOS may end the old
+  // camera track while the replacement is opening, so media-health checks must
+  // not convert that controlled transition into a persistent Camera off state.
   const flipCamera = async () => {
-    if (!isLive || cameraOff || isStartingLive) return
+    if (!isLive || cameraOff || isStartingLive || flipLockRef.current) return
+    flipLockRef.current = true
 
     const currentStream = streamRef.current
     const currentVideoTrack = currentStream?.getVideoTracks()[0]
-    if (!currentStream || !currentVideoTrack) return
+    if (!currentStream || !currentVideoTrack) {
+      flipLockRef.current = false
+      return
+    }
 
     const previousFacing = facingMode
     const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
@@ -218,19 +225,22 @@ export function useLiveMedia(setToast) {
     const currentVideo = getVideoElement(activeVideoSlot)
     let cameraStream = null
 
-    if (!stagingVideo) return
+    if (!stagingVideo) {
+      flipLockRef.current = false
+      return
+    }
     setIsStartingLive(true)
 
     try {
       cameraStream = await requestVideo(nextFacing)
       const nextVideoTrack = cameraStream.getVideoTracks()[0]
-      if (!nextVideoTrack) throw new Error('camera-track-missing')
+      if (!nextVideoTrack || nextVideoTrack.readyState !== 'live') throw new Error('camera-track-missing')
 
       configureVideo(stagingVideo, cameraStream)
       await stagingVideo.play()
       await waitForVideoFrame(stagingVideo)
 
-      const audioTracks = currentStream.getAudioTracks()
+      const audioTracks = currentStream.getAudioTracks().filter((track) => track.readyState === 'live')
       const nextStream = new MediaStream([...audioTracks, nextVideoTrack])
       configureVideo(stagingVideo, nextStream)
       await stagingVideo.play()
@@ -244,6 +254,7 @@ export function useLiveMedia(setToast) {
       setFacingMode(nextFacing)
       setActiveVideoSlot(nextSlot)
       setMediaStream(nextStream)
+      setCameraOff(false)
 
       await new Promise((resolve) => {
         window.requestAnimationFrame(() => window.requestAnimationFrame(resolve))
@@ -251,7 +262,9 @@ export function useLiveMedia(setToast) {
 
       if (currentVideo) currentVideo.srcObject = null
       try { currentStream.removeTrack(currentVideoTrack) } catch {}
-      try { currentVideoTrack.stop() } catch {}
+      if (currentVideoTrack.readyState === 'live') {
+        try { currentVideoTrack.stop() } catch {}
+      }
     } catch {
       if (stagingVideo) stagingVideo.srcObject = null
       cameraStream?.getTracks().forEach((track) => {
@@ -260,8 +273,32 @@ export function useLiveMedia(setToast) {
         }
       })
       setFacingMode(previousFacing)
-      setToast('Could not switch cameras')
+
+      // If WebKit ended the old camera while the replacement failed, restore
+      // the previous camera without touching the existing microphone tracks.
+      if (currentVideoTrack.readyState === 'ended') {
+        try {
+          const recoveryCamera = await requestVideo(previousFacing)
+          const recoveryTrack = recoveryCamera.getVideoTracks()[0]
+          if (!recoveryTrack) throw new Error('camera-recovery-missing')
+          const audioTracks = currentStream.getAudioTracks().filter((track) => track.readyState === 'live')
+          const recoveryStream = new MediaStream([...audioTracks, recoveryTrack])
+          streamRef.current = recoveryStream
+          configureVideo(currentVideo, recoveryStream)
+          await currentVideo?.play?.()
+          setMediaStream(recoveryStream)
+          setCameraOff(false)
+          setToast('Camera switch canceled · camera restored')
+        } catch {
+          setCameraOff(true)
+          setToast('Camera connection ended · tap Cam on to recover')
+        }
+      } else {
+        setCameraOff(false)
+        setToast('Could not switch cameras')
+      }
     } finally {
+      flipLockRef.current = false
       setIsStartingLive(false)
     }
   }
