@@ -16,7 +16,6 @@ const giftRegistry = Object.freeze({
 
 let activeGift = null
 let giftQueue = []
-let lastGift = { id: null, at: 0, count: 0 }
 
 function isLiveActive() {
   return Boolean(document.querySelector('.mobile-live-shell.is-live'))
@@ -47,7 +46,7 @@ function escapeText(value) {
   return node.innerHTML
 }
 
-function buildVideoScene(config, meta, comboCount) {
+function buildVideoScene(config, meta, quantity) {
   const root = document.createElement('div')
   root.className = 'fv-gift-engine fv-video-gift'
   root.dataset.giftId = config.id
@@ -73,7 +72,7 @@ function buildVideoScene(config, meta, comboCount) {
     <span class="fv-gift-meta-icon" aria-hidden="true">F</span>
     <div>
       <strong>${escapeText(meta.sender || 'Fameverse Creator')}</strong>
-      <small>sent ${escapeText(config.label)}${comboCount > 1 ? ` · ×${comboCount}` : ''}</small>
+      <small>sent ${escapeText(config.label)}${quantity > 1 ? ` · ×${quantity}` : ''}</small>
     </div>
   `
 
@@ -96,12 +95,12 @@ function playNextQueuedGift() {
     return
   }
 
-  startGiftScene(next.config, next.meta, next.comboCount)
+  startGiftScene(next.config, next.meta, next.quantity)
 }
 
-function startGiftScene(config, meta, comboCount) {
+function startGiftScene(config, meta, quantity) {
   const scene = config.effect === 'video-cinematic'
-    ? buildVideoScene(config, meta, comboCount)
+    ? buildVideoScene(config, meta, quantity)
     : null
   if (!scene) return false
 
@@ -112,7 +111,7 @@ function startGiftScene(config, meta, comboCount) {
     ...scene,
     timer: null,
     id: config.id,
-    comboCount,
+    quantity,
   }
 
   const finish = () => {
@@ -135,18 +134,15 @@ function playGift(giftKey, meta = {}) {
   const config = giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey)
   if (!config || !isLiveActive()) return false
 
-  const now = performance.now()
-  const fallbackCombo = lastGift.id === config.id && now - lastGift.at < 2200 ? lastGift.count + 1 : 1
-  const requestedCombo = Number(meta.comboCount)
-  const comboCount = Number.isFinite(requestedCombo) && requestedCombo > 0 ? requestedCombo : fallbackCombo
-  lastGift = { id: config.id, at: now, count: comboCount }
+  const requestedQuantity = Number(meta.quantity)
+  const quantity = Number.isSafeInteger(requestedQuantity) && requestedQuantity > 0 ? requestedQuantity : 1
 
   if (activeGift) {
-    giftQueue.push({ config, meta, comboCount })
+    giftQueue.push({ config, meta, quantity })
     return true
   }
 
-  return startGiftScene(config, meta, comboCount)
+  return startGiftScene(config, meta, quantity)
 }
 
 document.addEventListener('fameverse:gift', (event) => {

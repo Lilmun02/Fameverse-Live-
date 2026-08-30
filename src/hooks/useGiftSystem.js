@@ -9,7 +9,6 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
 
   const giftTimerRef = useRef(null)
   const premiumRepeatTimerRef = useRef(null)
-  const premiumComboRef = useRef({ id: null, at: 0, count: 0 })
   const coinsRef = useRef(coins)
 
   useEffect(() => {
@@ -28,7 +27,6 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     clearTimeout(premiumRepeatTimerRef.current)
     setPremiumRepeat(null)
     setGiftTrayOpen(false)
-    premiumComboRef.current = { id: null, at: 0, count: 0 }
     window.FameverseGiftEngine?.stop?.()
   }, [isLive])
 
@@ -39,35 +37,43 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
-  const showGift = (gift) => {
+  const showGift = (gift, quantity) => {
     clearTimeout(giftTimerRef.current)
-    const now = Date.now()
-    setGiftOverlay((previous) => {
-      const sameCombo = previous?.id === gift.id && now - (previous.lastSentAt || 0) < 2200
-      return {
-        ...gift,
-        sender: displayName,
-        duration: 1800,
-        count: sameCombo ? (previous.count || 1) + 1 : 1,
-        lastSentAt: now,
-      }
+    setGiftOverlay({
+      ...gift,
+      sender: displayName,
+      duration: 1800,
+      count: quantity,
+      lastSentAt: Date.now(),
     })
     giftTimerRef.current = setTimeout(() => setGiftOverlay(null), 1800)
   }
 
-  const sendGift = (gift) => {
+  const sendGift = (gift, quantity = 1) => {
     if (!isLive) {
       setGiftTrayOpen(false)
       setToast('Start Live before sending gifts')
-      return
+      return false
     }
 
-    if (coinsRef.current < gift.cost) {
-      setToast('Test balance empty · tap refill')
-      return
+    const normalizedQuantity = Number(quantity)
+    if (!Number.isSafeInteger(normalizedQuantity) || normalizedQuantity < 1) {
+      setToast('Enter a whole gift amount of 1 or more')
+      return false
     }
 
-    const nextBalance = coinsRef.current - gift.cost
+    const totalCost = gift.cost * normalizedQuantity
+    if (!Number.isSafeInteger(totalCost) || totalCost < 0) {
+      setToast('Gift amount is too large')
+      return false
+    }
+
+    if (coinsRef.current < totalCost) {
+      setToast('Test balance empty · lower the amount or tap refill')
+      return false
+    }
+
+    const nextBalance = coinsRef.current - totalCost
     coinsRef.current = nextBalance
     setCoins(nextBalance)
 
@@ -75,31 +81,26 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setChat((items) => [...items, {
       id: `${Date.now()}-${Math.random()}`,
       user: displayName,
-      text: `${activityEmoji} sent ${gift.label}`,
+      text: `${activityEmoji} sent ${gift.label}${normalizedQuantity > 1 ? ` ×${normalizedQuantity}` : ''}`,
     }])
 
     setGiftTrayOpen(false)
 
     if (gift.rendererId) {
-      const now = Date.now()
-      const previous = premiumComboRef.current
-      const sameCombo = previous.id === gift.id && now - previous.at < 2200
-      const comboCount = sameCombo ? previous.count + 1 : 1
-      premiumComboRef.current = { id: gift.id, at: now, count: comboCount }
-
-      setPremiumRepeat({ ...gift, comboCount })
+      setPremiumRepeat({ ...gift, quantity: normalizedQuantity })
       clearTimeout(premiumRepeatTimerRef.current)
       premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
 
       window.setTimeout(() => {
         document.dispatchEvent(new CustomEvent('fameverse:gift', {
-          detail: { id: gift.rendererId, sender: displayName, comboCount },
+          detail: { id: gift.rendererId, sender: displayName, quantity: normalizedQuantity },
         }))
       }, 140)
-      return
+      return true
     }
 
-    showGift(gift)
+    showGift(gift, normalizedQuantity)
+    return true
   }
 
   const stopGiftPlayback = () => {

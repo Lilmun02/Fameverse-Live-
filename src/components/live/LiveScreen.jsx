@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { gifts } from '../../config/gifts.js'
 import { seekGiftThumbnail } from '../../utils/media.js'
 
@@ -33,6 +34,20 @@ export default function LiveScreen({
   addTestCoins,
   cohostTrayOpen,
 }) {
+  const [customGiftId, setCustomGiftId] = useState(null)
+  const [giftAmounts, setGiftAmounts] = useState({})
+
+  const giftAmountValue = (giftId) => giftAmounts[giftId] ?? '1'
+
+  const updateGiftAmount = (giftId, value) => {
+    setGiftAmounts((amounts) => ({ ...amounts, [giftId]: value }))
+  }
+
+  const sendCustomGift = (gift) => {
+    const sent = sendGift(gift, Number(giftAmountValue(gift.id)))
+    if (sent) setCustomGiftId(null)
+  }
+
   return (
     <section className={`mobile-live-shell ${isLive ? 'is-live' : 'is-preview'}`}>
       <div className="live-video-surface">
@@ -126,30 +141,59 @@ export default function LiveScreen({
               <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
               <div className="test-balance">🪙 {coins.toLocaleString()}</div>
             </div>
-            <p>Tap simple gifts repeatedly. Cinematic gifts collapse to a compact combo control so the animation stays visible.</p>
+            <p>Send one gift, or choose a custom amount. Custom sends charge the selected quantity once and play one presentation.</p>
             <div className="live-gift-grid">
-              {gifts.map((gift) => (
-                <button
-                  className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''}`}
-                  key={gift.id}
-                  onClick={() => sendGift(gift)}
-                >
-                  {gift.video ? (
-                    <video
-                      className="live-gift-thumbnail"
-                      src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
-                      muted
-                      playsInline
-                      preload="metadata"
-                      onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
-                    />
-                  ) : (
-                    <span>{gift.emoji}</span>
-                  )}
-                  <strong>{gift.label}</strong>
-                  <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
-                </button>
-              ))}
+              {gifts.map((gift) => {
+                const customOpen = customGiftId === gift.id
+                const amountValue = giftAmountValue(gift.id)
+                return (
+                  <div
+                    className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''} ${customOpen ? 'is-custom-open' : ''}`}
+                    key={gift.id}
+                  >
+                    {gift.video ? (
+                      <video
+                        className="live-gift-thumbnail"
+                        src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
+                      />
+                    ) : (
+                      <span>{gift.emoji}</span>
+                    )}
+                    <strong>{gift.label}</strong>
+                    <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'} each</small>
+                    <div className="gift-card-actions">
+                      <button type="button" className="gift-send-main" onClick={() => sendGift(gift, 1)}>Send</button>
+                      <button
+                        type="button"
+                        className="gift-amount-toggle"
+                        onClick={() => setCustomGiftId(customOpen ? null : gift.id)}
+                      >
+                        Custom amount
+                      </button>
+                    </div>
+                    {customOpen && (
+                      <div className="gift-custom-row">
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="1"
+                          step="1"
+                          value={amountValue}
+                          aria-label={`Custom amount for ${gift.label}`}
+                          onChange={(event) => updateGiftAmount(gift.id, event.target.value)}
+                        />
+                        <button type="button" onClick={() => sendCustomGift(gift)}>
+                          Send ×{amountValue || '0'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
             <div className="test-wallet-row">
               <small>Beta tester balance</small>

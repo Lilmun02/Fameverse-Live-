@@ -81,6 +81,58 @@
 .live-gift-item strong { font-size: .78rem; }
 .live-gift-item small { color: #bdafc6; font-size: .62rem; }
 
+.gift-card-actions {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.gift-card-actions button,
+.gift-custom-row button {
+  width: 100%;
+  padding: 7px 5px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+}
+
+.gift-send-main {
+  background: linear-gradient(135deg, rgba(141,66,255,.9), rgba(101,40,190,.9)) !important;
+}
+
+.gift-amount-toggle {
+  color: #d9c4ea !important;
+}
+
+.gift-custom-row {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.gift-custom-row input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 6px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(0,0,0,.24);
+  color: #fff;
+  font: inherit;
+  font-size: .7rem;
+  text-align: center;
+}
+
+.gift-custom-row input:focus {
+  border-color: rgba(201,149,255,.7);
+}
+
 .premium-test-gift {
   border-color: rgba(240,197,92,.38);
   background: linear-gradient(145deg, rgba(137,64,255,.16), rgba(240,197,92,.08));

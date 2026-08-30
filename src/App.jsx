@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import AuthScreen from './components/auth/AuthScreen.jsx'
 import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
-import GiftRepeatDock from './components/gifts/GiftRepeatDock.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
 import TopBar from './components/layout/TopBar.jsx'
 import LiveScreen from './components/live/LiveScreen.jsx'
@@ -149,7 +148,6 @@ export default function App() {
     <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
-      <GiftRepeatDock isLive={live.isLive} premiumRepeat={gifts.premiumRepeat} sendGift={gifts.sendGift} />
 
       {tab !== 'live' && <TopBar standalone={pwa.standalone} installPwa={pwa.installPwa} />}
 
