@@ -1,20 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
-import { loadCoins } from '../utils/pwa.js'
-import { nextGiftCombo, nextOverlayCount } from '../systems/gifts/giftComboSystem.js'
+import { createGiftComboState, nextGiftCombo, nextOverlayCount } from '../systems/gifts/giftComboSystem.js'
 import {
+  addGiftBalance,
   canAffordGift,
   deductGiftCost,
   giftTotalCost,
+  loadGiftBalance,
   normalizeGiftQuantity,
+  persistGiftBalance,
 } from '../systems/gifts/giftWalletSystem.js'
 import {
+  CINEMATIC_GIFT_DELAY_MS,
+  PREMIUM_REPEAT_DURATION_MS,
+  SIMPLE_GIFT_DURATION_MS,
+  clearGiftPresentationTimer,
   createGiftOverlay,
   dispatchCinematicGift,
   giftActivityMessage,
+  scheduleGiftPresentation,
+  stopGiftRenderer,
 } from '../systems/gifts/giftPresentationSystem.js'
 
 export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
-  const [coins, setCoins] = useState(loadCoins)
+  const [coins, setCoins] = useState(loadGiftBalance)
   const [giftOverlay, setGiftOverlay] = useState(null)
   const [premiumRepeat, setPremiumRepeat] = useState(null)
   const [giftTrayOpen, setGiftTrayOpenState] = useState(false)
@@ -22,47 +30,61 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
 
   const giftTimerRef = useRef(null)
   const premiumRepeatTimerRef = useRef(null)
-  const premiumComboRef = useRef({ id: null, at: 0, count: 0 })
+  const premiumComboRef = useRef(createGiftComboState())
   const coinsRef = useRef(coins)
+
+  const clearGiftTimer = () => {
+    clearGiftPresentationTimer(giftTimerRef.current)
+    giftTimerRef.current = null
+  }
+
+  const clearPremiumRepeatTimer = () => {
+    clearGiftPresentationTimer(premiumRepeatTimerRef.current)
+    premiumRepeatTimerRef.current = null
+  }
 
   const setGiftTrayOpen = (open) => {
     setGiftTrayOpenState(open)
     if (open) {
-      clearTimeout(giftTimerRef.current)
+      clearGiftTimer()
       setGiftOverlay(null)
     }
   }
 
+  const applyBalance = (nextBalance) => {
+    coinsRef.current = nextBalance
+    setCoins(nextBalance)
+    persistGiftBalance(nextBalance)
+  }
+
   useEffect(() => {
     coinsRef.current = coins
-    localStorage.setItem('fameverse-owner-test-coins', String(coins))
   }, [coins])
 
   useEffect(() => () => {
-    clearTimeout(giftTimerRef.current)
-    clearTimeout(premiumRepeatTimerRef.current)
-    window.FameverseGiftEngine?.stop?.()
+    clearGiftTimer()
+    clearPremiumRepeatTimer()
+    stopGiftRenderer()
   }, [])
 
   useEffect(() => {
     if (isLive) return
-    clearTimeout(premiumRepeatTimerRef.current)
+    clearPremiumRepeatTimer()
     setPremiumRepeat(null)
     setGiftTrayOpen(false)
     setGiftSendCounts({})
-    premiumComboRef.current = { id: null, at: 0, count: 0 }
-    window.FameverseGiftEngine?.stop?.()
+    premiumComboRef.current = createGiftComboState()
+    stopGiftRenderer()
   }, [isLive])
 
   const addTestCoins = (amount = 10000) => {
-    const next = coinsRef.current + amount
-    coinsRef.current = next
-    setCoins(next)
+    const nextBalance = addGiftBalance(coinsRef.current, amount)
+    applyBalance(nextBalance)
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
   const showGift = (gift, quantity = 1) => {
-    clearTimeout(giftTimerRef.current)
+    clearGiftTimer()
     const now = Date.now()
     setGiftOverlay((previous) => createGiftOverlay(
       gift,
@@ -70,7 +92,10 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       nextOverlayCount(previous, gift.id, quantity, now),
       now,
     ))
-    giftTimerRef.current = setTimeout(() => setGiftOverlay(null), 1800)
+    giftTimerRef.current = scheduleGiftPresentation(
+      () => setGiftOverlay(null),
+      SIMPLE_GIFT_DURATION_MS,
+    )
   }
 
   const sendGift = (gift, quantity = 1) => {
@@ -88,9 +113,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       return
     }
 
-    const nextBalance = deductGiftCost(coinsRef.current, totalCost)
-    coinsRef.current = nextBalance
-    setCoins(nextBalance)
+    applyBalance(deductGiftCost(coinsRef.current, totalCost))
     setGiftSendCounts((counts) => ({
       ...counts,
       [gift.id]: (counts[gift.id] || 0) + safeQuantity,
@@ -108,19 +131,28 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       const combo = nextGiftCombo(premiumComboRef.current, gift.id, safeQuantity)
       premiumComboRef.current = combo
       setPremiumRepeat({ ...gift, comboCount: combo.count })
-      clearTimeout(premiumRepeatTimerRef.current)
-      premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
-      window.setTimeout(() => dispatchCinematicGift(gift, displayName, combo.count), 180)
+      clearPremiumRepeatTimer()
+      premiumRepeatTimerRef.current = scheduleGiftPresentation(
+        () => setPremiumRepeat(null),
+        PREMIUM_REPEAT_DURATION_MS,
+      )
+      scheduleGiftPresentation(
+        () => dispatchCinematicGift(gift, displayName, combo.count),
+        CINEMATIC_GIFT_DELAY_MS,
+      )
       return
     }
 
-    window.setTimeout(() => showGift(gift, safeQuantity), 180)
+    scheduleGiftPresentation(
+      () => showGift(gift, safeQuantity),
+      CINEMATIC_GIFT_DELAY_MS,
+    )
   }
 
   const stopGiftPlayback = () => {
-    clearTimeout(premiumRepeatTimerRef.current)
+    clearPremiumRepeatTimer()
     setPremiumRepeat(null)
-    window.FameverseGiftEngine?.stop?.()
+    stopGiftRenderer()
   }
 
   return {
