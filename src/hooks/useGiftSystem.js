@@ -78,6 +78,8 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       text: `${activityEmoji} sent ${gift.label}`,
     }])
 
+    setGiftTrayOpen(false)
+
     if (gift.rendererId) {
       const now = Date.now()
       const previous = premiumComboRef.current
@@ -85,7 +87,6 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       const comboCount = sameCombo ? previous.count + 1 : 1
       premiumComboRef.current = { id: gift.id, at: now, count: comboCount }
 
-      setGiftTrayOpen(false)
       setPremiumRepeat({ ...gift, comboCount })
       clearTimeout(premiumRepeatTimerRef.current)
       premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
