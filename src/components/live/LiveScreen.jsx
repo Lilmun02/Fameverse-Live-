@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { gifts } from '../../config/gifts.js'
 import { seekGiftThumbnail } from '../../utils/media.js'
 
@@ -38,6 +38,13 @@ export default function LiveScreen({
 }) {
   const [customGiftId, setCustomGiftId] = useState(null)
   const [giftAmounts, setGiftAmounts] = useState({})
+  const chatScrollRef = useRef(null)
+
+  useEffect(() => {
+    const chatNode = chatScrollRef.current
+    if (!chatNode) return
+    chatNode.scrollTop = chatNode.scrollHeight
+  }, [liveMessages])
 
   const giftAmountValue = (giftId) => giftAmounts[giftId] ?? '1'
 
@@ -120,7 +127,7 @@ export default function LiveScreen({
       )}
 
       {isLive && liveMessages.length > 0 && (
-        <div className="live-chat-overlay" aria-label="Live comments">
+        <div ref={chatScrollRef} className="live-chat-overlay" aria-label="Live comments">
           {liveMessages.map((item) => (
             <div className="live-chat-line" key={item.id}><strong>{item.user}</strong><span>{item.text}</span></div>
           ))}

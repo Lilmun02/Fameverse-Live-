@@ -40,6 +40,23 @@
   100% { opacity: 0; transform: translateY(-6px) scale(.98); }
 }
 
+/* Live comments retain the whole session, auto-follow new messages, and remain
+   manually scrollable so older comments are reachable without moving the page. */
+.mobile-live-shell.is-live .live-chat-overlay {
+  max-height: min(38dvh, 300px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+
+.mobile-live-shell.is-live .live-chat-overlay::-webkit-scrollbar {
+  display: none;
+}
+
 /* Make React's auth-loading state visually continuous with the HTML boot splash. */
 .foundation-loading {
   position: fixed;

@@ -48,7 +48,7 @@ export default function App() {
   })
   const pwa = usePwaInstall(setToast)
   const viewerCount = useMemo(() => 0, [])
-  const liveMessages = chat.slice(-5)
+  const liveMessages = chat
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashMinimumElapsed(true), SPLASH_MINIMUM_MS)
