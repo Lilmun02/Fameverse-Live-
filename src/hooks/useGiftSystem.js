@@ -40,6 +40,8 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   }
 
   const showGift = (gift) => {
+    if (giftTrayOpen) return
+
     clearTimeout(giftTimerRef.current)
     const now = Date.now()
     setGiftOverlay((previous) => {
