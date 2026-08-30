@@ -110,16 +110,12 @@ export default function LiveScreen({
               <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
               <div className="test-balance">🪙 {coins.toLocaleString()}</div>
             </div>
-            <p>Tap any gift to send it. After the first send, that gift stays ready to send again without leaving the gift box.</p>
+            <p>Choose a gift and send 1×, 5×, or 10×. The gift box closes before the gift appears on the live screen.</p>
             <div className="live-gift-grid">
               {gifts.map((gift) => {
                 const sentCount = giftSendCounts?.[gift.id] || 0
                 return (
-                  <button
-                    className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''}`}
-                    key={gift.id}
-                    onClick={() => sendGift(gift)}
-                  >
+                  <div className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''}`} key={gift.id}>
                     {gift.video ? (
                       <video
                         className="live-gift-thumbnail"
@@ -133,12 +129,16 @@ export default function LiveScreen({
                       <span>{gift.emoji}</span>
                     )}
                     <strong>{gift.label}</strong>
-                    <small>
-                      {sentCount > 0
-                        ? `Send again · ×${sentCount}`
-                        : `${gift.cost} ${gift.cost === 1 ? 'coin' : 'coins'}`}
-                    </small>
-                  </button>
+                    <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'} each</small>
+                    <button className="gift-send-main" type="button" onClick={() => sendGift(gift, 1)}>
+                      {sentCount > 0 ? 'Send again' : 'Send'}
+                    </button>
+                    <div className="gift-combo-actions" aria-label={`${gift.label} combo options`}>
+                      <button type="button" onClick={() => sendGift(gift, 5)}>5×</button>
+                      <button type="button" onClick={() => sendGift(gift, 10)}>10×</button>
+                    </div>
+                    {sentCount > 0 && <small className="gift-sent-count">Sent {sentCount} this live</small>}
+                  </div>
                 )
               })}
             </div>
