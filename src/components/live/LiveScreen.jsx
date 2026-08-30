@@ -26,6 +26,7 @@ export default function LiveScreen({
   setCommentText,
   submitComment,
   giftTrayOpen,
+  giftSendCounts,
   coins,
   sendGift,
   addTestCoins,
@@ -109,30 +110,37 @@ export default function LiveScreen({
               <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
               <div className="test-balance">🪙 {coins.toLocaleString()}</div>
             </div>
-            <p>Tap simple gifts repeatedly. Cinematic gifts collapse to a compact combo control so the animation stays visible.</p>
+            <p>Tap any gift to send it. After the first send, that gift stays ready to send again without leaving the gift box.</p>
             <div className="live-gift-grid">
-              {gifts.map((gift) => (
-                <button
-                  className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''}`}
-                  key={gift.id}
-                  onClick={() => sendGift(gift)}
-                >
-                  {gift.video ? (
-                    <video
-                      className="live-gift-thumbnail"
-                      src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
-                      muted
-                      playsInline
-                      preload="metadata"
-                      onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
-                    />
-                  ) : (
-                    <span>{gift.emoji}</span>
-                  )}
-                  <strong>{gift.label}</strong>
-                  <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'}</small>
-                </button>
-              ))}
+              {gifts.map((gift) => {
+                const sentCount = giftSendCounts?.[gift.id] || 0
+                return (
+                  <button
+                    className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''}`}
+                    key={gift.id}
+                    onClick={() => sendGift(gift)}
+                  >
+                    {gift.video ? (
+                      <video
+                        className="live-gift-thumbnail"
+                        src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
+                      />
+                    ) : (
+                      <span>{gift.emoji}</span>
+                    )}
+                    <strong>{gift.label}</strong>
+                    <small>
+                      {sentCount > 0
+                        ? `Send again · ×${sentCount}`
+                        : `${gift.cost} ${gift.cost === 1 ? 'coin' : 'coins'}`}
+                    </small>
+                  </button>
+                )
+              })}
             </div>
             <div className="test-wallet-row">
               <small>Beta tester balance</small>
