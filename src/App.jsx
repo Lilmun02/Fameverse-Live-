@@ -130,7 +130,7 @@ export default function App() {
   return (
     <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
       {toast && <div className="toast">{toast}</div>}
-      <GiftOverlay giftOverlay={gifts.giftOverlay} />
+      {!gifts.giftTrayOpen && <GiftOverlay giftOverlay={gifts.giftOverlay} />}
       <GiftRepeatDock isLive={live.isLive} premiumRepeat={gifts.premiumRepeat} sendGift={gifts.sendGift} />
 
       {tab !== 'live' && <TopBar standalone={pwa.standalone} installPwa={pwa.installPwa} />}
@@ -162,6 +162,7 @@ export default function App() {
             setCommentText={setCommentText}
             submitComment={submitComment}
             giftTrayOpen={gifts.giftTrayOpen}
+            giftSendCounts={gifts.giftSendCounts}
             coins={gifts.coins}
             sendGift={gifts.sendGift}
             addTestCoins={gifts.addTestCoins}
