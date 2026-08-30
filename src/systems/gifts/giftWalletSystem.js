@@ -1,33 +1,49 @@
 const GIFT_BALANCE_STORAGE_KEY = 'fameverse-owner-test-coins'
 const DEFAULT_GIFT_BALANCE = 10000
-const ALLOWED_GIFT_QUANTITIES = new Set([1, 5, 10])
+
+function isValidBalance(value) {
+  return Number.isSafeInteger(value) && value >= 0
+}
 
 export function loadGiftBalance() {
-  const saved = Number(localStorage.getItem(GIFT_BALANCE_STORAGE_KEY))
-  return Number.isFinite(saved) && saved >= 0 ? saved : DEFAULT_GIFT_BALANCE
+  try {
+    const raw = localStorage.getItem(GIFT_BALANCE_STORAGE_KEY)
+    if (raw == null) return DEFAULT_GIFT_BALANCE
+    if (raw.trim() === '') return 0
+
+    const saved = Number(raw)
+    return isValidBalance(saved) ? saved : 0
+  } catch {
+    return 0
+  }
 }
 
 export function persistGiftBalance(balance) {
-  localStorage.setItem(GIFT_BALANCE_STORAGE_KEY, String(balance))
-  return balance
+  if (!isValidBalance(balance)) return false
+
+  try {
+    localStorage.setItem(GIFT_BALANCE_STORAGE_KEY, String(balance))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function addGiftBalance(balance, amount) {
-  return balance + amount
+  if (!isValidBalance(balance) || !isValidBalance(amount)) return null
+  const nextBalance = balance + amount
+  return isValidBalance(nextBalance) ? nextBalance : null
 }
 
-export function normalizeGiftQuantity(quantity) {
-  return ALLOWED_GIFT_QUANTITIES.has(quantity) ? quantity : 1
-}
-
-export function giftTotalCost(gift, quantity) {
-  return gift.cost * normalizeGiftQuantity(quantity)
+export function giftTotalCost(gift) {
+  return isValidBalance(gift?.cost) ? gift.cost : null
 }
 
 export function canAffordGift(balance, totalCost) {
-  return balance >= totalCost
+  return isValidBalance(balance) && isValidBalance(totalCost) && balance >= totalCost
 }
 
 export function deductGiftCost(balance, totalCost) {
+  if (!canAffordGift(balance, totalCost)) return null
   return balance - totalCost
 }

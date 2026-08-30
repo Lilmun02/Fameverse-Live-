@@ -1,4 +1,5 @@
 import { gifts } from '../../config/gifts.js'
+import GiftRepeatDock from '../gifts/GiftRepeatDock.jsx'
 import { seekGiftThumbnail } from '../../utils/media.js'
 
 export default function LiveScreen({
@@ -82,6 +83,14 @@ export default function LiveScreen({
         </div>
       )}
 
+      {isLive && premiumRepeat && (
+        <GiftRepeatDock
+          isLive={isLive}
+          premiumRepeat={premiumRepeat}
+          sendGift={sendGift}
+        />
+      )}
+
       {isLive && liveMessages.length > 0 && (
         <div className="live-chat-overlay" aria-label="Live comments">
           {liveMessages.map((item) => (
@@ -110,7 +119,7 @@ export default function LiveScreen({
               <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
               <div className="test-balance">🪙 {coins.toLocaleString()}</div>
             </div>
-            <p>Choose a gift and send 1×, 5×, or 10×. The gift box closes before the gift appears on the live screen.</p>
+            <p>Choose a gift and send it. Repeat successful sends to build a combo.</p>
             <div className="live-gift-grid">
               {gifts.map((gift) => {
                 const sentCount = giftSendCounts?.[gift.id] || 0
@@ -130,13 +139,9 @@ export default function LiveScreen({
                     )}
                     <strong>{gift.label}</strong>
                     <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'} each</small>
-                    <button className="gift-send-main" type="button" onClick={() => sendGift(gift, 1)}>
+                    <button className="gift-send-main" type="button" onClick={() => sendGift(gift)}>
                       {sentCount > 0 ? 'Send again' : 'Send'}
                     </button>
-                    <div className="gift-combo-actions" aria-label={`${gift.label} combo options`}>
-                      <button type="button" onClick={() => sendGift(gift, 5)}>5×</button>
-                      <button type="button" onClick={() => sendGift(gift, 10)}>10×</button>
-                    </div>
                     {sentCount > 0 && <small className="gift-sent-count">Sent {sentCount} this live</small>}
                   </div>
                 )

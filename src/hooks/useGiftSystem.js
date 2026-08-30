@@ -6,13 +6,13 @@ import {
   deductGiftCost,
   giftTotalCost,
   loadGiftBalance,
-  normalizeGiftQuantity,
   persistGiftBalance,
 } from '../systems/gifts/giftWalletSystem.js'
 import {
   CINEMATIC_GIFT_DELAY_MS,
   PREMIUM_REPEAT_DURATION_MS,
   SIMPLE_GIFT_DURATION_MS,
+  clearAllGiftPresentationTimers,
   clearGiftPresentationTimer,
   createGiftOverlay,
   dispatchCinematicGift,
@@ -52,9 +52,10 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   }
 
   const applyBalance = (nextBalance) => {
+    if (!persistGiftBalance(nextBalance)) return false
     coinsRef.current = nextBalance
     setCoins(nextBalance)
-    persistGiftBalance(nextBalance)
+    return true
   }
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   }, [coins])
 
   useEffect(() => () => {
+    clearAllGiftPresentationTimers()
     clearGiftTimer()
     clearPremiumRepeatTimer()
     stopGiftRenderer()
@@ -69,8 +71,10 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
 
   useEffect(() => {
     if (isLive) return
+    clearAllGiftPresentationTimers()
     clearPremiumRepeatTimer()
     setPremiumRepeat(null)
+    setGiftOverlay(null)
     setGiftTrayOpen(false)
     setGiftSendCounts({})
     premiumComboRef.current = createGiftComboState()
@@ -79,17 +83,20 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
 
   const addTestCoins = (amount = 10000) => {
     const nextBalance = addGiftBalance(coinsRef.current, amount)
-    applyBalance(nextBalance)
+    if (!applyBalance(nextBalance)) {
+      setToast('Test coins could not be saved · try again')
+      return
+    }
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
-  const showGift = (gift, quantity = 1) => {
+  const showGift = (gift) => {
     clearGiftTimer()
     const now = Date.now()
     setGiftOverlay((previous) => createGiftOverlay(
       gift,
       displayName,
-      nextOverlayCount(previous, gift.id, quantity, now),
+      nextOverlayCount(previous, gift.id, now),
       now,
     ))
     giftTimerRef.current = scheduleGiftPresentation(
@@ -98,37 +105,44 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     )
   }
 
-  const sendGift = (gift, quantity = 1) => {
-    const safeQuantity = normalizeGiftQuantity(quantity)
-
+  const sendGift = (gift) => {
     if (!isLive) {
       setGiftTrayOpen(false)
       setToast('Start Live before sending gifts')
       return
     }
 
-    const totalCost = giftTotalCost(gift, safeQuantity)
-    if (!canAffordGift(coinsRef.current, totalCost)) {
-      setToast(`Need ${totalCost.toLocaleString()} test coins for ×${safeQuantity}`)
+    const totalCost = giftTotalCost(gift)
+    if (totalCost == null) {
+      setToast('Gift unavailable · try again')
       return
     }
 
-    applyBalance(deductGiftCost(coinsRef.current, totalCost))
+    if (!canAffordGift(coinsRef.current, totalCost)) {
+      setToast(`Need ${totalCost.toLocaleString()} test coins`)
+      return
+    }
+
+    const nextBalance = deductGiftCost(coinsRef.current, totalCost)
+    if (!applyBalance(nextBalance)) {
+      setToast('Gift could not be saved · try again')
+      return
+    }
     setGiftSendCounts((counts) => ({
       ...counts,
-      [gift.id]: (counts[gift.id] || 0) + safeQuantity,
+      [gift.id]: (counts[gift.id] || 0) + 1,
     }))
 
     setChat((items) => [...items, {
       id: `${Date.now()}-${Math.random()}`,
       user: displayName,
-      text: giftActivityMessage(gift, safeQuantity),
+      text: giftActivityMessage(gift, 1),
     }])
 
     setGiftTrayOpen(false)
 
     if (gift.rendererId) {
-      const combo = nextGiftCombo(premiumComboRef.current, gift.id, safeQuantity)
+      const combo = nextGiftCombo(premiumComboRef.current, gift.id)
       premiumComboRef.current = combo
       setPremiumRepeat({ ...gift, comboCount: combo.count })
       clearPremiumRepeatTimer()
@@ -144,14 +158,16 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     }
 
     scheduleGiftPresentation(
-      () => showGift(gift, safeQuantity),
+      () => showGift(gift),
       CINEMATIC_GIFT_DELAY_MS,
     )
   }
 
   const stopGiftPlayback = () => {
+    clearAllGiftPresentationTimers()
     clearPremiumRepeatTimer()
     setPremiumRepeat(null)
+    setGiftOverlay(null)
     stopGiftRenderer()
   }
 
