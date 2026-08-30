@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { videoConstraints } from '../utils/media.js'
+import {
+  attachCameraStream,
+  buildStreamWithCamera,
+  requestCameraStream,
+  retireVideoTracks,
+} from '../systems/media/cameraSystem.js'
+import { getMicrophoneTracks, setMicrophoneMuted } from '../systems/media/microphoneSystem.js'
+import { requestLiveStream, stopLiveStream } from '../systems/media/liveStreamSystem.js'
+import { acquireScreenWakeLock, releaseScreenWakeLock } from '../systems/device/wakeLockSystem.js'
 
 export function useLiveMedia(setToast) {
   const [isLive, setIsLive] = useState(false)
@@ -15,17 +24,28 @@ export function useLiveMedia(setToast) {
 
   useEffect(() => {
     if (!videoRef.current || !mediaStream || cameraOff) return
-    videoRef.current.muted = true
-    videoRef.current.defaultMuted = true
-    videoRef.current.volume = 0
-    videoRef.current.srcObject = mediaStream
-    videoRef.current.play().catch(() => {})
+    attachCameraStream(videoRef.current, mediaStream)
   }, [mediaStream, cameraOff, facingMode])
 
   useEffect(() => () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    wakeLockRef.current?.release?.().catch?.(() => {})
+    stopLiveStream(streamRef.current)
+    releaseScreenWakeLock(wakeLockRef.current)
   }, [])
+
+  const acquireWakeLock = async () => {
+    if (!isLive) return
+    const nextLock = await acquireScreenWakeLock(wakeLockRef.current)
+    wakeLockRef.current = nextLock
+    nextLock?.addEventListener?.('release', () => {
+      if (wakeLockRef.current === nextLock) wakeLockRef.current = null
+    }, { once: true })
+  }
+
+  const releaseWakeLock = async () => {
+    const lock = wakeLockRef.current
+    wakeLockRef.current = null
+    await releaseScreenWakeLock(lock)
+  }
 
   useEffect(() => {
     const reacquire = () => {
@@ -35,44 +55,13 @@ export function useLiveMedia(setToast) {
     return () => document.removeEventListener('visibilitychange', reacquire)
   }, [isLive])
 
-  const acquireWakeLock = async () => {
-    if (!navigator.wakeLock?.request || document.visibilityState !== 'visible' || !isLive) return
-    if (wakeLockRef.current && !wakeLockRef.current.released) return
-    try {
-      wakeLockRef.current = await navigator.wakeLock.request('screen')
-      wakeLockRef.current.addEventListener?.('release', () => { wakeLockRef.current = null })
-    } catch {
-      // Best effort only. iOS can reject Wake Lock after backgrounding.
-    }
-  }
-
-  const releaseWakeLock = async () => {
-    const lock = wakeLockRef.current
-    wakeLockRef.current = null
-    if (!lock || lock.released) return
-    try { await lock.release() } catch {}
-  }
-
   const stopMedia = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
+    stopLiveStream(streamRef.current)
     streamRef.current = null
     setMediaStream(null)
     setCameraOff(false)
     if (videoRef.current) videoRef.current.srcObject = null
     releaseWakeLock()
-  }
-
-  const requestMedia = async (nextFacing = facingMode) => {
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
-    return navigator.mediaDevices.getUserMedia({
-      video: videoConstraints(nextFacing),
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    })
-  }
-
-  const requestVideo = async (nextFacing = facingMode) => {
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
-    return navigator.mediaDevices.getUserMedia({ video: videoConstraints(nextFacing), audio: false })
   }
 
   const startLive = async () => {
@@ -87,7 +76,7 @@ export function useLiveMedia(setToast) {
 
     setIsStartingLive(true)
     try {
-      const stream = await requestMedia(facingMode)
+      const stream = await requestLiveStream(videoConstraints(facingMode))
       streamRef.current = stream
       setMediaStream(stream)
       setMicMuted(false)
@@ -110,10 +99,8 @@ export function useLiveMedia(setToast) {
   }
 
   const toggleMic = () => {
-    const audioTracks = streamRef.current?.getAudioTracks() || []
-    if (!audioTracks.length) return
     const nextMuted = !micMuted
-    audioTracks.forEach((track) => { track.enabled = !nextMuted })
+    if (!setMicrophoneMuted(streamRef.current, nextMuted)) return
     setMicMuted(nextMuted)
   }
 
@@ -125,9 +112,6 @@ export function useLiveMedia(setToast) {
     setCameraOff(nextOff)
   }
 
-  // Official FAM-5 camera-first patch: acquire the replacement camera before
-  // retiring the active video track. Audio is deliberately preserved and is
-  // never re-requested during a camera switch.
   const flipCamera = async () => {
     if (!isLive || cameraOff || isStartingLive) return
 
@@ -136,39 +120,26 @@ export function useLiveMedia(setToast) {
 
     const previousFacing = facingMode
     const nextFacing = previousFacing === 'user' ? 'environment' : 'user'
-    const audioTracks = currentStream.getAudioTracks()
-    const oldVideoTracks = currentStream.getVideoTracks()
+    const audioTracks = getMicrophoneTracks(currentStream)
 
     setIsStartingLive(true)
     try {
-      const cameraStream = await requestVideo(nextFacing)
+      const cameraStream = await requestCameraStream(videoConstraints(nextFacing))
       const nextVideoTrack = cameraStream.getVideoTracks()[0]
       if (!nextVideoTrack) throw new Error('camera-track-missing')
 
-      const nextStream = new MediaStream([...audioTracks, nextVideoTrack])
+      const nextStream = buildStreamWithCamera(audioTracks, nextVideoTrack)
       streamRef.current = nextStream
       setFacingMode(nextFacing)
       setMediaStream(nextStream)
-
-      const video = videoRef.current
-      if (video) {
-        video.muted = true
-        video.defaultMuted = true
-        video.volume = 0
-        video.srcObject = nextStream
-        video.play().catch(() => {})
-      }
-
-      oldVideoTracks.forEach((track) => {
-        try { currentStream.removeTrack(track) } catch {}
-        try { track.stop() } catch {}
-      })
+      attachCameraStream(videoRef.current, nextStream)
+      retireVideoTracks(currentStream)
     } catch {
       try {
-        const restoreStream = await requestVideo(previousFacing)
+        const restoreStream = await requestCameraStream(videoConstraints(previousFacing))
         const restoredVideoTrack = restoreStream.getVideoTracks()[0]
         if (restoredVideoTrack) {
-          const restoredStream = new MediaStream([...audioTracks, restoredVideoTrack])
+          const restoredStream = buildStreamWithCamera(audioTracks, restoredVideoTrack)
           streamRef.current = restoredStream
           setMediaStream(restoredStream)
         } else {
