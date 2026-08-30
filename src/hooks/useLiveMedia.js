@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { videoConstraints } from '../utils/media.js'
 import {
   attachCameraStream,
-  buildStreamWithCamera,
-  requestCameraStream,
-  retireVideoTracks,
+  detachCameraStream,
+  setCameraEnabled,
+  switchCameraStream,
 } from '../systems/media/cameraSystem.js'
 import { getMicrophoneTracks, setMicrophoneMuted } from '../systems/media/microphoneSystem.js'
 import { requestLiveStream, stopLiveStream } from '../systems/media/liveStreamSystem.js'
@@ -60,7 +60,7 @@ export function useLiveMedia(setToast) {
     streamRef.current = null
     setMediaStream(null)
     setCameraOff(false)
-    if (videoRef.current) videoRef.current.srcObject = null
+    detachCameraStream(videoRef.current)
     releaseWakeLock()
   }
 
@@ -105,10 +105,8 @@ export function useLiveMedia(setToast) {
   }
 
   const toggleCamera = () => {
-    const videoTracks = streamRef.current?.getVideoTracks() || []
-    if (!videoTracks.length) return
     const nextOff = !cameraOff
-    videoTracks.forEach((track) => { track.enabled = !nextOff })
+    if (!setCameraEnabled(streamRef.current, !nextOff)) return
     setCameraOff(nextOff)
   }
 
@@ -124,31 +122,19 @@ export function useLiveMedia(setToast) {
 
     setIsStartingLive(true)
     try {
-      const cameraStream = await requestCameraStream(videoConstraints(nextFacing))
-      const nextVideoTrack = cameraStream.getVideoTracks()[0]
-      if (!nextVideoTrack) throw new Error('camera-track-missing')
+      const result = await switchCameraStream({
+        currentStream,
+        audioTracks,
+        nextVideoConstraints: videoConstraints(nextFacing),
+        previousVideoConstraints: videoConstraints(previousFacing),
+      })
 
-      const nextStream = buildStreamWithCamera(audioTracks, nextVideoTrack)
-      streamRef.current = nextStream
-      setFacingMode(nextFacing)
-      setMediaStream(nextStream)
-      attachCameraStream(videoRef.current, nextStream)
-      retireVideoTracks(currentStream)
-    } catch {
-      try {
-        const restoreStream = await requestCameraStream(videoConstraints(previousFacing))
-        const restoredVideoTrack = restoreStream.getVideoTracks()[0]
-        if (restoredVideoTrack) {
-          const restoredStream = buildStreamWithCamera(audioTracks, restoredVideoTrack)
-          streamRef.current = restoredStream
-          setMediaStream(restoredStream)
-        } else {
-          setCameraOff(true)
-        }
-      } catch {
-        setCameraOff(true)
-      }
-      setToast('Could not switch cameras')
+      streamRef.current = result.stream
+      setMediaStream(result.stream)
+
+      if (result.switched) setFacingMode(nextFacing)
+      if (!result.cameraAvailable) setCameraOff(true)
+      if (!result.switched) setToast('Could not switch cameras')
     } finally {
       setIsStartingLive(false)
     }
