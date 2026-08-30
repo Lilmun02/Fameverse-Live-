@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../services/supabase.js'
-import { cleanUsername } from '../utils/profile.js'
+import {
+  getCurrentSession,
+  signInWithEmail,
+  signOutAccount,
+  signUpWithEmail,
+  subscribeToAuthChanges,
+} from '../systems/account/authSystem.js'
+import {
+  emptyProfileDraft,
+  loadProfile,
+  profileToDraft,
+  saveProfile as saveProfileRecord,
+} from '../systems/account/profileSystem.js'
 
 export function useAccount({ setToast, onBeforeSignOut }) {
   const [authReady, setAuthReady] = useState(false)
@@ -10,56 +21,47 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   const [authMode, setAuthMode] = useState('signin')
   const [authForm, setAuthForm] = useState({ email: '', password: '', displayName: '' })
   const [authMessage, setAuthMessage] = useState('')
-  const [profileDraft, setProfileDraft] = useState({ display_name: '', username: '', bio: '' })
+  const [profileDraft, setProfileDraft] = useState(emptyProfileDraft)
 
   useEffect(() => {
     let mounted = true
-    supabase.auth.getSession().then(({ data }) => {
+    getCurrentSession().then((nextSession) => {
       if (!mounted) return
-      setSession(data.session)
+      setSession(nextSession)
       setAuthReady(true)
     }).catch(() => setAuthReady(true))
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const unsubscribe = subscribeToAuthChanges((nextSession) => {
       setSession(nextSession)
       setAuthReady(true)
     })
 
     return () => {
       mounted = false
-      authListener.subscription.unsubscribe()
+      unsubscribe()
     }
   }, [])
 
   useEffect(() => {
     if (!session?.user?.id) {
       setProfile(null)
+      setProfileDraft(emptyProfileDraft())
       return
     }
 
     let active = true
-    const loadProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
-        .eq('id', session.user.id)
-        .single()
-
+    const hydrateProfile = async () => {
+      const { data, error } = await loadProfile(session.user.id)
       if (!active) return
       if (error) {
         setToast('Signed in · profile is still initializing')
         return
       }
-
       setProfile(data)
-      setProfileDraft({
-        display_name: data.display_name || '',
-        username: data.username || '',
-        bio: data.bio || '',
-      })
+      setProfileDraft(profileToDraft(data))
     }
 
-    loadProfile()
+    hydrateProfile()
     return () => { active = false }
   }, [session?.user?.id, setToast])
 
@@ -72,11 +74,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     }
 
     if (authMode === 'signup') {
-      const { data, error } = await supabase.auth.signUp({
-        email: authForm.email.trim(),
-        password: authForm.password,
-        options: { data: { display_name: authForm.displayName.trim() || 'Fameverse User' } },
-      })
+      const { data, error } = await signUpWithEmail(authForm)
       if (error) {
         setAuthMessage(error.message)
         return
@@ -85,10 +83,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
       return
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: authForm.email.trim(),
-      password: authForm.password,
-    })
+    const { error } = await signInWithEmail(authForm)
     if (error) setAuthMessage(error.message)
   }
 
@@ -96,39 +91,29 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     event.preventDefault()
     if (!session?.user?.id) return false
 
-    const nextUsername = cleanUsername(profileDraft.username)
-    if (profileDraft.username && nextUsername.length < 3) {
-      setToast('Username must be at least 3 characters')
-      return false
-    }
-
     setProfileBusy(true)
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({
-        display_name: profileDraft.display_name.trim() || 'Fameverse User',
-        username: nextUsername || null,
-        bio: profileDraft.bio.trim().slice(0, 160),
-      })
-      .eq('id', session.user.id)
-      .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
-      .single()
+    const result = await saveProfileRecord(session.user.id, profileDraft)
     setProfileBusy(false)
 
-    if (error) {
-      setToast(error.code === '23505' ? 'That username is already taken' : 'Could not save profile')
+    if (result.validationError) {
+      setToast(result.validationError)
       return false
     }
 
-    setProfile(data)
-    setProfileDraft({ display_name: data.display_name || '', username: data.username || '', bio: data.bio || '' })
+    if (result.error) {
+      setToast(result.error.code === '23505' ? 'That username is already taken' : 'Could not save profile')
+      return false
+    }
+
+    setProfile(result.data)
+    setProfileDraft(profileToDraft(result.data))
     setToast('Profile saved')
     return true
   }
 
   const signOut = async () => {
     onBeforeSignOut?.()
-    await supabase.auth.signOut()
+    await signOutAccount()
   }
 
   return {
