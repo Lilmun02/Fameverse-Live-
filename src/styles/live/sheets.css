@@ -66,10 +66,10 @@
 }
 
 .live-gift-item {
-  min-height: 106px;
+  min-height: 140px;
   display: grid;
   place-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 10px 6px;
   border: 1px solid rgba(255,255,255,.09);
   border-radius: 18px;
@@ -78,8 +78,39 @@
 }
 
 .live-gift-item > span { font-size: 1.8rem; }
-.live-gift-item strong { font-size: .78rem; }
-.live-gift-item small { color: #bdafc6; font-size: .62rem; }
+.live-gift-item strong { font-size: .78rem; text-align: center; }
+.live-gift-item small { color: #bdafc6; font-size: .62rem; text-align: center; }
+
+.gift-send-main,
+.gift-combo-actions button {
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff;
+  font-weight: 850;
+}
+
+.gift-send-main {
+  width: 100%;
+  padding: 7px 6px;
+  border-radius: 10px;
+  background: rgba(173,83,255,.28);
+  font-size: .67rem;
+}
+
+.gift-combo-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.gift-combo-actions button {
+  padding: 6px 3px;
+  border-radius: 9px;
+  background: rgba(255,255,255,.07);
+  font-size: .62rem;
+}
+
+.gift-sent-count { opacity: .78; }
 
 .premium-test-gift {
   border-color: rgba(240,197,92,.38);
