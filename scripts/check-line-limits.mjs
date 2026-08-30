@@ -87,6 +87,35 @@ for (const guard of REQUIRED_GUARDS) {
   }
 }
 
+// Gift amount/pricing invariant: current non-cinematic beta gifts remain 1 coin
+// each, quick amounts remain 1×/5×/10×, custom amount remains available, and
+// every simple gift presentation visibly includes the actual ×N quantity.
+{
+  const giftConfig = await readFile(join(sourceRoot, 'config/gifts.js'), 'utf8')
+  const liveScreen = await readFile(join(sourceRoot, 'components/live/LiveScreen.jsx'), 'utf8')
+  const giftOverlay = await readFile(join(sourceRoot, 'components/gifts/GiftOverlay.jsx'), 'utf8')
+  const basicGiftIds = ['rose', 'heart', 'fire', 'star', 'crown']
+  const basicPricesLocked = basicGiftIds.every((id) => {
+    const pattern = new RegExp(`id: '${id}',[^\\n]*cost: 1`)
+    return pattern.test(giftConfig)
+  })
+  const quickAmountsLocked = liveScreen.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
+  const customAmountLocked = liveScreen.includes('Custom amount')
+    && liveScreen.includes('Send ×{amountValue')
+  const quantityDisplayLocked = giftOverlay.includes('×{giftOverlay.count || 1}')
+
+  if (
+    !basicPricesLocked
+    || !quickAmountsLocked
+    || !customAmountLocked
+    || !quantityDisplayLocked
+  ) {
+    architectureViolations.push(
+      'Gift amount contract failed: basic gifts must stay 1 coin, 1×/5×/10× quick amounts and custom amount must remain available, and simple gift overlays must always display ×N.',
+    )
+  }
+}
+
 // Live session invariant: ending a Live must clear both committed chat messages
 // and the unsent comment draft inside the End Live path.
 {
@@ -126,4 +155,4 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: startup recovery, media health, gift tray quick-amount exception, and End Live chat reset contracts are active; disabled media wrappers are not imported.')
+console.log('Architecture guard passed: startup recovery, media health, gift tray quick-amount exception, gift amount/pricing, and End Live chat reset contracts are active; disabled media wrappers are not imported.')
