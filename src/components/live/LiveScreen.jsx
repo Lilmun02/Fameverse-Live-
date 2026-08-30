@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { gifts } from '../../config/gifts.js'
 import { seekGiftThumbnail } from '../../utils/media.js'
 
+const QUICK_GIFT_AMOUNTS = [1, 5, 10]
+
 export default function LiveScreen({
   isLive,
   mediaStream,
@@ -41,6 +43,10 @@ export default function LiveScreen({
 
   const updateGiftAmount = (giftId, value) => {
     setGiftAmounts((amounts) => ({ ...amounts, [giftId]: value }))
+  }
+
+  const sendQuickGift = (gift, quantity) => {
+    sendGift(gift, quantity, { keepTrayOpen: true })
   }
 
   const sendCustomGift = (gift) => {
@@ -133,7 +139,7 @@ export default function LiveScreen({
         </form>
       )}
 
-      {isLive && giftTrayOpen && !premiumRepeat && (
+      {isLive && giftTrayOpen && (
         <div className="live-sheet-backdrop" onClick={() => setGiftTrayOpen(false)}>
           <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
@@ -141,7 +147,7 @@ export default function LiveScreen({
               <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
               <div className="test-balance">🪙 {coins.toLocaleString()}</div>
             </div>
-            <p>Send one gift, or choose a custom amount. Custom sends charge the selected quantity once and play one presentation.</p>
+            <p>Tap 1×, 5×, or 10× to send that amount while keeping the gift tray open. Custom amount is still available.</p>
             <div className="live-gift-grid">
               {gifts.map((gift) => {
                 const customOpen = customGiftId === gift.id
@@ -165,16 +171,24 @@ export default function LiveScreen({
                     )}
                     <strong>{gift.label}</strong>
                     <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'} each</small>
-                    <div className="gift-card-actions">
-                      <button type="button" className="gift-send-main" onClick={() => sendGift(gift, 1)}>Send</button>
-                      <button
-                        type="button"
-                        className="gift-amount-toggle"
-                        onClick={() => setCustomGiftId(customOpen ? null : gift.id)}
-                      >
-                        Custom amount
-                      </button>
+                    <div className="gift-quick-amounts" aria-label={`${gift.label} quick amounts`}>
+                      {QUICK_GIFT_AMOUNTS.map((quantity) => (
+                        <button
+                          type="button"
+                          key={quantity}
+                          onClick={() => sendQuickGift(gift, quantity)}
+                        >
+                          {quantity}×
+                        </button>
+                      ))}
                     </div>
+                    <button
+                      type="button"
+                      className="gift-amount-toggle"
+                      onClick={() => setCustomGiftId(customOpen ? null : gift.id)}
+                    >
+                      Custom amount
+                    </button>
                     {customOpen && (
                       <div className="gift-custom-row">
                         <input

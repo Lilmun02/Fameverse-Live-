@@ -12,8 +12,8 @@ export const gifts = [
     cinematic: true,
   },
   { id: 'rose', emoji: '🌹', label: 'Rose', cost: 1 },
-  { id: 'heart', emoji: '💜', label: 'Heart', cost: 5 },
-  { id: 'fire', emoji: '🔥', label: 'Fire', cost: 10 },
-  { id: 'star', emoji: '⭐', label: 'Star', cost: 20 },
-  { id: 'crown', emoji: '👑', label: 'Crown', cost: 50 },
+  { id: 'heart', emoji: '💜', label: 'Heart', cost: 1 },
+  { id: 'fire', emoji: '🔥', label: 'Fire', cost: 1 },
+  { id: 'star', emoji: '⭐', label: 'Star', cost: 1 },
+  { id: 'crown', emoji: '👑', label: 'Crown', cost: 1 },
 ]

@@ -6,7 +6,7 @@ export default function GiftOverlay({ giftOverlay }) {
       <span className="gift-overlay-emoji">{giftOverlay.emoji}</span>
       <div>
         <strong>{giftOverlay.sender}</strong>
-        <small>sent {giftOverlay.label}{giftOverlay.count > 1 ? ` ×${giftOverlay.count}` : ''}</small>
+        <small>sent {giftOverlay.label} ×{giftOverlay.count || 1}</small>
       </div>
     </div>
   )

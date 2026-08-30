@@ -49,7 +49,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     giftTimerRef.current = setTimeout(() => setGiftOverlay(null), 1800)
   }
 
-  const sendGift = (gift, quantity = 1) => {
+  const sendGift = (gift, quantity = 1, { keepTrayOpen = false } = {}) => {
     if (!isLive) {
       setGiftTrayOpen(false)
       setToast('Start Live before sending gifts')
@@ -81,10 +81,10 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setChat((items) => [...items, {
       id: `${Date.now()}-${Math.random()}`,
       user: displayName,
-      text: `${activityEmoji} sent ${gift.label}${normalizedQuantity > 1 ? ` ×${normalizedQuantity}` : ''}`,
+      text: `${activityEmoji} sent ${gift.label} ×${normalizedQuantity}`,
     }])
 
-    setGiftTrayOpen(false)
+    if (!keepTrayOpen) setGiftTrayOpen(false)
 
     if (gift.rendererId) {
       setPremiumRepeat({ ...gift, quantity: normalizedQuantity })

@@ -89,7 +89,9 @@
 }
 
 .gift-card-actions button,
-.gift-custom-row button {
+.gift-quick-amounts button,
+.gift-custom-row button,
+.gift-amount-toggle {
   width: 100%;
   padding: 7px 5px;
   border: 1px solid rgba(255,255,255,.12);
@@ -98,6 +100,19 @@
   color: #fff;
   font-size: .62rem;
   font-weight: 800;
+}
+
+.gift-quick-amounts {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.gift-quick-amounts button {
+  padding: 7px 2px;
+  background: linear-gradient(135deg, rgba(141,66,255,.88), rgba(101,40,190,.88));
 }
 
 .gift-send-main {
