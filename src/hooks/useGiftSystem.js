@@ -5,12 +5,21 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   const [coins, setCoins] = useState(loadCoins)
   const [giftOverlay, setGiftOverlay] = useState(null)
   const [premiumRepeat, setPremiumRepeat] = useState(null)
-  const [giftTrayOpen, setGiftTrayOpen] = useState(false)
+  const [giftTrayOpen, setGiftTrayOpenState] = useState(false)
+  const [giftSendCounts, setGiftSendCounts] = useState({})
 
   const giftTimerRef = useRef(null)
   const premiumRepeatTimerRef = useRef(null)
   const premiumComboRef = useRef({ id: null, at: 0, count: 0 })
   const coinsRef = useRef(coins)
+
+  const setGiftTrayOpen = (open) => {
+    setGiftTrayOpenState(open)
+    if (open) {
+      clearTimeout(giftTimerRef.current)
+      setGiftOverlay(null)
+    }
+  }
 
   useEffect(() => {
     coinsRef.current = coins
@@ -28,6 +37,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     clearTimeout(premiumRepeatTimerRef.current)
     setPremiumRepeat(null)
     setGiftTrayOpen(false)
+    setGiftSendCounts({})
     premiumComboRef.current = { id: null, at: 0, count: 0 }
     window.FameverseGiftEngine?.stop?.()
   }, [isLive])
@@ -72,6 +82,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     const nextBalance = coinsRef.current - gift.cost
     coinsRef.current = nextBalance
     setCoins(nextBalance)
+    setGiftSendCounts((counts) => ({ ...counts, [gift.id]: (counts[gift.id] || 0) + 1 }))
 
     const activityEmoji = gift.activityEmoji || gift.emoji || '✦'
     setChat((items) => [...items, {
@@ -114,6 +125,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     giftOverlay,
     premiumRepeat,
     giftTrayOpen,
+    giftSendCounts,
     setGiftTrayOpen,
     addTestCoins,
     sendGift,
