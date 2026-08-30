@@ -49,9 +49,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
-  const showGift = (gift) => {
-    if (giftTrayOpen) return
-
+  const showGift = (gift, quantity = 1) => {
     clearTimeout(giftTimerRef.current)
     const now = Date.now()
     setGiftOverlay((previous) => {
@@ -60,45 +58,54 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
         ...gift,
         sender: displayName,
         duration: 1800,
-        count: sameCombo ? (previous.count || 1) + 1 : 1,
+        count: sameCombo ? (previous.count || 1) + quantity : quantity,
         lastSentAt: now,
       }
     })
     giftTimerRef.current = setTimeout(() => setGiftOverlay(null), 1800)
   }
 
-  const sendGift = (gift) => {
+  const sendGift = (gift, quantity = 1) => {
+    const safeQuantity = [1, 5, 10].includes(quantity) ? quantity : 1
+
     if (!isLive) {
       setGiftTrayOpen(false)
       setToast('Start Live before sending gifts')
       return
     }
 
-    if (coinsRef.current < gift.cost) {
-      setToast('Test balance empty · tap refill')
+    const totalCost = gift.cost * safeQuantity
+    if (coinsRef.current < totalCost) {
+      setToast(`Need ${totalCost.toLocaleString()} test coins for ×${safeQuantity}`)
       return
     }
 
-    const nextBalance = coinsRef.current - gift.cost
+    const nextBalance = coinsRef.current - totalCost
     coinsRef.current = nextBalance
     setCoins(nextBalance)
-    setGiftSendCounts((counts) => ({ ...counts, [gift.id]: (counts[gift.id] || 0) + 1 }))
+    setGiftSendCounts((counts) => ({
+      ...counts,
+      [gift.id]: (counts[gift.id] || 0) + safeQuantity,
+    }))
 
     const activityEmoji = gift.activityEmoji || gift.emoji || '✦'
     setChat((items) => [...items, {
       id: `${Date.now()}-${Math.random()}`,
       user: displayName,
-      text: `${activityEmoji} sent ${gift.label}`,
+      text: `${activityEmoji} sent ${gift.label}${safeQuantity > 1 ? ` ×${safeQuantity}` : ''}`,
     }])
+
+    // Sending and browsing are separate states: the tray always closes before
+    // any gift renderer or simple overlay is allowed onto the live screen.
+    setGiftTrayOpen(false)
 
     if (gift.rendererId) {
       const now = Date.now()
       const previous = premiumComboRef.current
       const sameCombo = previous.id === gift.id && now - previous.at < 2200
-      const comboCount = sameCombo ? previous.count + 1 : 1
+      const comboCount = sameCombo ? previous.count + safeQuantity : safeQuantity
       premiumComboRef.current = { id: gift.id, at: now, count: comboCount }
 
-      setGiftTrayOpen(false)
       setPremiumRepeat({ ...gift, comboCount })
       clearTimeout(premiumRepeatTimerRef.current)
       premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
@@ -107,11 +114,11 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
         document.dispatchEvent(new CustomEvent('fameverse:gift', {
           detail: { id: gift.rendererId, sender: displayName, comboCount },
         }))
-      }, 140)
+      }, 180)
       return
     }
 
-    showGift(gift)
+    window.setTimeout(() => showGift(gift, safeQuantity), 180)
   }
 
   const stopGiftPlayback = () => {
