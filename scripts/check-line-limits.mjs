@@ -63,6 +63,30 @@ for (const guard of REQUIRED_GUARDS) {
   }
 }
 
+// Gift tray invariant: after a gift has been accepted into chat, the tray must
+// close on the shared success path before renderer-specific branching. This
+// prevents simple gifts from losing the close behavior during future refactors.
+{
+  const giftHookPath = join(sourceRoot, 'hooks/useGiftSystem.js')
+  const giftHook = await readFile(giftHookPath, 'utf8')
+  const acceptedChatIndex = giftHook.indexOf('setChat((items)')
+  const rendererBranchIndex = giftHook.indexOf('if (gift.rendererId)')
+  const sharedCloseIndex = acceptedChatIndex >= 0
+    ? giftHook.indexOf('setGiftTrayOpen(false)', acceptedChatIndex)
+    : -1
+
+  if (
+    acceptedChatIndex < 0
+    || rendererBranchIndex < 0
+    || sharedCloseIndex < 0
+    || sharedCloseIndex > rendererBranchIndex
+  ) {
+    architectureViolations.push(
+      'Gift tray contract failed: every successful gift send must close the tray on the shared path before renderer-specific branching. Expected in src/hooks/useGiftSystem.js',
+    )
+  }
+}
+
 if (violations.length) {
   console.error(`Fameverse source limit exceeded (${MAX_LINES} lines max):`)
   for (const violation of violations) {
@@ -81,4 +105,4 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: 10s max startup recovery + React-owned media health active; disabled media wrappers are not imported.')
+console.log('Architecture guard passed: startup recovery, media health, and successful-send gift tray close contracts are active; disabled media wrappers are not imported.')
