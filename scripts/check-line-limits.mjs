@@ -87,6 +87,31 @@ for (const guard of REQUIRED_GUARDS) {
   }
 }
 
+// Live session invariant: ending a Live must clear both committed chat messages
+// and the unsent comment draft. These states are App-owned and must reset inside
+// the End Live path so no room text leaks into the next session.
+{
+  const appPath = join(sourceRoot, 'App.jsx')
+  const app = await readFile(appPath, 'utf8')
+  const endLiveIndex = app.indexOf('if (wasLive)')
+  const endLiveCloseIndex = endLiveIndex >= 0 ? app.indexOf('\n    }', endLiveIndex) : -1
+  const clearChatIndex = endLiveIndex >= 0 ? app.indexOf('setChat([])', endLiveIndex) : -1
+  const clearDraftIndex = endLiveIndex >= 0 ? app.indexOf("setCommentText('')", endLiveIndex) : -1
+
+  if (
+    endLiveIndex < 0
+    || endLiveCloseIndex < 0
+    || clearChatIndex < 0
+    || clearDraftIndex < 0
+    || clearChatIndex > endLiveCloseIndex
+    || clearDraftIndex > endLiveCloseIndex
+  ) {
+    architectureViolations.push(
+      'Live session contract failed: End Live must clear chat and comment draft inside the wasLive cleanup path. Expected in src/App.jsx',
+    )
+  }
+}
+
 if (violations.length) {
   console.error(`Fameverse source limit exceeded (${MAX_LINES} lines max):`)
   for (const violation of violations) {
@@ -105,4 +130,4 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: startup recovery, media health, and successful-send gift tray close contracts are active; disabled media wrappers are not imported.')
+console.log('Architecture guard passed: startup recovery, media health, successful-send gift tray close, and End Live chat reset contracts are active; disabled media wrappers are not imported.')
