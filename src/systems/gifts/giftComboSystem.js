@@ -1,5 +1,9 @@
 export const GIFT_COMBO_WINDOW_MS = 2200
 
+export function createGiftComboState() {
+  return { id: null, at: 0, count: 0 }
+}
+
 export function nextGiftCombo(previous, giftId, quantity, now = Date.now()) {
   const sameCombo = previous?.id === giftId && now - (previous?.at || 0) < GIFT_COMBO_WINDOW_MS
   return {
