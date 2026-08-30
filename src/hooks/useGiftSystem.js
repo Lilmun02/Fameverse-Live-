@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { createGiftComboState, nextGiftCombo, nextOverlayCount } from '../systems/gifts/giftComboSystem.js'
+import { createGiftComboState, nextGiftCombo } from '../systems/gifts/giftComboSystem.js'
 import {
   addGiftBalance,
   canAffordGift,
@@ -11,12 +11,13 @@ import {
 import {
   CINEMATIC_GIFT_DELAY_MS,
   PREMIUM_REPEAT_DURATION_MS,
-  SIMPLE_GIFT_DURATION_MS,
   clearAllGiftPresentationTimers,
   clearGiftPresentationTimer,
-  createGiftOverlay,
   dispatchCinematicGift,
+  enqueueSimpleGift,
   giftActivityMessage,
+  pauseSimpleGiftPresentation,
+  resumeSimpleGiftPresentation,
   scheduleGiftPresentation,
   stopGiftRenderer,
 } from '../systems/gifts/giftPresentationSystem.js'
@@ -28,15 +29,9 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   const [giftTrayOpen, setGiftTrayOpenState] = useState(false)
   const [giftSendCounts, setGiftSendCounts] = useState({})
 
-  const giftTimerRef = useRef(null)
   const premiumRepeatTimerRef = useRef(null)
-  const premiumComboRef = useRef(createGiftComboState())
+  const giftComboRef = useRef(createGiftComboState())
   const coinsRef = useRef(coins)
-
-  const clearGiftTimer = () => {
-    clearGiftPresentationTimer(giftTimerRef.current)
-    giftTimerRef.current = null
-  }
 
   const clearPremiumRepeatTimer = () => {
     clearGiftPresentationTimer(premiumRepeatTimerRef.current)
@@ -44,11 +39,8 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   }
 
   const setGiftTrayOpen = (open) => {
+    if (open) pauseSimpleGiftPresentation()
     setGiftTrayOpenState(open)
-    if (open) {
-      clearGiftTimer()
-      setGiftOverlay(null)
-    }
   }
 
   const applyBalance = (nextBalance) => {
@@ -62,9 +54,12 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     coinsRef.current = coins
   }, [coins])
 
+  useEffect(() => {
+    if (!giftTrayOpen) resumeSimpleGiftPresentation()
+  }, [giftTrayOpen])
+
   useEffect(() => () => {
     clearAllGiftPresentationTimers()
-    clearGiftTimer()
     clearPremiumRepeatTimer()
     stopGiftRenderer()
   }, [])
@@ -75,9 +70,9 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     clearPremiumRepeatTimer()
     setPremiumRepeat(null)
     setGiftOverlay(null)
-    setGiftTrayOpen(false)
+    setGiftTrayOpenState(false)
     setGiftSendCounts({})
-    premiumComboRef.current = createGiftComboState()
+    giftComboRef.current = createGiftComboState()
     stopGiftRenderer()
   }, [isLive])
 
@@ -90,20 +85,8 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
-  const showGift = (gift) => {
-    clearGiftTimer()
-    const now = Date.now()
-    setGiftOverlay((previous) => createGiftOverlay(
-      gift,
-      displayName,
-      nextOverlayCount(previous, gift.id, now),
-      now,
-    ))
-    giftTimerRef.current = scheduleGiftPresentation(
-      () => setGiftOverlay(null),
-      SIMPLE_GIFT_DURATION_MS,
-    )
-  }
+  const showGift = (overlay) => setGiftOverlay(overlay)
+  const hideGift = () => setGiftOverlay(null)
 
   const sendGift = (gift) => {
     if (!isLive) {
@@ -128,6 +111,10 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       setToast('Gift could not be saved · try again')
       return
     }
+
+    const combo = nextGiftCombo(giftComboRef.current, gift.id)
+    giftComboRef.current = combo
+
     setGiftSendCounts((counts) => ({
       ...counts,
       [gift.id]: (counts[gift.id] || 0) + 1,
@@ -142,8 +129,6 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setGiftTrayOpen(false)
 
     if (gift.rendererId) {
-      const combo = nextGiftCombo(premiumComboRef.current, gift.id)
-      premiumComboRef.current = combo
       setPremiumRepeat({ ...gift, comboCount: combo.count })
       clearPremiumRepeatTimer()
       premiumRepeatTimerRef.current = scheduleGiftPresentation(
@@ -157,10 +142,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       return
     }
 
-    scheduleGiftPresentation(
-      () => showGift(gift),
-      CINEMATIC_GIFT_DELAY_MS,
-    )
+    enqueueSimpleGift(gift, displayName, combo.count, showGift, hideGift)
   }
 
   const stopGiftPlayback = () => {
@@ -168,6 +150,9 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     clearPremiumRepeatTimer()
     setPremiumRepeat(null)
     setGiftOverlay(null)
+    setGiftTrayOpenState(false)
+    setGiftSendCounts({})
+    giftComboRef.current = createGiftComboState()
     stopGiftRenderer()
   }
 
