@@ -79,6 +79,8 @@ export default function App() {
       gifts.stopGiftPlayback()
       gifts.setGiftTrayOpen(false)
       setCohostTrayOpen(false)
+      setChat([])
+      setCommentText('')
     }
     return result
   }
