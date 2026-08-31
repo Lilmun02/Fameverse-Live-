@@ -9,22 +9,14 @@
   animation: fv-gift-shell 6.4s ease both;
 }
 
-.fv-gift-video,
-.fv-gift-canvas {
+.fv-gift-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  background: #050308;
-}
-
-.fv-gift-video {
   object-fit: cover;
   object-position: 50% 50%;
-}
-
-.fv-gift-canvas {
-  display: block;
+  background: #050308;
 }
 
 .fv-gift-meta {
