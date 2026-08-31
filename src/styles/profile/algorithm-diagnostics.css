@@ -1,0 +1,92 @@
+.algorithm-diagnostics {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(183, 116, 255, .18);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(133, 62, 205, .08), rgba(255, 255, 255, .02));
+}
+
+.algorithm-diagnostics header,
+.algorithm-diagnostics footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.algorithm-diagnostics header div {
+  display: grid;
+  gap: 3px;
+}
+
+.algorithm-diagnostics header span,
+.algorithm-diagnostics footer span {
+  color: #c783ff;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.algorithm-diagnostics h3,
+.algorithm-diagnostics p {
+  margin: 0;
+}
+
+.algorithm-diagnostics h3 {
+  font-size: 1.15rem;
+}
+
+.algorithm-diagnostics p,
+.algorithm-diagnostics footer small {
+  color: rgba(255, 255, 255, .6);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.algorithm-status-off {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 193, 93, .25);
+  border-radius: 999px;
+  background: rgba(255, 193, 93, .08);
+  color: #ffd27b;
+  font-size: .66rem;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.algorithm-diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.algorithm-diagnostic-grid div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, .16);
+}
+
+.algorithm-diagnostic-grid strong {
+  font-size: 1.2rem;
+}
+
+.algorithm-diagnostic-grid small {
+  color: rgba(255, 255, 255, .48);
+  font-size: .64rem;
+  line-height: 1.25;
+}
+
+.algorithm-diagnostics footer {
+  align-items: flex-end;
+}
+
+.algorithm-diagnostics footer small {
+  max-width: 64%;
+  text-align: right;
+}

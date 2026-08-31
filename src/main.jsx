@@ -28,6 +28,7 @@ import './styles/live/fam1-v2.css'
 import './styles/live/prelive-setup.css'
 import './styles/live/end-live-summary.css'
 import './styles/profile/fam1-v2.css'
+import './styles/profile/algorithm-diagnostics.css'
 import './styles/base/pwa-update.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

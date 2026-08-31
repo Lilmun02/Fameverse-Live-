@@ -1,3 +1,5 @@
+import AlgorithmDiagnostics from './AlgorithmDiagnostics.jsx'
+
 export default function CreatorStudio({ openProfileMode, setTab, setCreatorTab, setProfileMode }) {
   return (
     <section className="panel full-panel account-panel creator-studio-page">
@@ -12,6 +14,8 @@ export default function CreatorStudio({ openProfileMode, setTab, setCreatorTab, 
         <button onClick={() => { setCreatorTab('replays'); setProfileMode('view') }}><span>↻</span><strong>Replays</strong><small>Replay library arrives with real rooms</small></button>
         <button onClick={() => { setCreatorTab('gifts'); setProfileMode('view') }}><span>🎁</span><strong>Gift activity</strong><small>Test gifts now, production wallet later</small></button>
       </div>
+
+      <AlgorithmDiagnostics />
 
       <div className="settings-info-card">
         <b>Creator status</b>
