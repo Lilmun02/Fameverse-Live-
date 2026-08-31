@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "check:lines": "node scripts/check-line-limits.mjs",
-    "build": "npm run check:lines && vite build",
+    "check:algorithm": "node scripts/check-verse-momentum.mjs",
+    "build": "npm run check:lines && npm run check:algorithm && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
