@@ -64,10 +64,10 @@ export default function LiveScreen({
             <small>Your microphone can stay on while video is hidden.</small>
           </div>
         ) : (
-          <div className="fam-preview-stage" aria-hidden="true">
-            <div className="fam-orbit fam-orbit-one" />
-            <div className="fam-orbit fam-orbit-two" />
-            <div className="fam-preview-core">F</div>
+          <div className="community-live-preview">
+            <div className="community-preview-avatar">{initial}</div>
+            <strong>{displayName}</strong>
+            <small>Camera preview begins when you go live.</small>
           </div>
         )}
         <div className="live-vignette fam-live-vignette" />
