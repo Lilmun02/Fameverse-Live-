@@ -11,7 +11,7 @@ import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
-const SPLASH_MINIMUM_MS = 5000
+const SPLASH_MINIMUM_MS = 900
 
 export default function App() {
   const [toast, setToast] = useState('')
