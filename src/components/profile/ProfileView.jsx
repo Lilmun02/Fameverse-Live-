@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { creatorContent } from '../../config/creator.js'
+import ProfileConnections from './ProfileConnections.jsx'
 
 export default function ProfileView({
   initial,
@@ -10,7 +12,14 @@ export default function ProfileView({
   shareRoom,
   creatorTab,
   setCreatorTab,
+  followers,
+  following,
+  followerCount,
+  followingCount,
+  busyTargetId,
+  toggleFollow,
 }) {
+  const [connectionsMode, setConnectionsMode] = useState(null)
   const [creatorSectionTitle, creatorSectionCopy] = creatorContent[creatorTab]
 
   return (
@@ -33,10 +42,23 @@ export default function ProfileView({
       </div>
 
       <div className="profile-stats refined-stats">
-        <div><strong>0</strong><small>Followers</small></div>
-        <div><strong>0</strong><small>Following</small></div>
+        <button type="button" onClick={() => setConnectionsMode('followers')}>
+          <strong>{followerCount}</strong><small>Followers</small>
+        </button>
+        <button type="button" onClick={() => setConnectionsMode('following')}>
+          <strong>{followingCount}</strong><small>Following</small>
+        </button>
         <div><strong>0</strong><small>Likes</small></div>
       </div>
+
+      <ProfileConnections
+        mode={connectionsMode}
+        followers={followers}
+        following={following}
+        busyTargetId={busyTargetId}
+        toggleFollow={toggleFollow}
+        onClose={() => setConnectionsMode(null)}
+      />
 
       <div className="profile-actions refined-actions">
         <button className="primary-profile-action" onClick={() => openProfileMode('edit')}>Edit profile</button>

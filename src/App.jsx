@@ -7,6 +7,7 @@ import TopBar from './components/layout/TopBar.jsx'
 import LiveScreen from './components/live/LiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
+import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
@@ -33,6 +34,7 @@ export default function App() {
       live.setIsLive(false)
     },
   })
+  const followNetwork = useFollowNetwork({ userId: account.session?.user?.id, setToast })
   const displayName = account.profile?.display_name || account.session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = account.profile?.username ? `@${account.profile.username}` : '@newuser'
   const initial = displayName.trim().charAt(0).toUpperCase() || 'F'
@@ -212,6 +214,7 @@ export default function App() {
             profileBusy={account.profileBusy}
             signOut={signOut}
             setTab={setTab}
+            followNetwork={followNetwork}
           />
         )}
       </main>

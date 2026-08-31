@@ -28,6 +28,7 @@ export default function ProfileScreen({
   profileBusy,
   signOut,
   setTab,
+  followNetwork,
 }) {
   const openProfileMode = (mode) => {
     setPolicyPage(null)
@@ -47,6 +48,12 @@ export default function ProfileScreen({
         shareRoom={shareRoom}
         creatorTab={creatorTab}
         setCreatorTab={setCreatorTab}
+        followers={followNetwork.followers}
+        following={followNetwork.following}
+        followerCount={followNetwork.followerCount}
+        followingCount={followNetwork.followingCount}
+        busyTargetId={followNetwork.busyTargetId}
+        toggleFollow={followNetwork.toggleFollow}
       />
     )
   }

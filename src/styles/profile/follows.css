@@ -1,0 +1,128 @@
+/* FAM 1 follower/following network UI. */
+
+.refined-stats > button {
+  display: grid;
+  gap: 4px;
+  padding: 16px 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  text-align: center;
+}
+.refined-stats > button + button,
+.refined-stats > button + div,
+.refined-stats > div + button { border-left: 1px solid rgba(255,255,255,.07); }
+.refined-stats > button strong { font-size: 1.15rem; }
+.refined-stats > button small { color: #9f91ad; font-size: .68rem; }
+
+.profile-connections {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(191, 133, 255, .14);
+  border-radius: 20px;
+  background: rgba(255,255,255,.035);
+}
+
+.profile-connections-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.profile-connections-heading span,
+.profile-connections-heading strong { display: block; }
+.profile-connections-heading span {
+  margin-bottom: 3px;
+  color: #9f8eaa;
+  font-size: .55rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.profile-connections-heading strong { font-size: .95rem; }
+.profile-connections-heading button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+  color: #d5c7dd;
+  font-size: .64rem;
+  font-weight: 800;
+}
+
+.profile-connections-list { display: grid; gap: 8px; }
+.profile-connection-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.03);
+}
+.profile-connection-avatar {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  font-size: .8rem;
+}
+.profile-connection-copy { min-width: 0; }
+.profile-connection-copy strong,
+.profile-connection-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-connection-copy strong { font-size: .76rem; }
+.profile-connection-copy small { margin-top: 2px; color: #9e91a7; font-size: .62rem; }
+
+.profile-relation-button {
+  min-width: 76px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 850;
+}
+.profile-relation-button.relation-friend {
+  border-color: rgba(203, 145, 255, .19);
+  background: rgba(150, 74, 237, .12);
+  color: #d9b7ff;
+}
+.profile-relation-button.relation-follow-back,
+.profile-relation-button.relation-follow {
+  border-color: transparent;
+  background: linear-gradient(135deg, #8e37ff, #c85eff);
+}
+.profile-relation-button.relation-unfollow { color: #c8b8cf; }
+.profile-relation-button:disabled { opacity: .5; }
+
+.profile-connections-empty {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  text-align: center;
+}
+.profile-connections-empty > span { color: #b96cff; font-size: 1.4rem; }
+.profile-connections-empty strong { font-size: .82rem; }
+.profile-connections-empty p {
+  max-width: 300px;
+  margin: 0;
+  color: #97899e;
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 370px) {
+  .profile-connection-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 7px; }
+  .profile-connection-avatar { width: 34px; height: 34px; flex-basis: 34px; }
+  .profile-relation-button { min-width: 68px; padding: 0 8px; }
+}
