@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { gifts } from '../../config/gifts.js'
-import { seekGiftThumbnail } from '../../utils/media.js'
-
-const QUICK_GIFT_AMOUNTS = [1, 5, 10]
+import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
+import CohostSheet from './CohostSheet.jsx'
+import LiveActions from './LiveActions.jsx'
+import LiveChat from './LiveChat.jsx'
+import LiveHeader from './LiveHeader.jsx'
+import LiveLaunchPanel from './LiveLaunchPanel.jsx'
 
 export default function LiveScreen({
   isLive,
@@ -36,34 +37,9 @@ export default function LiveScreen({
   addTestCoins,
   cohostTrayOpen,
 }) {
-  const [customGiftId, setCustomGiftId] = useState(null)
-  const [giftAmounts, setGiftAmounts] = useState({})
-  const chatScrollRef = useRef(null)
-
-  useEffect(() => {
-    const chatNode = chatScrollRef.current
-    if (!chatNode) return
-    chatNode.scrollTop = chatNode.scrollHeight
-  }, [liveMessages])
-
-  const giftAmountValue = (giftId) => giftAmounts[giftId] ?? '1'
-
-  const updateGiftAmount = (giftId, value) => {
-    setGiftAmounts((amounts) => ({ ...amounts, [giftId]: value }))
-  }
-
-  const sendQuickGift = (gift, quantity) => {
-    sendGift(gift, quantity, { keepTrayOpen: true })
-  }
-
-  const sendCustomGift = (gift) => {
-    const sent = sendGift(gift, Number(giftAmountValue(gift.id)))
-    if (sent) setCustomGiftId(null)
-  }
-
   return (
-    <section className={`mobile-live-shell ${isLive ? 'is-live' : 'is-preview'}`}>
-      <div className="live-video-surface">
+    <section className={`mobile-live-shell fam-live-shell ${isLive ? 'is-live' : 'is-preview'}`}>
+      <div className="live-video-surface fam-live-video-surface">
         {isLive && mediaStream && !cameraOff ? (
           <>
             <video
@@ -82,158 +58,72 @@ export default function LiveScreen({
             />
           </>
         ) : isLive && cameraOff ? (
-          <div className="camera-off-placeholder">
+          <div className="camera-off-placeholder fam-camera-off">
             <div className="preview-camera-icon">◉</div>
             <strong>Camera off</strong>
             <small>Your microphone can stay on while video is hidden.</small>
           </div>
         ) : (
-          <div className="live-preview-placeholder">
-            <div className="preview-brand"><span>FAMEVERSE</span> LIVE</div>
-            <div className="preview-camera-icon">◉</div>
-            <strong>Ready to go live?</strong>
-            <small>Camera + microphone stay on this device during the current beta.</small>
+          <div className="fam-preview-stage" aria-hidden="true">
+            <div className="fam-orbit fam-orbit-one" />
+            <div className="fam-orbit fam-orbit-two" />
+            <div className="fam-preview-core">F</div>
           </div>
         )}
-        <div className="live-vignette" />
+        <div className="live-vignette fam-live-vignette" />
       </div>
 
-      <div className="live-floating-top">
-        <div className="live-host-chip">
-          <div className="avatar owner live-avatar">{initial}</div>
-          <div><strong>{displayName}</strong><small>{username}</small></div>
-        </div>
-        <div className="live-status-cluster">
-          {isLive ? (
-            <>
-              <span className="viewer-chip">👁 {viewerCount}</span>
-              <button className="top-end-live" onClick={startLive}>End</button>
-            </>
-          ) : (
-            <><span className="live-pill">READY</span><span className="viewer-chip">👁 {viewerCount}</span></>
-          )}
-        </div>
-      </div>
+      <LiveHeader
+        isLive={isLive}
+        initial={initial}
+        displayName={displayName}
+        username={username}
+        viewerCount={viewerCount}
+        startLive={startLive}
+      />
 
-      {isLive && !premiumRepeat && (
-        <div className="live-action-rail">
-          <button className="live-action" onClick={() => setGiftTrayOpen(true)}><span>🎁</span><small>Gift</small></button>
-          <button className="live-action" onClick={() => setCohostTrayOpen(true)}><span>＋</span><small>Co-host</small></button>
-          <button className="live-action" onClick={toggleMic}><span>{micMuted ? '🔇' : '🎙️'}</span><small>{micMuted ? 'Unmute' : 'Mute'}</small></button>
-          <button className="live-action" onClick={toggleCamera}><span>{cameraOff ? '🚫' : '📷'}</span><small>{cameraOff ? 'Cam on' : 'Camera'}</small></button>
-          <button className="live-action" onClick={flipCamera} disabled={isStartingLive || cameraOff}><span>↻</span><small>Flip</small></button>
-          <button className="live-action" onClick={shareRoom}><span>↗</span><small>Share</small></button>
-        </div>
-      )}
-
-      {isLive && liveMessages.length > 0 && (
-        <div ref={chatScrollRef} className="live-chat-overlay" aria-label="Live comments">
-          {liveMessages.map((item) => (
-            <div className="live-chat-line" key={item.id}><strong>{item.user}</strong><span>{item.text}</span></div>
-          ))}
-        </div>
-      )}
-
-      {!isLive ? (
-        <div className="live-launch-controls">
-          <button className="go-live-main" onClick={startLive} disabled={isStartingLive}>{isStartingLive ? 'Starting…' : 'Go Live'}</button>
-          <button className="preview-tool preview-tool-wide" onClick={flipCamera}>↻ Camera</button>
-        </div>
+      {isLive ? (
+        <>
+          <LiveActions
+            premiumRepeat={premiumRepeat}
+            setGiftTrayOpen={setGiftTrayOpen}
+            setCohostTrayOpen={setCohostTrayOpen}
+            micMuted={micMuted}
+            toggleMic={toggleMic}
+            cameraOff={cameraOff}
+            toggleCamera={toggleCamera}
+            flipCamera={flipCamera}
+            isStartingLive={isStartingLive}
+            shareRoom={shareRoom}
+          />
+          <LiveChat
+            liveMessages={liveMessages}
+            commentText={commentText}
+            setCommentText={setCommentText}
+            submitComment={submitComment}
+          />
+        </>
       ) : (
-        <form className="live-comment-composer" onSubmit={submitComment}>
-          <input value={commentText} onChange={(event) => setCommentText(event.target.value)} maxLength={160} placeholder="Add comment…" aria-label="Add comment" />
-          <button type="submit" aria-label="Send comment" disabled={!commentText.trim()}>↑</button>
-        </form>
+        <LiveLaunchPanel
+          isStartingLive={isStartingLive}
+          startLive={startLive}
+          flipCamera={flipCamera}
+        />
       )}
 
-      {isLive && giftTrayOpen && (
-        <div className="live-sheet-backdrop" onClick={() => setGiftTrayOpen(false)}>
-          <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
-            <div className="sheet-handle" />
-            <div className="sheet-heading">
-              <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
-              <div className="test-balance">🪙 {coins.toLocaleString()}</div>
-            </div>
-            <p>Tap 1×, 5×, or 10× to send that amount while keeping the gift tray open. Custom amount is still available.</p>
-            <div className="live-gift-grid">
-              {gifts.map((gift) => {
-                const customOpen = customGiftId === gift.id
-                const amountValue = giftAmountValue(gift.id)
-                return (
-                  <div
-                    className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''} ${customOpen ? 'is-custom-open' : ''}`}
-                    key={gift.id}
-                  >
-                    {gift.video ? (
-                      <video
-                        className="live-gift-thumbnail"
-                        src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
-                        muted
-                        playsInline
-                        preload="metadata"
-                        onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
-                      />
-                    ) : (
-                      <span>{gift.emoji}</span>
-                    )}
-                    <strong>{gift.label}</strong>
-                    <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'} each</small>
-                    <div className="gift-quick-amounts" aria-label={`${gift.label} quick amounts`}>
-                      {QUICK_GIFT_AMOUNTS.map((quantity) => (
-                        <button
-                          type="button"
-                          key={quantity}
-                          onClick={() => sendQuickGift(gift, quantity)}
-                        >
-                          {quantity}×
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="gift-amount-toggle"
-                      onClick={() => setCustomGiftId(customOpen ? null : gift.id)}
-                    >
-                      Custom amount
-                    </button>
-                    {customOpen && (
-                      <div className="gift-custom-row">
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="1"
-                          step="1"
-                          value={amountValue}
-                          aria-label={`Custom amount for ${gift.label}`}
-                          onChange={(event) => updateGiftAmount(gift.id, event.target.value)}
-                        />
-                        <button type="button" onClick={() => sendCustomGift(gift)}>
-                          Send ×{amountValue || '0'}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-            <div className="test-wallet-row">
-              <small>Beta tester balance</small>
-              <button onClick={() => addTestCoins(10000)}>+10K test coins</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LiveGiftTray
+        open={isLive && giftTrayOpen}
+        onClose={() => setGiftTrayOpen(false)}
+        coins={coins}
+        sendGift={sendGift}
+        addTestCoins={addTestCoins}
+      />
 
-      {cohostTrayOpen && (
-        <div className="live-sheet-backdrop" onClick={() => setCohostTrayOpen(false)}>
-          <div className="live-sheet" onClick={(event) => event.stopPropagation()}>
-            <div className="sheet-handle" />
-            <div className="sheet-heading"><div><span>CO-HOST</span><strong>No requests yet</strong></div></div>
-            <p>Realtime co-host requests and remote video are still being connected. No fake users are shown.</p>
-            <button className="sheet-primary-action" onClick={shareRoom}>Share live link</button>
-          </div>
-        </div>
-      )}
+      <CohostSheet
+        open={cohostTrayOpen}
+        onClose={() => setCohostTrayOpen(false)}
+        shareRoom={shareRoom}
+      />
     </section>
   )
 }

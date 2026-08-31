@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createGifterBadge } from '../features/badges/gifterBadgeSystem.js'
 import { loadCoins } from '../utils/pwa.js'
 
 const SIMPLE_GIFT_DURATION_MS = 1800
@@ -110,7 +111,11 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     const activityEmoji = gift.activityEmoji || gift.emoji || '✦'
     setChat((items) => [...items, {
       id: `${Date.now()}-${Math.random()}`,
+      kind: 'gift',
       user: displayName,
+      badge: createGifterBadge(),
+      giftId: gift.id,
+      quantity: normalizedQuantity,
       text: `${activityEmoji} sent ${gift.label} ×${normalizedQuantity}`,
     }])
 

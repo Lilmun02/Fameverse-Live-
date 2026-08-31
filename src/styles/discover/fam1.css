@@ -1,0 +1,284 @@
+/* FAM 1 Discover redesign. Truthful empty-state first: no fake creators or rooms. */
+
+.fam-discover-shell {
+  min-height: calc(100dvh - 180px);
+  display: grid;
+  gap: 14px;
+  padding: 4px 2px 110px;
+}
+
+.fam-discover-hero {
+  position: relative;
+  min-height: 220px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid rgba(197, 143, 255, .14);
+  border-radius: 28px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 24%, rgba(146, 62, 255, .26), transparent 13rem),
+    linear-gradient(145deg, rgba(33, 11, 53, .92), rgba(8, 3, 14, .96));
+  box-shadow: 0 24px 56px rgba(0,0,0,.24);
+}
+
+.fam-discover-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.fam-discover-kicker {
+  color: #c39aef;
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.fam-discover-copy h2 {
+  margin: 8px 0 8px;
+  font-size: clamp(1.8rem, 8vw, 2.55rem);
+  line-height: 1;
+  letter-spacing: -.06em;
+}
+
+.fam-discover-copy p {
+  max-width: 470px;
+  margin: 0;
+  color: #b5a6be;
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.fam-discover-orbit {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  display: grid;
+  place-items: center;
+}
+
+.fam-discover-orbit b {
+  position: relative;
+  z-index: 2;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #7f31ff, #c95cff);
+  color: #fff;
+  font-size: 1.45rem;
+  box-shadow: 0 0 36px rgba(139, 55, 255, .34);
+}
+
+.fam-discover-orbit-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(204, 158, 255, .2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(-22deg);
+}
+
+.fam-discover-orbit-ring.ring-one {
+  width: 118px;
+  height: 52px;
+}
+
+.fam-discover-orbit-ring.ring-two {
+  width: 94px;
+  height: 94px;
+  border-color: rgba(99, 158, 255, .11);
+  transform: translate(-50%, -50%) rotate(34deg);
+}
+
+.fam-discover-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fam-discover-status-grid article {
+  min-height: 126px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 20px;
+  background: rgba(255,255,255,.035);
+}
+
+.fam-discover-status-grid article > span {
+  color: #998aa5;
+  font-size: .55rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.fam-discover-status-grid strong {
+  font-size: 1.35rem;
+}
+
+.fam-discover-status-grid small {
+  color: #a89aae;
+  font-size: .67rem;
+  line-height: 1.4;
+}
+
+.fam-discover-section {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 24px;
+  background: rgba(16,5,31,.66);
+}
+
+.fam-discover-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fam-discover-section-heading div > span,
+.fam-discover-section-heading div > strong {
+  display: block;
+}
+
+.fam-discover-section-heading div > span {
+  margin-bottom: 4px;
+  color: #9f8cac;
+  font-size: .55rem;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.fam-discover-section-heading div > strong {
+  font-size: .95rem;
+}
+
+.fam-discover-zero {
+  padding: 6px 8px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+  color: #8e8098;
+  font-size: .53rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.fam-discover-empty-card {
+  min-height: 230px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed rgba(196, 146, 255, .14);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at center, rgba(121, 52, 197, .12), transparent 12rem),
+    rgba(255,255,255,.02);
+  text-align: center;
+}
+
+.fam-empty-pulse {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(201, 151, 255, .22);
+  border-radius: 50%;
+  color: #ca84ff;
+  box-shadow: 0 0 24px rgba(167, 76, 255, .14);
+}
+
+.fam-discover-empty-card strong {
+  font-size: .92rem;
+}
+
+.fam-discover-empty-card p {
+  max-width: 360px;
+  margin: 0;
+  color: #9f91a8;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.fam-discover-footer-note {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 18px;
+  background: rgba(255,255,255,.025);
+}
+
+.fam-discover-footer-note span {
+  color: #b28cdb;
+  font-size: .56rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.fam-discover-footer-note p {
+  margin: 0;
+  color: #918496;
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .fam-discover-hero {
+    grid-template-columns: 1fr 92px;
+    min-height: 205px;
+    padding: 20px;
+  }
+
+  .fam-discover-orbit {
+    width: 90px;
+    height: 90px;
+  }
+
+  .fam-discover-orbit-ring.ring-one {
+    width: 86px;
+    height: 38px;
+  }
+
+  .fam-discover-orbit-ring.ring-two {
+    width: 70px;
+    height: 70px;
+  }
+
+  .fam-discover-orbit b {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+}
+
+@media (max-width: 390px) {
+  .fam-discover-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .fam-discover-orbit {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    opacity: .62;
+  }
+
+  .fam-discover-copy {
+    padding-right: 36px;
+  }
+
+  .fam-discover-status-grid {
+    grid-template-columns: 1fr;
+  }
+}

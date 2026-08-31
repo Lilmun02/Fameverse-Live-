@@ -1,0 +1,96 @@
+/* FAM 1 shared shell and navigation identity. */
+
+.fam-topbar {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.fam-release-chip-top {
+  width: fit-content;
+  background: rgba(143, 73, 255, .13);
+  border-color: rgba(202, 157, 255, .18);
+  color: #d9b9ff;
+}
+
+.fam-bottom-nav {
+  width: min(calc(100% - 28px), 500px);
+  min-height: 64px;
+  padding: 7px 8px;
+  border-radius: 22px;
+  border-color: rgba(206, 168, 255, .12);
+  background:
+    linear-gradient(180deg, rgba(24, 10, 39, .94), rgba(8, 3, 14, .96));
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.42),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.fam-bottom-nav button {
+  min-height: 50px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border-radius: 16px;
+  color: #8f829b;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.fam-bottom-nav button small {
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .01em;
+}
+
+.fam-bottom-nav button.active {
+  background: rgba(158, 82, 255, .12);
+  color: #fff;
+}
+
+.fam-bottom-nav button:active {
+  transform: scale(.97);
+}
+
+.fam-nav-icon {
+  display: grid !important;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  margin: 0 !important;
+  color: #c189ff;
+  font-size: 1rem !important;
+}
+
+.fam-live-nav-orbit {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  margin: 0 !important;
+  display: grid !important;
+  place-items: center;
+  border: 1px solid rgba(203, 153, 255, .34);
+  border-radius: 50%;
+  box-shadow: 0 0 18px rgba(169, 78, 255, .16);
+}
+
+.fam-live-nav-orbit::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 50%;
+}
+
+.fam-live-nav-orbit i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #cf75ff;
+  box-shadow: 0 0 12px rgba(207,117,255,.72);
+}
+
+.fam-bottom-nav button.active .fam-live-nav-orbit {
+  border-color: rgba(222, 188, 255, .62);
+  box-shadow: 0 0 24px rgba(170, 73, 255, .32);
+}
