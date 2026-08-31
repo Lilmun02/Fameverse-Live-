@@ -57,6 +57,26 @@
   display: none;
 }
 
+/* The Live experience itself must never become the scroll target. iOS standalone
+   mode may retain document scroll after keyboard/gesture interactions, so pin the
+   Live shell to the visual screen and leave vertical scrolling to chat. */
+.live-app-shell {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.live-app-shell main,
+.live-app-shell .mobile-live-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Make React's auth-loading state visually continuous with the HTML boot splash. */
 .foundation-loading {
   position: fixed;
