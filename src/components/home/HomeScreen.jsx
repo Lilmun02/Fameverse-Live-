@@ -53,7 +53,7 @@ export default function HomeScreen({
       <div className="fv-home-intro">
         <span>COMMUNITY</span>
         <h1 id="fv-home-title">Hey, {displayName}</h1>
-        <p>{username} · Find your people and see what is happening live.</p>
+        <p>{username} · Your connections live here.</p>
       </div>
 
       <label className="fv-search">
@@ -75,7 +75,6 @@ export default function HomeScreen({
       <section className="fv-home-section">
         <div className="fv-section-heading">
           <div><span>{GROUPS.find(([key]) => key === group)?.[1] || 'Community'}</span><h2>Your circle</h2></div>
-          <button type="button" onClick={() => setTab('discover')}>Find people</button>
         </div>
 
         {visiblePeople.length ? (
@@ -96,14 +95,8 @@ export default function HomeScreen({
         ) : (
           <div className="fv-empty-inline">
             <div><strong>{query ? 'No matches' : group === 'friends' ? 'Your circle is empty for now' : `No ${group} yet`}</strong><p>{query ? 'Try another name or username.' : 'When you connect with real people, they will show up here.'}</p></div>
-            <button type="button" onClick={() => setTab('discover')}>Discover</button>
           </div>
         )}
-      </section>
-
-      <section className="fv-home-live-row">
-        <div><span>LIVE NOW</span><strong>See who is on</strong><small>Public live rooms will appear in Discover.</small></div>
-        <button type="button" onClick={() => setTab('discover')}>Open Discover</button>
       </section>
     </section>
   )
