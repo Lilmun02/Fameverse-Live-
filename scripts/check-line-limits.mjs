@@ -116,6 +116,31 @@ for (const guard of REQUIRED_GUARDS) {
   }
 }
 
+// Live chat scrolling invariant: the whole session stays available, new messages
+// auto-follow inside the chat region, and the Live shell itself never becomes the
+// scroll target on iOS/PWA. Only the chat viewport may scroll vertically.
+{
+  const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
+  const liveScreen = await readFile(join(sourceRoot, 'components/live/LiveScreen.jsx'), 'utf8')
+  const livePolish = await readFile(join(sourceRoot, 'styles/live/polish.css'), 'utf8')
+  const fullSessionChat = app.includes('const liveMessages = chat') && !app.includes('const liveMessages = chat.slice(')
+  const autoFollow = liveScreen.includes('chatNode.scrollTop = chatNode.scrollHeight')
+    && liveScreen.includes('ref={chatScrollRef}')
+  const chatOwnsScroll = livePolish.includes('.mobile-live-shell.is-live .live-chat-overlay')
+    && livePolish.includes('overflow-y: auto')
+    && livePolish.includes('touch-action: pan-y')
+    && livePolish.includes('pointer-events: auto')
+  const shellPinned = livePolish.includes('.live-app-shell {')
+    && livePolish.includes('position: fixed')
+    && livePolish.includes('overflow: hidden')
+
+  if (!fullSessionChat || !autoFollow || !chatOwnsScroll || !shellPinned) {
+    architectureViolations.push(
+      'Live chat scrolling contract failed: retain the full session, auto-follow new comments, keep chat vertically scrollable, and keep the Live shell pinned/non-scrollable.',
+    )
+  }
+}
+
 // Live session invariant: ending a Live must clear both committed chat messages
 // and the unsent comment draft inside the End Live path.
 {
@@ -155,4 +180,4 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: startup recovery, media health, gift tray quick-amount exception, gift amount/pricing, and End Live chat reset contracts are active; disabled media wrappers are not imported.')
+console.log('Architecture guard passed: startup recovery, media health, gift tray quick-amount exception, gift amount/pricing, live chat scrolling, and End Live chat reset contracts are active; disabled media wrappers are not imported.')
