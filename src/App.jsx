@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import AuthScreen from './components/auth/AuthScreen.jsx'
 import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
+import HomeScreen from './components/home/HomeScreen.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
-import TopBar from './components/layout/TopBar.jsx'
 import LiveScreen from './components/live/LiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
@@ -16,7 +16,7 @@ const SPLASH_MINIMUM_MS = 900
 
 export default function App() {
   const [toast, setToast] = useState('')
-  const [tab, setTab] = useState('live')
+  const [tab, setTab] = useState('home')
   const [profileMode, setProfileMode] = useState('view')
   const [policyPage, setPolicyPage] = useState(null)
   const [settingsDetail, setSettingsDetail] = useState(null)
@@ -114,7 +114,7 @@ export default function App() {
   const signOut = async () => {
     gifts.stopGiftPlayback()
     await account.signOut()
-    setTab('live')
+    setTab('home')
     setProfileMode('view')
     setPolicyPage(null)
     setSettingsDetail(null)
@@ -151,9 +151,21 @@ export default function App() {
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
 
-      {tab !== 'live' && <TopBar standalone={pwa.standalone} installPwa={pwa.installPwa} />}
-
       <main>
+        {tab === 'home' && (
+          <HomeScreen
+            displayName={displayName}
+            username={username}
+            initial={initial}
+            followNetwork={followNetwork}
+            setTab={setTab}
+            standalone={pwa.standalone}
+            installPwa={pwa.installPwa}
+          />
+        )}
+
+        {tab === 'discover' && <DiscoverScreen setTab={setTab} />}
+
         {tab === 'live' && (
           <LiveScreen
             isLive={live.isLive}
@@ -188,8 +200,6 @@ export default function App() {
             cohostTrayOpen={cohostTrayOpen}
           />
         )}
-
-        {tab === 'discover' && <DiscoverScreen />}
 
         {tab === 'profile' && (
           <ProfileScreen
