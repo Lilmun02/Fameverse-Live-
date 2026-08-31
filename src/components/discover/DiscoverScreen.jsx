@@ -1,52 +1,60 @@
-import { FAMEVERSE_RELEASE } from '../../config/version.js'
+import { useState } from 'react'
 
-export default function DiscoverScreen() {
+const FILTERS = ['Popular', 'Friends', 'Following', 'Nearby']
+
+export default function DiscoverScreen({ setTab }) {
+  const [filter, setFilter] = useState('Popular')
+  const [query, setQuery] = useState('')
+
   return (
-    <section className="fam-discover-shell" aria-labelledby="discover-title">
-      <div className="fam-discover-hero">
-        <div className="fam-discover-copy">
-          <span className="fam-discover-kicker">DISCOVER · {FAMEVERSE_RELEASE.family}</span>
-          <h2 id="discover-title">Live in the Verse</h2>
-          <p>Real public rooms will land here as Fameverse discovery comes online. No fake creators, fake viewers, or placeholder lives.</p>
+    <section className="community-discover-shell" aria-labelledby="discover-title">
+      <header className="community-discover-header">
+        <div>
+          <span>LIVE DISCOVERY</span>
+          <h1 id="discover-title">Find your people</h1>
         </div>
-        <div className="fam-discover-orbit" aria-hidden="true">
-          <span className="fam-discover-orbit-ring ring-one" />
-          <span className="fam-discover-orbit-ring ring-two" />
-          <b>F</b>
-        </div>
+        <button type="button" className="community-discover-profile" onClick={() => setTab('profile')} aria-label="Open profile">♙</button>
+      </header>
+
+      <div className="community-discover-filters" role="tablist" aria-label="Live discovery filters">
+        {FILTERS.map((item) => (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={filter === item}
+            className={filter === item ? 'active' : ''}
+            key={item}
+            onClick={() => setFilter(item)}
+          >
+            {item}
+          </button>
+        ))}
       </div>
 
-      <div className="fam-discover-status-grid">
-        <article>
-          <span>PUBLIC ROOMS</span>
-          <strong>0</strong>
-          <small>Realtime room discovery is not connected yet.</small>
-        </article>
-        <article>
-          <span>DISCOVERY MODE</span>
-          <strong>Beta</strong>
-          <small>Only verified live data will populate this page.</small>
-        </article>
+      <label className="community-discover-search">
+        <span aria-hidden="true">⌕</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search creators or live titles"
+          aria-label="Search live discovery"
+        />
+      </label>
+
+      <div className="community-live-heading">
+        <div>
+          <span>{filter.toUpperCase()}</span>
+          <strong>Live now</strong>
+        </div>
+        <small>0 live</small>
       </div>
 
-      <div className="fam-discover-section">
-        <div className="fam-discover-section-heading">
-          <div>
-            <span>LIVE IN THE VERSE</span>
-            <strong>No public rooms yet</strong>
-          </div>
-          <span className="fam-discover-zero">0 LIVE</span>
-        </div>
-        <div className="fam-discover-empty-card">
-          <div className="fam-empty-pulse" aria-hidden="true">✦</div>
-          <strong>The Verse is quiet right now</strong>
-          <p>When real creators go public, their rooms will appear here instead of made-up demo profiles.</p>
-        </div>
-      </div>
-
-      <div className="fam-discover-footer-note">
-        <span>{FAMEVERSE_RELEASE.label}</span>
-        <p>Discovery cards, ranking, and creator recommendations stay locked until they can be powered by real Fameverse activity.</p>
+      <div className="community-live-empty">
+        <div className="community-live-empty-mark" aria-hidden="true">◉</div>
+        <strong>No live rooms to show yet</strong>
+        <p>Real public creators will appear here when live-room discovery is connected. We are not filling the grid with fake accounts.</p>
+        <button type="button" onClick={() => setTab('live')}>Go Live</button>
       </div>
     </section>
   )
