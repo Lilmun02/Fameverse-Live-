@@ -5,15 +5,9 @@ export default function LiveHeader({
   username,
   viewerCount,
   startLive,
+  liveTitle,
 }) {
-  if (!isLive) {
-    return (
-      <div className="fv-prelive-header">
-        <div><span>LIVE</span><strong>Start a room</strong><small>{username}</small></div>
-        <div className="fv-prelive-avatar" aria-label={displayName}>{initial}</div>
-      </div>
-    )
-  }
+  if (!isLive) return null
 
   return (
     <div className="fam-live-header">
@@ -21,7 +15,7 @@ export default function LiveHeader({
         <div className="fam-avatar-orbit is-live"><div className="avatar owner live-avatar">{initial}</div></div>
         <div className="fam-creator-copy">
           <div className="fam-creator-name-row"><strong>{displayName}</strong><span className="fam-live-badge">LIVE</span></div>
-          <small>{username}</small>
+          <small>{liveTitle || username}</small>
         </div>
       </div>
       <div className="fam-header-meta">
