@@ -1,0 +1,67 @@
+.fv-update-notice {
+  position: fixed;
+  z-index: 210;
+  top: max(12px, calc(env(safe-area-inset-top) + 8px));
+  left: 50%;
+  width: min(calc(100% - 28px), 430px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 16px;
+  background: rgba(12, 8, 18, .94);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, .42);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: #fff;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.fv-update-dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #b75cff;
+  box-shadow: 0 0 16px rgba(183, 92, 255, .72);
+}
+
+.fv-update-notice div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.fv-update-notice strong,
+.fv-update-notice small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fv-update-notice strong {
+  font-size: .78rem;
+  line-height: 1.15;
+}
+
+.fv-update-notice small {
+  color: rgba(255, 255, 255, .7);
+  font-size: .66rem;
+  line-height: 1.25;
+}
+
+.fv-update-notice[data-mode='applying'] .fv-update-dot {
+  animation: fv-update-pulse .85s ease-in-out infinite alternate;
+}
+
+@keyframes fv-update-pulse {
+  from { transform: scale(.8); opacity: .65; }
+  to { transform: scale(1.15); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-update-notice[data-mode='applying'] .fv-update-dot {
+    animation: none;
+  }
+}
