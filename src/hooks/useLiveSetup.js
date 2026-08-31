@@ -1,18 +1,32 @@
 import { useState } from 'react'
 
-const EMPTY_SETUP = Object.freeze({
-  title: '',
-  goal: '',
-  wishlist: '',
-})
+function createEmptySetup() {
+  return {
+    title: '',
+    goal: '',
+    wishlistGiftIds: [],
+  }
+}
 
 export function useLiveSetup(setToast) {
-  const [draft, setDraft] = useState(EMPTY_SETUP)
+  const [draft, setDraft] = useState(createEmptySetup)
   const [active, setActive] = useState(null)
 
   const updateField = (field, value) => {
-    if (!(field in EMPTY_SETUP)) return
+    if (field !== 'title' && field !== 'goal') return
     setDraft((current) => ({ ...current, [field]: value }))
+  }
+
+  const toggleWishlistGift = (giftId) => {
+    setDraft((current) => {
+      const selected = current.wishlistGiftIds.includes(giftId)
+      return {
+        ...current,
+        wishlistGiftIds: selected
+          ? current.wishlistGiftIds.filter((id) => id !== giftId)
+          : [...current.wishlistGiftIds, giftId],
+      }
+    })
   }
 
   const beginLive = async (startLive) => {
@@ -25,7 +39,7 @@ export function useLiveSetup(setToast) {
     const nextSetup = {
       title,
       goal: draft.goal.trim(),
-      wishlist: draft.wishlist.trim(),
+      wishlistGiftIds: [...draft.wishlistGiftIds],
     }
     const started = await startLive()
     if (started) setActive(nextSetup)
@@ -33,7 +47,7 @@ export function useLiveSetup(setToast) {
   }
 
   const reset = () => {
-    setDraft(EMPTY_SETUP)
+    setDraft(createEmptySetup())
     setActive(null)
   }
 
@@ -41,6 +55,7 @@ export function useLiveSetup(setToast) {
     draft,
     active,
     updateField,
+    toggleWishlistGift,
     beginLive,
     reset,
   }

@@ -1,9 +1,12 @@
+import { gifts } from '../../config/gifts.js'
+
 export default function PreLiveSetupPanel({
   displayName,
   username,
   initial,
   draft,
   updateField,
+  toggleWishlistGift,
   beginLive,
   isStartingLive,
 }) {
@@ -50,17 +53,35 @@ export default function PreLiveSetupPanel({
           <small>{draft.goal.length}/60</small>
         </label>
 
-        <label>
-          <span>Wishlist <b>Optional</b></span>
-          <textarea
-            maxLength={120}
-            rows={3}
-            value={draft.wishlist}
-            onChange={(event) => updateField('wishlist', event.target.value)}
-            placeholder="Add something you are wishing for during this live"
-          />
-          <small>{draft.wishlist.length}/120</small>
-        </label>
+        <div className="fv-wishlist-field">
+          <div className="fv-wishlist-heading">
+            <span>Wishlist gifts</span>
+            <b>Optional · {draft.wishlistGiftIds.length} selected</b>
+          </div>
+          <p>Pick only gifts that actually exist in Fameverse.</p>
+          <div className="fv-wishlist-grid" role="group" aria-label="Wishlist gifts">
+            {gifts.map((gift) => {
+              const selected = draft.wishlistGiftIds.includes(gift.id)
+              const symbol = gift.activityEmoji || gift.emoji || '✦'
+              return (
+                <button
+                  key={gift.id}
+                  type="button"
+                  className={selected ? 'selected' : ''}
+                  aria-pressed={selected}
+                  onClick={() => toggleWishlistGift(gift.id)}
+                >
+                  <span className="fv-wishlist-symbol">{symbol}</span>
+                  <span className="fv-wishlist-copy">
+                    <strong>{gift.label}</strong>
+                    <small>{gift.cost.toLocaleString()} coin{gift.cost === 1 ? '' : 's'}</small>
+                  </span>
+                  <span className="fv-wishlist-check" aria-hidden="true">{selected ? '✓' : '+'}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="fv-live-setup-foot">

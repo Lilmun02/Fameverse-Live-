@@ -46,6 +46,7 @@ export default function LiveScreen({
         initial={initial}
         draft={liveSetup.draft}
         updateField={liveSetup.updateField}
+        toggleWishlistGift={liveSetup.toggleWishlistGift}
         beginLive={() => liveSetup.beginLive(startLive)}
         isStartingLive={isStartingLive}
       />
