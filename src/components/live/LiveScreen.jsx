@@ -1,5 +1,6 @@
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
 import CohostSheet from './CohostSheet.jsx'
+import EndLiveSummaryPanel from './EndLiveSummaryPanel.jsx'
 import LiveActions from './LiveActions.jsx'
 import LiveChat from './LiveChat.jsx'
 import LiveHeader from './LiveHeader.jsx'
@@ -20,6 +21,7 @@ export default function LiveScreen({
   isStartingLive,
   startLive,
   liveSetup,
+  sessionSummary,
   premiumRepeat,
   setGiftTrayOpen,
   setCohostTrayOpen,
@@ -38,6 +40,15 @@ export default function LiveScreen({
   addTestCoins,
   cohostTrayOpen,
 }) {
+  if (!isLive && sessionSummary.summary) {
+    return (
+      <EndLiveSummaryPanel
+        summary={sessionSummary.summary}
+        onDone={sessionSummary.dismissSummary}
+      />
+    )
+  }
+
   if (!isLive) {
     return (
       <PreLiveSetupPanel

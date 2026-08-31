@@ -4,7 +4,7 @@ import { loadCoins } from '../utils/pwa.js'
 
 const SIMPLE_GIFT_DURATION_MS = 1800
 
-export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
+export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAccepted }) {
   const [coins, setCoins] = useState(loadCoins)
   const [giftOverlay, setGiftOverlay] = useState(null)
   const [premiumRepeat, setPremiumRepeat] = useState(null)
@@ -118,6 +118,13 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
       quantity: normalizedQuantity,
       text: `${activityEmoji} sent ${gift.label} ×${normalizedQuantity}`,
     }])
+
+    onGiftAccepted?.({
+      gift,
+      quantity: normalizedQuantity,
+      sender: displayName,
+      totalCoins: totalCost,
+    })
 
     if (!keepTrayOpen) setGiftTrayOpen(false)
 

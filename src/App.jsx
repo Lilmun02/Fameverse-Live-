@@ -10,6 +10,7 @@ import { useAccount } from './hooks/useAccount.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
+import { useLiveSessionSummary } from './hooks/useLiveSessionSummary.js'
 import { useLiveSetup } from './hooks/useLiveSetup.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
@@ -29,6 +30,7 @@ export default function App() {
 
   const live = useLiveMedia(setToast)
   const liveSetup = useLiveSetup(setToast)
+  const sessionSummary = useLiveSessionSummary()
   const account = useAccount({
     setToast,
     onBeforeSignOut: () => {
@@ -49,6 +51,7 @@ export default function App() {
     displayName,
     setToast,
     setChat,
+    onGiftAccepted: sessionSummary.recordGift,
   })
   const pwa = usePwaInstall(setToast)
   const viewerCount = useMemo(() => 0, [])
@@ -77,15 +80,21 @@ export default function App() {
 
   const startLive = async () => {
     const wasLive = live.isLive
+    const roomTitle = liveSetup.active?.title || liveSetup.draft.title.trim() || 'Live session'
     const result = await live.startLive()
+
     if (wasLive) {
+      sessionSummary.finishSession({ title: roomTitle, viewerCount })
       gifts.stopGiftPlayback()
       gifts.setGiftTrayOpen(false)
       setCohostTrayOpen(false)
       setChat([])
       setCommentText('')
       liveSetup.reset()
+      return result
     }
+
+    if (result) sessionSummary.beginSession({ title: roomTitle })
     return result
   }
 
@@ -120,6 +129,7 @@ export default function App() {
   const signOut = async () => {
     gifts.stopGiftPlayback()
     liveSetup.reset()
+    sessionSummary.clear()
     await account.signOut()
     setTab('home')
     setProfileMode('view')
@@ -189,6 +199,7 @@ export default function App() {
             isStartingLive={live.isStartingLive}
             startLive={startLive}
             liveSetup={liveSetup}
+            sessionSummary={sessionSummary}
             premiumRepeat={gifts.premiumRepeat}
             setGiftTrayOpen={gifts.setGiftTrayOpen}
             setCohostTrayOpen={setCohostTrayOpen}

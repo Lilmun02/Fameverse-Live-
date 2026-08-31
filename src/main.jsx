@@ -25,6 +25,7 @@ import './styles/home/fam1-v2.css'
 import './styles/discover/fam1-v2.css'
 import './styles/live/fam1-v2.css'
 import './styles/live/prelive-setup.css'
+import './styles/live/end-live-summary.css'
 import './styles/profile/fam1-v2.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
