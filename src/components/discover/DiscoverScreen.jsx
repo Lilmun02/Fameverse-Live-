@@ -27,7 +27,6 @@ export default function DiscoverScreen({ setTab }) {
           <div className="fv-live-empty-mark" aria-hidden="true"><i /></div>
           <strong>No one is live yet</strong>
           <p>When a real creator starts a public room, it will appear here.</p>
-          <button type="button" onClick={() => setTab('live')}>Go Live</button>
         </div>
       </section>
     </section>
