@@ -154,7 +154,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${tab === 'live' ? 'live-app-shell' : ''}`}>
+    <div className={`app-shell ${tab === 'live' && live.isLive ? 'live-app-shell' : ''}`}>
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
 
