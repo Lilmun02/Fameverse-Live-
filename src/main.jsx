@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './features/feedback/beta-feedback.js'
 import './features/gifts/renderer/gift-engine.js'
+import { registerFameversePwaUpdates } from './services/app/pwaUpdate.js'
 import App from './App.jsx'
 import './styles/base/global.css'
 import './styles/gifts/base.css'
@@ -34,8 +35,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
-}
+registerFameversePwaUpdates()
