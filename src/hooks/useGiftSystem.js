@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadCoins } from '../utils/pwa.js'
 
+const SIMPLE_GIFT_DURATION_MS = 1800
+
 export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   const [coins, setCoins] = useState(loadCoins)
   const [giftOverlay, setGiftOverlay] = useState(null)
@@ -8,6 +10,8 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   const [giftTrayOpen, setGiftTrayOpen] = useState(false)
 
   const giftTimerRef = useRef(null)
+  const simpleGiftQueueRef = useRef([])
+  const simpleGiftActiveRef = useRef(false)
   const premiumRepeatTimerRef = useRef(null)
   const coinsRef = useRef(coins)
 
@@ -18,12 +22,23 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
 
   useEffect(() => () => {
     clearTimeout(giftTimerRef.current)
+    simpleGiftQueueRef.current = []
+    simpleGiftActiveRef.current = false
     clearTimeout(premiumRepeatTimerRef.current)
     window.FameverseGiftEngine?.stop?.()
   }, [])
 
+  const clearSimpleGiftPlayback = () => {
+    clearTimeout(giftTimerRef.current)
+    giftTimerRef.current = null
+    simpleGiftQueueRef.current = []
+    simpleGiftActiveRef.current = false
+    setGiftOverlay(null)
+  }
+
   useEffect(() => {
     if (isLive) return
+    clearSimpleGiftPlayback()
     clearTimeout(premiumRepeatTimerRef.current)
     setPremiumRepeat(null)
     setGiftTrayOpen(false)
@@ -37,16 +52,31 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
-  const showGift = (gift, quantity) => {
-    clearTimeout(giftTimerRef.current)
+  const playNextSimpleGift = () => {
+    if (simpleGiftActiveRef.current) return
+    const next = simpleGiftQueueRef.current.shift()
+    if (!next) return
+
+    simpleGiftActiveRef.current = true
     setGiftOverlay({
-      ...gift,
+      ...next.gift,
       sender: displayName,
-      duration: 1800,
-      count: quantity,
+      duration: SIMPLE_GIFT_DURATION_MS,
+      count: next.quantity,
       lastSentAt: Date.now(),
     })
-    giftTimerRef.current = setTimeout(() => setGiftOverlay(null), 1800)
+
+    giftTimerRef.current = window.setTimeout(() => {
+      giftTimerRef.current = null
+      setGiftOverlay(null)
+      simpleGiftActiveRef.current = false
+      playNextSimpleGift()
+    }, SIMPLE_GIFT_DURATION_MS)
+  }
+
+  const showGift = (gift, quantity) => {
+    simpleGiftQueueRef.current.push({ gift, quantity })
+    playNextSimpleGift()
   }
 
   const sendGift = (gift, quantity = 1, { keepTrayOpen = false } = {}) => {
@@ -104,6 +134,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat }) {
   }
 
   const stopGiftPlayback = () => {
+    clearSimpleGiftPlayback()
     clearTimeout(premiumRepeatTimerRef.current)
     setPremiumRepeat(null)
     window.FameverseGiftEngine?.stop?.()
