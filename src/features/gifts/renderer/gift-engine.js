@@ -1,5 +1,4 @@
 import '../../../styles/gifts/engine.css'
-import { startPocketCometAnimation } from './pocketComet.js'
 
 const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
 
@@ -12,14 +11,6 @@ const giftRegistry = Object.freeze({
     cost: 100,
     video: GROK_WELCOME_VIDEO,
     effect: 'video-cinematic',
-  },
-  pocketComet: {
-    id: 'fv_pocket_comet_15',
-    label: 'Pocket Comet',
-    tier: 'low',
-    duration: 4500,
-    cost: 15,
-    effect: 'canvas-pocket-comet',
   },
 })
 
@@ -34,7 +25,6 @@ function destroyActiveScene() {
   if (!activeGift) return
 
   clearTimeout(activeGift.timer)
-  activeGift.cancelAnimation?.()
   if (activeGift.video) {
     try { activeGift.video.pause() } catch {}
     activeGift.video.removeAttribute('src')
@@ -90,25 +80,6 @@ function buildVideoScene(config, meta, quantity) {
   return { root, video, metaBar }
 }
 
-function buildPocketCometScene(config) {
-  const root = document.createElement('div')
-  root.className = 'fv-gift-engine fv-canvas-gift'
-  root.dataset.giftId = config.id
-  root.setAttribute('role', 'status')
-  root.setAttribute('aria-label', 'Pocket Comet gift animation')
-  root.style.animationDuration = `${config.duration}ms`
-
-  const canvas = document.createElement('canvas')
-  canvas.className = 'fv-gift-canvas'
-  root.append(canvas)
-
-  return {
-    root,
-    canvas,
-    start: () => startPocketCometAnimation(canvas, config.duration),
-  }
-}
-
 function playNextQueuedGift() {
   destroyActiveScene()
 
@@ -130,9 +101,7 @@ function playNextQueuedGift() {
 function startGiftScene(config, meta, quantity) {
   const scene = config.effect === 'video-cinematic'
     ? buildVideoScene(config, meta, quantity)
-    : config.effect === 'canvas-pocket-comet'
-      ? buildPocketCometScene(config)
-      : null
+    : null
   if (!scene) return false
 
   document.documentElement.classList.add('fv-gift-engine-active')
@@ -143,24 +112,21 @@ function startGiftScene(config, meta, quantity) {
     timer: null,
     id: config.id,
     quantity,
-    cancelAnimation: scene.start?.() || null,
   }
 
   const finish = () => {
-    if (!activeGift || activeGift.root !== scene.root) return
+    if (!activeGift || activeGift.video !== scene.video) return
     playNextQueuedGift()
   }
 
-  activeGift.timer = window.setTimeout(finish, config.duration + (scene.video ? 1200 : 120))
+  scene.video.addEventListener('ended', finish, { once: true })
+  activeGift.timer = window.setTimeout(finish, config.duration + 1200)
 
-  if (scene.video) {
-    scene.video.addEventListener('ended', finish, { once: true })
-    const start = scene.video.play()
-    start?.catch?.(() => {
-      scene.video.muted = true
-      scene.video.play().catch(finish)
-    })
-  }
+  const start = scene.video.play()
+  start?.catch?.(() => {
+    scene.video.muted = true
+    scene.video.play().catch(finish)
+  })
   return true
 }
 
