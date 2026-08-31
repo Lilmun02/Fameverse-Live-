@@ -15,7 +15,8 @@ import './styles/live/polish.css'
 import './styles/feedback/beta-feedback.css'
 import './styles/gifts/ui.css'
 import './styles/base/fam1.css'
-import './styles/live/fam1.css'
+import './styles/live/fam1-shell.css'
+import './styles/live/fam1-chat.css'
 import './styles/discover/fam1.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

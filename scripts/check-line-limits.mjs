@@ -61,17 +61,18 @@ for (const guard of REQUIRED_GUARDS) {
 
 // Gift tray invariant: successful gift sends close the tray by default. The only
 // allowed exception is an explicitly requested quick-amount tap (1×/5×/10×),
-// which keeps the tray open so the sender can tap another amount.
+// which keeps the tray open so the sender can tap another amount. The tray UI
+// owns amount selection; the hook owns transaction/close behavior.
 {
   const giftHook = await readFile(join(sourceRoot, 'hooks/useGiftSystem.js'), 'utf8')
-  const liveScreen = await readFile(join(sourceRoot, 'components/live/LiveScreen.jsx'), 'utf8')
+  const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
   const acceptedChatIndex = giftHook.indexOf('setChat((items)')
   const rendererBranchIndex = giftHook.indexOf('if (gift.rendererId)')
   const conditionalCloseIndex = acceptedChatIndex >= 0
     ? giftHook.indexOf('if (!keepTrayOpen) setGiftTrayOpen(false)', acceptedChatIndex)
     : -1
-  const quickAmountsDeclared = liveScreen.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
-  const quickSendKeepsTrayOpen = liveScreen.includes('sendGift(gift, quantity, { keepTrayOpen: true })')
+  const quickAmountsDeclared = giftTray.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
+  const quickSendKeepsTrayOpen = giftTray.includes('sendGift(gift, quantity, { keepTrayOpen: true })')
 
   if (
     acceptedChatIndex < 0
@@ -92,16 +93,16 @@ for (const guard of REQUIRED_GUARDS) {
 // every simple gift presentation visibly includes the actual ×N quantity.
 {
   const giftConfig = await readFile(join(sourceRoot, 'config/gifts.js'), 'utf8')
-  const liveScreen = await readFile(join(sourceRoot, 'components/live/LiveScreen.jsx'), 'utf8')
+  const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
   const giftOverlay = await readFile(join(sourceRoot, 'components/gifts/GiftOverlay.jsx'), 'utf8')
   const basicGiftIds = ['rose', 'heart', 'fire', 'star', 'crown']
   const basicPricesLocked = basicGiftIds.every((id) => {
     const pattern = new RegExp(`id: '${id}',[^\\n]*cost: 1`)
     return pattern.test(giftConfig)
   })
-  const quickAmountsLocked = liveScreen.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
-  const customAmountLocked = liveScreen.includes('Custom amount')
-    && liveScreen.includes('Send ×{amountValue')
+  const quickAmountsLocked = giftTray.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
+  const customAmountLocked = giftTray.includes('Custom amount')
+    && giftTray.includes('Send ×{amountValue')
   const quantityDisplayLocked = giftOverlay.includes('×{giftOverlay.count || 1}')
 
   if (
@@ -118,14 +119,15 @@ for (const guard of REQUIRED_GUARDS) {
 
 // Live chat scrolling invariant: the whole session stays available, new messages
 // auto-follow inside the chat region, and the Live shell itself never becomes the
-// scroll target on iOS/PWA. Only the chat viewport may scroll vertically.
+// scroll target on iOS/PWA. LiveChat owns scroll behavior; polish.css owns the
+// pinned shell/scroll viewport contract.
 {
   const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
-  const liveScreen = await readFile(join(sourceRoot, 'components/live/LiveScreen.jsx'), 'utf8')
+  const liveChat = await readFile(join(sourceRoot, 'components/live/LiveChat.jsx'), 'utf8')
   const livePolish = await readFile(join(sourceRoot, 'styles/live/polish.css'), 'utf8')
   const fullSessionChat = app.includes('const liveMessages = chat') && !app.includes('const liveMessages = chat.slice(')
-  const autoFollow = liveScreen.includes('chatNode.scrollTop = chatNode.scrollHeight')
-    && liveScreen.includes('ref={chatScrollRef}')
+  const autoFollow = liveChat.includes('chatNode.scrollTop = chatNode.scrollHeight')
+    && liveChat.includes('ref={chatScrollRef}')
   const chatOwnsScroll = livePolish.includes('.mobile-live-shell.is-live .live-chat-overlay')
     && livePolish.includes('overflow-y: auto')
     && livePolish.includes('touch-action: pan-y')
