@@ -1,0 +1,107 @@
+/* FAM 1.1 shared mobile shell: flatter, denser, community-first. */
+:root {
+  --fv-bg: #08070b;
+  --fv-panel: #111016;
+  --fv-panel-2: #17131d;
+  --fv-line: rgba(255,255,255,.08);
+  --fv-muted: #9d96a5;
+  --fv-text: #f7f4fa;
+  --fv-accent: #a64cff;
+  --fv-accent-soft: rgba(166,76,255,.14);
+}
+
+body { background: var(--fv-bg); }
+.app-shell { background: var(--fv-bg); color: var(--fv-text); }
+
+.fv-bottom-nav {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  width: min(100%, 520px);
+  min-height: 72px;
+  padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 0;
+  border-top: 1px solid var(--fv-line);
+  border-radius: 0;
+  background: rgba(8,7,11,.96);
+  box-shadow: 0 -10px 28px rgba(0,0,0,.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.fv-bottom-nav button {
+  position: relative;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  padding: 5px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #817b88;
+}
+
+.fv-bottom-nav button::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.fv-bottom-nav button.active { color: #fff; background: transparent; }
+.fv-bottom-nav button.active::before { background: var(--fv-accent); }
+.fv-bottom-nav svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.fv-bottom-nav button small { font-size: .62rem; font-weight: 760; }
+
+.beta-feedback-launcher {
+  position: fixed;
+  z-index: 142;
+  top: auto;
+  left: auto;
+  right: 14px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  transform: none;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 50%;
+  background: rgba(18,15,23,.88);
+  color: #d9b7ff;
+  font-size: 0;
+  letter-spacing: 0;
+  box-shadow: 0 8px 22px rgba(0,0,0,.25);
+}
+.beta-feedback-launcher::before {
+  content: '!';
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: .8rem;
+  font-weight: 950;
+}
+body:has(.mobile-live-shell) .beta-feedback-launcher { display: none; }
+
+@media (min-width: 521px) {
+  .app-shell { max-width: 520px; margin: 0 auto; }
+}

@@ -1,0 +1,27 @@
+/* FAM 1.1 Discover: compact live discovery, no fake rooms. */
+.fv-discover { min-height:100dvh; padding:max(16px,env(safe-area-inset-top)) 18px 104px; background:var(--fv-bg); }
+.fv-discover-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.fv-discover-topbar span { color:#8d8695; font-size:.54rem; font-weight:900; letter-spacing:.14em; }
+.fv-discover-topbar h1 { margin:4px 0 0; font-size:1.8rem; letter-spacing:-.05em; }
+.fv-discover-profile { width:38px; height:38px; border:1px solid var(--fv-line); border-radius:50%; background:#0f0e13; color:#c99aff; font-size:.9rem; }
+.fv-discover-filters { display:flex; gap:8px; margin-top:22px; overflow-x:auto; scrollbar-width:none; }
+.fv-discover-filters::-webkit-scrollbar { display:none; }
+.fv-discover-filters button { flex:0 0 auto; min-height:36px; padding:0 14px; border:1px solid var(--fv-line); border-radius:999px; background:#0d0c11; color:#8d8793; font-size:.65rem; font-weight:800; }
+.fv-discover-filters button.active { border-color:rgba(166,76,255,.32); background:var(--fv-accent-soft); color:#fff; }
+
+.fv-discover-search { min-height:48px; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:5px; margin-top:18px; padding:0 13px; border:1px solid var(--fv-line); border-radius:14px; background:#0e0d12; }
+.fv-discover-search > span { color:#8c8592; font-size:1.15rem; }
+.fv-discover-search input { min-width:0; border:0; outline:0; background:transparent; color:#fff; font-size:16px; }
+.fv-discover-search input::placeholder { color:#77717e; }
+
+.fv-live-section { margin-top:30px; }
+.fv-live-section-heading { display:flex; align-items:end; justify-content:space-between; gap:12px; }
+.fv-live-section-heading span { color:#8d8695; font-size:.54rem; font-weight:900; letter-spacing:.14em; }
+.fv-live-section-heading h2 { margin:4px 0 0; font-size:1.25rem; letter-spacing:-.025em; }
+.fv-live-section-heading > small { padding:5px 8px; border-radius:999px; background:#111016; color:#827b88; font-size:.56rem; font-weight:850; }
+.fv-live-empty { min-height:190px; display:grid; place-items:center; align-content:center; gap:7px; margin-top:14px; padding:24px 18px; border:1px solid var(--fv-line); border-radius:18px; background:#0d0c11; text-align:center; }
+.fv-live-empty-mark { width:42px; height:42px; display:grid; place-items:center; margin-bottom:4px; border:1px solid rgba(166,76,255,.24); border-radius:50%; }
+.fv-live-empty-mark i { width:10px; height:10px; border-radius:50%; background:var(--fv-accent); box-shadow:0 0 18px rgba(166,76,255,.4); }
+.fv-live-empty strong { font-size:.88rem; }
+.fv-live-empty p { max-width:300px; margin:0; color:#817a87; font-size:.66rem; line-height:1.45; }
+.fv-live-empty button { min-height:36px; margin-top:7px; padding:0 15px; border:0; border-radius:999px; background:var(--fv-accent); color:#fff; font-size:.64rem; font-weight:900; }

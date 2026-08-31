@@ -20,6 +20,11 @@ import './styles/live/fam1-shell.css'
 import './styles/live/fam1-chat.css'
 import './styles/discover/fam1.css'
 import './styles/profile/follows.css'
+import './styles/base/fam1-v2.css'
+import './styles/home/fam1-v2.css'
+import './styles/discover/fam1-v2.css'
+import './styles/live/fam1-v2.css'
+import './styles/profile/fam1-v2.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

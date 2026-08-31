@@ -42,88 +42,36 @@ export default function LiveScreen({
       <div className="live-video-surface fam-live-video-surface">
         {isLive && mediaStream && !cameraOff ? (
           <>
-            <video
-              ref={videoPrimaryRef}
-              className={`host-video immersive-video ${activeVideoSlot === 0 ? 'active' : 'inactive'} ${videoSlotFacing[0] === 'user' ? 'mirror' : ''}`}
-              autoPlay
-              muted
-              playsInline
-            />
-            <video
-              ref={videoSecondaryRef}
-              className={`host-video immersive-video ${activeVideoSlot === 1 ? 'active' : 'inactive'} ${videoSlotFacing[1] === 'user' ? 'mirror' : ''}`}
-              autoPlay
-              muted
-              playsInline
-            />
+            <video ref={videoPrimaryRef} className={`host-video immersive-video ${activeVideoSlot === 0 ? 'active' : 'inactive'} ${videoSlotFacing[0] === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
+            <video ref={videoSecondaryRef} className={`host-video immersive-video ${activeVideoSlot === 1 ? 'active' : 'inactive'} ${videoSlotFacing[1] === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
           </>
         ) : isLive && cameraOff ? (
           <div className="camera-off-placeholder fam-camera-off">
-            <div className="preview-camera-icon">◉</div>
-            <strong>Camera off</strong>
-            <small>Your microphone can stay on while video is hidden.</small>
+            <div className="preview-camera-icon">◉</div><strong>Camera off</strong><small>Your microphone can stay on while video is hidden.</small>
           </div>
         ) : (
-          <div className="community-live-preview">
-            <div className="community-preview-avatar">{initial}</div>
-            <strong>{displayName}</strong>
-            <small>Camera preview begins when you go live.</small>
+          <div className="fv-prelive-canvas" aria-hidden="true">
+            <span className="fv-prelive-corner top-left" /><span className="fv-prelive-corner top-right" />
+            <span className="fv-prelive-corner bottom-left" /><span className="fv-prelive-corner bottom-right" />
+            <div className="fv-prelive-focus"><i /></div>
           </div>
         )}
         <div className="live-vignette fam-live-vignette" />
       </div>
 
-      <LiveHeader
-        isLive={isLive}
-        initial={initial}
-        displayName={displayName}
-        username={username}
-        viewerCount={viewerCount}
-        startLive={startLive}
-      />
+      <LiveHeader isLive={isLive} initial={initial} displayName={displayName} username={username} viewerCount={viewerCount} startLive={startLive} />
 
       {isLive ? (
         <>
-          <LiveActions
-            premiumRepeat={premiumRepeat}
-            setGiftTrayOpen={setGiftTrayOpen}
-            setCohostTrayOpen={setCohostTrayOpen}
-            micMuted={micMuted}
-            toggleMic={toggleMic}
-            cameraOff={cameraOff}
-            toggleCamera={toggleCamera}
-            flipCamera={flipCamera}
-            isStartingLive={isStartingLive}
-            shareRoom={shareRoom}
-          />
-          <LiveChat
-            liveMessages={liveMessages}
-            commentText={commentText}
-            setCommentText={setCommentText}
-            submitComment={submitComment}
-          />
+          <LiveActions premiumRepeat={premiumRepeat} setGiftTrayOpen={setGiftTrayOpen} setCohostTrayOpen={setCohostTrayOpen} micMuted={micMuted} toggleMic={toggleMic} cameraOff={cameraOff} toggleCamera={toggleCamera} flipCamera={flipCamera} isStartingLive={isStartingLive} shareRoom={shareRoom} />
+          <LiveChat liveMessages={liveMessages} commentText={commentText} setCommentText={setCommentText} submitComment={submitComment} />
         </>
       ) : (
-        <LiveLaunchPanel
-          isStartingLive={isStartingLive}
-          startLive={startLive}
-          flipCamera={flipCamera}
-        />
+        <LiveLaunchPanel isStartingLive={isStartingLive} startLive={startLive} flipCamera={flipCamera} />
       )}
 
-      <LiveGiftTray
-        open={isLive && giftTrayOpen}
-        onClose={() => setGiftTrayOpen(false)}
-        coins={coins}
-        sendGift={sendGift}
-        addTestCoins={addTestCoins}
-      />
-
-      <CohostSheet
-        open={cohostTrayOpen}
-        onClose={() => setCohostTrayOpen(false)}
-        shareRoom={shareRoom}
-      />
+      <LiveGiftTray open={isLive && giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
+      <CohostSheet open={cohostTrayOpen} onClose={() => setCohostTrayOpen(false)} shareRoom={shareRoom} />
     </section>
   )
 }

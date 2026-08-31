@@ -1,0 +1,67 @@
+/* FAM 1.1 Home: social surface, not a dashboard. */
+.fv-home {
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) 18px 104px;
+  background: var(--fv-bg);
+}
+.fv-home-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.fv-wordmark { padding:0; border:0; background:transparent; color:#fff; font-size:1.22rem; font-weight:950; letter-spacing:-.045em; }
+.fv-home-actions { display:flex; align-items:center; gap:8px; }
+.fv-install { min-height:34px; padding:0 11px; border:1px solid var(--fv-line); border-radius:999px; background:transparent; color:#cfc8d4; font-size:.62rem; font-weight:800; }
+.fv-avatar-button { width:38px; height:38px; border:0; border-radius:50%; background:linear-gradient(145deg,#7d32e7,#bb58f3); color:#fff; font-weight:950; }
+
+.fv-home-intro { margin-top:30px; }
+.fv-home-intro > span,
+.fv-section-heading span,
+.fv-home-live-row span { color:#8d8695; font-size:.54rem; font-weight:900; letter-spacing:.14em; }
+.fv-home-intro h1 { margin:6px 0 4px; font-size:clamp(1.55rem,7vw,2.05rem); line-height:1.05; letter-spacing:-.045em; }
+.fv-home-intro p { margin:0; color:var(--fv-muted); font-size:.74rem; }
+
+.fv-search {
+  min-height:48px;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr);
+  align-items:center;
+  gap:5px;
+  margin-top:20px;
+  padding:0 13px;
+  border:1px solid var(--fv-line);
+  border-radius:14px;
+  background:#0e0d12;
+}
+.fv-search > span { color:#8c8592; font-size:1.15rem; }
+.fv-search input { min-width:0; border:0; outline:0; background:transparent; color:#fff; font-size:16px; }
+.fv-search input::placeholder { color:#77717e; }
+
+.fv-community-tabs { display:grid; grid-template-columns:repeat(3,1fr); margin-top:18px; border-bottom:1px solid var(--fv-line); }
+.fv-community-tabs button { min-height:48px; display:flex; align-items:center; justify-content:center; gap:6px; border:0; border-bottom:2px solid transparent; background:transparent; color:#8d8793; font-size:.68rem; font-weight:800; }
+.fv-community-tabs button small { min-width:20px; padding:2px 5px; border-radius:999px; background:#17141c; color:#9d96a5; font-size:.52rem; }
+.fv-community-tabs button.active { color:#fff; border-bottom-color:var(--fv-accent); }
+
+.fv-home-section { margin-top:26px; }
+.fv-section-heading { display:flex; align-items:end; justify-content:space-between; gap:12px; }
+.fv-section-heading h2 { margin:4px 0 0; font-size:1.15rem; letter-spacing:-.025em; }
+.fv-section-heading > button { padding:0; border:0; background:transparent; color:#c88dff; font-size:.64rem; font-weight:850; }
+.fv-people-grid { display:grid; gap:8px; margin-top:13px; }
+.fv-person-card { display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:10px; min-height:66px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.055); }
+.fv-person-avatar { width:42px; height:42px; display:grid; place-items:center; border-radius:50%; background:#1a1420; color:#d8a8ff; font-weight:950; }
+.fv-person-copy { min-width:0; }
+.fv-person-copy strong,
+.fv-person-copy small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fv-person-copy strong { font-size:.76rem; }
+.fv-person-copy small { margin-top:2px; color:#817b87; font-size:.61rem; }
+.fv-relation { min-height:32px; padding:0 10px; border:1px solid var(--fv-line); border-radius:999px; background:#111016; color:#d9d2dd; font-size:.58rem; font-weight:850; }
+.fv-relation.relation-friend { color:#f2cd86; }
+.fv-relation.relation-follow-back { color:#cf9eff; }
+
+.fv-empty-inline { min-height:108px; display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:14px; padding:16px; border:1px solid var(--fv-line); border-radius:16px; background:#0d0c11; }
+.fv-empty-inline strong { font-size:.78rem; }
+.fv-empty-inline p { margin:4px 0 0; color:#827b88; font-size:.64rem; line-height:1.4; }
+.fv-empty-inline button,
+.fv-home-live-row button { flex:0 0 auto; min-height:34px; padding:0 11px; border:0; border-radius:999px; background:var(--fv-accent-soft); color:#d7aaff; font-size:.6rem; font-weight:850; }
+
+.fv-home-live-row { min-height:88px; display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:26px; padding:16px 0; border-top:1px solid var(--fv-line); }
+.fv-home-live-row strong,
+.fv-home-live-row small { display:block; }
+.fv-home-live-row strong { margin-top:4px; font-size:.82rem; }
+.fv-home-live-row small { margin-top:2px; color:#817b87; font-size:.61rem; }
