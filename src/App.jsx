@@ -10,6 +10,7 @@ import { useAccount } from './hooks/useAccount.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
+import { useLiveSetup } from './hooks/useLiveSetup.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
 const SPLASH_MINIMUM_MS = 900
@@ -27,6 +28,7 @@ export default function App() {
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
 
   const live = useLiveMedia(setToast)
+  const liveSetup = useLiveSetup(setToast)
   const account = useAccount({
     setToast,
     onBeforeSignOut: () => {
@@ -82,6 +84,7 @@ export default function App() {
       setCohostTrayOpen(false)
       setChat([])
       setCommentText('')
+      liveSetup.reset()
     }
     return result
   }
@@ -95,9 +98,12 @@ export default function App() {
   }
 
   const shareRoom = async () => {
+    const roomTitle = liveSetup.active?.title || 'Fameverse Live Beta'
     const shareData = {
-      title: 'Fameverse Live Beta',
-      text: `${displayName} is testing Fameverse Live.`,
+      title: roomTitle,
+      text: liveSetup.active?.title
+        ? `${displayName} is live on Fameverse: ${liveSetup.active.title}`
+        : `${displayName} is testing Fameverse Live.`,
       url: window.location.href,
     }
     try {
@@ -113,6 +119,7 @@ export default function App() {
 
   const signOut = async () => {
     gifts.stopGiftPlayback()
+    liveSetup.reset()
     await account.signOut()
     setTab('home')
     setProfileMode('view')
@@ -181,6 +188,7 @@ export default function App() {
             viewerCount={viewerCount}
             isStartingLive={live.isStartingLive}
             startLive={startLive}
+            liveSetup={liveSetup}
             premiumRepeat={gifts.premiumRepeat}
             setGiftTrayOpen={gifts.setGiftTrayOpen}
             setCohostTrayOpen={setCohostTrayOpen}
