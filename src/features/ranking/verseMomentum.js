@@ -3,12 +3,12 @@ import {
   MAX_RANKING_COMMENTS_PER_USER,
   MAX_RANKING_GIFT_COINS_PER_USER,
   MAX_RANKING_TAPS_PER_USER,
-  MAX_REPORT_PENALTY,
   MAX_WATCH_SECONDS_PER_USER,
   RANKING_ENABLED,
+  VERSE_MOMENTUM_LANE_MAX,
   VERSE_MOMENTUM_TARGETS,
   VERSE_MOMENTUM_VERSION,
-  VERSE_MOMENTUM_WEIGHTS,
+  VERSE_RANKING_LANES,
 } from './verseMomentumConfig.js'
 
 const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value))
@@ -59,69 +59,40 @@ export function aggregateVerseEvents(events = []) {
     }
   }
 
-  const uniqueViewers = viewers.size
-  const watchSeconds = sumMap(watchByUser)
-  const comments = sumMap(commentsByUser)
-  const taps = sumMap(tapsByUser)
-  const giftCoins = sumMap(giftsByUser)
-
   return Object.freeze({
-    uniqueViewers,
-    watchSeconds,
-    averageWatchSeconds: uniqueViewers > 0 ? watchSeconds / uniqueViewers : 0,
-    comments,
+    uniqueViewers: viewers.size,
+    watchSeconds: sumMap(watchByUser),
+    comments: sumMap(commentsByUser),
     uniqueCommenters: commentsByUser.size,
     follows: followActors.size,
-    taps,
+    taps: sumMap(tapsByUser),
     uniqueTappers: tapsByUser.size,
-    giftCoins,
+    giftCoins: sumMap(giftsByUser),
     uniqueGifters: giftsByUser.size,
     reports: reportActors.size,
   })
 }
 
-function logProgress(value, target) {
-  if (value <= 0 || target <= 0) return 0
-  return clamp(Math.log1p(value) / Math.log1p(target))
+function laneScore(value, target) {
+  return VERSE_MOMENTUM_LANE_MAX * clamp(value / target)
 }
 
 export function scoreVerseMomentum(events = []) {
   const signals = aggregateVerseEvents(events)
   const targets = VERSE_MOMENTUM_TARGETS
-  const weights = VERSE_MOMENTUM_WEIGHTS
-  const viewers = Math.max(signals.uniqueViewers, 1)
 
-  const retention = weights.retention * clamp(signals.averageWatchSeconds / targets.retentionSeconds)
-  const viewerDepth = weights.viewerDepth * logProgress(signals.uniqueViewers, targets.uniqueViewers)
-
-  const commenterCoverage = clamp((signals.uniqueCommenters / viewers) / targets.commenterCoverage)
-  const commentDensity = clamp((signals.comments / viewers) / targets.commentsPerViewer)
-  const conversation = weights.conversation * ((commenterCoverage + commentDensity) / 2)
-
-  const follows = weights.follows * clamp((signals.follows / viewers) / targets.followRate)
-
-  const tapperCoverage = clamp((signals.uniqueTappers / viewers) / targets.tapperCoverage)
-  const tapsPerTapper = signals.uniqueTappers > 0 ? signals.taps / signals.uniqueTappers : 0
-  const tapIntensity = clamp(tapsPerTapper / targets.tapsPerTapper)
-  const taps = weights.taps * ((tapperCoverage + tapIntensity) / 2)
-
-  const gifts = weights.gifts * logProgress(signals.giftCoins, targets.giftCoins)
-  const reportRate = signals.reports / viewers
-  const reportPenalty = MAX_REPORT_PENALTY * clamp(reportRate / targets.reportRate)
+  const audience = laneScore(signals.uniqueViewers, targets.audienceViewers)
+  const taps = laneScore(signals.taps, targets.taps)
+  const gifts = laneScore(signals.giftCoins, targets.giftCoins)
 
   const breakdown = Object.freeze({
-    retention: round(retention),
-    viewerDepth: round(viewerDepth),
-    conversation: round(conversation),
-    follows: round(follows),
+    audience: round(audience),
     taps: round(taps),
     gifts: round(gifts),
-    reportPenalty: round(reportPenalty),
   })
 
-  const positiveTotal = retention + viewerDepth + conversation + follows + taps + gifts
   return Object.freeze({
-    score: round(clamp(positiveTotal - reportPenalty, 0, 100)),
+    score: round((audience + taps + gifts) / VERSE_RANKING_LANES.length),
     breakdown,
     signals,
   })
@@ -131,6 +102,8 @@ export function getVerseMomentumStatus() {
   return Object.freeze({
     version: VERSE_MOMENTUM_VERSION,
     rankingEnabled: RANKING_ENABLED,
-    signalCount: VERSE_EVENT_TYPE_COUNT,
+    eventSignalCount: VERSE_EVENT_TYPE_COUNT,
+    rankingSignalCount: VERSE_RANKING_LANES.length,
+    rankingLanes: VERSE_RANKING_LANES,
   })
 }
