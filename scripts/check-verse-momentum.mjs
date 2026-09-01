@@ -21,10 +21,9 @@ assert.equal(scoreVerseMomentum([]).score, 0)
 assert.equal(isVerseEventType('unfollow'), false, 'Unfollow must never become a ranking event by accident.')
 
 const audienceOnly = scoreVerseMomentum(viewers(VERSE_MOMENTUM_TARGETS.audienceViewers))
-const tapsOnly = scoreVerseMomentum([
-  ...viewers(100),
-  ...Array.from({ length: 100 }, (_, index) => event(VERSE_EVENT_TYPES.TAP, `viewer-${index + 1}`, MAX_RANKING_TAPS_PER_USER)),
-])
+const tapsOnly = scoreVerseMomentum(
+  Array.from({ length: 100 }, (_, index) => event(VERSE_EVENT_TYPES.TAP, `tapper-${index + 1}`, MAX_RANKING_TAPS_PER_USER)),
+)
 const giftsOnly = scoreVerseMomentum([
   event(VERSE_EVENT_TYPES.GIFT, 'supporter-1', VERSE_MOMENTUM_TARGETS.giftCoins),
 ])
