@@ -39,6 +39,7 @@ export default function LiveScreen({
   sendGift,
   addTestCoins,
   cohostTrayOpen,
+  presenceState,
 }) {
   if (!isLive && sessionSummary.summary) {
     return (
@@ -88,6 +89,7 @@ export default function LiveScreen({
         viewerCount={viewerCount}
         startLive={startLive}
         liveTitle={liveSetup.active?.title}
+        presenceState={presenceState}
       />
 
       <LiveActions

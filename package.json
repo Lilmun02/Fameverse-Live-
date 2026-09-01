@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "check:lines": "node scripts/check-line-limits.mjs",
+    "check:presence": "node scripts/check-live-presence.mjs",
     "check:algorithm": "node scripts/check-verse-momentum.mjs",
     "check:taps": "node scripts/check-tap-integrity.mjs",
-    "build": "npm run check:lines && npm run check:taps && npm run check:algorithm && vite build",
+    "build": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

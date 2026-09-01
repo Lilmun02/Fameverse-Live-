@@ -10,6 +10,7 @@ import { useAccount } from './hooks/useAccount.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
+import { useLivePresence } from './hooks/useLivePresence.js'
 import { useLiveSessionSummary } from './hooks/useLiveSessionSummary.js'
 import { useLiveSetup } from './hooks/useLiveSetup.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
@@ -38,6 +39,7 @@ export default function App() {
       live.setIsLive(false)
     },
   })
+  const presence = useLivePresence({ userId: account.session?.user?.id })
   const followNetwork = useFollowNetwork({ userId: account.session?.user?.id, setToast })
   const displayName = account.profile?.display_name || account.session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = account.profile?.username ? `@${account.profile.username}` : '@newuser'
@@ -84,6 +86,7 @@ export default function App() {
     const result = await live.startLive()
 
     if (wasLive) {
+      const presenceEnded = await presence.endPresence()
       sessionSummary.finishSession({ title: roomTitle, viewerCount })
       gifts.stopGiftPlayback()
       gifts.setGiftTrayOpen(false)
@@ -91,11 +94,23 @@ export default function App() {
       setChat([])
       setCommentText('')
       liveSetup.reset()
+      setToast(presenceEnded ? 'Live ended' : 'Live ended locally · room presence will expire')
       return result
     }
 
-    if (result) sessionSummary.beginSession({ title: roomTitle })
-    return result
+    if (!result) return false
+
+    const presenceStarted = await presence.startPresence(roomTitle)
+    if (!presenceStarted) {
+      live.stopMedia()
+      live.setIsLive(false)
+      setToast('Could not publish Live room · try again')
+      return false
+    }
+
+    sessionSummary.beginSession({ title: roomTitle })
+    setToast("You're Live on Fameverse")
+    return true
   }
 
   const submitComment = (event) => {
@@ -128,6 +143,7 @@ export default function App() {
 
   const signOut = async () => {
     gifts.stopGiftPlayback()
+    await presence.endPresence()
     liveSetup.reset()
     sessionSummary.clear()
     await account.signOut()
@@ -217,6 +233,7 @@ export default function App() {
             sendGift={gifts.sendGift}
             addTestCoins={gifts.addTestCoins}
             cohostTrayOpen={cohostTrayOpen}
+            presenceState={presence.state}
           />
         )}
 
