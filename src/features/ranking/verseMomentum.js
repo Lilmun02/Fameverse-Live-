@@ -2,7 +2,6 @@ import { VERSE_EVENT_TYPE_COUNT, VERSE_EVENT_TYPES, normalizeVerseEvent } from '
 import {
   MAX_RANKING_COMMENTS_PER_USER,
   MAX_RANKING_GIFT_COINS_PER_USER,
-  MAX_RANKING_TAPS_PER_USER,
   MAX_WATCH_SECONDS_PER_USER,
   RANKING_ENABLED,
   VERSE_MOMENTUM_LANE_MAX,
@@ -17,6 +16,10 @@ const sumMap = (map) => [...map.values()].reduce((total, value) => total + value
 
 function addCapped(map, key, value, cap) {
   map.set(key, Math.min(cap, (map.get(key) || 0) + value))
+}
+
+function addValue(map, key, value) {
+  map.set(key, (map.get(key) || 0) + value)
 }
 
 export function aggregateVerseEvents(events = []) {
@@ -46,7 +49,7 @@ export function aggregateVerseEvents(events = []) {
         followActors.add(event.actorId)
         break
       case VERSE_EVENT_TYPES.TAP:
-        addCapped(tapsByUser, event.actorId, event.value, MAX_RANKING_TAPS_PER_USER)
+        if (event.integrityVerified) addValue(tapsByUser, event.actorId, event.value)
         break
       case VERSE_EVENT_TYPES.GIFT:
         addCapped(giftsByUser, event.actorId, event.value, MAX_RANKING_GIFT_COINS_PER_USER)

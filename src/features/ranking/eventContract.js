@@ -25,6 +25,7 @@ export function normalizeVerseEvent(event) {
     type: event.type,
     actorId,
     value: positiveNumber(event.value),
+    integrityVerified: event.type === VERSE_EVENT_TYPES.TAP ? event.integrityVerified === true : undefined,
   })
 }
 
