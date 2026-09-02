@@ -32,7 +32,7 @@ export function getTapIntegrityStatus() {
     rawTapCap: null,
     authoritativeLedger: true,
     visibleTotalsConnected: true,
-    viewerCaptureConnected: false,
-    liveCaptureConnected: false,
+    viewerCaptureConnected: true,
+    liveCaptureConnected: true,
   })
 }
