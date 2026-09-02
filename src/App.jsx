@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AuthScreen from './components/auth/AuthScreen.jsx'
 import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
@@ -10,6 +10,7 @@ import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
+import { useLiveActivity } from './hooks/useLiveActivity.js'
 import { useLiveBroadcast } from './hooks/useLiveBroadcast.js'
 import { useLiveDiscovery } from './hooks/useLiveDiscovery.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
@@ -33,6 +34,7 @@ export default function App() {
   const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
   const [viewingRoom, setViewingRoom] = useState(null)
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
+  const activityRef = useRef(null)
 
   const live = useLiveMedia(setToast)
   const liveSetup = useLiveSetup(setToast)
@@ -62,17 +64,29 @@ export default function App() {
   const joinedLabel = account.profile?.created_at
     ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(account.profile.created_at))
     : 'Beta 2026'
+  const activeActivityRoomId = live.isLive ? presence.room?.id : viewingRoom?.id
 
   const gifts = useGiftSystem({
-    isLive: live.isLive,
+    isLive: live.isLive || Boolean(viewingRoom),
     displayName,
     setToast,
     setChat,
-    onGiftAccepted: sessionSummary.recordGift,
+    onGiftAccepted: (giftEvent) => {
+      if (live.isLive) sessionSummary.recordGift(giftEvent)
+      activityRef.current?.sendGift?.(giftEvent)
+    },
   })
+  const activity = useLiveActivity({
+    roomId: activeActivityRoomId,
+    displayName,
+    enabled: Boolean(account.session && activeActivityRoomId),
+    onRemoteGift: gifts.receiveGift,
+  })
+  activityRef.current = activity
+
   const pwa = usePwaInstall(setToast)
   const viewerCount = broadcast.viewerCount
-  const liveMessages = chat
+  const liveMessages = [...activity.messages, ...chat].slice(-80)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashMinimumElapsed(true), SPLASH_MINIMUM_MS)
@@ -95,6 +109,12 @@ export default function App() {
       setSettingsDetail(null)
     }
   }, [tab])
+
+  useEffect(() => {
+    setChat([])
+    setCommentText('')
+    gifts.setGiftTrayOpen(false)
+  }, [activeActivityRoomId])
 
   const startLive = async () => {
     const wasLive = live.isLive
@@ -133,24 +153,26 @@ export default function App() {
     event.preventDefault()
     const text = commentText.trim()
     if (!text) return
-    setChat((items) => [...items, { id: Date.now(), user: displayName, text }])
+    if (!activity.sendComment(text)) {
+      setToast('Live chat is reconnecting')
+      return
+    }
     setCommentText('')
   }
 
-  const shareRoom = async () => {
-    const roomTitle = liveSetup.active?.title || 'Fameverse Live Beta'
+  const shareRoom = async (roomOverride = null) => {
+    const roomTitle = roomOverride?.title || liveSetup.active?.title || 'Fameverse Live Beta'
+    const creatorName = roomOverride?.host?.displayName || roomOverride?.host?.username || displayName
     const shareData = {
       title: roomTitle,
-      text: liveSetup.active?.title
-        ? `${displayName} is live on Fameverse: ${liveSetup.active.title}`
-        : `${displayName} is testing Fameverse Live.`,
+      text: `${creatorName} is live on Fameverse: ${roomTitle}`,
       url: window.location.href,
     }
     try {
       if (navigator.share) await navigator.share(shareData)
       else {
         await navigator.clipboard.writeText(window.location.href)
-        setToast('Beta link copied')
+        setToast('Live link copied')
       }
     } catch {
       // User cancelled share sheet.
@@ -202,7 +224,21 @@ export default function App() {
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
 
       {viewingRoom ? (
-        <ViewerLiveScreen room={viewingRoom} onClose={() => setViewingRoom(null)} />
+        <ViewerLiveScreen
+          room={viewingRoom}
+          onClose={() => setViewingRoom(null)}
+          followNetwork={followNetwork}
+          shareRoom={() => shareRoom(viewingRoom)}
+          liveMessages={liveMessages}
+          commentText={commentText}
+          setCommentText={setCommentText}
+          submitComment={submitComment}
+          giftTrayOpen={gifts.giftTrayOpen}
+          setGiftTrayOpen={gifts.setGiftTrayOpen}
+          coins={gifts.coins}
+          sendGift={gifts.sendGift}
+          addTestCoins={gifts.addTestCoins}
+        />
       ) : (
         <>
           <main>
@@ -249,6 +285,7 @@ export default function App() {
                 setCohostTrayOpen={setCohostTrayOpen}
                 micMuted={live.micMuted}
                 toggleMic={live.toggleMic}
+                cameraOff={live.cameraOff}
                 toggleCamera={live.toggleCamera}
                 flipCamera={live.flipCamera}
                 shareRoom={shareRoom}
