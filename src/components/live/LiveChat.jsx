@@ -14,6 +14,7 @@ export default function LiveChat({
   setCommentText,
   submitComment,
   onGiftClick = null,
+  onOpenIdentity = null,
 }) {
   const chatScrollRef = useRef(null)
 
@@ -34,15 +35,35 @@ export default function LiveChat({
           {liveMessages.map((item) => (
             <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
               {item.kind === 'gift' && <span className="fam-chat-gift-mark" aria-hidden="true">🎁</span>}
-              <span className="fam-chat-avatar" aria-hidden="true">{initialFor(item.user)}</span>
+              <button
+                type="button"
+                className="fam-chat-avatar"
+                disabled={!item.userId || !onOpenIdentity}
+                onPointerDown={stopLiveTap}
+                onClick={() => item.userId && onOpenIdentity?.(item.userId)}
+                aria-label={item.userId ? `Open ${item.user} profile` : undefined}
+              >
+                {initialFor(item.user)}
+              </button>
               <div className="fam-chat-copy">
                 <div className="fam-chat-identity">
-                  {item.badge && (
+                  {item.kind === 'gift' && item.badge && (
                     <span className="fam-gifter-badge">
                       <span aria-hidden="true">{item.badge.icon}</span> {item.badge.label}
                     </span>
                   )}
-                  <strong>{item.user}</strong>
+                  {item.userId && onOpenIdentity ? (
+                    <button
+                      type="button"
+                      className="fam-chat-identity-button"
+                      onPointerDown={stopLiveTap}
+                      onClick={() => onOpenIdentity(item.userId)}
+                    >
+                      <strong>{item.user}</strong>
+                    </button>
+                  ) : (
+                    <strong>{item.user}</strong>
+                  )}
                 </div>
                 <span className="fam-chat-message">{item.text}</span>
               </div>
