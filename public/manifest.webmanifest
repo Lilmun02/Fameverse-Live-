@@ -4,8 +4,8 @@
   "description": "Fameverse Live beta testing app",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#10051f",
-  "theme_color": "#10051f",
+  "background_color": "#07010d",
+  "theme_color": "#07010d",
   "orientation": "portrait-primary",
   "icons": [
     {
