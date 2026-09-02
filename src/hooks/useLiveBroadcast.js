@@ -25,11 +25,20 @@ function makeOfferId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
+function viewerProfile(payload) {
+  return {
+    userId: payload?.userId || null,
+    displayName: payload?.displayName || 'Fameverse viewer',
+    avatarUrl: payload?.avatarUrl || null,
+  }
+}
+
 export function useLiveBroadcast({ roomId, stream, enabled }) {
   const streamRef = useRef(stream)
   const peersRef = useRef(new Map())
   const [viewerCount, setViewerCount] = useState(0)
   const [viewerIds, setViewerIds] = useState([])
+  const [viewerRoster, setViewerRoster] = useState([])
   const hasStream = Boolean(stream)
 
   useEffect(() => {
@@ -51,6 +60,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
     if (!enabled || !roomId || !hasStream) {
       setViewerCount(0)
       setViewerIds([])
+      setViewerRoster([])
       return undefined
     }
 
@@ -61,10 +71,11 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
     const send = (event, payload) => sendLiveRelayEvent(channel, event, payload)
 
     const publishViewerCount = () => {
-      const connectedIds = [...peers.entries()]
-        .filter(([, entry]) => entry.connected)
-        .map(([viewerId]) => viewerId)
+      const connected = [...peers.entries()].filter(([, entry]) => entry.connected)
+      const connectedIds = connected.map(([viewerId]) => viewerId)
+      const roster = connected.map(([viewerId, entry]) => ({ viewerId, ...entry.profile }))
       setViewerIds(connectedIds)
+      setViewerRoster(roster)
       setViewerCount(connectedIds.length)
       void send('viewer-count', { roomId, viewerCount: connectedIds.length })
     }
@@ -85,15 +96,20 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       }
     }
 
-    const offerViewer = async (viewerId) => {
+    const offerViewer = async (payload) => {
+      const viewerId = payload?.viewerId
       if (!active || !viewerId || !streamRef.current) return
       const existing = peers.get(viewerId)
+      if (existing) existing.profile = viewerProfile(payload)
       if (
         existing
         && existing.peer?.connectionState !== 'failed'
         && existing.peer?.connectionState !== 'closed'
         && Date.now() - existing.createdAt < OFFER_RETRY_AFTER_MS
-      ) return
+      ) {
+        if (existing.connected) publishViewerCount()
+        return
+      }
 
       removePeer(viewerId)
       const offerId = makeOfferId()
@@ -103,6 +119,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
         pendingIce: [],
         connected: false,
         createdAt: Date.now(),
+        profile: viewerProfile(payload),
       }
       const peer = createCohostPeer({
         iceServers: LIVE_RELAY_ICE_SERVERS,
@@ -139,7 +156,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
 
     channel
       .on('broadcast', { event: 'viewer-ready' }, ({ payload }) => {
-        void offerViewer(payload?.viewerId)
+        void offerViewer(payload)
       })
       .on('broadcast', { event: 'viewer-answer' }, async ({ payload }) => {
         const viewerId = payload?.viewerId
@@ -167,13 +184,8 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          const currentIds = [...peers.entries()]
-            .filter(([, entry]) => entry.connected)
-            .map(([viewerId]) => viewerId)
-          setViewerIds(currentIds)
-          setViewerCount(currentIds.length)
-          void send('host-ready', { roomId, viewerCount: currentIds.length })
-          void send('viewer-count', { roomId, viewerCount: currentIds.length })
+          publishViewerCount()
+          void send('host-ready', { roomId, viewerCount: 0 })
         }
       })
 
@@ -184,9 +196,10 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       peers.clear()
       setViewerCount(0)
       setViewerIds([])
+      setViewerRoster([])
       void removeLiveRelayChannel(channel)
     }
   }, [enabled, hasStream, roomId])
 
-  return { viewerCount, viewerIds }
+  return { viewerCount, viewerIds, viewerRoster }
 }
