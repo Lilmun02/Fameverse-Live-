@@ -32,6 +32,7 @@ import './styles/live/viewer-live-effects.css'
 import './styles/profile/fam1-v2.css'
 import './styles/profile/algorithm-diagnostics.css'
 import './styles/base/pwa-update.css'
+import './styles/live/profile-sheet.css'
 import './styles/live/live-contract.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
