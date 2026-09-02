@@ -80,13 +80,14 @@ export default function App() {
     roomId: activeActivityRoomId,
     displayName,
     enabled: Boolean(account.session && activeActivityRoomId),
+    setMessages: setChat,
     onRemoteGift: gifts.receiveGift,
   })
   activityRef.current = activity
 
   const pwa = usePwaInstall(setToast)
   const viewerCount = broadcast.viewerCount
-  const liveMessages = [...activity.messages, ...chat].slice(-80)
+  const liveMessages = chat
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashMinimumElapsed(true), SPLASH_MINIMUM_MS)
