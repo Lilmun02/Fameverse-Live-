@@ -1,0 +1,157 @@
+/* Real one-guest co-host layout. Keeps existing Live chrome above both video panes. */
+
+.mobile-live-shell.is-live.has-cohost .host-video.active,
+.mobile-live-shell.is-live.has-cohost .fam-camera-off {
+  left: 0;
+  right: auto;
+  width: 50%;
+}
+
+.fv-viewer-live.has-cohost .fv-viewer-live-video {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 50%;
+  height: 100%;
+}
+
+.fv-cohost-video-tile {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(133, 52, 216, .22), transparent 45%),
+    #08030d;
+}
+
+.mobile-live-shell.is-live .fv-cohost-video-tile { z-index: 2; }
+.fv-viewer-live .fv-cohost-video-tile { z-index: 0; }
+
+.fv-cohost-video-tile video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: #08030d;
+}
+
+.fv-cohost-video-tile.is-local video { transform: scaleX(-1); }
+
+.fv-cohost-video-tile > span {
+  position: absolute;
+  left: 10px;
+  top: max(108px, calc(env(safe-area-inset-top) + 92px));
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 8px;
+  border: 1px solid rgba(202, 132, 255, .25);
+  border-radius: 999px;
+  background: rgba(12, 5, 18, .62);
+  color: #ead5ff;
+  font-size: .55rem;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+
+.fv-cohost-sheet { max-height: min(72dvh, 570px); overflow-y: auto; }
+
+.fv-cohost-request-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fv-cohost-request-card,
+.fv-cohost-active-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid rgba(193, 122, 255, .16);
+  border-radius: 15px;
+  background: rgba(255,255,255,.035);
+}
+
+.fv-cohost-request-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(197, 123, 255, .3);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #8735dc, #3a1454);
+  color: #fff;
+  object-fit: cover;
+  font-size: .75rem;
+  font-weight: 950;
+}
+
+.fv-cohost-request-card > div:nth-child(2),
+.fv-cohost-active-card > div { min-width: 0; }
+
+.fv-cohost-request-card strong,
+.fv-cohost-request-card small,
+.fv-cohost-active-card strong,
+.fv-cohost-active-card small { display: block; }
+
+.fv-cohost-request-card strong,
+.fv-cohost-active-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .72rem;
+}
+
+.fv-cohost-request-card small,
+.fv-cohost-active-card small {
+  margin-top: 3px;
+  color: #9e90a7;
+  font-size: .56rem;
+}
+
+.fv-cohost-request-actions { display: flex; gap: 5px; }
+
+.fv-cohost-request-actions button,
+.fv-cohost-active-card > button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  color: #c8bacf;
+  font-size: .54rem;
+  font-weight: 900;
+}
+
+.fv-cohost-request-actions .is-accept {
+  border-color: rgba(177, 87, 255, .36);
+  background: linear-gradient(135deg, #7530d8, #a543ed);
+  color: #fff;
+}
+
+.fv-cohost-active-card > button.is-danger {
+  border-color: rgba(255, 78, 112, .24);
+  color: #ff8fa6;
+}
+
+@media (max-width: 360px) {
+  .fv-cohost-request-card,
+  .fv-cohost-active-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .fv-cohost-request-actions,
+  .fv-cohost-active-card > button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .fv-cohost-request-actions button,
+  .fv-cohost-active-card > button { flex: 1; }
+}
