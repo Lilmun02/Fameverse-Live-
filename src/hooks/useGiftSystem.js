@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createGifterBadge } from '../features/badges/gifterBadgeSystem.js'
 import { loadCoins } from '../utils/pwa.js'
 
 const SIMPLE_GIFT_DURATION_MS = 1800
 
-export function useGiftSystem({ isLive, displayName, actorId, setToast, setChat, onGiftAccepted }) {
+export function useGiftSystem({
+  isLive,
+  displayName,
+  actorId,
+  gifterLevel = 1,
+  recordGifterGift,
+  setToast,
+  setChat,
+  onGiftAccepted,
+}) {
   const [coins, setCoins] = useState(loadCoins)
   const [giftOverlay, setGiftOverlay] = useState(null)
   const [premiumRepeat, setPremiumRepeat] = useState(null)
@@ -132,13 +140,14 @@ export function useGiftSystem({ isLive, displayName, actorId, setToast, setChat,
     coinsRef.current = nextBalance
     setCoins(nextBalance)
 
+    const eventLevel = Number(recordGifterGift?.(gift, normalizedQuantity) || gifterLevel || 1)
     const activityEmoji = gift.activityEmoji || gift.emoji || '✦'
     setChat((items) => [...items, {
       id: `${Date.now()}-${Math.random()}`,
       kind: 'gift',
       user: displayName,
       userId: actorId || null,
-      badge: createGifterBadge(),
+      gifterLevel: eventLevel,
       giftId: gift.id,
       quantity: normalizedQuantity,
       text: `${activityEmoji} sent ${gift.label} ×${normalizedQuantity}`,
@@ -148,6 +157,7 @@ export function useGiftSystem({ isLive, displayName, actorId, setToast, setChat,
       gift,
       quantity: normalizedQuantity,
       sender: displayName,
+      gifterLevel: eventLevel,
       totalCoins: totalCost,
     })
 
