@@ -6,6 +6,12 @@ import { useLiveViewer } from '../../hooks/useLiveViewer.js'
 import { useViewerTapCapture } from '../../hooks/useViewerTapCapture.js'
 
 const TAP_PARTICLE_LIFETIME_MS = 1250
+const compactNumber = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
+
+function formatStat(value) {
+  const number = Number(value)
+  return compactNumber.format(Number.isFinite(number) && number > 0 ? number : 0)
+}
 
 export default function ViewerLiveScreen({
   room,
@@ -27,6 +33,7 @@ export default function ViewerLiveScreen({
   const particleTimersRef = useRef(new Set())
   const [needsPlay, setNeedsPlay] = useState(false)
   const [tapParticles, setTapParticles] = useState([])
+  const [menuOpen, setMenuOpen] = useState(false)
   const relay = useLiveViewer({ roomId: room?.id, enabled: Boolean(room?.id) })
   const totals = useLiveTapTotals({ roomId: room?.id })
   const capture = useViewerTapCapture({ roomId: room?.id })
@@ -35,6 +42,7 @@ export default function ViewerLiveScreen({
     : room?.host?.displayName || 'Fameverse creator'
   const hostName = room?.host?.displayName || hostLabel
   const hostInitial = hostName.trim().charAt(0).toUpperCase() || 'F'
+  const hostAvatar = room?.host?.avatarUrl || null
   const serverTotal = Math.max(totals.rawTaps, Number(capture.lastResult?.totalRawTaps || 0))
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
   const isFollowing = useMemo(
@@ -88,6 +96,7 @@ export default function ViewerLiveScreen({
   const onTap = (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if (relay.state !== 'connected' || ended) return
+    setMenuOpen(false)
     playVideo()
     capture.tap()
     spawnTapParticles(event)
@@ -96,6 +105,11 @@ export default function ViewerLiveScreen({
   const toggleFollow = () => {
     if (!room?.host_user_id) return
     void followNetwork?.toggleFollow?.(room.host_user_id)
+  }
+
+  const shareLive = () => {
+    setMenuOpen(false)
+    void shareRoom?.()
   }
 
   return (
@@ -150,32 +164,36 @@ export default function ViewerLiveScreen({
 
         <header className="fv-viewer-live-header" onPointerDown={(event) => event.stopPropagation()}>
           <button type="button" className="fv-viewer-live-back" onClick={onClose} aria-label="Back to Discover">‹</button>
+
           <div className="fv-viewer-live-creator">
-            <span className="fv-viewer-live-avatar">{hostInitial}</span>
+            {hostAvatar ? (
+              <img className="fv-viewer-live-avatar" src={hostAvatar} alt="" />
+            ) : (
+              <span className="fv-viewer-live-avatar fv-viewer-live-avatar-fallback">{hostInitial}</span>
+            )}
             <div className="fv-viewer-live-identity">
-              <div><strong>{hostName}</strong><span>LIVE</span></div>
+              <div className="fv-viewer-live-name-row">
+                <strong>{hostName}</strong>
+                <span className="fv-viewer-live-badge">LIVE</span>
+              </div>
+              <button
+                type="button"
+                className={`fv-viewer-follow ${isFollowing ? 'is-following' : ''}`}
+                onClick={toggleFollow}
+                disabled={followNetwork?.busyTargetId === room?.host_user_id}
+              >
+                {isFollowing ? '✓ Following' : '+ Follow'}
+              </button>
               <small>{room?.title || hostLabel}</small>
             </div>
           </div>
-          <div className="fv-viewer-live-header-actions">
-            <button
-              type="button"
-              className={`fv-viewer-follow ${isFollowing ? 'is-following' : ''}`}
-              onClick={toggleFollow}
-              disabled={followNetwork?.busyTargetId === room?.host_user_id}
-            >
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
-            <b className="fv-viewer-live-total" aria-label={`${serverTotal} Fame Taps`}>♥ {serverTotal}</b>
+
+          <div className="fv-viewer-live-stats" aria-label={`${relay.viewerCount} viewers and ${serverTotal} Fame Taps`}>
+            <span><b aria-hidden="true">♟</b>{formatStat(relay.viewerCount)}</span>
+            <i aria-hidden="true" />
+            <span className="is-fame"><b aria-hidden="true">F</b>{formatStat(serverTotal)}</span>
           </div>
         </header>
-
-        {!ended && (
-          <aside className="fv-viewer-live-actions" onPointerDown={(event) => event.stopPropagation()} aria-label="Live actions">
-            <button type="button" onClick={() => setGiftTrayOpen(true)}><span>🎁</span><small>Gift</small></button>
-            <button type="button" onClick={shareRoom}><span>↗</span><small>Share</small></button>
-          </aside>
-        )}
 
         {!ended && (
           <div className="fv-viewer-live-chat-layer" onPointerDown={(event) => event.stopPropagation()}>
@@ -184,7 +202,30 @@ export default function ViewerLiveScreen({
               commentText={commentText}
               setCommentText={setCommentText}
               submitComment={submitComment}
+              onGiftClick={() => setGiftTrayOpen(true)}
             />
+          </div>
+        )}
+
+        {!ended && (
+          <div className="fv-viewer-live-more" onPointerDown={(event) => event.stopPropagation()}>
+            {menuOpen && (
+              <div className="fv-viewer-live-menu" role="menu" aria-label="Live options">
+                <button type="button" role="menuitem" onClick={shareLive}>
+                  <span aria-hidden="true">↗</span>
+                  <b>Share Live</b>
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className="fv-viewer-live-f-menu"
+              aria-label="Open Fameverse Live menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              F
+            </button>
           </div>
         )}
       </div>
