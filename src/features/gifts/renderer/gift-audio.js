@@ -1,5 +1,8 @@
 let audioContext = null
 let primeInstalled = false
+let keepAliveSource = null
+let keepAliveGain = null
+let sessionActive = false
 
 function getAudioContext() {
   if (audioContext) return audioContext
@@ -24,12 +27,30 @@ function playUnlockPulse(context) {
   }
 }
 
+function ensureKeepAlive(context) {
+  if (keepAliveSource || !sessionActive || context.state !== 'running') return
+  try {
+    const source = context.createConstantSource()
+    const gain = context.createGain()
+    source.offset.value = 0
+    gain.gain.value = 0.000001
+    source.connect(gain)
+    gain.connect(context.destination)
+    source.start()
+    keepAliveSource = source
+    keepAliveGain = gain
+  } catch {
+    // ConstantSource is a best-effort keep-alive. Chime playback still has its normal path.
+  }
+}
+
 export function primeGiftAudio() {
   const context = getAudioContext()
   if (!context) return false
 
   const warm = () => {
     playUnlockPulse(context)
+    ensureKeepAlive(context)
     return context.state === 'running'
   }
 
@@ -43,6 +64,20 @@ export function primeGiftAudio() {
   }
 
   return true
+}
+
+export function startGiftAudioSession() {
+  sessionActive = true
+  return primeGiftAudio()
+}
+
+export function stopGiftAudioSession() {
+  sessionActive = false
+  try { keepAliveSource?.stop?.() } catch {}
+  try { keepAliveSource?.disconnect?.() } catch {}
+  try { keepAliveGain?.disconnect?.() } catch {}
+  keepAliveSource = null
+  keepAliveGain = null
 }
 
 function scheduleTone(context, destination, frequency, startAt, duration, gainValue) {
@@ -66,15 +101,16 @@ function scheduleTone(context, destination, frequency, startAt, duration, gainVa
 function playUnlockedChime(context) {
   if (context.state !== 'running') return false
 
+  ensureKeepAlive(context)
   const now = context.currentTime + 0.015
   const master = context.createGain()
-  master.gain.setValueAtTime(0.82, now)
+  master.gain.setValueAtTime(0.92, now)
   master.connect(context.destination)
 
-  scheduleTone(context, master, 392.0, now, 0.36, 0.16)
-  scheduleTone(context, master, 523.25, now + 0.07, 0.42, 0.18)
-  scheduleTone(context, master, 659.25, now + 0.16, 0.48, 0.16)
-  scheduleTone(context, master, 783.99, now + 0.28, 0.52, 0.13)
+  scheduleTone(context, master, 392.0, now, 0.36, 0.18)
+  scheduleTone(context, master, 523.25, now + 0.07, 0.42, 0.20)
+  scheduleTone(context, master, 659.25, now + 0.16, 0.48, 0.18)
+  scheduleTone(context, master, 783.99, now + 0.28, 0.52, 0.15)
 
   window.setTimeout(() => {
     try { master.disconnect() } catch {}
