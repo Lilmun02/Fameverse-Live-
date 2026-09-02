@@ -20,9 +20,9 @@ const liveScreen = read('src/components/live/LiveScreen.jsx')
 const main = read('src/main.jsx')
 const discover = read('src/components/discover/DiscoverScreen.jsx')
 
-assert.match(app, /actorId=account\.session\?\.user\?\.id|const actorId = account\.session\?\.user\?\.id/, 'Signed-in account id must be the Live identity source.')
-assert.match(app, /actorId,\n\s*setToast/, 'Gift activity must receive the signed-in actor id.')
-assert.match(app, /displayName,\n\s*actorId,/, 'Live activity must receive the signed-in actor id.')
+assert.match(app, /const actorId = account\.session\?\.user\?\.id/, 'Signed-in account id must be the Live identity source.')
+assert.match(app, /displayName,\n\s*actorId,\n\s*setToast/, 'Gift activity must receive the signed-in actor id.')
+assert.match(app, /roomId: activeActivityRoomId,[\s\S]*displayName,[\s\S]*actorId,/, 'Live activity must receive the signed-in actor id.')
 assert.match(app, /currentUserId=\{actorId\}/, 'Host and viewer Live screens must receive the current user id.')
 
 assert.match(activity, /userId: payload\.userId \|\| null/, 'Remote comments must preserve sender user ids.')
@@ -35,7 +35,7 @@ assert.match(chat, /onOpenIdentity = null/, 'LiveChat must expose identity openi
 assert.match(chat, /onClick=\{\(\) => identityEnabled && onOpenIdentity\(item\.userId\)\}/, 'Comment avatars must open the real sender profile.')
 assert.match(chat, /className="fam-chat-identity-button"/, 'Comment names must be tappable when a real user id exists.')
 
-assert.match(header, /fv-host-identity-button/, 'Host top identity must be tappable.')
+assert.match(header, /className="fam-live-creator-identity"/, 'Host top identity must keep the canonical no-box class.')
 assert.match(header, /onOpenIdentity\(currentUserId\)/, 'Host top identity must open the host real profile.')
 assert.match(liveScreen, /onOpenIdentity=\{profileSheet\.open\}/, 'Host comments must open the profile sheet.')
 assert.match(liveScreen, /<LiveProfileSheet/, 'Host Live must mount the profile sheet over the Live.')
