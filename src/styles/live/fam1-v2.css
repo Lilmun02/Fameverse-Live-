@@ -1,4 +1,4 @@
-/* FAM 1.1 pre-live surface: camera-first and quiet. Existing in-live behavior stays intact. */
+/* FAM 1.1 pre-live surface: camera-first and quiet. In-live styling belongs to the dedicated live shell. */
 .mobile-live-shell.is-preview { background:#050407; }
 .mobile-live-shell.is-preview .fam-live-video-surface {
   background:
@@ -97,7 +97,3 @@
   font-size:.56rem;
   text-align:center;
 }
-
-/* Keep the actual live room visually dominant. */
-.mobile-live-shell.is-live .fam-creator-capsule { background:rgba(5,4,7,.5); border-color:rgba(255,255,255,.08); }
-.mobile-live-shell.is-live .fam-action-button { background:rgba(5,4,7,.52); border-radius:50%; }
