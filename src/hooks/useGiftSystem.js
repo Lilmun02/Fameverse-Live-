@@ -81,11 +81,13 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
   }, [displayName, playNextSimpleGift])
 
   const playPremiumGift = useCallback((gift, quantity, sender) => {
+    window.FameverseGiftEngine?.primeAudio?.()
     setPremiumRepeat({ ...gift, quantity: Number(quantity) || 1 })
     clearTimeout(premiumRepeatTimerRef.current)
     premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
 
     window.setTimeout(() => {
+      window.FameverseGiftEngine?.primeAudio?.()
       document.dispatchEvent(new CustomEvent('fameverse:gift', {
         detail: { id: gift.rendererId, sender, quantity: Number(quantity) || 1 },
       }))
