@@ -25,6 +25,17 @@ import { usePwaInstall } from './hooks/usePwaInstall.js'
 
 const SPLASH_MINIMUM_MS = 1800
 
+function liveRoomFromUrl() {
+  return new URL(window.location.href).searchParams.get('live')
+}
+
+function buildLiveShareUrl(roomId) {
+  const url = new URL(window.location.href)
+  if (roomId) url.searchParams.set('live', roomId)
+  else url.searchParams.delete('live')
+  return url.toString()
+}
+
 export default function App() {
   const [toast, setToast] = useState('')
   const [tab, setTab] = useState('home')
@@ -37,6 +48,7 @@ export default function App() {
   const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
   const [viewingRoom, setViewingRoom] = useState(null)
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
+  const deepLinkHandledRef = useRef(false)
   const activityRef = useRef(null)
 
   const live = useLiveMedia(setToast)
@@ -59,7 +71,7 @@ export default function App() {
   const cohostHost = useCohostHost({
     roomId: presence.room?.id,
     enabled: live.isLive && Boolean(presence.room?.id),
-    viewerIds: broadcast.viewerIds,
+    viewerRoster: broadcast.viewerRoster,
     setToast,
   })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
@@ -119,6 +131,26 @@ export default function App() {
     const timer = setTimeout(() => setToast(''), 2400)
     return () => clearTimeout(timer)
   }, [toast])
+
+  useEffect(() => {
+    if (!account.session || deepLinkHandledRef.current || liveDiscovery.state === 'loading') return
+    const targetRoomId = liveRoomFromUrl()
+    if (!targetRoomId) {
+      deepLinkHandledRef.current = true
+      return
+    }
+    const room = liveDiscovery.rooms.find((item) => item.id === targetRoomId)
+    if (!room) {
+      if (liveDiscovery.state === 'ready') {
+        deepLinkHandledRef.current = true
+        setToast('That Live is no longer active')
+      }
+      return
+    }
+    deepLinkHandledRef.current = true
+    setTab('discover')
+    setViewingRoom(room)
+  }, [account.session, liveDiscovery.rooms, liveDiscovery.state])
 
   useEffect(() => {
     gifts.setGiftTrayOpen(false)
@@ -183,22 +215,30 @@ export default function App() {
   }
 
   const shareRoom = async (roomOverride = null) => {
-    const roomTitle = roomOverride?.title || liveSetup.active?.title || 'Fameverse Live Beta'
+    const room = roomOverride || presence.room
+    const roomTitle = room?.title || liveSetup.active?.title || 'Fameverse Live Beta'
     const creatorName = roomOverride?.host?.displayName || roomOverride?.host?.username || displayName
     const shareData = {
       title: roomTitle,
       text: `${creatorName} is live on Fameverse: ${roomTitle}`,
-      url: window.location.href,
+      url: buildLiveShareUrl(room?.id),
     }
     try {
       if (navigator.share) await navigator.share(shareData)
       else {
-        await navigator.clipboard.writeText(window.location.href)
+        await navigator.clipboard.writeText(shareData.url)
         setToast('Live link copied')
       }
     } catch {
       // User cancelled share sheet.
     }
+  }
+
+  const closeViewingRoom = () => {
+    setViewingRoom(null)
+    const url = new URL(window.location.href)
+    url.searchParams.delete('live')
+    window.history.replaceState({}, '', url)
   }
 
   const signOut = async () => {
@@ -249,7 +289,7 @@ export default function App() {
       {viewingRoom ? (
         <ViewerLiveScreen
           room={viewingRoom}
-          onClose={() => setViewingRoom(null)}
+          onClose={closeViewingRoom}
           followNetwork={followNetwork}
           shareRoom={() => shareRoom(viewingRoom)}
           liveMessages={liveMessages}
