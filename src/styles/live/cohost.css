@@ -59,6 +59,14 @@
 
 .fv-cohost-sheet { max-height: min(72dvh, 570px); overflow-y: auto; }
 
+.fv-cohost-section-title {
+  margin: 14px 2px 7px;
+  color: #a994b6;
+  font-size: .55rem;
+  font-weight: 950;
+  letter-spacing: .11em;
+}
+
 .fv-cohost-request-list {
   display: grid;
   gap: 8px;
@@ -138,6 +146,57 @@
 .fv-cohost-active-card > button.is-danger {
   border-color: rgba(255, 78, 112, .24);
   color: #ff8fa6;
+}
+
+.fv-cohost-invite-backdrop { z-index: 1200; }
+
+.fv-cohost-invite-prompt {
+  text-align: center;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+.fv-cohost-invite-mark {
+  width: 52px;
+  height: 52px;
+  margin: 8px auto 12px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(194, 111, 255, .3);
+  border-radius: 18px;
+  background: rgba(143, 54, 224, .17);
+  color: #d79cff;
+  font-size: 1.5rem;
+}
+
+.fv-cohost-invite-prompt > strong {
+  display: block;
+  color: #fff;
+  font-size: .92rem;
+}
+
+.fv-cohost-invite-prompt > p {
+  max-width: 290px;
+  margin: 8px auto 16px;
+  color: #aa9cb4;
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.fv-cohost-invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+.fv-cohost-invite-actions button {
+  min-height: 44px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  background: rgba(255,255,255,.04);
+  color: #d5c8dd;
+  font-weight: 900;
+}
+
+.fv-cohost-invite-actions button.is-accept {
+  border-color: rgba(177, 87, 255, .38);
+  background: linear-gradient(135deg, #7530d8, #a543ed);
+  color: #fff;
 }
 
 @media (max-width: 360px) {
