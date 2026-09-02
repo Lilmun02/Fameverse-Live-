@@ -138,8 +138,12 @@ export default function LiveScreen({
         open={cohostTrayOpen}
         onClose={() => setCohostTrayOpen(false)}
         shareRoom={shareRoom}
+        viewers={cohost?.viewers || []}
         requests={cohost?.requests || []}
+        pendingInvite={cohost?.pendingInvite || null}
         activeCohost={cohost?.activeCohost || null}
+        onInvite={cohost?.inviteViewer}
+        onCancelInvite={cohost?.cancelInvite}
         onAccept={cohost?.acceptRequest}
         onDecline={cohost?.declineRequest}
         onEndCohost={cohost?.endCohost}
