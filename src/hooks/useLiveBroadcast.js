@@ -29,6 +29,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
   const streamRef = useRef(stream)
   const peersRef = useRef(new Map())
   const [viewerCount, setViewerCount] = useState(0)
+  const [viewerIds, setViewerIds] = useState([])
   const hasStream = Boolean(stream)
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
   useEffect(() => {
     if (!enabled || !roomId || !hasStream) {
       setViewerCount(0)
+      setViewerIds([])
       return undefined
     }
 
@@ -59,9 +61,12 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
     const send = (event, payload) => sendLiveRelayEvent(channel, event, payload)
 
     const publishViewerCount = () => {
-      const nextCount = [...peers.values()].filter((entry) => entry.connected).length
-      setViewerCount(nextCount)
-      void send('viewer-count', { roomId, viewerCount: nextCount })
+      const connectedIds = [...peers.entries()]
+        .filter(([, entry]) => entry.connected)
+        .map(([viewerId]) => viewerId)
+      setViewerIds(connectedIds)
+      setViewerCount(connectedIds.length)
+      void send('viewer-count', { roomId, viewerCount: connectedIds.length })
     }
 
     const removePeer = (viewerId) => {
@@ -162,9 +167,13 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          const currentCount = [...peers.values()].filter((entry) => entry.connected).length
-          void send('host-ready', { roomId, viewerCount: currentCount })
-          void send('viewer-count', { roomId, viewerCount: currentCount })
+          const currentIds = [...peers.entries()]
+            .filter(([, entry]) => entry.connected)
+            .map(([viewerId]) => viewerId)
+          setViewerIds(currentIds)
+          setViewerCount(currentIds.length)
+          void send('host-ready', { roomId, viewerCount: currentIds.length })
+          void send('viewer-count', { roomId, viewerCount: currentIds.length })
         }
       })
 
@@ -174,9 +183,10 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       peers.forEach(({ peer }) => closeCohostPeer(peer))
       peers.clear()
       setViewerCount(0)
+      setViewerIds([])
       void removeLiveRelayChannel(channel)
     }
   }, [enabled, hasStream, roomId])
 
-  return { viewerCount }
+  return { viewerCount, viewerIds }
 }
