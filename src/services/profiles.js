@@ -14,13 +14,19 @@ export async function loadLiveIdentity(userId) {
   if (error) throw error
   if (!profile) return null
 
-  const [{ count: followerCount, error: followerError }, { count: followingCount, error: followingError }] = await Promise.all([
+  const [
+    { count: followerCount, error: followerError },
+    { count: followingCount, error: followingError },
+    { data: gifterStats, error: gifterError },
+  ] = await Promise.all([
     supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', userId),
     supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', userId),
+    supabase.from('gifter_stats').select('level').eq('user_id', userId).maybeSingle(),
   ])
 
   if (followerError) throw followerError
   if (followingError) throw followingError
+  if (gifterError) throw gifterError
 
   return {
     id: profile.id,
@@ -30,5 +36,6 @@ export async function loadLiveIdentity(userId) {
     avatarUrl: profile.avatar_url || null,
     followerCount: followerCount || 0,
     followingCount: followingCount || 0,
+    gifterLevel: Math.max(1, Number(gifterStats?.level || 1)),
   }
 }
