@@ -96,7 +96,6 @@ export default function LiveScreen({
 
       <LiveActions
         premiumRepeat={premiumRepeat}
-        setGiftTrayOpen={setGiftTrayOpen}
         setCohostTrayOpen={setCohostTrayOpen}
         micMuted={micMuted}
         toggleMic={toggleMic}
@@ -106,11 +105,13 @@ export default function LiveScreen({
         isStartingLive={isStartingLive}
         shareRoom={shareRoom}
       />
+
       <LiveChat
         liveMessages={liveMessages}
         commentText={commentText}
         setCommentText={setCommentText}
         submitComment={submitComment}
+        onGiftClick={() => setGiftTrayOpen(true)}
       />
 
       <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
