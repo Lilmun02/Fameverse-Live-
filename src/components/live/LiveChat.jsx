@@ -30,7 +30,7 @@ export default function LiveChat({
   return (
     <>
       {liveMessages.length > 0 && (
-        <div ref={chatScrollRef} className="fam-chat-stack live-chat-overlay" aria-label="Live comments">
+        <div ref={chatScrollRef} className="fam-chat-stack fv-live-chat-feed" aria-label="Live comments">
           {liveMessages.map((item) => (
             <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
               <span className="fam-chat-avatar" aria-hidden="true">{initialFor(item.user)}</span>
@@ -51,11 +51,11 @@ export default function LiveChat({
       )}
 
       <form
-        className="fam-comment-composer live-comment-composer"
+        className="fam-comment-composer fv-live-composer"
         onSubmit={submitComment}
         onPointerDown={stopLiveTap}
       >
-        <div className="live-comment-entry">
+        <div className="fv-live-comment-entry">
           <input
             value={commentText}
             onChange={(event) => setCommentText(event.target.value)}
@@ -69,7 +69,7 @@ export default function LiveChat({
         {onGiftClick && (
           <button
             type="button"
-            className="live-comment-gift"
+            className="fv-live-gift-button"
             aria-label="Open gifts"
             onPointerDown={stopLiveTap}
             onClick={onGiftClick}
@@ -78,7 +78,7 @@ export default function LiveChat({
           </button>
         )}
         <button
-          className="live-comment-send"
+          className="fv-live-send-button"
           type="submit"
           aria-label="Send comment"
           disabled={!commentText.trim()}
