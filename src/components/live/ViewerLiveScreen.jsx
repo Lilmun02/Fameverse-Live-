@@ -13,6 +13,10 @@ function formatStat(value) {
   return compactNumber.format(Number.isFinite(number) && number > 0 ? number : 0)
 }
 
+function stopLiveTap(event) {
+  event.stopPropagation()
+}
+
 export default function ViewerLiveScreen({
   room,
   onClose,
@@ -103,13 +107,18 @@ export default function ViewerLiveScreen({
   }
 
   const toggleFollow = () => {
-    if (!room?.host_user_id) return
+    if (!room?.host_user_id || followNetwork?.busyTargetId === room.host_user_id) return
     void followNetwork?.toggleFollow?.(room.host_user_id)
   }
 
   const shareLive = () => {
     setMenuOpen(false)
     void shareRoom?.()
+  }
+
+  const openGiftTray = () => {
+    setMenuOpen(false)
+    setGiftTrayOpen(true)
   }
 
   return (
@@ -130,7 +139,7 @@ export default function ViewerLiveScreen({
           <div className="fv-viewer-live-ended">
             <strong>This Live ended</strong>
             <small>Return to Discover to find another live creator.</small>
-            <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={onClose}>Back to Discover</button>
+            <button type="button" onPointerDown={stopLiveTap} onClick={onClose}>Back to Discover</button>
           </div>
         )}
 
@@ -138,7 +147,7 @@ export default function ViewerLiveScreen({
           <button
             type="button"
             className="fv-viewer-live-play"
-            onPointerDown={(event) => event.stopPropagation()}
+            onPointerDown={stopLiveTap}
             onClick={playVideo}
           >
             Tap to play Live
@@ -162,7 +171,7 @@ export default function ViewerLiveScreen({
           ))}
         </div>
 
-        <header className="fv-viewer-live-header" onPointerDown={(event) => event.stopPropagation()}>
+        <header className="fv-viewer-live-header" onPointerDown={stopLiveTap}>
           <button type="button" className="fv-viewer-live-back" onClick={onClose} aria-label="Back to Discover">‹</button>
 
           <div className="fv-viewer-live-creator">
@@ -179,39 +188,39 @@ export default function ViewerLiveScreen({
               <button
                 type="button"
                 className={`fv-viewer-follow ${isFollowing ? 'is-following' : ''}`}
+                onPointerDown={stopLiveTap}
                 onClick={toggleFollow}
                 disabled={followNetwork?.busyTargetId === room?.host_user_id}
               >
                 {isFollowing ? '✓ Following' : '+ Follow'}
               </button>
-              <small>{room?.title || hostLabel}</small>
             </div>
           </div>
 
           <div className="fv-viewer-live-stats" aria-label={`${relay.viewerCount} viewers and ${serverTotal} Fame Taps`}>
-            <span><b aria-hidden="true">♟</b>{formatStat(relay.viewerCount)}</span>
+            <span><b aria-hidden="true">👥</b>{formatStat(relay.viewerCount)}</span>
             <i aria-hidden="true" />
             <span className="is-fame"><b aria-hidden="true">F</b>{formatStat(serverTotal)}</span>
           </div>
         </header>
 
         {!ended && (
-          <div className="fv-viewer-live-chat-layer" onPointerDown={(event) => event.stopPropagation()}>
+          <div className="fv-viewer-live-chat-layer" onPointerDown={stopLiveTap}>
             <LiveChat
               liveMessages={liveMessages}
               commentText={commentText}
               setCommentText={setCommentText}
               submitComment={submitComment}
-              onGiftClick={() => setGiftTrayOpen(true)}
+              onGiftClick={openGiftTray}
             />
           </div>
         )}
 
         {!ended && (
-          <div className="fv-viewer-live-more" onPointerDown={(event) => event.stopPropagation()}>
+          <div className="fv-viewer-live-more" onPointerDown={stopLiveTap}>
             {menuOpen && (
               <div className="fv-viewer-live-menu" role="menu" aria-label="Live options">
-                <button type="button" role="menuitem" onClick={shareLive}>
+                <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={shareLive}>
                   <span aria-hidden="true">↗</span>
                   <b>Share Live</b>
                 </button>
@@ -222,6 +231,7 @@ export default function ViewerLiveScreen({
               className="fv-viewer-live-f-menu"
               aria-label="Open Fameverse Live menu"
               aria-expanded={menuOpen}
+              onPointerDown={stopLiveTap}
               onClick={() => setMenuOpen((open) => !open)}
             >
               F
