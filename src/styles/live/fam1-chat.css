@@ -1,13 +1,24 @@
-/* FAM 1 live chat, gifter badge, and approved bottom composer layout. */
+/* Canonical Fameverse Live chat + bottom controls. Legacy live-comment-* classes are intentionally not used here. */
 
-.mobile-live-shell.is-live .fam-chat-stack {
+.mobile-live-shell.is-live .fv-live-chat-feed {
+  position: absolute;
+  z-index: 24;
   left: 14px;
-  right: 74px;
-  bottom: calc(max(66px, env(safe-area-inset-bottom) + 58px));
+  right: 78px;
+  bottom: calc(max(68px, env(safe-area-inset-bottom) + 60px));
   max-height: min(34dvh, 270px);
   display: grid;
   gap: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  pointer-events: auto;
+  scrollbar-width: none;
 }
+
+.mobile-live-shell.is-live .fv-live-chat-feed::-webkit-scrollbar { display: none; }
 
 .fam-chat-line {
   width: fit-content;
@@ -47,23 +58,9 @@
   font-weight: 950;
 }
 
-.fam-chat-copy {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-
-.fam-chat-identity {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.fam-chat-identity strong {
-  color: #d49cff;
-  font-size: .68rem;
-}
+.fam-chat-copy { min-width: 0; display: grid; gap: 2px; }
+.fam-chat-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.fam-chat-identity strong { color: #d49cff; font-size: .68rem; }
 
 .fam-gifter-badge {
   display: inline-flex;
@@ -81,48 +78,45 @@
 
 .fam-chat-message { color: #fff; }
 
-.fam-comment-composer.live-comment-composer {
+.fam-comment-composer.fv-live-composer {
   position: absolute;
-  z-index: 30;
+  z-index: 34;
   left: 14px;
-  right: 76px;
+  right: 78px;
   bottom: calc(max(10px, env(safe-area-inset-bottom) + 6px));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px 42px;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
   align-items: center;
   gap: 7px;
   pointer-events: auto;
 }
 
-.live-comment-entry {
-  min-width: 0;
-  height: 42px;
-}
+.fv-live-comment-entry { min-width: 0; height: 44px; }
 
-.fam-comment-composer.live-comment-composer .live-comment-entry input {
+.fam-comment-composer.fv-live-composer .fv-live-comment-entry input {
   width: 100%;
-  height: 42px;
-  padding: 0 14px;
-  border: 1px solid rgba(255,255,255,.13);
+  height: 44px;
+  padding: 0 15px;
+  border: 1px solid rgba(255,255,255,.14);
   border-radius: 999px;
   outline: 0;
-  background: rgba(8,3,14,.72);
+  background: rgba(8,3,14,.76);
   box-shadow: 0 10px 24px rgba(0,0,0,.2);
   color: #fff;
   font-size: 16px;
   backdrop-filter: blur(12px);
 }
 
-.fam-comment-composer.live-comment-composer .live-comment-entry input:focus {
-  border-color: rgba(203, 144, 255, .52);
+.fam-comment-composer.fv-live-composer .fv-live-comment-entry input:focus {
+  border-color: rgba(203, 144, 255, .58);
   box-shadow: 0 0 0 3px rgba(151, 70, 255, .08);
 }
 
-.fam-comment-composer.live-comment-composer .live-comment-gift,
-.fam-comment-composer.live-comment-composer .live-comment-send {
-  width: 42px;
-  height: 42px;
-  min-height: 42px;
+.fam-comment-composer.fv-live-composer .fv-live-gift-button,
+.fam-comment-composer.fv-live-composer .fv-live-send-button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -130,41 +124,43 @@
   color: #fff;
   touch-action: manipulation;
   pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.fam-comment-composer.live-comment-composer .live-comment-gift {
-  border: 1px solid rgba(202, 145, 255, .32);
-  background: rgba(17, 10, 23, .82);
-  box-shadow: 0 8px 22px rgba(0,0,0,.2);
-  font-size: 1rem;
+.fam-comment-composer.fv-live-composer .fv-live-gift-button {
+  border: 1px solid rgba(202, 145, 255, .34);
+  background: rgba(17, 10, 23, .86);
+  box-shadow: 0 8px 22px rgba(0,0,0,.22);
+  font-size: 1.06rem;
 }
 
-.fam-comment-composer.live-comment-composer .live-comment-send {
+.fam-comment-composer.fv-live-composer .fv-live-send-button {
   border: 1px solid rgba(221, 185, 255, .18);
   background: linear-gradient(145deg, #6d24d5, #a241f4);
-  box-shadow: 0 8px 22px rgba(116, 38, 209, .26);
+  box-shadow: 0 8px 22px rgba(116, 38, 209, .28);
   font-size: 1rem;
 }
 
-.fam-comment-composer.live-comment-composer .live-comment-send:disabled { opacity: .42; }
+.fam-comment-composer.fv-live-composer .fv-live-send-button:disabled { opacity: .42; }
+.fam-comment-composer.fv-live-composer button:active { transform: scale(.94); }
 
 @media (max-width: 390px) {
-  .mobile-live-shell.is-live .fam-chat-stack {
-    left: 10px;
-    right: 66px;
-  }
-
-  .fam-comment-composer.live-comment-composer {
+  .mobile-live-shell.is-live .fv-live-chat-feed {
     left: 10px;
     right: 68px;
-    grid-template-columns: minmax(0, 1fr) 39px 39px;
+  }
+
+  .fam-comment-composer.fv-live-composer {
+    left: 10px;
+    right: 68px;
+    grid-template-columns: minmax(0, 1fr) 40px 40px;
     gap: 6px;
   }
 
-  .fam-comment-composer.live-comment-composer .live-comment-gift,
-  .fam-comment-composer.live-comment-composer .live-comment-send {
-    width: 39px;
-    height: 39px;
-    min-height: 39px;
+  .fam-comment-composer.fv-live-composer .fv-live-gift-button,
+  .fam-comment-composer.fv-live-composer .fv-live-send-button {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
   }
 }
