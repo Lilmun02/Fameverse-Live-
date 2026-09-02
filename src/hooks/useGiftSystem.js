@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createGifterBadge } from '../features/badges/gifterBadgeSystem.js'
 import { loadCoins } from '../utils/pwa.js'
 
@@ -29,13 +29,13 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     window.FameverseGiftEngine?.stop?.()
   }, [])
 
-  const clearSimpleGiftPlayback = () => {
+  const clearSimpleGiftPlayback = useCallback(() => {
     clearTimeout(giftTimerRef.current)
     giftTimerRef.current = null
     simpleGiftQueueRef.current = []
     simpleGiftActiveRef.current = false
     setGiftOverlay(null)
-  }
+  }, [])
 
   useEffect(() => {
     if (isLive) return
@@ -44,7 +44,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     setPremiumRepeat(null)
     setGiftTrayOpen(false)
     window.FameverseGiftEngine?.stop?.()
-  }, [isLive])
+  }, [clearSimpleGiftPlayback, isLive])
 
   const addTestCoins = (amount = 10000) => {
     const next = coinsRef.current + amount
@@ -53,7 +53,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     setToast(`+${amount.toLocaleString()} beta test coins`)
   }
 
-  const playNextSimpleGift = () => {
+  const playNextSimpleGift = useCallback(() => {
     if (simpleGiftActiveRef.current) return
     const next = simpleGiftQueueRef.current.shift()
     if (!next) return
@@ -61,7 +61,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     simpleGiftActiveRef.current = true
     setGiftOverlay({
       ...next.gift,
-      sender: displayName,
+      sender: next.sender || displayName,
       duration: SIMPLE_GIFT_DURATION_MS,
       count: next.quantity,
       lastSentAt: Date.now(),
@@ -73,17 +73,37 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
       simpleGiftActiveRef.current = false
       playNextSimpleGift()
     }, SIMPLE_GIFT_DURATION_MS)
-  }
+  }, [displayName])
 
-  const showGift = (gift, quantity) => {
-    simpleGiftQueueRef.current.push({ gift, quantity })
+  const showGift = useCallback((gift, quantity, sender = displayName) => {
+    simpleGiftQueueRef.current.push({ gift, quantity, sender })
     playNextSimpleGift()
-  }
+  }, [displayName, playNextSimpleGift])
+
+  const playPremiumGift = useCallback((gift, quantity, sender) => {
+    setPremiumRepeat({ ...gift, quantity: Number(quantity) || 1 })
+    clearTimeout(premiumRepeatTimerRef.current)
+    premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
+
+    window.setTimeout(() => {
+      document.dispatchEvent(new CustomEvent('fameverse:gift', {
+        detail: { id: gift.rendererId, sender, quantity: Number(quantity) || 1 },
+      }))
+    }, 140)
+  }, [])
+
+  const receiveGift = useCallback((gift, quantity = 1, sender = 'Fameverse viewer') => {
+    if (!gift) return false
+    const normalizedQuantity = Math.max(1, Number(quantity) || 1)
+    if (gift.rendererId) playPremiumGift(gift, normalizedQuantity, sender)
+    else showGift(gift, normalizedQuantity, sender)
+    return true
+  }, [playPremiumGift, showGift])
 
   const sendGift = (gift, quantity = 1, { keepTrayOpen = false } = {}) => {
     if (!isLive) {
       setGiftTrayOpen(false)
-      setToast('Start Live before sending gifts')
+      setToast('Open a Live before sending gifts')
       return false
     }
 
@@ -127,21 +147,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     })
 
     if (!keepTrayOpen) setGiftTrayOpen(false)
-
-    if (gift.rendererId) {
-      setPremiumRepeat({ ...gift, quantity: normalizedQuantity })
-      clearTimeout(premiumRepeatTimerRef.current)
-      premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
-
-      window.setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('fameverse:gift', {
-          detail: { id: gift.rendererId, sender: displayName, quantity: normalizedQuantity },
-        }))
-      }, 140)
-      return true
-    }
-
-    showGift(gift, normalizedQuantity)
+    receiveGift(gift, normalizedQuantity, displayName)
     return true
   }
 
@@ -160,6 +166,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     setGiftTrayOpen,
     addTestCoins,
     sendGift,
+    receiveGift,
     stopGiftPlayback,
   }
 }
