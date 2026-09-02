@@ -23,7 +23,13 @@ function serializeCandidate(candidate) {
   return candidate?.toJSON ? candidate.toJSON() : candidate
 }
 
-export function useLiveViewer({ roomId, enabled = true }) {
+export function useLiveViewer({
+  roomId,
+  enabled = true,
+  userId = null,
+  displayName = 'Fameverse viewer',
+  avatarUrl = null,
+}) {
   const viewerIdRef = useRef(makeViewerId())
   const peerRef = useRef(null)
   const activeOfferIdRef = useRef(null)
@@ -61,9 +67,19 @@ export function useLiveViewer({ roomId, enabled = true }) {
       if (clearPending) pendingIceRef.current.clear()
     }
 
+    const announceViewer = () => {
+      if (!active || stateRef.current === 'ended') return
+      void send('viewer-ready', {
+        roomId,
+        userId,
+        displayName,
+        avatarUrl: avatarUrl || null,
+      })
+    }
+
     const requestHost = () => {
       if (!active || stateRef.current === 'connected' || stateRef.current === 'ended') return
-      void send('viewer-ready', { roomId })
+      announceViewer()
     }
 
     const applyViewerCount = (payload) => {
@@ -154,7 +170,7 @@ export function useLiveViewer({ roomId, enabled = true }) {
         changeState('ended')
       })
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') requestHost()
+        if (status === 'SUBSCRIBED') announceViewer()
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') changeState('degraded')
       })
 
@@ -163,13 +179,13 @@ export function useLiveViewer({ roomId, enabled = true }) {
     return () => {
       active = false
       window.clearInterval(retryTimer)
-      void send('viewer-left', { roomId })
+      void send('viewer-left', { roomId, userId })
       closePeer()
       setRemoteStream(null)
       setViewerCount(0)
       void removeLiveRelayChannel(channel)
     }
-  }, [enabled, roomId])
+  }, [avatarUrl, displayName, enabled, roomId, userId])
 
   return {
     viewerId: viewerIdRef.current,
