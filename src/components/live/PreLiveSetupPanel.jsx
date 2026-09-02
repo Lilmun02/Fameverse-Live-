@@ -1,5 +1,5 @@
 import { gifts } from '../../config/gifts.js'
-import { primeGiftAudio } from '../../features/gifts/renderer/gift-audio.js'
+import { startGiftAudioSession } from '../../features/gifts/renderer/gift-audio.js'
 
 export default function PreLiveSetupPanel({
   displayName,
@@ -14,7 +14,7 @@ export default function PreLiveSetupPanel({
   const titleReady = Boolean(draft.title.trim())
 
   const startLiveWithAudioReady = () => {
-    primeGiftAudio()
+    startGiftAudioSession()
     beginLive()
   }
 
