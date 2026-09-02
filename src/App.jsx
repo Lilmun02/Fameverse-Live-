@@ -69,6 +69,7 @@ export default function App() {
   const gifts = useGiftSystem({
     isLive: live.isLive || Boolean(viewingRoom),
     displayName,
+    actorId: account.session?.user?.id || null,
     setToast,
     setChat,
     onGiftAccepted: (giftEvent) => {
@@ -79,6 +80,7 @@ export default function App() {
   const activity = useLiveActivity({
     roomId: activeActivityRoomId,
     displayName,
+    actorId: account.session?.user?.id || null,
     enabled: Boolean(account.session && activeActivityRoomId),
     setMessages: setChat,
     onRemoteGift: gifts.receiveGift,
@@ -239,6 +241,7 @@ export default function App() {
           coins={gifts.coins}
           sendGift={gifts.sendGift}
           addTestCoins={gifts.addTestCoins}
+          currentUserId={account.session?.user?.id || null}
         />
       ) : (
         <>
@@ -299,6 +302,8 @@ export default function App() {
                 addTestCoins={gifts.addTestCoins}
                 cohostTrayOpen={cohostTrayOpen}
                 presenceState={presence.state}
+                currentUserId={account.session?.user?.id || null}
+                followNetwork={followNetwork}
               />
             )}
 
