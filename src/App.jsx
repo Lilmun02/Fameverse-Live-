@@ -285,7 +285,6 @@ export default function App() {
                 setCohostTrayOpen={setCohostTrayOpen}
                 micMuted={live.micMuted}
                 toggleMic={live.toggleMic}
-                cameraOff={live.cameraOff}
                 toggleCamera={live.toggleCamera}
                 flipCamera={live.flipCamera}
                 shareRoom={shareRoom}
