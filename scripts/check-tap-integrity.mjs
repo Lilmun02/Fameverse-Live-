@@ -13,6 +13,12 @@ import {
 const migration = readFileSync(new URL('../supabase/migrations/20260902_add_authoritative_live_tap_ledger.sql', import.meta.url), 'utf8')
 const service = readFileSync(new URL('../src/services/live/liveTaps.js', import.meta.url), 'utf8')
 const totalsHook = readFileSync(new URL('../src/hooks/useLiveTapTotals.js', import.meta.url), 'utf8')
+const captureHook = readFileSync(new URL('../src/hooks/useViewerTapCapture.js', import.meta.url), 'utf8')
+const discoveryHook = readFileSync(new URL('../src/hooks/useLiveDiscovery.js', import.meta.url), 'utf8')
+const viewerHook = readFileSync(new URL('../src/hooks/useLiveViewer.js', import.meta.url), 'utf8')
+const broadcastHook = readFileSync(new URL('../src/hooks/useLiveBroadcast.js', import.meta.url), 'utf8')
+const viewerScreen = readFileSync(new URL('../src/components/live/ViewerLiveScreen.jsx', import.meta.url), 'utf8')
+const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
 
 assert.equal(TAP_INTEGRITY_VERSION, 'FAM-TAP-2')
 assert.equal(TAP_NETWORK_BATCH_MAX, 200, 'Network batching may be bounded, but total Fame Taps must not be capped.')
@@ -21,7 +27,8 @@ const status = getTapIntegrityStatus()
 assert.equal(status.rawTapCap, null)
 assert.equal(status.authoritativeLedger, true)
 assert.equal(status.visibleTotalsConnected, true)
-assert.equal(status.viewerCaptureConnected, false, 'Do not claim viewer tap capture before a real viewer Live surface exists.')
+assert.equal(status.viewerCaptureConnected, true)
+assert.equal(status.liveCaptureConnected, true)
 
 assert.match(migration, /create table if not exists public\.live_tap_totals/i)
 assert.match(migration, /create table if not exists public\.live_tap_batches/i)
@@ -38,6 +45,18 @@ assert.match(migration, /integrity_version text not null default 'FAM-TAP-2'/i)
 assert.match(service, /\.rpc\('record_live_tap_batch'/)
 assert.match(service, /\.from\('live_tap_totals'\)/)
 assert.match(totalsHook, /getLiveTapTotals\(roomId\)/)
+assert.match(captureHook, /submitLiveTapBatch/)
+assert.match(captureHook, /TAP_FLUSH_MS = 1200/)
+assert.match(discoveryHook, /listDiscoverableLiveRooms/)
+assert.match(viewerHook, /useLiveViewer/)
+assert.match(viewerHook, /host-offer/)
+assert.match(broadcastHook, /useLiveBroadcast/)
+assert.match(broadcastHook, /viewer-ready/)
+assert.match(viewerScreen, /<video/)
+assert.match(viewerScreen, /useViewerTapCapture/)
+assert.match(app, /ViewerLiveScreen/)
+assert.match(app, /useLiveBroadcast/)
+assert.match(app, /onOpenLiveRoom=\{setViewingRoom\}/)
 
 const verifiedEvent = createIntegrityVerifiedTapEvent({
   source: TAP_LEDGER_SOURCE,
@@ -60,4 +79,4 @@ assert.equal(createIntegrityVerifiedTapEvent({
   eligibleTapCount: 1250,
 }), null, 'Client-classified tap values must not become verified Verse Momentum events.')
 
-console.log(`Tap Integrity checks passed (${status.version}): authoritative ledger guarded, raw taps uncapped, viewer capture intentionally pending.`)
+console.log(`Tap Integrity checks passed (${status.version}): authoritative ledger + real viewer capture guarded, raw taps uncapped.`)
