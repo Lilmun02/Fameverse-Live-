@@ -25,14 +25,3 @@
 .fv-live-empty strong { font-size:.88rem; }
 .fv-live-empty p { max-width:300px; margin:0; color:#817a87; font-size:.66rem; line-height:1.45; }
 .fv-live-empty button { min-height:36px; margin-top:7px; padding:0 15px; border:0; border-radius:999px; background:var(--fv-accent); color:#fff; font-size:.64rem; font-weight:900; }
-
-.fv-live-room-list { display:grid; gap:9px; margin-top:14px; }
-.fv-live-room-row {
-  width:100%; min-height:72px; display:grid; grid-template-columns:46px minmax(0,1fr) auto; align-items:center; gap:11px;
-  padding:10px 12px; border:1px solid var(--fv-line); border-radius:16px; background:#0d0c11; color:#fff; text-align:left;
-}
-.fv-live-room-avatar { width:46px; height:46px; display:grid; place-items:center; border:1px solid rgba(166,76,255,.32); border-radius:50%; background:var(--fv-accent-soft); color:#e2c8ff; font-size:.82rem; font-weight:900; }
-.fv-live-room-copy { min-width:0; }
-.fv-live-room-copy b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.78rem; }
-.fv-live-room-copy small { display:block; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#8b8490; font-size:.6rem; }
-.fv-live-room-enter { color:#c99aff; font-size:.62rem; font-weight:850; white-space:nowrap; }

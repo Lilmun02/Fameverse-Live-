@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 const FILTERS = ['Popular', 'Friends', 'Following', 'Nearby']
 
@@ -9,24 +9,10 @@ const EMPTY_COPY = {
   Nearby: ['No nearby live rooms yet', 'Nearby discovery will populate from real public rooms when location-based discovery is connected.'],
 }
 
-export default function DiscoverScreen({ setTab, liveDiscovery, onOpenLiveRoom }) {
+export default function DiscoverScreen({ setTab }) {
   const [filter, setFilter] = useState('Popular')
   const [query, setQuery] = useState('')
   const [emptyTitle, emptyBody] = EMPTY_COPY[filter]
-
-  const visibleRooms = useMemo(() => {
-    if (filter !== 'Popular') return []
-    const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) return liveDiscovery.rooms
-
-    return liveDiscovery.rooms.filter((room) => {
-      const searchable = [room.title, room.host?.displayName, room.host?.username]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return searchable.includes(normalizedQuery)
-    })
-  }, [filter, liveDiscovery.rooms, query])
 
   return (
     <section className="fv-discover" aria-labelledby="discover-title">
@@ -64,41 +50,14 @@ export default function DiscoverScreen({ setTab, liveDiscovery, onOpenLiveRoom }
       <section className="fv-live-section">
         <div className="fv-live-section-heading">
           <div><span>{filter.toUpperCase()}</span><h2>Community live</h2></div>
-          <small>{visibleRooms.length} live</small>
+          <small>0 live</small>
         </div>
 
-        {filter === 'Popular' && visibleRooms.length > 0 ? (
-          <div className="fv-live-room-list">
-            {visibleRooms.map((room) => {
-              const hostLabel = room.host?.username
-                ? `@${room.host.username}`
-                : room.host?.displayName || 'Fameverse creator'
-              const initial = (room.host?.displayName || room.host?.username || 'F').trim().charAt(0).toUpperCase()
-
-              return (
-                <button
-                  key={room.id}
-                  type="button"
-                  className="fv-live-room-row"
-                  onClick={() => onOpenLiveRoom(room)}
-                >
-                  <span className="fv-live-room-avatar" aria-hidden="true">{initial}</span>
-                  <span className="fv-live-room-copy">
-                    <b>{room.title}</b>
-                    <small>{hostLabel} · LIVE</small>
-                  </span>
-                  <span className="fv-live-room-enter">Open ›</span>
-                </button>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="fv-live-empty">
-            <div className="fv-live-empty-mark" aria-hidden="true"><i /></div>
-            <strong>{liveDiscovery.state === 'loading' && filter === 'Popular' ? 'Checking live rooms…' : emptyTitle}</strong>
-            <p>{emptyBody}</p>
-          </div>
-        )}
+        <div className="fv-live-empty">
+          <div className="fv-live-empty-mark" aria-hidden="true"><i /></div>
+          <strong>{emptyTitle}</strong>
+          <p>{emptyBody}</p>
+        </div>
       </section>
     </section>
   )

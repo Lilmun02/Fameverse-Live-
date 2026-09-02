@@ -5,12 +5,10 @@ import GiftOverlay from './components/gifts/GiftOverlay.jsx'
 import HomeScreen from './components/home/HomeScreen.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
 import LiveScreen from './components/live/LiveScreen.jsx'
-import ViewerLiveTapScreen from './components/live/ViewerLiveTapScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
-import { useLiveDiscovery } from './hooks/useLiveDiscovery.js'
 import { useLiveMedia } from './hooks/useLiveMedia.js'
 import { useLivePresence } from './hooks/useLivePresence.js'
 import { useLiveSessionSummary } from './hooks/useLiveSessionSummary.js'
@@ -30,7 +28,6 @@ export default function App() {
   const [chat, setChat] = useState([])
   const [commentText, setCommentText] = useState('')
   const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
-  const [viewingRoom, setViewingRoom] = useState(null)
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
 
   const live = useLiveMedia(setToast)
@@ -45,10 +42,6 @@ export default function App() {
   })
   const presence = useLivePresence({ userId: account.session?.user?.id })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
-  const liveDiscovery = useLiveDiscovery({
-    userId: account.session?.user?.id,
-    enabled: Boolean(account.session),
-  })
   const followNetwork = useFollowNetwork({ userId: account.session?.user?.id, setToast })
   const displayName = account.profile?.display_name || account.session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = account.profile?.username ? `@${account.profile.username}` : '@newuser'
@@ -82,7 +75,6 @@ export default function App() {
   useEffect(() => {
     gifts.setGiftTrayOpen(false)
     setCohostTrayOpen(false)
-    if (tab !== 'discover') setViewingRoom(null)
     if (tab !== 'profile') {
       setProfileMode('view')
       setPolicyPage(null)
@@ -156,7 +148,6 @@ export default function App() {
     await presence.endPresence()
     liveSetup.reset()
     sessionSummary.clear()
-    setViewingRoom(null)
     await account.signOut()
     setTab('home')
     setProfileMode('view')
@@ -195,99 +186,89 @@ export default function App() {
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
 
-      {viewingRoom ? (
-        <ViewerLiveTapScreen room={viewingRoom} onClose={() => setViewingRoom(null)} />
-      ) : (
-        <main>
-          {tab === 'home' && (
-            <HomeScreen
-              displayName={displayName}
-              username={username}
-              initial={initial}
-              followNetwork={followNetwork}
-              setTab={setTab}
-              standalone={pwa.standalone}
-              installPwa={pwa.installPwa}
-            />
-          )}
+      <main>
+        {tab === 'home' && (
+          <HomeScreen
+            displayName={displayName}
+            username={username}
+            initial={initial}
+            followNetwork={followNetwork}
+            setTab={setTab}
+            standalone={pwa.standalone}
+            installPwa={pwa.installPwa}
+          />
+        )}
 
-          {tab === 'discover' && (
-            <DiscoverScreen
-              setTab={setTab}
-              liveDiscovery={liveDiscovery}
-              onOpenLiveRoom={setViewingRoom}
-            />
-          )}
+        {tab === 'discover' && <DiscoverScreen setTab={setTab} />}
 
-          {tab === 'live' && (
-            <LiveScreen
-              isLive={live.isLive}
-              mediaStream={live.mediaStream}
-              cameraOff={live.cameraOff}
-              activeVideoSlot={live.activeVideoSlot}
-              videoSlotFacing={live.videoSlotFacing}
-              videoPrimaryRef={live.videoPrimaryRef}
-              videoSecondaryRef={live.videoSecondaryRef}
-              displayName={displayName}
-              username={username}
-              initial={initial}
-              viewerCount={viewerCount}
-              tapCount={tapTotals.rawTaps}
-              isStartingLive={live.isStartingLive}
-              startLive={startLive}
-              liveSetup={liveSetup}
-              sessionSummary={sessionSummary}
-              premiumRepeat={gifts.premiumRepeat}
-              setGiftTrayOpen={gifts.setGiftTrayOpen}
-              setCohostTrayOpen={setCohostTrayOpen}
-              micMuted={live.micMuted}
-              toggleMic={live.toggleMic}
-              toggleCamera={live.toggleCamera}
-              flipCamera={live.flipCamera}
-              shareRoom={shareRoom}
-              liveMessages={liveMessages}
-              commentText={commentText}
-              setCommentText={setCommentText}
-              submitComment={submitComment}
-              giftTrayOpen={gifts.giftTrayOpen}
-              coins={gifts.coins}
-              sendGift={gifts.sendGift}
-              addTestCoins={gifts.addTestCoins}
-              cohostTrayOpen={cohostTrayOpen}
-              presenceState={presence.state}
-            />
-          )}
+        {tab === 'live' && (
+          <LiveScreen
+            isLive={live.isLive}
+            mediaStream={live.mediaStream}
+            cameraOff={live.cameraOff}
+            activeVideoSlot={live.activeVideoSlot}
+            videoSlotFacing={live.videoSlotFacing}
+            videoPrimaryRef={live.videoPrimaryRef}
+            videoSecondaryRef={live.videoSecondaryRef}
+            displayName={displayName}
+            username={username}
+            initial={initial}
+            viewerCount={viewerCount}
+            tapCount={tapTotals.rawTaps}
+            isStartingLive={live.isStartingLive}
+            startLive={startLive}
+            liveSetup={liveSetup}
+            sessionSummary={sessionSummary}
+            premiumRepeat={gifts.premiumRepeat}
+            setGiftTrayOpen={gifts.setGiftTrayOpen}
+            setCohostTrayOpen={setCohostTrayOpen}
+            micMuted={live.micMuted}
+            toggleMic={live.toggleMic}
+            toggleCamera={live.toggleCamera}
+            flipCamera={live.flipCamera}
+            shareRoom={shareRoom}
+            liveMessages={liveMessages}
+            commentText={commentText}
+            setCommentText={setCommentText}
+            submitComment={submitComment}
+            giftTrayOpen={gifts.giftTrayOpen}
+            coins={gifts.coins}
+            sendGift={gifts.sendGift}
+            addTestCoins={gifts.addTestCoins}
+            cohostTrayOpen={cohostTrayOpen}
+            presenceState={presence.state}
+          />
+        )}
 
-          {tab === 'profile' && (
-            <ProfileScreen
-              profileMode={profileMode}
-              setProfileMode={setProfileMode}
-              policyPage={policyPage}
-              setPolicyPage={setPolicyPage}
-              settingsDetail={settingsDetail}
-              setSettingsDetail={setSettingsDetail}
-              creatorTab={creatorTab}
-              setCreatorTab={setCreatorTab}
-              session={account.session}
-              profile={account.profile}
-              displayName={displayName}
-              username={username}
-              initial={initial}
-              joinedLabel={joinedLabel}
-              shareRoom={shareRoom}
-              profileDraft={account.profileDraft}
-              setProfileDraft={account.setProfileDraft}
-              saveProfile={account.saveProfile}
-              profileBusy={account.profileBusy}
-              signOut={signOut}
-              setTab={setTab}
-              followNetwork={followNetwork}
-            />
-          )}
-        </main>
-      )}
+        {tab === 'profile' && (
+          <ProfileScreen
+            profileMode={profileMode}
+            setProfileMode={setProfileMode}
+            policyPage={policyPage}
+            setPolicyPage={setPolicyPage}
+            settingsDetail={settingsDetail}
+            setSettingsDetail={setSettingsDetail}
+            creatorTab={creatorTab}
+            setCreatorTab={setCreatorTab}
+            session={account.session}
+            profile={account.profile}
+            displayName={displayName}
+            username={username}
+            initial={initial}
+            joinedLabel={joinedLabel}
+            shareRoom={shareRoom}
+            profileDraft={account.profileDraft}
+            setProfileDraft={account.setProfileDraft}
+            saveProfile={account.saveProfile}
+            profileBusy={account.profileBusy}
+            signOut={signOut}
+            setTab={setTab}
+            followNetwork={followNetwork}
+          />
+        )}
+      </main>
 
-      {!viewingRoom && <BottomNav tab={tab} setTab={setTab} isLive={live.isLive} />}
+      <BottomNav tab={tab} setTab={setTab} isLive={live.isLive} />
     </div>
   )
 }
