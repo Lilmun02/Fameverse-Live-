@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
+import CohostVideoTile from './CohostVideoTile.jsx'
 import LiveChat from './LiveChat.jsx'
 import LiveProfileSheet from './LiveProfileSheet.jsx'
+import { useCohostViewer } from '../../hooks/useCohostViewer.js'
 import { useLiveProfileSheet } from '../../hooks/useLiveProfileSheet.js'
 import { useLiveTapTotals } from '../../hooks/useLiveTapTotals.js'
 import { useLiveViewer } from '../../hooks/useLiveViewer.js'
@@ -34,6 +36,9 @@ export default function ViewerLiveScreen({
   sendGift,
   addTestCoins,
   currentUserId,
+  currentDisplayName,
+  currentAvatarUrl,
+  setToast,
 }) {
   const videoRef = useRef(null)
   const particleIdRef = useRef(0)
@@ -43,6 +48,15 @@ export default function ViewerLiveScreen({
   const [menuOpen, setMenuOpen] = useState(false)
   const profileSheet = useLiveProfileSheet()
   const relay = useLiveViewer({ roomId: room?.id, enabled: Boolean(room?.id) })
+  const cohost = useCohostViewer({
+    roomId: room?.id,
+    viewerId: relay.viewerId,
+    userId: currentUserId,
+    displayName: currentDisplayName,
+    avatarUrl: currentAvatarUrl,
+    enabled: Boolean(room?.id && currentUserId),
+    setToast,
+  })
   const totals = useLiveTapTotals({ roomId: room?.id })
   const capture = useViewerTapCapture({ roomId: room?.id })
   const hostLabel = room?.host?.username
@@ -53,6 +67,8 @@ export default function ViewerLiveScreen({
   const hostAvatar = room?.host?.avatarUrl || null
   const serverTotal = Math.max(totals.rawTaps, Number(capture.lastResult?.totalRawTaps || 0))
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
+  const cohostStream = cohost.localStream || cohost.remoteStream
+  const isSelfCohost = Boolean(cohost.localStream)
   const isFollowing = useMemo(
     () => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)),
     [followNetwork?.following, room?.host_user_id],
@@ -124,15 +140,37 @@ export default function ViewerLiveScreen({
     void shareRoom?.()
   }
 
+  const requestCohost = () => {
+    if (cohost.requestCohost()) setMenuOpen(false)
+  }
+
+  const leaveCohost = () => {
+    cohost.leaveCohost()
+    setMenuOpen(false)
+  }
+
   const openGiftTray = () => {
     setMenuOpen(false)
     setGiftTrayOpen(true)
   }
 
+  const cohostMenuLabel = cohost.status === 'requested'
+    ? 'Request sent'
+    : cohost.status === 'connecting'
+      ? 'Joining co-host…'
+      : cohost.status === 'declined'
+        ? 'Request declined'
+        : 'Request co-host'
+
   return (
-    <section className="fv-viewer-live" aria-label={`Watching ${hostLabel} live`}>
+    <section className={`fv-viewer-live ${cohostStream ? 'has-cohost' : ''}`} aria-label={`Watching ${hostLabel} live`}>
       <div className="fv-viewer-live-stage" onPointerDown={onTap}>
         <video ref={videoRef} autoPlay playsInline className="fv-viewer-live-video" />
+        <CohostVideoTile
+          stream={cohostStream}
+          label={cohost.activeCohost?.displayName || 'Co-host'}
+          local={isSelfCohost}
+        />
         <div className="fv-viewer-live-vignette" aria-hidden="true" />
 
         {!relay.remoteStream && !ended && (
@@ -244,6 +282,23 @@ export default function ViewerLiveScreen({
           <div className="fv-viewer-live-more" onPointerDown={stopLiveTap}>
             {menuOpen && (
               <div className="fv-viewer-live-menu" role="menu" aria-label="Live options">
+                {isSelfCohost ? (
+                  <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={leaveCohost}>
+                    <span aria-hidden="true">◫</span>
+                    <b>Leave co-host</b>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onPointerDown={stopLiveTap}
+                    onClick={requestCohost}
+                    disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost)}
+                  >
+                    <span aria-hidden="true">◫</span>
+                    <b>{cohost.activeCohost && cohost.status === 'idle' ? 'Co-host occupied' : cohostMenuLabel}</b>
+                  </button>
+                )}
                 <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={shareLive}>
                   <span aria-hidden="true">↗</span>
                   <b>Share Live</b>
