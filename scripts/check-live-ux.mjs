@@ -64,7 +64,7 @@ assert.match(liveActions, /runAction\(flipCamera\)/, 'Host flip control must rem
 assert.match(liveActions, /runAction\(shareRoom\)/, 'Host Share control must remain wired.')
 assert.doesNotMatch(liveActions, /fam-action-rail/, 'Do not restore the old host vertical action rail.')
 assert.doesNotMatch(hostCss, /\.fam-action-rail\s*\{/, 'Old host action rail CSS must remain removed.')
-assert.doesNotMatch(hostCss, /fam-creator-capsule[\s\S]*background:\s*rgba/, 'Do not restore the black box behind the host identity.')
+assert.match(hostCss, /\.fam-creator-capsule\s*\{[\s\S]*?background:\s*transparent;/, 'Host identity must remain unboxed like the approved Live layout.')
 assert.match(liveHeader, />LIVE<\/span>/, 'Host header must show a clean LIVE badge, not developer sync text.')
 
 assert.match(preLive, /primeGiftAudio\(\)[\s\S]*beginLive\(\)/, 'Go Live must explicitly unlock gift audio in the user gesture.')
