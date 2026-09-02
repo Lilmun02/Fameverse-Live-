@@ -62,6 +62,21 @@
 .fam-chat-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .fam-chat-identity strong { color: #d49cff; font-size: .68rem; }
 
+.fam-gifter-level {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  padding: 1px 6px;
+  border: 1px solid rgba(201, 126, 255, .28);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(119, 43, 198, .74), rgba(58, 20, 91, .74));
+  color: #f0d8ff;
+  font-size: .48rem;
+  font-weight: 950;
+  letter-spacing: .02em;
+  box-shadow: 0 4px 14px rgba(87, 29, 143, .18);
+}
+
 .fam-gifter-badge {
   display: inline-flex;
   align-items: center;
