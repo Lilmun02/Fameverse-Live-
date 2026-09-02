@@ -15,16 +15,48 @@
   text-align: center;
 }
 
-.live-gift-thumbnail {
+.live-gift-thumbnail-frame {
+  position: relative;
   width: 58px;
   height: 58px;
-  display: block;
+  overflow: hidden;
+  border: 1px solid rgba(188, 116, 255, .22);
   border-radius: 14px;
-  object-fit: cover;
-  object-position: center;
-  background: #09040e;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(192, 98, 255, .72), transparent 46%),
+    linear-gradient(145deg, #3b115d, #0c0611 72%);
   box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
 }
+
+.live-gift-thumbnail-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.18rem;
+  font-style: italic;
+  font-weight: 1000;
+  text-shadow: 0 0 14px rgba(210, 153, 255, .72);
+  transition: opacity .16s ease;
+}
+
+.live-gift-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: cover;
+  object-position: center;
+  background: transparent;
+  opacity: 0;
+  transition: opacity .16s ease;
+}
+
+.live-gift-thumbnail-frame.is-ready .live-gift-thumbnail { opacity: 1; }
+.live-gift-thumbnail-frame.is-ready .live-gift-thumbnail-fallback { opacity: 0; }
 
 .live-gift-item-cinematic strong {
   justify-self: center;
@@ -71,7 +103,7 @@
   display: block;
   border-radius: 12px;
   object-fit: cover;
-  background: #09040e;
+  background: #24102f;
 }
 
 .gift-repeat-copy {
@@ -87,14 +119,8 @@
   white-space: nowrap;
 }
 
-.gift-repeat-copy strong {
-  font-size: .75rem;
-}
-
-.gift-repeat-copy small {
-  color: #cbbbd5;
-  font-size: .61rem;
-}
+.gift-repeat-copy strong { font-size: .75rem; }
+.gift-repeat-copy small { color: #cbbbd5; font-size: .61rem; }
 
 .gift-repeat-dock button {
   min-height: 42px;
@@ -110,18 +136,14 @@
 }
 
 @media (max-width: 380px) {
-  .live-gift-item-cinematic {
-    grid-template-columns: 1fr;
-  }
+  .live-gift-item-cinematic { grid-template-columns: 1fr; }
 
-  .live-gift-thumbnail {
+  .live-gift-thumbnail-frame {
     width: 54px;
     height: 54px;
   }
 
-  .gift-repeat-dock {
-    grid-template-columns: 46px minmax(0, 1fr) auto;
-  }
+  .gift-repeat-dock { grid-template-columns: 46px minmax(0, 1fr) auto; }
 
   .gift-repeat-thumb {
     width: 46px;
