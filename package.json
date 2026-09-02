@@ -11,7 +11,8 @@
     "check:taps": "node scripts/check-tap-integrity.mjs",
     "check:ux": "node scripts/check-live-ux.mjs",
     "check:discovery": "node scripts/check-discovery-ux.mjs",
-    "build": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && vite build",
+    "check:identity": "node scripts/check-live-identity.mjs",
+    "build": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && npm run check:identity && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
