@@ -31,6 +31,7 @@ export function useLiveViewer({ roomId, enabled = true }) {
   const stateRef = useRef('idle')
   const [remoteStream, setRemoteStream] = useState(null)
   const [state, setState] = useState('idle')
+  const [viewerCount, setViewerCount] = useState(0)
 
   const changeState = (next) => {
     stateRef.current = next
@@ -41,6 +42,7 @@ export function useLiveViewer({ roomId, enabled = true }) {
     if (!enabled || !roomId) {
       changeState('idle')
       setRemoteStream(null)
+      setViewerCount(0)
       return undefined
     }
 
@@ -48,6 +50,7 @@ export function useLiveViewer({ roomId, enabled = true }) {
     const viewerId = viewerIdRef.current
     const channel = createLiveRelayChannel(roomId)
     changeState('connecting')
+    setViewerCount(0)
 
     const send = (event, payload = {}) => sendLiveRelayEvent(channel, event, { viewerId, ...payload })
 
@@ -61,6 +64,12 @@ export function useLiveViewer({ roomId, enabled = true }) {
     const requestHost = () => {
       if (!active || stateRef.current === 'connected' || stateRef.current === 'ended') return
       void send('viewer-ready', { roomId })
+    }
+
+    const applyViewerCount = (payload) => {
+      const nextCount = Number(payload?.viewerCount)
+      if (!Number.isFinite(nextCount) || nextCount < 0) return
+      setViewerCount(Math.floor(nextCount))
     }
 
     const flushPendingIce = async (peer, offerId) => {
@@ -116,7 +125,13 @@ export function useLiveViewer({ roomId, enabled = true }) {
     }
 
     channel
-      .on('broadcast', { event: 'host-ready' }, () => requestHost())
+      .on('broadcast', { event: 'host-ready' }, ({ payload }) => {
+        applyViewerCount(payload)
+        requestHost()
+      })
+      .on('broadcast', { event: 'viewer-count' }, ({ payload }) => {
+        applyViewerCount(payload)
+      })
       .on('broadcast', { event: 'host-offer' }, ({ payload }) => {
         void acceptOffer(payload)
       })
@@ -135,6 +150,7 @@ export function useLiveViewer({ roomId, enabled = true }) {
       .on('broadcast', { event: 'host-ended' }, () => {
         closePeer()
         setRemoteStream(null)
+        setViewerCount(0)
         changeState('ended')
       })
       .subscribe((status) => {
@@ -150,9 +166,10 @@ export function useLiveViewer({ roomId, enabled = true }) {
       void send('viewer-left', { roomId })
       closePeer()
       setRemoteStream(null)
+      setViewerCount(0)
       void removeLiveRelayChannel(channel)
     }
   }, [enabled, roomId])
 
-  return { remoteStream, state }
+  return { remoteStream, state, viewerCount }
 }
