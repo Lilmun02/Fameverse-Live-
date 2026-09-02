@@ -4,6 +4,10 @@ function initialFor(user) {
   return String(user || 'F').trim().charAt(0).toUpperCase() || 'F'
 }
 
+function stopLiveTap(event) {
+  event.stopPropagation()
+}
+
 export default function LiveChat({
   liveMessages,
   commentText,
@@ -46,7 +50,11 @@ export default function LiveChat({
         </div>
       )}
 
-      <form className="fam-comment-composer live-comment-composer" onSubmit={submitComment}>
+      <form
+        className="fam-comment-composer live-comment-composer"
+        onSubmit={submitComment}
+        onPointerDown={stopLiveTap}
+      >
         <div className="live-comment-entry">
           <input
             value={commentText}
@@ -57,18 +65,25 @@ export default function LiveChat({
             placeholder="Say something…"
             aria-label="Add comment"
           />
-          {onGiftClick && (
-            <button
-              type="button"
-              className="live-comment-gift"
-              aria-label="Open gifts"
-              onClick={onGiftClick}
-            >
-              🎁
-            </button>
-          )}
         </div>
-        <button className="live-comment-send" type="submit" aria-label="Send comment" disabled={!commentText.trim()}>
+        {onGiftClick && (
+          <button
+            type="button"
+            className="live-comment-gift"
+            aria-label="Open gifts"
+            onPointerDown={stopLiveTap}
+            onClick={onGiftClick}
+          >
+            🎁
+          </button>
+        )}
+        <button
+          className="live-comment-send"
+          type="submit"
+          aria-label="Send comment"
+          disabled={!commentText.trim()}
+          onPointerDown={stopLiveTap}
+        >
           ↑
         </button>
       </form>
