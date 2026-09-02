@@ -1,72 +1,63 @@
 import assert from 'node:assert/strict'
-import { TAP_INTEGRITY_VERSION } from '../src/features/taps/tapIntegrityConfig.js'
+import { readFileSync } from 'node:fs'
 import {
-  assessTapBatch,
+  TAP_INTEGRITY_VERSION,
+  TAP_LEDGER_SOURCE,
+  TAP_NETWORK_BATCH_MAX,
+} from '../src/features/taps/tapIntegrityConfig.js'
+import {
   createIntegrityVerifiedTapEvent,
   getTapIntegrityStatus,
 } from '../src/features/taps/tapIntegrity.js'
 
-const base = {
-  actorId: 'viewer-1',
-  sessionId: 'live-1',
-  batchId: 'batch-1',
-  sessionActive: true,
-  replayed: false,
-}
+const migration = readFileSync(new URL('../supabase/migrations/20260902_add_authoritative_live_tap_ledger.sql', import.meta.url), 'utf8')
+const service = readFileSync(new URL('../src/services/live/liveTaps.js', import.meta.url), 'utf8')
+const totalsHook = readFileSync(new URL('../src/hooks/useLiveTapTotals.js', import.meta.url), 'utf8')
 
-const manualLike = assessTapBatch({
-  ...base,
-  timestamps: [0, 82, 171, 265, 354, 455, 543, 646, 735, 835, 929, 1030, 1121, 1224, 1317, 1418, 1510, 1614, 1705, 1806],
-})
-assert.equal(manualLike.classification, 'trusted', 'Irregular plausible tapping should remain fully trusted.')
-assert.equal(manualLike.eligibleTapCount, manualLike.rawTapCount)
+assert.equal(TAP_INTEGRITY_VERSION, 'FAM-TAP-2')
+assert.equal(TAP_NETWORK_BATCH_MAX, 200, 'Network batching may be bounded, but total Fame Taps must not be capped.')
 
-const periodic = assessTapBatch({
-  ...base,
-  batchId: 'batch-2',
-  timestamps: Array.from({ length: 30 }, (_, index) => index * 100),
-})
-assert.equal(periodic.classification, 'reduced', 'Near-perfect timing should reduce confidence without banning the user.')
-assert.ok(periodic.eligibleTapCount > 0 && periodic.eligibleTapCount < periodic.rawTapCount)
+const status = getTapIntegrityStatus()
+assert.equal(status.rawTapCap, null)
+assert.equal(status.authoritativeLedger, true)
+assert.equal(status.visibleTotalsConnected, true)
+assert.equal(status.viewerCaptureConnected, false, 'Do not claim viewer tap capture before a real viewer Live surface exists.')
 
-const impossible = assessTapBatch({
-  ...base,
-  batchId: 'batch-3',
-  timestamps: Array.from({ length: 40 }, (_, index) => index),
-})
-assert.equal(impossible.classification, 'rejected', 'Impossible request rates must not reach ranking.')
-assert.equal(impossible.eligibleTapCount, 0)
+assert.match(migration, /create table if not exists public\.live_tap_totals/i)
+assert.match(migration, /create table if not exists public\.live_tap_batches/i)
+assert.match(migration, /create or replace function public\.record_live_tap_batch/i)
+assert.match(migration, /security definer/i)
+assert.match(migration, /host_self_tap/)
+assert.match(migration, /replayed_batch/)
+assert.match(migration, /impossible_rate/)
+assert.match(migration, /batch_too_large/)
+assert.match(migration, /unique \(room_id, actor_user_id, batch_id\)/i)
+assert.match(migration, /grant execute on function public\.record_live_tap_batch[\s\S]*to authenticated/i)
+assert.match(migration, /integrity_version text not null default 'FAM-TAP-2'/i)
 
-const replayed = assessTapBatch({ ...base, batchId: 'batch-4', replayed: true, timestamps: [0, 100, 220] })
-assert.equal(replayed.eligibleTapCount, 0, 'Replayed batches must be rejected.')
-
-const inactive = assessTapBatch({ ...base, batchId: 'batch-5', sessionActive: false, timestamps: [0, 100, 220] })
-assert.equal(inactive.eligibleTapCount, 0, 'Taps from an inactive Live session must be rejected.')
-
-const highVolume = assessTapBatch({
-  ...base,
-  batchId: 'batch-6',
-  timestamps: Array.from({ length: 500 }, (_, index) => (index * 100) + ((index % 7) * 11)),
-})
-assert.equal(highVolume.rawTapCount, 500, 'Raw Fame Taps must remain unlimited.')
-assert.ok(highVolume.eligibleTapCount > 250, 'Tap Integrity must replace the old 250-tap hard cap.')
+assert.match(service, /\.rpc\('record_live_tap_batch'/)
+assert.match(service, /\.from\('live_tap_totals'\)/)
+assert.match(totalsHook, /getLiveTapTotals\(roomId\)/)
 
 const verifiedEvent = createIntegrityVerifiedTapEvent({
-  ...base,
-  batchId: 'batch-7',
-  timestamps: [0, 82, 171, 265, 354, 455, 543, 646, 735, 835, 929, 1030, 1121, 1224],
+  source: TAP_LEDGER_SOURCE,
+  integrityVersion: TAP_INTEGRITY_VERSION,
+  actorId: 'viewer-1',
+  roomId: 'room-1',
+  batchId: 'batch-0001',
+  eligibleTapCount: 1250,
 })
 assert.equal(verifiedEvent?.type, 'tap')
 assert.equal(verifiedEvent?.integrityVerified, true)
-assert.ok(verifiedEvent?.value > 0)
+assert.equal(verifiedEvent?.value, 1250)
 
-const rejectedEvent = createIntegrityVerifiedTapEvent({ ...base, batchId: 'batch-8', replayed: true, timestamps: [0, 100] })
-assert.equal(rejectedEvent, null)
+assert.equal(createIntegrityVerifiedTapEvent({
+  source: 'client_guess',
+  integrityVersion: TAP_INTEGRITY_VERSION,
+  actorId: 'viewer-1',
+  roomId: 'room-1',
+  batchId: 'batch-0002',
+  eligibleTapCount: 1250,
+}), null, 'Client-classified tap values must not become verified Verse Momentum events.')
 
-const status = getTapIntegrityStatus()
-assert.equal(status.version, TAP_INTEGRITY_VERSION)
-assert.equal(status.rawTapCap, null)
-assert.equal(status.classificationOnly, true)
-assert.equal(status.liveCaptureConnected, false)
-
-console.log(`Tap Integrity checks passed (${status.version}): no raw tap cap, confidence classification active, replay/impossible traffic rejected.`)
+console.log(`Tap Integrity checks passed (${status.version}): authoritative ledger guarded, raw taps uncapped, viewer capture intentionally pending.`)

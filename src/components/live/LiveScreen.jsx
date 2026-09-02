@@ -18,6 +18,7 @@ export default function LiveScreen({
   username,
   initial,
   viewerCount,
+  tapCount,
   isStartingLive,
   startLive,
   liveSetup,
@@ -87,6 +88,7 @@ export default function LiveScreen({
         displayName={displayName}
         username={username}
         viewerCount={viewerCount}
+        tapCount={tapCount}
         startLive={startLive}
         liveTitle={liveSetup.active?.title}
         presenceState={presenceState}

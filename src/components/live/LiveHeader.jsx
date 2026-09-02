@@ -4,6 +4,7 @@ export default function LiveHeader({
   displayName,
   username,
   viewerCount,
+  tapCount,
   startLive,
   liveTitle,
   presenceState,
@@ -26,7 +27,9 @@ export default function LiveHeader({
         </div>
       </div>
       <div className="fam-header-meta">
-        <span className="fam-viewer-chip" aria-label={`${viewerCount} viewers`}><span aria-hidden="true">◉</span> {viewerCount}</span>
+        <span className="fam-viewer-chip" aria-label={`${viewerCount} viewers and ${tapCount} Fame Taps`}>
+          <span aria-hidden="true">◉</span> {viewerCount} <span aria-hidden="true">♥</span> {tapCount}
+        </span>
         <button type="button" className="fam-end-live" onClick={startLive}>End</button>
       </div>
     </div>

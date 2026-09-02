@@ -15,7 +15,7 @@ export default function AlgorithmDiagnostics() {
         <b className="algorithm-status-off">Ranking OFF</b>
       </header>
 
-      <p>Three equal discovery lanes stay locked: Audience, Taps and Gift Coins. Tap volume is no longer capped; Tap Integrity decides which tap activity becomes ranking-eligible.</p>
+      <p>Three equal discovery lanes stay locked: Audience, Taps and Gift Coins. Raw Fame Taps are uncapped; the server tap ledger stores visible taps separately from ranking-eligible taps.</p>
 
       <div className="algorithm-diagnostic-grid">
         <div><strong>{status.rankingSignalCount}</strong><small>Equal ranking lanes</small></div>
@@ -24,8 +24,8 @@ export default function AlgorithmDiagnostics() {
       </div>
 
       <footer>
-        <span>{tapStatus.version}</span>
-        <small>{tapStatus.liveCaptureConnected ? 'Live tap capture connected.' : 'Tap Integrity ready · real tap capture waits for Live tap events. Confidence protects ranking without banning users.'}</small>
+        <span>{tapStatus.version} · SERVER LEDGER</span>
+        <small>{tapStatus.viewerCaptureConnected ? 'Viewer tap capture connected.' : 'Authoritative tap ledger ready · visible Live totals connected · viewer tap capture waits for the real viewer Live surface.'}</small>
       </footer>
     </section>
   )

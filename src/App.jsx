@@ -13,6 +13,7 @@ import { useLiveMedia } from './hooks/useLiveMedia.js'
 import { useLivePresence } from './hooks/useLivePresence.js'
 import { useLiveSessionSummary } from './hooks/useLiveSessionSummary.js'
 import { useLiveSetup } from './hooks/useLiveSetup.js'
+import { useLiveTapTotals } from './hooks/useLiveTapTotals.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
 const SPLASH_MINIMUM_MS = 900
@@ -40,6 +41,7 @@ export default function App() {
     },
   })
   const presence = useLivePresence({ userId: account.session?.user?.id })
+  const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
   const followNetwork = useFollowNetwork({ userId: account.session?.user?.id, setToast })
   const displayName = account.profile?.display_name || account.session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = account.profile?.username ? `@${account.profile.username}` : '@newuser'
@@ -212,6 +214,7 @@ export default function App() {
             username={username}
             initial={initial}
             viewerCount={viewerCount}
+            tapCount={tapTotals.rawTaps}
             isStartingLive={live.isStartingLive}
             startLive={startLive}
             liveSetup={liveSetup}

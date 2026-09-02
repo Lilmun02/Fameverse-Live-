@@ -1,13 +1,6 @@
-export const TAP_INTEGRITY_VERSION = 'FAM-TAP-1'
+export const TAP_INTEGRITY_VERSION = 'FAM-TAP-2'
+export const TAP_LEDGER_SOURCE = 'supabase_tap_ledger'
 
-// Conservative beta thresholds. They classify confidence; they do not accuse or ban users.
-export const TAP_INTEGRITY_RULES = Object.freeze({
-  minimumPatternTaps: 12,
-  highRateTapsPerSecond: 15,
-  impossibleTapsPerSecond: 30,
-  nearPerfectIntervalCv: 0.015,
-  repetitiveIntervalCv: 0.04,
-  highRateMultiplier: 0.75,
-  nearPerfectMultiplier: 0.5,
-  repetitiveMultiplier: 0.8,
-})
+// This limits one network payload, not how many Fame Taps a viewer can make.
+export const TAP_NETWORK_BATCH_MAX = 200
+export const TAP_TOTALS_POLL_MS = 2000
