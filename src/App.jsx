@@ -8,6 +8,7 @@ import LiveScreen from './components/live/LiveScreen.jsx'
 import ViewerLiveScreen from './components/live/ViewerLiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
+import { useCreatorDiscovery } from './hooks/useCreatorDiscovery.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useLiveActivity } from './hooks/useLiveActivity.js'
@@ -54,6 +55,10 @@ export default function App() {
   })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
   const liveDiscovery = useLiveDiscovery({
+    userId: account.session?.user?.id,
+    enabled: Boolean(account.session),
+  })
+  const creatorDiscovery = useCreatorDiscovery({
     userId: account.session?.user?.id,
     enabled: Boolean(account.session),
   })
@@ -259,6 +264,9 @@ export default function App() {
               <DiscoverScreen
                 setTab={setTab}
                 liveDiscovery={liveDiscovery}
+                creatorDiscovery={creatorDiscovery}
+                followNetwork={followNetwork}
+                currentProfile={account.profile}
                 onOpenLiveRoom={setViewingRoom}
               />
             )}
