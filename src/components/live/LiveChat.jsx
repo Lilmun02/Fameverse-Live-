@@ -14,6 +14,7 @@ export default function LiveChat({
   setCommentText,
   submitComment,
   onGiftClick = null,
+  onOpenIdentity = null,
 }) {
   const chatScrollRef = useRef(null)
 
@@ -31,22 +32,45 @@ export default function LiveChat({
     <>
       {liveMessages.length > 0 && (
         <div ref={chatScrollRef} className="fam-chat-stack fv-live-chat-feed" aria-label="Live comments">
-          {liveMessages.map((item) => (
-            <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
-              <span className="fam-chat-avatar" aria-hidden="true">{initialFor(item.user)}</span>
-              <div className="fam-chat-copy">
-                <div className="fam-chat-identity">
-                  <strong>{item.user}</strong>
-                  {item.badge && (
-                    <span className="fam-gifter-badge">
-                      <span aria-hidden="true">{item.badge.icon}</span> {item.badge.label}
-                    </span>
-                  )}
+          {liveMessages.map((item) => {
+            const identityEnabled = Boolean(item.userId && onOpenIdentity)
+            return (
+              <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
+                <button
+                  type="button"
+                  className="fam-chat-avatar"
+                  disabled={!identityEnabled}
+                  onPointerDown={stopLiveTap}
+                  onClick={() => identityEnabled && onOpenIdentity(item.userId)}
+                  aria-label={identityEnabled ? `Open ${item.user} profile` : undefined}
+                >
+                  {initialFor(item.user)}
+                </button>
+                <div className="fam-chat-copy">
+                  <div className="fam-chat-identity">
+                    {identityEnabled ? (
+                      <button
+                        type="button"
+                        className="fam-chat-identity-button"
+                        onPointerDown={stopLiveTap}
+                        onClick={() => onOpenIdentity(item.userId)}
+                      >
+                        <strong>{item.user}</strong>
+                      </button>
+                    ) : (
+                      <strong>{item.user}</strong>
+                    )}
+                    {item.badge && (
+                      <span className="fam-gifter-badge">
+                        <span aria-hidden="true">{item.badge.icon}</span> {item.badge.label}
+                      </span>
+                    )}
+                  </div>
+                  <span className="fam-chat-message">{item.text}</span>
                 </div>
-                <span className="fam-chat-message">{item.text}</span>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
