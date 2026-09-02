@@ -29,6 +29,11 @@ export default function DiscoverScreen({ setTab, liveDiscovery, onOpenLiveRoom }
     })
   }, [filter, query, rooms])
 
+  const openLiveRoom = (room) => {
+    window.FameverseGiftEngine?.startAudioSession?.()
+    onOpenLiveRoom?.(room)
+  }
+
   return (
     <section className="fv-discover" aria-labelledby="discover-title">
       <header className="fv-discover-topbar">
@@ -81,7 +86,7 @@ export default function DiscoverScreen({ setTab, liveDiscovery, onOpenLiveRoom }
                   key={room.id}
                   type="button"
                   className="fv-live-room-row"
-                  onClick={() => onOpenLiveRoom?.(room)}
+                  onClick={() => openLiveRoom(room)}
                 >
                   <span className="fv-live-room-avatar" aria-hidden="true">{initial}</span>
                   <span className="fv-live-room-copy">
