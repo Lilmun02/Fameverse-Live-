@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+
+function read(path) {
+  return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
+}
+
+const app = read('src/App.jsx')
+const activity = read('src/hooks/useLiveActivity.js')
+const gifts = read('src/hooks/useGiftSystem.js')
+const follows = read('src/services/follows.js')
+const followHook = read('src/hooks/useFollowNetwork.js')
+const profiles = read('src/services/profiles.js')
+const sheetHook = read('src/hooks/useLiveProfileSheet.js')
+const sheet = read('src/components/live/LiveProfileSheet.jsx')
+const chat = read('src/components/live/LiveChat.jsx')
+const viewer = read('src/components/live/ViewerLiveScreen.jsx')
+const liveScreen = read('src/components/live/LiveScreen.jsx')
+const badges = read('src/features/badges/gifterBadgeSystem.js')
+const discover = read('src/components/discover/DiscoverScreen.jsx')
+
+assert.match(chat, /onOpenIdentity/, 'Live comments must expose a real identity opener.')
+assert.match(chat, /item\.userId && onOpenIdentity/, 'Comment identity taps require a real user id.')
+assert.match(viewer, /profileSheet\.open\(room\.host_user_id\)/, 'Creator identity on viewer Live must open the profile sheet.')
+assert.match(viewer, /fv-viewer-follow/, 'Quick Follow under the creator name must stay visible.')
+assert.match(viewer, /onOpenIdentity=\{profileSheet\.open\}/, 'Viewer chat identities must open the same sheet.')
+assert.match(liveScreen, /onOpenIdentity=\{profileSheet\.open\}/, 'Host Live comments must open the same sheet.')
+assert.match(sheet, /followNetwork\?\.toggleFollow/, 'Profile sheet Follow must use the existing follow network.')
+assert.match(sheetHook, /loadLiveIdentity/, 'Profile sheet must load real profile rows.')
+assert.match(profiles, /from\('profiles'\)/, 'Live identity must read the real profiles table.')
+assert.match(profiles, /from\('follows'\)/, 'Follower counts must come from the real follows table.')
+assert.match(follows, /from\('follows'\)\.insert/, 'Follow writes must stay on the existing follows service.')
+assert.match(followHook, /userId === targetId/, 'Self-follow must stay blocked.')
+assert.match(activity, /userId: actorId/, 'Comments must carry the real signed-in user id.')
+assert.match(activity, /senderId: actorId/, 'Gift activity must carry the real sender id.')
+assert.match(gifts, /userId: actorId/, 'Local gift chat rows must keep the sender account id.')
+assert.match(app, /actorId: account\.session\?\.user\?\.id/, 'Live activity must use the signed-in account id.')
+assert.doesNotMatch(viewer, /setTab\(|navigate\(/, 'Opening a profile must not navigate away from Live.')
+assert.doesNotMatch(sheet, /setTab\(|navigate\(/, 'The profile sheet must stay over Live.')
+assert.doesNotMatch(sheet, /Top Fan|Lv\.\s*\d|rank:/, 'Do not invent gifter ranks on the Live profile sheet.')
+assert.doesNotMatch(chat, /badge: createGifterBadge\(\)/, 'Chat UI must not invent badges.')
+assert.match(badges, /label: 'Gifter'/, 'Session gift rows may keep the existing gift-activity badge helper.')
+assert.doesNotMatch(discover, /LiveProfileSheet/, 'Do not attach Live profile work to Discovery.')
+assert.doesNotMatch(viewer, /fv-viewer-live-actions/, 'Do not restore the vertical viewer action rail.')
+
+console.log('Live identity checks passed: tappable real profiles, follow wiring, no fake ranks, Live stays open.')
