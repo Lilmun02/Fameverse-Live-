@@ -1,5 +1,5 @@
-const CACHE = 'fameverse-beta-v19'
-const APP_SHELL = ['/manifest.webmanifest', '/icon.svg']
+const CACHE = 'fameverse-beta-v20'
+const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)))
@@ -34,11 +34,16 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE)
-      const network = await fetchAndCache(request, cache)
-      if (network) return network
+      const cached = (await cache.match(request)) || (await cache.match('/'))
+      const networkPromise = fetchAndCache(request, cache)
 
-      const cached = await cache.match(request)
-      if (cached) return cached
+      if (cached) {
+        event.waitUntil(networkPromise)
+        return cached
+      }
+
+      const network = await networkPromise
+      if (network) return network
 
       return new Response('Fameverse is temporarily unavailable.', {
         status: 503,
