@@ -16,14 +16,20 @@ function serializeCandidate(candidate) {
   return candidate?.toJSON ? candidate.toJSON() : candidate
 }
 
-export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
+function makeInviteId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+export function useCohostHost({ roomId, enabled, viewerRoster = [], setToast }) {
   const channelRef = useRef(null)
   const peerRef = useRef(null)
   const offerIdRef = useRef(null)
   const pendingIceRef = useRef([])
   const activeRef = useRef(null)
-  const viewerIdsRef = useRef(viewerIds)
+  const viewerRosterRef = useRef(viewerRoster)
   const [requests, setRequests] = useState([])
+  const [pendingInvite, setPendingInvite] = useState(null)
   const [activeCohost, setActiveCohost] = useState(null)
   const [remoteStream, setRemoteStream] = useState(null)
   const targetId = roomId ? `host:${roomId}` : null
@@ -45,18 +51,28 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
     clearPeer()
     activeRef.current = null
     setActiveCohost(null)
+    setPendingInvite(null)
   }, [clearPeer])
+
+  const viewerIds = useCallback(() => (
+    viewerRosterRef.current.map((viewer) => viewer.viewerId).filter(Boolean)
+  ), [])
 
   const publishTargets = useCallback((cohost = activeRef.current) => {
     if (!cohost?.viewerId || !roomId || !targetId) return
-    const targetIds = [targetId, ...viewerIdsRef.current.filter((id) => id && id !== cohost.viewerId)]
+    const targetIds = [targetId, ...viewerIds().filter((id) => id !== cohost.viewerId)]
     void send('cohost-peer-list', { viewerId: cohost.viewerId, targetIds })
-  }, [roomId, send, targetId])
+  }, [roomId, send, targetId, viewerIds])
 
   useEffect(() => {
-    viewerIdsRef.current = viewerIds
+    viewerRosterRef.current = viewerRoster
     if (activeRef.current?.status === 'live') publishTargets(activeRef.current)
-  }, [publishTargets, viewerIds])
+    const invitedViewerId = pendingInvite?.viewerId
+    if (invitedViewerId && !viewerRoster.some((viewer) => viewer.viewerId === invitedViewerId)) {
+      activeRef.current = null
+      setPendingInvite(null)
+    }
+  }, [pendingInvite?.viewerId, publishTargets, viewerRoster])
 
   useEffect(() => {
     if (!enabled || !roomId) {
@@ -132,10 +148,27 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
         }
         setRequests((items) => [request, ...items.filter((item) => item.viewerId !== request.viewerId)].slice(0, 12))
       })
+      .on('broadcast', { event: 'cohost-invite-accepted' }, ({ payload }) => {
+        const invited = activeRef.current
+        if (!invited || invited.status !== 'invited' || payload?.viewerId !== invited.viewerId) return
+        setPendingInvite(null)
+        const next = { ...invited, status: 'connecting' }
+        activeRef.current = next
+        setActiveCohost(next)
+        publishTargets(next)
+      })
+      .on('broadcast', { event: 'cohost-invite-declined' }, ({ payload }) => {
+        const invited = activeRef.current
+        if (!invited || invited.status !== 'invited' || payload?.viewerId !== invited.viewerId) return
+        activeRef.current = null
+        setPendingInvite(null)
+        setToast?.(`${invited.displayName || 'Viewer'} declined the co-host invite`)
+      })
       .on('broadcast', { event: 'cohost-active' }, ({ payload }) => {
         if (!active || payload?.viewerId !== activeRef.current?.viewerId) return
         const next = { ...activeRef.current, status: 'live' }
         activeRef.current = next
+        setPendingInvite(null)
         setActiveCohost(next)
         publishTargets(next)
       })
@@ -174,6 +207,27 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
     }
   }, [clearActive, clearPeer, enabled, publishTargets, roomId, send, setToast, targetId])
 
+  const inviteViewer = useCallback((viewer) => {
+    if (!viewer?.viewerId || !viewer?.userId || activeRef.current) return false
+    const invite = { ...viewer, inviteId: makeInviteId(), status: 'invited' }
+    activeRef.current = invite
+    setPendingInvite(invite)
+    void send('cohost-invite', {
+      inviteId: invite.inviteId,
+      viewerId: invite.viewerId,
+      userId: invite.userId,
+    })
+    return true
+  }, [send])
+
+  const cancelInvite = useCallback(() => {
+    const invite = pendingInvite
+    if (!invite) return
+    void send('cohost-invite-cancelled', { viewerId: invite.viewerId, inviteId: invite.inviteId })
+    activeRef.current = null
+    setPendingInvite(null)
+  }, [pendingInvite, send])
+
   const acceptRequest = useCallback((request) => {
     if (!request?.viewerId || activeRef.current) return false
     const next = { ...request, status: 'connecting' }
@@ -194,9 +248,24 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
   const endCohost = useCallback(() => {
     const cohost = activeRef.current
     if (!cohost) return
+    if (cohost.status === 'invited') {
+      cancelInvite()
+      return
+    }
     void send('cohost-ended', { viewerId: cohost.viewerId })
     clearActive()
-  }, [clearActive, send])
+  }, [cancelInvite, clearActive, send])
 
-  return { requests, activeCohost, remoteStream, acceptRequest, declineRequest, endCohost }
+  return {
+    viewers: viewerRoster,
+    requests,
+    pendingInvite,
+    activeCohost,
+    remoteStream,
+    inviteViewer,
+    cancelInvite,
+    acceptRequest,
+    declineRequest,
+    endCohost,
+  }
 }
