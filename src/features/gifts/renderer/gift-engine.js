@@ -51,7 +51,14 @@ function escapeText(value) {
   return node.innerHTML
 }
 
-function buildVideoScene(config, meta, quantity) {
+function comboLabel(meta) {
+  const index = Number(meta?.comboIndex)
+  const total = Number(meta?.comboTotal)
+  if (!Number.isSafeInteger(index) || !Number.isSafeInteger(total) || total <= 1) return ''
+  return ` · combo ×${index}`
+}
+
+function buildVideoScene(config, meta) {
   const root = document.createElement('div')
   root.className = 'fv-gift-engine fv-video-gift'
   root.dataset.giftId = config.id
@@ -77,7 +84,7 @@ function buildVideoScene(config, meta, quantity) {
     <span class="fv-gift-meta-icon" aria-hidden="true">F</span>
     <div>
       <strong>${escapeText(meta.sender || 'Fameverse Creator')}</strong>
-      <small>sent ${escapeText(config.label)}${quantity > 1 ? ` · ×${quantity}` : ''}</small>
+      <small>sent ${escapeText(config.label)}${comboLabel(meta)}</small>
     </div>
   `
 
@@ -100,12 +107,12 @@ function playNextQueuedGift() {
     return
   }
 
-  startGiftScene(next.config, next.meta, next.quantity)
+  startGiftScene(next.config, next.meta)
 }
 
-function startGiftScene(config, meta, quantity) {
+function startGiftScene(config, meta) {
   const scene = config.effect === 'video-cinematic'
-    ? buildVideoScene(config, meta, quantity)
+    ? buildVideoScene(config, meta)
     : null
   if (!scene) return false
 
@@ -116,7 +123,8 @@ function startGiftScene(config, meta, quantity) {
     ...scene,
     timer: null,
     id: config.id,
-    quantity,
+    comboIndex: meta.comboIndex || 1,
+    comboTotal: meta.comboTotal || 1,
   }
 
   const finish = () => {
@@ -136,19 +144,34 @@ function startGiftScene(config, meta, quantity) {
   return true
 }
 
+function buildComboEntries(config, meta, quantity) {
+  return Array.from({ length: quantity }, (_, index) => ({
+    config,
+    meta: {
+      ...meta,
+      quantity: 1,
+      comboIndex: index + 1,
+      comboTotal: quantity,
+    },
+  }))
+}
+
 function playGift(giftKey, meta = {}) {
   const config = giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey)
   if (!config || !isLiveActive()) return false
 
   const requestedQuantity = Number(meta.quantity)
   const quantity = Number.isSafeInteger(requestedQuantity) && requestedQuantity > 0 ? requestedQuantity : 1
+  const entries = buildComboEntries(config, meta, quantity)
 
   if (activeGift) {
-    giftQueue.push({ config, meta, quantity })
+    giftQueue.push(...entries)
     return true
   }
 
-  return startGiftScene(config, meta, quantity)
+  const first = entries.shift()
+  giftQueue.push(...entries)
+  return startGiftScene(first.config, first.meta)
 }
 
 document.addEventListener('fameverse:gift', (event) => {
