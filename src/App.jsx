@@ -47,7 +47,8 @@ export default function App() {
       live.setIsLive(false)
     },
   })
-  const presence = useLivePresence({ userId: account.session?.user?.id })
+  const actorId = account.session?.user?.id || null
+  const presence = useLivePresence({ userId: actorId })
   const broadcast = useLiveBroadcast({
     roomId: presence.room?.id,
     stream: live.mediaStream,
@@ -55,14 +56,14 @@ export default function App() {
   })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
   const liveDiscovery = useLiveDiscovery({
-    userId: account.session?.user?.id,
+    userId: actorId,
     enabled: Boolean(account.session),
   })
   const creatorDiscovery = useCreatorDiscovery({
-    userId: account.session?.user?.id,
+    userId: actorId,
     enabled: Boolean(account.session),
   })
-  const followNetwork = useFollowNetwork({ userId: account.session?.user?.id, setToast })
+  const followNetwork = useFollowNetwork({ userId: actorId, setToast })
   const displayName = account.profile?.display_name || account.session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = account.profile?.username ? `@${account.profile.username}` : '@newuser'
   const initial = displayName.trim().charAt(0).toUpperCase() || 'F'
@@ -74,6 +75,7 @@ export default function App() {
   const gifts = useGiftSystem({
     isLive: live.isLive || Boolean(viewingRoom),
     displayName,
+    actorId,
     setToast,
     setChat,
     onGiftAccepted: (giftEvent) => {
@@ -84,6 +86,7 @@ export default function App() {
   const activity = useLiveActivity({
     roomId: activeActivityRoomId,
     displayName,
+    actorId,
     enabled: Boolean(account.session && activeActivityRoomId),
     setMessages: setChat,
     onRemoteGift: gifts.receiveGift,
@@ -244,6 +247,7 @@ export default function App() {
           coins={gifts.coins}
           sendGift={gifts.sendGift}
           addTestCoins={gifts.addTestCoins}
+          currentUserId={actorId}
         />
       ) : (
         <>
@@ -307,6 +311,8 @@ export default function App() {
                 addTestCoins={gifts.addTestCoins}
                 cohostTrayOpen={cohostTrayOpen}
                 presenceState={presence.state}
+                currentUserId={actorId}
+                followNetwork={followNetwork}
               />
             )}
 
