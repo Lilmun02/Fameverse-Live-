@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
 import LiveChat from './LiveChat.jsx'
+import LiveProfileSheet from './LiveProfileSheet.jsx'
+import { useLiveProfileSheet } from '../../hooks/useLiveProfileSheet.js'
 import { useLiveTapTotals } from '../../hooks/useLiveTapTotals.js'
 import { useLiveViewer } from '../../hooks/useLiveViewer.js'
 import { useViewerTapCapture } from '../../hooks/useViewerTapCapture.js'
@@ -31,6 +33,7 @@ export default function ViewerLiveScreen({
   coins,
   sendGift,
   addTestCoins,
+  currentUserId,
 }) {
   const videoRef = useRef(null)
   const particleIdRef = useRef(0)
@@ -38,6 +41,7 @@ export default function ViewerLiveScreen({
   const [needsPlay, setNeedsPlay] = useState(false)
   const [tapParticles, setTapParticles] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
+  const profileSheet = useLiveProfileSheet()
   const relay = useLiveViewer({ roomId: room?.id, enabled: Boolean(room?.id) })
   const totals = useLiveTapTotals({ roomId: room?.id })
   const capture = useViewerTapCapture({ roomId: room?.id })
@@ -111,6 +115,10 @@ export default function ViewerLiveScreen({
     void followNetwork?.toggleFollow?.(room.host_user_id)
   }
 
+  const openHostProfile = () => {
+    if (room?.host_user_id) profileSheet.open(room.host_user_id)
+  }
+
   const shareLive = () => {
     setMenuOpen(false)
     void shareRoom?.()
@@ -175,14 +183,29 @@ export default function ViewerLiveScreen({
           <button type="button" className="fv-viewer-live-back" onClick={onClose} aria-label="Back to Discover">‹</button>
 
           <div className="fv-viewer-live-creator">
-            {hostAvatar ? (
-              <img className="fv-viewer-live-avatar" src={hostAvatar} alt="" />
-            ) : (
-              <span className="fv-viewer-live-avatar fv-viewer-live-avatar-fallback">{hostInitial}</span>
-            )}
+            <button
+              type="button"
+              className="fv-viewer-identity-button"
+              onPointerDown={stopLiveTap}
+              onClick={openHostProfile}
+              aria-label={`Open ${hostName} profile`}
+            >
+              {hostAvatar ? (
+                <img className="fv-viewer-live-avatar" src={hostAvatar} alt="" />
+              ) : (
+                <span className="fv-viewer-live-avatar fv-viewer-live-avatar-fallback">{hostInitial}</span>
+              )}
+            </button>
             <div className="fv-viewer-live-identity">
               <div className="fv-viewer-live-name-row">
-                <strong>{hostName}</strong>
+                <button
+                  type="button"
+                  className="fv-viewer-identity-button"
+                  onPointerDown={stopLiveTap}
+                  onClick={openHostProfile}
+                >
+                  <strong>{hostName}</strong>
+                </button>
                 <span className="fv-viewer-live-badge">LIVE</span>
               </div>
               <button
@@ -212,6 +235,7 @@ export default function ViewerLiveScreen({
               setCommentText={setCommentText}
               submitComment={submitComment}
               onGiftClick={openGiftTray}
+              onOpenIdentity={profileSheet.open}
             />
           </div>
         )}
@@ -239,6 +263,12 @@ export default function ViewerLiveScreen({
           </div>
         )}
       </div>
+
+      <LiveProfileSheet
+        sheet={profileSheet}
+        currentUserId={currentUserId}
+        followNetwork={followNetwork}
+      />
 
       <LiveGiftTray
         open={giftTrayOpen}
