@@ -14,8 +14,15 @@ import {
   sendLiveRelayEvent,
 } from '../services/live/liveRelay.js'
 
+const OFFER_RETRY_AFTER_MS = 8000
+
 function serializeCandidate(candidate) {
   return candidate?.toJSON ? candidate.toJSON() : candidate
+}
+
+function makeOfferId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export function useLiveBroadcast({ roomId, stream, enabled }) {
@@ -74,17 +81,35 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
 
     const offerViewer = async (viewerId) => {
       if (!active || !viewerId || !streamRef.current) return
-      removePeer(viewerId)
+      const existing = peers.get(viewerId)
+      if (
+        existing
+        && existing.peer?.connectionState !== 'failed'
+        && existing.peer?.connectionState !== 'closed'
+        && Date.now() - existing.createdAt < OFFER_RETRY_AFTER_MS
+      ) return
 
-      const entry = { peer: null, pendingIce: [], connected: false }
+      removePeer(viewerId)
+      const offerId = makeOfferId()
+      const entry = {
+        peer: null,
+        offerId,
+        pendingIce: [],
+        connected: false,
+        createdAt: Date.now(),
+      }
       const peer = createCohostPeer({
         iceServers: LIVE_RELAY_ICE_SERVERS,
         onIceCandidate: (candidate) => {
-          void send('host-ice', { viewerId, candidate: serializeCandidate(candidate) })
+          void send('host-ice', {
+            viewerId,
+            offerId,
+            candidate: serializeCandidate(candidate),
+          })
         },
         onConnectionStateChange: (state) => {
           const current = peers.get(viewerId)
-          if (!current) return
+          if (!current || current.peer !== peer) return
           if (state === 'connected') {
             current.connected = true
             updateViewerCount()
@@ -100,7 +125,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
         attachLocalStream(peer, streamRef.current)
         const offer = await createCohostOffer(peer)
         if (!active || peers.get(viewerId)?.peer !== peer) return
-        await send('host-offer', { viewerId, offer })
+        await send('host-offer', { viewerId, offerId, offer })
       } catch {
         removePeer(viewerId)
       }
@@ -113,7 +138,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       .on('broadcast', { event: 'viewer-answer' }, async ({ payload }) => {
         const viewerId = payload?.viewerId
         const entry = peers.get(viewerId)
-        if (!entry?.peer || !payload?.answer) return
+        if (!entry?.peer || !payload?.answer || payload?.offerId !== entry.offerId) return
         try {
           await acceptCohostAnswer(entry.peer, payload.answer)
           await flushPendingIce(entry)
@@ -124,7 +149,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       .on('broadcast', { event: 'viewer-ice' }, async ({ payload }) => {
         const viewerId = payload?.viewerId
         const entry = peers.get(viewerId)
-        if (!entry?.peer || !payload?.candidate) return
+        if (!entry?.peer || !payload?.candidate || payload?.offerId !== entry.offerId) return
         if (!entry.peer.remoteDescription) {
           entry.pendingIce.push(payload.candidate)
           return
