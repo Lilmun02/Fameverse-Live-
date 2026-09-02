@@ -1,5 +1,6 @@
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
 import CohostSheet from './CohostSheet.jsx'
+import CohostVideoTile from './CohostVideoTile.jsx'
 import EndLiveSummaryPanel from './EndLiveSummaryPanel.jsx'
 import LiveActions from './LiveActions.jsx'
 import LiveChat from './LiveChat.jsx'
@@ -42,11 +43,13 @@ export default function LiveScreen({
   sendGift,
   addTestCoins,
   cohostTrayOpen,
+  cohost,
   presenceState,
   currentUserId,
   followNetwork,
 }) {
   const profileSheet = useLiveProfileSheet()
+  const cohostStream = cohost?.remoteStream || null
 
   if (!isLive && sessionSummary.summary) {
     return (
@@ -73,7 +76,7 @@ export default function LiveScreen({
   }
 
   return (
-    <section className="mobile-live-shell fam-live-shell is-live">
+    <section className={`mobile-live-shell fam-live-shell is-live ${cohostStream ? 'has-cohost' : ''}`}>
       <div className="live-video-surface fam-live-video-surface">
         {mediaStream && !cameraOff ? (
           <>
@@ -85,6 +88,7 @@ export default function LiveScreen({
             <div className="preview-camera-icon">◉</div><strong>Camera off</strong><small>Your microphone can stay on while video is hidden.</small>
           </div>
         )}
+        <CohostVideoTile stream={cohostStream} label={cohost?.activeCohost?.displayName || 'Co-host'} />
         <div className="live-vignette fam-live-vignette" />
       </div>
 
@@ -130,7 +134,16 @@ export default function LiveScreen({
       />
 
       <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
-      <CohostSheet open={cohostTrayOpen} onClose={() => setCohostTrayOpen(false)} shareRoom={shareRoom} />
+      <CohostSheet
+        open={cohostTrayOpen}
+        onClose={() => setCohostTrayOpen(false)}
+        shareRoom={shareRoom}
+        requests={cohost?.requests || []}
+        activeCohost={cohost?.activeCohost || null}
+        onAccept={cohost?.acceptRequest}
+        onDecline={cohost?.declineRequest}
+        onEndCohost={cohost?.endCohost}
+      />
     </section>
   )
 }
