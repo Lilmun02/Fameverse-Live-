@@ -126,6 +126,21 @@ export default function ViewerLiveScreen({
       <div className="fv-viewer-live-stage" onPointerDown={onTap}>
         <video ref={videoRef} autoPlay playsInline className="fv-viewer-live-video" />
         <div className="fv-viewer-live-vignette" aria-hidden="true" />
+        <div className={`fv-live-stage-brand ${relay.remoteStream && !ended ? 'is-dim' : ''}`} aria-hidden="true">
+          <span className="fv-live-stage-arch" />
+          <small>LIVE ON FAMEVERSE</small>
+          <strong>{hostName}</strong>
+          <em>{room?.title || 'Late Night Vibes'}</em>
+          <span className="fv-live-stage-rule">F</span>
+          <i>MUSIC. ENERGY. COMMUNITY.</i>
+        </div>
+        <div className="fv-live-fall" aria-hidden="true">
+          {['F', '🔥', 'F', '🔥', 'F', '🔥', 'F', '🔥'].map((symbol, index) => (
+            <span key={`fall-${index}`} className={symbol === 'F' ? 'is-f' : 'is-fire'} style={{ '--fall-i': index }}>
+              {symbol}
+            </span>
+          ))}
+        </div>
 
         {!relay.remoteStream && !ended && (
           <div className="fv-viewer-live-connecting" aria-live="polite">
@@ -200,7 +215,7 @@ export default function ViewerLiveScreen({
           <div className="fv-viewer-live-stats" aria-label={`${relay.viewerCount} viewers and ${serverTotal} Fame Taps`}>
             <span><b aria-hidden="true">👥</b>{formatStat(relay.viewerCount)}</span>
             <i aria-hidden="true" />
-            <span className="is-fame"><b aria-hidden="true">F</b>{formatStat(serverTotal)}</span>
+            <span className="is-fame"><b aria-hidden="true">🔥</b>{formatStat(serverTotal)}</span>
           </div>
         </header>
 
