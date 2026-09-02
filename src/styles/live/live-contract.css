@@ -1,0 +1,150 @@
+/* Canonical active-Live contract. This file loads last so legacy beta styles cannot restyle the approved room UI. */
+
+.mobile-live-shell.is-live .fam-live-header,
+.mobile-live-shell.is-live .fam-live-creator-identity {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.mobile-live-shell.is-live .fam-live-creator-identity {
+  min-width: 0;
+  max-width: 62vw;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.mobile-live-shell.is-live .fam-creator-copy {
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.mobile-live-shell.is-live .fam-creator-name-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.mobile-live-shell.is-live .fam-creator-name-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-size: .94rem;
+  font-weight: 920;
+  text-shadow: 0 2px 12px rgba(0,0,0,.58);
+}
+
+.mobile-live-shell.is-live .fam-creator-copy small {
+  display: block;
+  margin-top: 5px;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255,255,255,.72);
+  font-size: .62rem;
+  text-shadow: 0 2px 9px rgba(0,0,0,.72);
+}
+
+.mobile-live-shell.is-live .live-action-rail,
+.mobile-live-shell.is-live .fam-action-rail {
+  display: none !important;
+}
+
+.mobile-live-shell.is-live .fam-live-f-menu,
+.mobile-live-shell.is-live .fam-live-control-menu,
+.mobile-live-shell.is-live .fam-end-live,
+.mobile-live-shell.is-live .fv-live-gift-button,
+.mobile-live-shell.is-live .fv-live-send-button,
+.fv-viewer-live .fv-viewer-live-back,
+.fv-viewer-live .fv-viewer-follow,
+.fv-viewer-live .fv-viewer-live-f-menu,
+.fv-viewer-live .fv-viewer-live-menu,
+.fv-viewer-live .fv-live-gift-button,
+.fv-viewer-live .fv-live-send-button {
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+
+.mobile-live-shell.is-live .fam-live-f-menu,
+.fv-viewer-live .fv-viewer-live-f-menu {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fv-viewer-live .fv-live-chat-feed {
+  position: absolute;
+  z-index: 24;
+  left: 14px;
+  right: 78px;
+  bottom: calc(max(68px, env(safe-area-inset-bottom) + 60px));
+  max-height: min(34dvh, 270px);
+  display: grid;
+  gap: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+
+.fv-viewer-live .fv-live-chat-feed::-webkit-scrollbar { display: none; }
+
+.fv-viewer-live .fam-comment-composer.fv-live-composer {
+  position: absolute;
+  z-index: 34;
+  left: 14px;
+  right: 78px;
+  bottom: calc(max(10px, env(safe-area-inset-bottom) + 6px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
+  align-items: center;
+  gap: 7px;
+  pointer-events: auto;
+}
+
+.fv-viewer-live .fam-chat-line {
+  width: fit-content;
+  max-width: min(78vw, 355px);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.fv-viewer-live .fam-chat-line.is-gift {
+  padding: 8px 10px;
+  border: 1px solid rgba(203,128,255,.24);
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(88,24,139,.80), rgba(22,8,31,.70));
+  box-shadow: 0 8px 24px rgba(0,0,0,.20);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 390px) {
+  .mobile-live-shell.is-live .fam-live-creator-identity {
+    max-width: 59vw;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .mobile-live-shell.is-live .fam-creator-name-row strong { font-size: .84rem; }
+
+  .fv-viewer-live .fv-live-chat-feed {
+    left: 10px;
+    right: 68px;
+  }
+
+  .fv-viewer-live .fam-comment-composer.fv-live-composer {
+    left: 10px;
+    right: 68px;
+    grid-template-columns: minmax(0, 1fr) 40px 40px;
+    gap: 6px;
+  }
+}
