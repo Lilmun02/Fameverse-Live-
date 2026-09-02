@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react'
 
+function initialFor(user) {
+  return String(user || 'F').trim().charAt(0).toUpperCase() || 'F'
+}
+
 export default function LiveChat({
   liveMessages,
   commentText,
@@ -25,41 +29,46 @@ export default function LiveChat({
         <div ref={chatScrollRef} className="fam-chat-stack live-chat-overlay" aria-label="Live comments">
           {liveMessages.map((item) => (
             <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
-              <div className="fam-chat-identity">
-                <strong>{item.user}</strong>
-                {item.badge && (
-                  <span className="fam-gifter-badge">
-                    <span aria-hidden="true">{item.badge.icon}</span> {item.badge.label}
-                  </span>
-                )}
+              <span className="fam-chat-avatar" aria-hidden="true">{initialFor(item.user)}</span>
+              <div className="fam-chat-copy">
+                <div className="fam-chat-identity">
+                  <strong>{item.user}</strong>
+                  {item.badge && (
+                    <span className="fam-gifter-badge">
+                      <span aria-hidden="true">{item.badge.icon}</span> {item.badge.label}
+                    </span>
+                  )}
+                </div>
+                <span className="fam-chat-message">{item.text}</span>
               </div>
-              <span>{item.text}</span>
             </div>
           ))}
         </div>
       )}
 
       <form className="fam-comment-composer live-comment-composer" onSubmit={submitComment}>
-        <input
-          value={commentText}
-          onChange={(event) => setCommentText(event.target.value)}
-          onKeyDown={preventKeyboardSubmit}
-          enterKeyHint="done"
-          maxLength={160}
-          placeholder="Say something…"
-          aria-label="Add comment"
-        />
-        {onGiftClick && (
-          <button
-            type="button"
-            className="live-comment-gift"
-            aria-label="Open gifts"
-            onClick={onGiftClick}
-          >
-            🎁
-          </button>
-        )}
-        <button type="submit" aria-label="Send comment" disabled={!commentText.trim()}>
+        <div className="live-comment-entry">
+          <input
+            value={commentText}
+            onChange={(event) => setCommentText(event.target.value)}
+            onKeyDown={preventKeyboardSubmit}
+            enterKeyHint="done"
+            maxLength={160}
+            placeholder="Say something…"
+            aria-label="Add comment"
+          />
+          {onGiftClick && (
+            <button
+              type="button"
+              className="live-comment-gift"
+              aria-label="Open gifts"
+              onClick={onGiftClick}
+            >
+              🎁
+            </button>
+          )}
+        </div>
+        <button className="live-comment-send" type="submit" aria-label="Send comment" disabled={!commentText.trim()}>
           ↑
         </button>
       </form>
