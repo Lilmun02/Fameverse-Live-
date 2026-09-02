@@ -1,4 +1,5 @@
 import '../../../styles/gifts/engine.css'
+import { playGiftChime, primeGiftAudio } from './gift-audio.js'
 
 const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
 
@@ -18,7 +19,7 @@ let activeGift = null
 let giftQueue = []
 
 function isLiveActive() {
-  return Boolean(document.querySelector('.mobile-live-shell.is-live'))
+  return Boolean(document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'))
 }
 
 function destroyActiveScene() {
@@ -62,7 +63,7 @@ function buildVideoScene(config, meta, quantity) {
   video.controls = false
   video.loop = false
   video.muted = false
-  video.volume = 0.78
+  video.volume = 0.82
   video.setAttribute('playsinline', '')
   video.setAttribute('webkit-playsinline', '')
 
@@ -120,8 +121,10 @@ function startGiftScene(config, meta, quantity) {
   }
 
   scene.video.addEventListener('ended', finish, { once: true })
+  scene.video.addEventListener('playing', () => scene.root.classList.add('is-playing'), { once: true })
   activeGift.timer = window.setTimeout(finish, config.duration + 1200)
 
+  playGiftChime()
   const start = scene.video.play()
   start?.catch?.(() => {
     scene.video.muted = true
@@ -152,6 +155,7 @@ document.addEventListener('fameverse:gift', (event) => {
 
 window.FameverseGiftEngine = Object.freeze({
   play: playGift,
+  primeAudio: primeGiftAudio,
   registry: giftRegistry,
   stop: stopGiftEngine,
 })
