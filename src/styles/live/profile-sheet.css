@@ -1,0 +1,103 @@
+.fv-live-profile-backdrop {
+  z-index: 80;
+}
+
+.fv-live-profile-sheet {
+  max-height: min(62dvh, 420px);
+}
+
+.fv-live-profile-body {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 8px 0 6px;
+  text-align: center;
+}
+
+.fv-live-profile-avatar {
+  width: 72px;
+  height: 72px;
+  border: 2px solid #9e42ff;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #35114f;
+}
+
+.fv-live-profile-avatar.is-fallback {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 950;
+}
+
+.fv-live-profile-body strong {
+  font-size: 1.05rem;
+}
+
+.fv-live-profile-body small {
+  color: #c9a4ef;
+  font-size: .72rem;
+}
+
+.fv-live-profile-body p {
+  max-width: 320px;
+  margin: 2px 0 0;
+  color: #d7c8e6;
+  font-size: .74rem;
+  line-height: 1.4;
+}
+
+.fv-live-profile-counts {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+  color: #b9a6c8;
+  font-size: .68rem;
+}
+
+.fv-live-profile-counts b {
+  color: #fff;
+  margin-right: 4px;
+}
+
+.fv-live-profile-follow {
+  min-width: 148px;
+  min-height: 42px;
+  margin-top: 8px;
+  border: 1px solid rgba(181, 96, 255, .72);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7a31e8, #bd58f7);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 900;
+  touch-action: manipulation;
+}
+
+.fv-live-profile-follow.is-following {
+  background: rgba(18, 10, 24, .72);
+  color: #d7a8ff;
+}
+
+.fam-chat-identity-button,
+.fv-viewer-identity-button {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.fv-viewer-live-creator > .fv-viewer-identity-button {
+  width: 50px;
+  height: 50px;
+}
+
+.fam-chat-line .fam-chat-avatar,
+.fam-chat-identity-button {
+  cursor: pointer;
+}
