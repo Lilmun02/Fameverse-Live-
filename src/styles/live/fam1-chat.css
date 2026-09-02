@@ -13,7 +13,9 @@
   width: fit-content;
   max-width: min(78vw, 355px);
   display: grid;
-  gap: 3px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
   padding: 7px 10px;
   border: 1px solid rgba(255,255,255,.06);
   border-radius: 13px;
@@ -27,6 +29,25 @@
 .fam-chat-line.is-gift {
   border-color: rgba(213, 158, 255, .16);
   background: linear-gradient(135deg, rgba(72, 25, 108, .64), rgba(8,3,12,.58));
+}
+
+.fam-chat-avatar {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(200, 135, 255, .32);
+  border-radius: 50%;
+  background: rgba(98, 36, 141, .42);
+  color: #fff;
+  font-size: .55rem;
+  font-weight: 950;
+}
+
+.fam-chat-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
 }
 
 .fam-chat-identity {
@@ -55,9 +76,7 @@
   letter-spacing: .03em;
 }
 
-.fam-chat-line > span {
-  color: #f4edf8;
-}
+.fam-chat-message { color: #f4edf8; }
 
 .fam-comment-composer.live-comment-composer {
   left: 12px;
@@ -66,7 +85,10 @@
   grid-template-columns: minmax(0, 1fr) 40px;
 }
 
+.live-comment-entry { min-width: 0; }
+
 .fam-comment-composer.live-comment-composer input {
+  width: 100%;
   height: 42px;
   border-color: rgba(255,255,255,.11);
   background: rgba(8,3,14,.62);
