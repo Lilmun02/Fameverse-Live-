@@ -1,6 +1,11 @@
+import { useState } from 'react'
+
+function stopLiveTap(event) {
+  event.stopPropagation()
+}
+
 export default function LiveActions({
   premiumRepeat,
-  setGiftTrayOpen,
   setCohostTrayOpen,
   micMuted,
   toggleMic,
@@ -10,32 +15,50 @@ export default function LiveActions({
   isStartingLive,
   shareRoom,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   if (premiumRepeat) return null
 
+  const runAction = (action) => {
+    setMenuOpen(false)
+    action?.()
+  }
+
   return (
-    <div className="fam-action-rail" aria-label="Live controls">
-      <button type="button" className="fam-action-button" onClick={() => setGiftTrayOpen(true)}>
-        <span aria-hidden="true">🎁</span><small>Gift</small>
-      </button>
-      <button type="button" className="fam-action-button" onClick={() => setCohostTrayOpen(true)}>
-        <span aria-hidden="true">＋</span><small>Co-host</small>
-      </button>
-      <button type="button" className="fam-action-button" onClick={toggleMic}>
-        <span aria-hidden="true">{micMuted ? '🔇' : '🎙️'}</span><small>{micMuted ? 'Unmute' : 'Mute'}</small>
-      </button>
-      <button type="button" className="fam-action-button" onClick={toggleCamera}>
-        <span aria-hidden="true">{cameraOff ? '🚫' : '📷'}</span><small>{cameraOff ? 'Cam on' : 'Camera'}</small>
-      </button>
+    <div className="fam-live-more" onPointerDown={stopLiveTap}>
+      {menuOpen && (
+        <div className="fam-live-control-menu" role="menu" aria-label="Host Live controls">
+          <button type="button" role="menuitem" onClick={() => runAction(() => setCohostTrayOpen(true))}>
+            <span aria-hidden="true">＋</span><b>Co-host</b>
+          </button>
+          <button type="button" role="menuitem" onClick={() => runAction(toggleMic)}>
+            <span aria-hidden="true">{micMuted ? '🔇' : '🎙️'}</span><b>{micMuted ? 'Unmute' : 'Mute'}</b>
+          </button>
+          <button type="button" role="menuitem" onClick={() => runAction(toggleCamera)}>
+            <span aria-hidden="true">{cameraOff ? '◉' : '📷'}</span><b>{cameraOff ? 'Camera on' : 'Camera off'}</b>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={isStartingLive || cameraOff}
+            onClick={() => runAction(flipCamera)}
+          >
+            <span aria-hidden="true">↻</span><b>Flip camera</b>
+          </button>
+          <button type="button" role="menuitem" onClick={() => runAction(shareRoom)}>
+            <span aria-hidden="true">↗</span><b>Share Live</b>
+          </button>
+        </div>
+      )}
       <button
         type="button"
-        className="fam-action-button"
-        onClick={flipCamera}
-        disabled={isStartingLive || cameraOff}
+        className="fam-live-f-menu"
+        aria-label="Open host Live controls"
+        aria-expanded={menuOpen}
+        onPointerDown={stopLiveTap}
+        onClick={() => setMenuOpen((open) => !open)}
       >
-        <span aria-hidden="true">↻</span><small>Flip</small>
-      </button>
-      <button type="button" className="fam-action-button" onClick={shareRoom}>
-        <span aria-hidden="true">↗</span><small>Share</small>
+        F
       </button>
     </div>
   )
