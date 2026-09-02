@@ -147,7 +147,13 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     })
 
     if (!keepTrayOpen) setGiftTrayOpen(false)
-    receiveGift(gift, normalizedQuantity, displayName)
+
+    if (gift.rendererId) {
+      playPremiumGift(gift, normalizedQuantity, displayName)
+      return true
+    }
+
+    showGift(gift, normalizedQuantity, displayName)
     return true
   }
 
