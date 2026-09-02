@@ -11,14 +11,27 @@ export function registerFameversePwaUpdates() {
     document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
   )
 
-  const currentBundlePath = () => {
-    const script = document.querySelector('script[type="module"][src]')
-    if (!script?.src) return null
-    try { return new URL(script.src, window.location.href).pathname }
-    catch { return null }
+  const shellAssetSignature = (doc, baseUrl) => {
+    const assets = []
+    const nodes = doc.querySelectorAll('script[type="module"][src], link[rel="stylesheet"][href]')
+
+    nodes.forEach((node) => {
+      const raw = node.getAttribute('src') || node.getAttribute('href')
+      if (!raw) return
+      try {
+        const url = new URL(raw, baseUrl)
+        if (url.origin !== window.location.origin) return
+        assets.push(url.pathname)
+      } catch {}
+    })
+
+    if (!assets.length) return null
+    return JSON.stringify([...new Set(assets)].sort())
   }
 
-  const latestBundlePath = async () => {
+  const currentShellSignature = () => shellAssetSignature(document, window.location.href)
+
+  const latestShellSignature = async () => {
     const url = new URL('/', window.location.origin)
     url.searchParams.set('fv-shell-check', String(Date.now()))
     const response = await fetch(url, {
@@ -29,11 +42,7 @@ export function registerFameversePwaUpdates() {
 
     const html = await response.text()
     const doc = new DOMParser().parseFromString(html, 'text/html')
-    const script = doc.querySelector('script[type="module"][src]')
-    const src = script?.getAttribute('src')
-    if (!src) return null
-    try { return new URL(src, window.location.origin).pathname }
-    catch { return null }
+    return shellAssetSignature(doc, window.location.origin)
   }
 
   const showNotice = (mode) => {
@@ -91,8 +100,8 @@ export function registerFameversePwaUpdates() {
     lastShellCheckAt = now
 
     try {
-      const current = currentBundlePath()
-      const latest = await latestBundlePath()
+      const current = currentShellSignature()
+      const latest = await latestShellSignature()
       if (!current || !latest || current === latest) return
       markPending()
       applyPendingUpdate()
