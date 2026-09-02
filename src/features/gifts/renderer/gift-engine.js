@@ -1,6 +1,5 @@
 import '../../../styles/gifts/engine.css'
 import {
-  playGiftChime,
   primeGiftAudio,
   startGiftAudioSession,
   stopGiftAudioSession,
@@ -129,7 +128,6 @@ function startGiftScene(config, meta, quantity) {
   scene.video.addEventListener('playing', () => scene.root.classList.add('is-playing'), { once: true })
   activeGift.timer = window.setTimeout(finish, config.duration + 1200)
 
-  playGiftChime()
   const start = scene.video.play()
   start?.catch?.(() => {
     scene.video.muted = true
