@@ -5,6 +5,7 @@ export default function LiveChat({
   commentText,
   setCommentText,
   submitComment,
+  onGiftClick = null,
 }) {
   const chatScrollRef = useRef(null)
 
@@ -48,6 +49,16 @@ export default function LiveChat({
           placeholder="Say something…"
           aria-label="Add comment"
         />
+        {onGiftClick && (
+          <button
+            type="button"
+            className="live-comment-gift"
+            aria-label="Open gifts"
+            onClick={onGiftClick}
+          >
+            🎁
+          </button>
+        )}
         <button type="submit" aria-label="Send comment" disabled={!commentText.trim()}>
           ↑
         </button>
