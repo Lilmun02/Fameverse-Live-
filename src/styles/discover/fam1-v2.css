@@ -25,3 +25,60 @@
 .fv-live-empty strong { font-size:.88rem; }
 .fv-live-empty p { max-width:300px; margin:0; color:#817a87; font-size:.66rem; line-height:1.45; }
 .fv-live-empty button { min-height:36px; margin-top:7px; padding:0 15px; border:0; border-radius:999px; background:var(--fv-accent); color:#fff; font-size:.64rem; font-weight:900; }
+
+.fv-live-room-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.fv-live-room-row {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 46px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--fv-line);
+  border-radius: 17px;
+  background: #0d0c11;
+  color: #fff;
+  text-align: left;
+}
+
+.fv-live-room-row:active { transform: scale(.99); }
+
+.fv-live-room-avatar {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(183,103,255,.28);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #a754ff, #52207f 72%);
+  font-size: .9rem;
+  font-weight: 950;
+}
+
+.fv-live-room-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.fv-live-room-copy b,
+.fv-live-room-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fv-live-room-copy b { font-size: .78rem; }
+.fv-live-room-copy small { color: #93899d; font-size: .58rem; }
+
+.fv-live-room-enter {
+  color: #c594ff;
+  font-size: .62rem;
+  font-weight: 900;
+}
