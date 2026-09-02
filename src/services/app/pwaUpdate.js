@@ -3,9 +3,38 @@ export function registerFameversePwaUpdates() {
 
   let registration = null
   let reloading = false
+  let lastShellCheckAt = 0
   const pendingKey = 'fameverse-pwa-update-pending'
+  const shellCheckIntervalMs = 15000
 
-  const liveIsActive = () => Boolean(document.querySelector('.mobile-live-shell.is-live'))
+  const liveIsActive = () => Boolean(
+    document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
+  )
+
+  const currentBundlePath = () => {
+    const script = document.querySelector('script[type="module"][src]')
+    if (!script?.src) return null
+    try { return new URL(script.src, window.location.href).pathname }
+    catch { return null }
+  }
+
+  const latestBundlePath = async () => {
+    const url = new URL('/', window.location.origin)
+    url.searchParams.set('fv-shell-check', String(Date.now()))
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
+    if (!response.ok) return null
+
+    const html = await response.text()
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    const script = doc.querySelector('script[type="module"][src]')
+    const src = script?.getAttribute('src')
+    if (!src) return null
+    try { return new URL(src, window.location.origin).pathname }
+    catch { return null }
+  }
 
   const showNotice = (mode) => {
     let notice = document.querySelector('[data-fameverse-update-notice]')
@@ -37,6 +66,12 @@ export function registerFameversePwaUpdates() {
     showNotice(liveIsActive() ? 'deferred' : 'applying')
   }
 
+  const forceNewestShell = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('fv-force-refresh', String(Date.now()))
+    window.location.replace(url.toString())
+  }
+
   const applyPendingUpdate = () => {
     if (reloading || sessionStorage.getItem(pendingKey) !== '1') return
     if (liveIsActive()) {
@@ -47,7 +82,28 @@ export function registerFameversePwaUpdates() {
     reloading = true
     showNotice('applying')
     sessionStorage.removeItem(pendingKey)
-    window.setTimeout(() => window.location.reload(), 450)
+    window.setTimeout(forceNewestShell, 350)
+  }
+
+  const checkAppShell = async ({ force = false } = {}) => {
+    const now = Date.now()
+    if (!force && now - lastShellCheckAt < shellCheckIntervalMs) return
+    lastShellCheckAt = now
+
+    try {
+      const current = currentBundlePath()
+      const latest = await latestBundlePath()
+      if (!current || !latest || current === latest) return
+      markPending()
+      applyPendingUpdate()
+    } catch {}
+  }
+
+  const cleanForceRefreshMarker = () => {
+    const url = new URL(window.location.href)
+    if (!url.searchParams.has('fv-force-refresh')) return
+    url.searchParams.delete('fv-force-refresh')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -69,12 +125,14 @@ export function registerFameversePwaUpdates() {
   }
 
   window.addEventListener('load', async () => {
+    cleanForceRefreshMarker()
     try {
       registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       watchRegistration(registration)
       await registration.update()
-      applyPendingUpdate()
     } catch {}
+    await checkAppShell({ force: true })
+    applyPendingUpdate()
   })
 
   document.addEventListener('visibilitychange', async () => {
@@ -84,6 +142,7 @@ export function registerFameversePwaUpdates() {
       if (registration) watchRegistration(registration)
       await registration?.update()
     } catch {}
+    await checkAppShell()
     applyPendingUpdate()
   })
 
@@ -92,6 +151,7 @@ export function registerFameversePwaUpdates() {
       registration ||= await navigator.serviceWorker.getRegistration()
       await registration?.update()
     } catch {}
+    await checkAppShell({ force: true })
     applyPendingUpdate()
   })
 
