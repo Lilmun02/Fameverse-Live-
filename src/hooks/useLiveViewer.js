@@ -171,5 +171,10 @@ export function useLiveViewer({ roomId, enabled = true }) {
     }
   }, [enabled, roomId])
 
-  return { remoteStream, state, viewerCount }
+  return {
+    viewerId: viewerIdRef.current,
+    remoteStream,
+    state,
+    viewerCount,
+  }
 }
