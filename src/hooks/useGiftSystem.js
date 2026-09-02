@@ -95,7 +95,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
   const receiveGift = useCallback((gift, quantity = 1, sender = 'Fameverse viewer') => {
     if (!gift) return false
     const normalizedQuantity = Math.max(1, Number(quantity) || 1)
-    if (gift.rendererId) playPremiumGift(gift, normalizedQuantity, sender)
+    if (Boolean(gift.rendererId)) playPremiumGift(gift, normalizedQuantity, sender)
     else showGift(gift, normalizedQuantity, sender)
     return true
   }, [playPremiumGift, showGift])
