@@ -64,9 +64,7 @@
 }
 
 .fv-viewer-live-connecting strong,
-.fv-viewer-live-ended strong {
-  font-size: 1.05rem;
-}
+.fv-viewer-live-ended strong { font-size: 1.05rem; }
 
 .fv-viewer-live-connecting small,
 .fv-viewer-live-ended small {
@@ -107,7 +105,7 @@
   position: absolute;
   z-index: 11;
   left: 50%;
-  bottom: max(124px, calc(env(safe-area-inset-bottom) + 104px));
+  bottom: max(110px, calc(env(safe-area-inset-bottom) + 92px));
   transform: translateX(-50%);
   box-shadow: 0 12px 34px rgba(0,0,0,.28);
 }
@@ -135,29 +133,51 @@
   }
 
   .fv-viewer-live-stats {
-    gap: 6px;
-    padding-inline: 8px;
+    gap: 5px;
+    padding-inline: 7px;
   }
 
   .fv-viewer-live-stats > span {
-    gap: 4px;
-    font-size: .54rem;
+    gap: 3px;
+    font-size: .52rem;
+  }
+
+  .fv-viewer-live-chat-layer .live-chat-overlay {
+    left: 9px;
+    width: min(75vw, 282px);
   }
 
   .fv-viewer-live-chat-layer .fam-comment-composer.live-comment-composer {
-    right: 70px;
-    grid-template-columns: minmax(0, 1fr) 40px 40px;
-    gap: 5px;
+    left: 9px;
+    width: min(72vw, 270px);
+    grid-template-columns: minmax(0, 1fr) 37px;
+    gap: 6px;
   }
 
-  .fv-viewer-live-chat-layer .fam-comment-composer.live-comment-composer button {
-    width: 40px;
-    height: 40px;
-    min-height: 40px;
+  .fv-viewer-live-chat-layer .live-comment-entry {
+    height: 38px;
+    grid-template-columns: minmax(0, 1fr) 36px;
   }
+
+  .fv-viewer-live-chat-layer .live-comment-entry input,
+  .fv-viewer-live-chat-layer .live-comment-entry .live-comment-gift {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .fv-viewer-live-chat-layer .live-comment-entry .live-comment-gift { width: 36px; }
+
+  .fv-viewer-live-chat-layer .live-comment-send {
+    width: 37px;
+    height: 37px;
+    min-height: 37px;
+  }
+
+  .fv-viewer-live-more { right: 8px; }
 
   .fv-viewer-live-f-menu {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
   }
 }
