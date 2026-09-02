@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v21-device-parity'
+const CACHE = 'fameverse-beta-v22-device-truth'
 const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -46,25 +46,11 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE)
-      const forceRefresh = url.searchParams.has('fv-force-refresh')
+      const fresh = await fetchAndCache(request, cache, '/')
+      if (fresh) return fresh
 
-      if (forceRefresh) {
-        const fresh = await fetchAndCache(request, cache, '/')
-        if (fresh) return fresh
-        const fallback = await cache.match('/')
-        if (fallback) return fallback
-      }
-
-      const cached = (await cache.match(request)) || (await cache.match('/'))
-      const networkPromise = fetchAndCache(request, cache, '/')
-
-      if (cached) {
-        event.waitUntil(networkPromise)
-        return cached
-      }
-
-      const network = await networkPromise
-      if (network) return network
+      const fallback = (await cache.match(request)) || (await cache.match('/'))
+      if (fallback) return fallback
 
       return new Response('Fameverse is temporarily unavailable.', {
         status: 503,
