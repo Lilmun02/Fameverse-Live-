@@ -11,7 +11,7 @@ function makeActivityId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export function useLiveActivity({ roomId, displayName, enabled, setMessages, onRemoteGift }) {
+export function useLiveActivity({ roomId, displayName, actorId, enabled, setMessages, onRemoteGift }) {
   const channelRef = useRef(null)
   const remoteGiftRef = useRef(onRemoteGift)
   const [state, setState] = useState('idle')
@@ -37,6 +37,7 @@ export function useLiveActivity({ roomId, displayName, enabled, setMessages, onR
         setMessages((items) => [...items, {
           id: payload.id || makeActivityId('comment'),
           user: payload.user,
+          userId: payload.userId || null,
           text: String(payload.text).slice(0, 160),
         }])
       })
@@ -49,6 +50,7 @@ export function useLiveActivity({ roomId, displayName, enabled, setMessages, onR
           id: payload.id || makeActivityId('gift'),
           kind: 'gift',
           user: payload.sender,
+          userId: payload.senderId || null,
           badge: createGifterBadge(),
           giftId: gift.id,
           quantity,
@@ -76,18 +78,20 @@ export function useLiveActivity({ roomId, displayName, enabled, setMessages, onR
     const payload = {
       id: makeActivityId('comment'),
       user: displayName || 'Fameverse User',
+      userId: actorId || null,
       text: normalized,
     }
     setMessages((items) => [...items, payload])
     void sendLiveActivity(channelRef.current, 'comment', payload)
     return true
-  }, [displayName, roomId, setMessages])
+  }, [actorId, displayName, roomId, setMessages])
 
   const sendGift = useCallback(({ gift, quantity, sender }) => {
     if (!roomId || !gift?.id) return false
     const payload = {
       id: makeActivityId('gift'),
       sender: sender || displayName || 'Fameverse User',
+      senderId: actorId || null,
       quantity: Math.max(1, Number(quantity) || 1),
       gift: {
         id: gift.id,
@@ -100,7 +104,7 @@ export function useLiveActivity({ roomId, displayName, enabled, setMessages, onR
     }
     void sendLiveActivity(channelRef.current, 'gift', payload)
     return true
-  }, [displayName, roomId])
+  }, [actorId, displayName, roomId])
 
   return { state, sendComment, sendGift }
 }
