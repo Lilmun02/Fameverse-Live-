@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
+import CohostInvitePrompt from './CohostInvitePrompt.jsx'
 import CohostVideoTile from './CohostVideoTile.jsx'
 import LiveChat from './LiveChat.jsx'
 import LiveProfileSheet from './LiveProfileSheet.jsx'
@@ -47,7 +48,13 @@ export default function ViewerLiveScreen({
   const [tapParticles, setTapParticles] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
   const profileSheet = useLiveProfileSheet()
-  const relay = useLiveViewer({ roomId: room?.id, enabled: Boolean(room?.id) })
+  const relay = useLiveViewer({
+    roomId: room?.id,
+    enabled: Boolean(room?.id),
+    userId: currentUserId,
+    displayName: currentDisplayName,
+    avatarUrl: currentAvatarUrl,
+  })
   const cohost = useCohostViewer({
     roomId: room?.id,
     viewerId: relay.viewerId,
@@ -293,7 +300,7 @@ export default function ViewerLiveScreen({
                     role="menuitem"
                     onPointerDown={stopLiveTap}
                     onClick={requestCohost}
-                    disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost)}
+                    disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost) || Boolean(cohost.incomingInvite)}
                   >
                     <span aria-hidden="true">◫</span>
                     <b>{cohost.activeCohost && cohost.status === 'idle' ? 'Co-host occupied' : cohostMenuLabel}</b>
@@ -318,6 +325,13 @@ export default function ViewerLiveScreen({
           </div>
         )}
       </div>
+
+      <CohostInvitePrompt
+        invite={cohost.incomingInvite}
+        hostName={hostName}
+        onAccept={cohost.acceptInvite}
+        onDecline={cohost.declineInvite}
+      />
 
       <LiveProfileSheet
         sheet={profileSheet}
