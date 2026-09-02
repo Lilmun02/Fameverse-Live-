@@ -1,4 +1,5 @@
 import { gifts } from '../../config/gifts.js'
+import { primeGiftAudio } from '../../features/gifts/renderer/gift-audio.js'
 
 export default function PreLiveSetupPanel({
   displayName,
@@ -11,6 +12,11 @@ export default function PreLiveSetupPanel({
   isStartingLive,
 }) {
   const titleReady = Boolean(draft.title.trim())
+
+  const startLiveWithAudioReady = () => {
+    primeGiftAudio()
+    beginLive()
+  }
 
   return (
     <section className="fv-live-setup" aria-labelledby="fv-live-setup-title">
@@ -90,7 +96,7 @@ export default function PreLiveSetupPanel({
           type="button"
           className="fv-live-setup-go"
           disabled={!titleReady || isStartingLive}
-          onClick={beginLive}
+          onClick={startLiveWithAudioReady}
         >
           {isStartingLive ? 'Starting…' : 'Go Live'}
         </button>
