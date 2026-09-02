@@ -33,7 +33,7 @@ assert.match(manifest, /"background_color": "#07010d"/, 'PWA launch background m
 assert.match(serviceWorker, /fameverse-beta-v21-device-parity/, 'Every device-parity release must rotate the installed PWA cache.')
 assert.match(serviceWorker, /fv-shell-check/, 'The service worker must allow a network-only app-shell version check.')
 assert.match(serviceWorker, /fv-force-refresh/, 'The service worker must support a forced fresh navigation.')
-assert.match(serviceWorker, /cache\.put\('\/'/, 'Forced refresh must replace the canonical cached app shell.')
+assert.match(serviceWorker, /fetchAndCache\(request, cache, '\/'\)/, 'Forced refresh must replace the canonical cached app shell.')
 assert.match(pwaUpdate, /currentBundlePath/, 'The running app must know which JS bundle it is executing.')
 assert.match(pwaUpdate, /latestBundlePath/, 'The running app must compare itself with the deployed bundle.')
 assert.match(pwaUpdate, /fv-shell-check/, 'PWA update detection must bypass the stale app-shell cache.')
