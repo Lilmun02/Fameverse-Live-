@@ -1,3 +1,47 @@
+.fv-live-fall {
+  position: absolute;
+  z-index: 4;
+  top: 18%;
+  right: 8px;
+  bottom: 22%;
+  width: 54px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fv-live-fall span {
+  position: absolute;
+  right: 6px;
+  top: calc(var(--fall-i) * 11%);
+  opacity: .82;
+  animation: fv-live-fall 5.6s linear calc(var(--fall-i) * .35s) infinite;
+}
+
+.fv-live-fall .is-f {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(228,190,255,.4);
+  border-radius: 7px;
+  background: linear-gradient(145deg, rgba(188, 97, 255, .92), rgba(105, 31, 180, .94));
+  color: #fff;
+  font-size: .68rem;
+  font-style: italic;
+  font-weight: 1000;
+}
+
+.fv-live-fall .is-fire {
+  font-size: 1.05rem;
+  filter: drop-shadow(0 6px 10px rgba(255,120,0,.28));
+}
+
+@keyframes fv-live-fall {
+  0% { transform: translateY(-8px) rotate(-8deg); opacity: 0; }
+  12% { opacity: .9; }
+  100% { transform: translateY(92px) rotate(12deg); opacity: 0; }
+}
+
 .fv-viewer-live-particles {
   position: absolute;
   inset: 0;
@@ -49,7 +93,20 @@
   }
 }
 
-.fv-viewer-live-connecting,
+.fv-viewer-live-connecting {
+  position: absolute;
+  z-index: 5;
+  left: 20px;
+  right: 20px;
+  bottom: 28%;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 0;
+  text-align: center;
+  background: none;
+}
+
 .fv-viewer-live-ended {
   position: absolute;
   z-index: 3;
@@ -149,24 +206,18 @@
 
   .fv-viewer-live-chat-layer .fam-comment-composer.live-comment-composer {
     left: 9px;
-    width: min(72vw, 270px);
-    grid-template-columns: minmax(0, 1fr) 37px;
+    right: 64px;
+    width: auto;
+    grid-template-columns: minmax(0, 1fr) 37px 37px;
     gap: 6px;
   }
 
-  .fv-viewer-live-chat-layer .live-comment-entry {
-    height: 38px;
-    grid-template-columns: minmax(0, 1fr) 36px;
+  .fv-viewer-live-chat-layer .live-comment-entry,
+  .fv-viewer-live-chat-layer .live-comment-entry input {
+    height: 37px;
   }
 
-  .fv-viewer-live-chat-layer .live-comment-entry input,
-  .fv-viewer-live-chat-layer .live-comment-entry .live-comment-gift {
-    height: 36px;
-    min-height: 36px;
-  }
-
-  .fv-viewer-live-chat-layer .live-comment-entry .live-comment-gift { width: 36px; }
-
+  .fv-viewer-live-chat-layer .live-comment-gift,
   .fv-viewer-live-chat-layer .live-comment-send {
     width: 37px;
     height: 37px;
