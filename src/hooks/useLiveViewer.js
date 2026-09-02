@@ -26,8 +26,9 @@ function serializeCandidate(candidate) {
 export function useLiveViewer({ roomId, enabled = true }) {
   const viewerIdRef = useRef(makeViewerId())
   const peerRef = useRef(null)
+  const activeOfferIdRef = useRef(null)
+  const pendingIceRef = useRef(new Map())
   const stateRef = useRef('idle')
-  const pendingIceRef = useRef([])
   const [remoteStream, setRemoteStream] = useState(null)
   const [state, setState] = useState('idle')
 
@@ -50,10 +51,11 @@ export function useLiveViewer({ roomId, enabled = true }) {
 
     const send = (event, payload = {}) => sendLiveRelayEvent(channel, event, { viewerId, ...payload })
 
-    const closePeer = () => {
+    const closePeer = ({ clearPending = true } = {}) => {
       closeCohostPeer(peerRef.current)
       peerRef.current = null
-      pendingIceRef.current = []
+      activeOfferIdRef.current = null
+      if (clearPending) pendingIceRef.current.clear()
     }
 
     const requestHost = () => {
@@ -61,32 +63,37 @@ export function useLiveViewer({ roomId, enabled = true }) {
       void send('viewer-ready', { roomId })
     }
 
-    const flushPendingIce = async (peer) => {
-      if (!peer?.remoteDescription || !pendingIceRef.current.length) return
-      const pending = pendingIceRef.current.splice(0)
+    const flushPendingIce = async (peer, offerId) => {
+      const pending = pendingIceRef.current.get(offerId) || []
+      pendingIceRef.current.delete(offerId)
       for (const candidate of pending) {
         try { await addCohostIceCandidate(peer, candidate) } catch {}
       }
     }
 
     const acceptOffer = async (payload) => {
-      if (!active || payload?.viewerId !== viewerId || !payload?.offer) return
-      closePeer()
+      const offerId = payload?.offerId
+      if (!active || payload?.viewerId !== viewerId || !payload?.offer || !offerId) return
+      closePeer({ clearPending: false })
       setRemoteStream(null)
       changeState('connecting')
+      activeOfferIdRef.current = offerId
 
       const peer = createCohostPeer({
         iceServers: LIVE_RELAY_ICE_SERVERS,
         onIceCandidate: (candidate) => {
-          void send('viewer-ice', { candidate: serializeCandidate(candidate) })
+          void send('viewer-ice', {
+            offerId,
+            candidate: serializeCandidate(candidate),
+          })
         },
         onTrack: (event) => {
-          if (!active) return
+          if (!active || activeOfferIdRef.current !== offerId) return
           const incoming = event.streams?.[0] || new MediaStream([event.track])
           setRemoteStream(incoming)
         },
         onConnectionStateChange: (connectionState) => {
-          if (!active || peerRef.current !== peer) return
+          if (!active || peerRef.current !== peer || activeOfferIdRef.current !== offerId) return
           if (connectionState === 'connected') changeState('connected')
           if (connectionState === 'failed' || connectionState === 'closed') {
             setRemoteStream(null)
@@ -98,11 +105,11 @@ export function useLiveViewer({ roomId, enabled = true }) {
 
       try {
         const answer = await acceptCohostOffer(peer, payload.offer)
-        await flushPendingIce(peer)
-        if (!active || peerRef.current !== peer) return
-        await send('viewer-answer', { answer })
+        await flushPendingIce(peer, offerId)
+        if (!active || peerRef.current !== peer || activeOfferIdRef.current !== offerId) return
+        await send('viewer-answer', { offerId, answer })
       } catch {
-        if (peerRef.current === peer) closePeer()
+        if (peerRef.current === peer) closePeer({ clearPending: false })
         setRemoteStream(null)
         changeState('connecting')
       }
@@ -114,10 +121,13 @@ export function useLiveViewer({ roomId, enabled = true }) {
         void acceptOffer(payload)
       })
       .on('broadcast', { event: 'host-ice' }, async ({ payload }) => {
-        if (payload?.viewerId !== viewerId || !payload?.candidate) return
+        const offerId = payload?.offerId
+        if (payload?.viewerId !== viewerId || !payload?.candidate || !offerId) return
         const peer = peerRef.current
-        if (!peer?.remoteDescription) {
-          pendingIceRef.current.push(payload.candidate)
+        if (activeOfferIdRef.current !== offerId || !peer?.remoteDescription) {
+          const pending = pendingIceRef.current.get(offerId) || []
+          pending.push(payload.candidate)
+          pendingIceRef.current.set(offerId, pending)
           return
         }
         try { await addCohostIceCandidate(peer, payload.candidate) } catch {}
