@@ -1,46 +1,49 @@
-/* FAM 1 live chat, gifter badge, and composer styling. */
+/* FAM 1 live chat, gifter badge, and approved bottom composer layout. */
 
 .mobile-live-shell.is-live .fam-chat-stack {
-  left: 12px;
-  right: 70px;
-  bottom: calc(max(72px, env(safe-area-inset-bottom) + 62px));
-  max-height: min(36dvh, 290px);
+  left: 14px;
+  right: 74px;
+  bottom: calc(max(66px, env(safe-area-inset-bottom) + 58px));
+  max-height: min(34dvh, 270px);
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .fam-chat-line {
   width: fit-content;
   max-width: min(78vw, 355px);
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr);
   align-items: start;
-  gap: 7px;
-  padding: 7px 10px;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 13px;
-  background: rgba(7,3,12,.5);
+  gap: 8px;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
   color: #fff;
-  font-size: .69rem;
+  font-size: .72rem;
   line-height: 1.3;
-  backdrop-filter: blur(9px);
+  text-shadow: 0 2px 9px rgba(0,0,0,.72);
 }
 
 .fam-chat-line.is-gift {
-  border-color: rgba(213, 158, 255, .16);
-  background: linear-gradient(135deg, rgba(72, 25, 108, .64), rgba(8,3,12,.58));
+  padding: 8px 10px;
+  border: 1px solid rgba(203, 128, 255, .22);
+  background: linear-gradient(90deg, rgba(88, 24, 139, .8), rgba(22, 8, 31, .7));
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  backdrop-filter: blur(10px);
 }
 
 .fam-chat-avatar {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(200, 135, 255, .32);
+  border: 1px solid rgba(200, 135, 255, .38);
   border-radius: 50%;
-  background: rgba(98, 36, 141, .42);
+  background: rgba(98, 36, 141, .54);
   color: #fff;
-  font-size: .55rem;
+  font-size: .58rem;
   font-weight: 950;
 }
 
@@ -59,7 +62,7 @@
 
 .fam-chat-identity strong {
   color: #d49cff;
-  font-size: .66rem;
+  font-size: .68rem;
 }
 
 .fam-gifter-badge {
@@ -76,38 +79,92 @@
   letter-spacing: .03em;
 }
 
-.fam-chat-message { color: #f4edf8; }
+.fam-chat-message { color: #fff; }
 
 .fam-comment-composer.live-comment-composer {
-  left: 12px;
-  right: 70px;
-  bottom: calc(max(12px, env(safe-area-inset-bottom) + 7px));
-  grid-template-columns: minmax(0, 1fr) 40px;
+  position: absolute;
+  z-index: 30;
+  left: 14px;
+  right: 76px;
+  bottom: calc(max(10px, env(safe-area-inset-bottom) + 6px));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px 42px;
+  align-items: center;
+  gap: 7px;
+  pointer-events: auto;
 }
 
-.live-comment-entry { min-width: 0; }
+.live-comment-entry {
+  min-width: 0;
+  height: 42px;
+}
 
-.fam-comment-composer.live-comment-composer input {
+.fam-comment-composer.live-comment-composer .live-comment-entry input {
   width: 100%;
   height: 42px;
-  border-color: rgba(255,255,255,.11);
-  background: rgba(8,3,14,.62);
+  padding: 0 14px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 999px;
+  outline: 0;
+  background: rgba(8,3,14,.72);
   box-shadow: 0 10px 24px rgba(0,0,0,.2);
+  color: #fff;
+  font-size: 16px;
+  backdrop-filter: blur(12px);
 }
 
-.fam-comment-composer.live-comment-composer input:focus {
+.fam-comment-composer.live-comment-composer .live-comment-entry input:focus {
   border-color: rgba(203, 144, 255, .52);
   box-shadow: 0 0 0 3px rgba(151, 70, 255, .08);
 }
 
-.fam-comment-composer.live-comment-composer button {
-  background: linear-gradient(135deg, #8d38ff, #c85eff);
-  box-shadow: 0 8px 20px rgba(137, 51, 230, .24);
+.fam-comment-composer.live-comment-composer .live-comment-gift,
+.fam-comment-composer.live-comment-composer .live-comment-send {
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  color: #fff;
+  touch-action: manipulation;
+  pointer-events: auto;
 }
 
+.fam-comment-composer.live-comment-composer .live-comment-gift {
+  border: 1px solid rgba(202, 145, 255, .32);
+  background: rgba(17, 10, 23, .82);
+  box-shadow: 0 8px 22px rgba(0,0,0,.2);
+  font-size: 1rem;
+}
+
+.fam-comment-composer.live-comment-composer .live-comment-send {
+  border: 1px solid rgba(221, 185, 255, .18);
+  background: linear-gradient(145deg, #6d24d5, #a241f4);
+  box-shadow: 0 8px 22px rgba(116, 38, 209, .26);
+  font-size: 1rem;
+}
+
+.fam-comment-composer.live-comment-composer .live-comment-send:disabled { opacity: .42; }
+
 @media (max-width: 390px) {
-  .mobile-live-shell.is-live .fam-chat-stack,
-  .fam-comment-composer.live-comment-composer {
+  .mobile-live-shell.is-live .fam-chat-stack {
+    left: 10px;
     right: 66px;
+  }
+
+  .fam-comment-composer.live-comment-composer {
+    left: 10px;
+    right: 68px;
+    grid-template-columns: minmax(0, 1fr) 39px 39px;
+    gap: 6px;
+  }
+
+  .fam-comment-composer.live-comment-composer .live-comment-gift,
+  .fam-comment-composer.live-comment-composer .live-comment-send {
+    width: 39px;
+    height: 39px;
+    min-height: 39px;
   }
 }
