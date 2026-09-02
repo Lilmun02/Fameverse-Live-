@@ -11,10 +11,9 @@ function makeActivityId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) {
+export function useLiveActivity({ roomId, displayName, enabled, setMessages, onRemoteGift }) {
   const channelRef = useRef(null)
   const remoteGiftRef = useRef(onRemoteGift)
-  const [messages, setMessages] = useState([])
   const [state, setState] = useState('idle')
 
   useEffect(() => {
@@ -22,7 +21,6 @@ export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) 
   }, [onRemoteGift])
 
   useEffect(() => {
-    setMessages([])
     if (!enabled || !roomId) {
       setState('idle')
       return undefined
@@ -36,7 +34,7 @@ export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) 
     channel
       .on('broadcast', { event: 'comment' }, ({ payload }) => {
         if (!active || !payload?.text || !payload?.user) return
-        setMessages((items) => [...items.slice(-79), {
+        setMessages((items) => [...items, {
           id: payload.id || makeActivityId('comment'),
           user: payload.user,
           text: String(payload.text).slice(0, 160),
@@ -47,7 +45,7 @@ export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) 
         const quantity = Math.max(1, Number(payload.quantity) || 1)
         const gift = payload.gift
         const activityEmoji = gift.activityEmoji || gift.emoji || '✦'
-        setMessages((items) => [...items.slice(-79), {
+        setMessages((items) => [...items, {
           id: payload.id || makeActivityId('gift'),
           kind: 'gift',
           user: payload.sender,
@@ -69,7 +67,7 @@ export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) 
       channelRef.current = null
       void removeLiveActivityChannel(channel)
     }
-  }, [enabled, roomId])
+  }, [enabled, roomId, setMessages])
 
   const sendComment = useCallback((text) => {
     const normalized = String(text || '').trim().slice(0, 160)
@@ -80,10 +78,10 @@ export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) 
       user: displayName || 'Fameverse User',
       text: normalized,
     }
-    setMessages((items) => [...items.slice(-79), payload])
+    setMessages((items) => [...items, payload])
     void sendLiveActivity(channelRef.current, 'comment', payload)
     return true
-  }, [displayName, roomId])
+  }, [displayName, roomId, setMessages])
 
   const sendGift = useCallback(({ gift, quantity, sender }) => {
     if (!roomId || !gift?.id) return false
@@ -104,5 +102,5 @@ export function useLiveActivity({ roomId, displayName, enabled, onRemoteGift }) 
     return true
   }, [displayName, roomId])
 
-  return { messages, state, sendComment, sendGift }
+  return { state, sendComment, sendGift }
 }
