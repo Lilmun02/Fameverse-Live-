@@ -52,10 +52,12 @@ export function useCohostViewer({
   const latestTargetsRef = useRef([])
   const activeCohostRef = useRef(null)
   const statusRef = useRef('idle')
+  const inviteRef = useRef(null)
   const [status, setStatus] = useState('idle')
   const [localStream, setLocalStream] = useState(null)
   const [remoteStream, setRemoteStream] = useState(null)
   const [activeCohost, setActiveCohost] = useState(null)
+  const [incomingInvite, setIncomingInvite] = useState(null)
 
   const changeStatus = useCallback((next) => {
     statusRef.current = next
@@ -65,6 +67,11 @@ export function useCohostViewer({
   const applyActiveCohost = useCallback((next) => {
     activeCohostRef.current = next
     setActiveCohost(next)
+  }, [])
+
+  const applyInvite = useCallback((next) => {
+    inviteRef.current = next
+    setIncomingInvite(next)
   }, [])
 
   const send = useCallback((event, payload = {}) => {
@@ -154,12 +161,12 @@ export function useCohostViewer({
   }, [avatarUrl, connectTarget, displayName, userId])
 
   const startSource = useCallback(async () => {
-    if (!navigator.mediaDevices?.getUserMedia || localStreamRef.current) return
+    if (!navigator.mediaDevices?.getUserMedia || localStreamRef.current) return false
     changeStatus('connecting')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user' },
-        audio: true,
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       })
       localStreamRef.current = stream
       setLocalStream(stream)
@@ -168,12 +175,14 @@ export function useCohostViewer({
       applyActiveCohost({ viewerId, ...profile })
       await send('cohost-active', { viewerId, ...profile })
       syncTargets(latestTargetsRef.current)
+      return true
     } catch {
       clearSource()
       applyActiveCohost(null)
       changeStatus('idle')
       setToast?.('Camera and microphone are required to co-host')
       void send('cohost-failed', { viewerId, userId })
+      return false
     }
   }, [applyActiveCohost, avatarUrl, changeStatus, clearSource, displayName, send, setToast, syncTargets, userId, viewerId])
 
@@ -183,6 +192,7 @@ export function useCohostViewer({
       closeTargetPeer()
       changeStatus('idle')
       applyActiveCohost(null)
+      applyInvite(null)
       return undefined
     }
 
@@ -239,6 +249,15 @@ export function useCohostViewer({
     }
 
     channel
+      .on('broadcast', { event: 'cohost-invite' }, ({ payload }) => {
+        if (payload?.viewerId !== viewerId || !payload?.inviteId) return
+        if (localStreamRef.current || activeCohostRef.current) return
+        applyInvite({ inviteId: payload.inviteId, viewerId, userId })
+      })
+      .on('broadcast', { event: 'cohost-invite-cancelled' }, ({ payload }) => {
+        if (payload?.viewerId !== viewerId || payload?.inviteId !== inviteRef.current?.inviteId) return
+        applyInvite(null)
+      })
       .on('broadcast', { event: 'cohost-accept' }, ({ payload }) => {
         if (payload?.viewerId !== viewerId) return
         void startSource()
@@ -316,12 +335,13 @@ export function useCohostViewer({
       clearSource()
       closeTargetPeer()
       applyActiveCohost(null)
+      applyInvite(null)
       void removeLiveRelayChannel(channel)
     }
-  }, [applyActiveCohost, changeStatus, clearSource, closeTargetPeer, enabled, roomId, send, startSource, syncTargets, userId, viewerId])
+  }, [applyActiveCohost, applyInvite, changeStatus, clearSource, closeTargetPeer, enabled, roomId, send, startSource, syncTargets, userId, viewerId])
 
   const requestCohost = useCallback(() => {
-    if (statusRef.current !== 'idle' || !viewerId || !userId || activeCohostRef.current) return false
+    if (statusRef.current !== 'idle' || !viewerId || !userId || activeCohostRef.current || inviteRef.current) return false
     const requestId = makeRequestId()
     changeStatus('requested')
     void send('cohost-request', {
@@ -333,6 +353,21 @@ export function useCohostViewer({
     })
     return true
   }, [avatarUrl, changeStatus, displayName, send, userId, viewerId])
+
+  const acceptInvite = useCallback(async () => {
+    const invite = inviteRef.current
+    if (!invite || localStreamRef.current) return false
+    applyInvite(null)
+    void send('cohost-invite-accepted', { viewerId, userId, inviteId: invite.inviteId })
+    return startSource()
+  }, [applyInvite, send, startSource, userId, viewerId])
+
+  const declineInvite = useCallback(() => {
+    const invite = inviteRef.current
+    if (!invite) return
+    applyInvite(null)
+    void send('cohost-invite-declined', { viewerId, userId, inviteId: invite.inviteId })
+  }, [applyInvite, send, userId, viewerId])
 
   const leaveCohost = useCallback(() => {
     if (!localStreamRef.current || !viewerId) return
@@ -346,7 +381,10 @@ export function useCohostViewer({
     localStream,
     remoteStream,
     activeCohost,
+    incomingInvite,
     requestCohost,
+    acceptInvite,
+    declineInvite,
     leaveCohost,
   }
 }
