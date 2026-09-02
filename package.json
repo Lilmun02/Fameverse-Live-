@@ -9,7 +9,8 @@
     "check:presence": "node scripts/check-live-presence.mjs",
     "check:algorithm": "node scripts/check-verse-momentum.mjs",
     "check:taps": "node scripts/check-tap-integrity.mjs",
-    "build": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && vite build",
+    "check:ux": "node scripts/check-live-ux.mjs",
+    "build": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
