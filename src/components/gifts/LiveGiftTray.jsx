@@ -13,6 +13,7 @@ export default function LiveGiftTray({
 }) {
   const [customGiftId, setCustomGiftId] = useState(null)
   const [giftAmounts, setGiftAmounts] = useState({})
+  const [readyThumbnails, setReadyThumbnails] = useState({})
 
   if (!open) return null
 
@@ -20,6 +21,10 @@ export default function LiveGiftTray({
 
   const updateGiftAmount = (giftId, value) => {
     setGiftAmounts((amounts) => ({ ...amounts, [giftId]: value }))
+  }
+
+  const markThumbnailReady = (giftId) => {
+    setReadyThumbnails((ready) => (ready[giftId] ? ready : { ...ready, [giftId]: true }))
   }
 
   const sendQuickGift = (gift, quantity) => {
@@ -44,20 +49,31 @@ export default function LiveGiftTray({
           {gifts.map((gift) => {
             const customOpen = customGiftId === gift.id
             const amountValue = giftAmountValue(gift.id)
+            const thumbnailReady = Boolean(readyThumbnails[gift.id])
             return (
               <div
                 className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''} ${customOpen ? 'is-custom-open' : ''}`}
                 key={gift.id}
               >
                 {gift.video ? (
-                  <video
-                    className="live-gift-thumbnail"
-                    src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
-                    muted
-                    playsInline
-                    preload="metadata"
-                    onLoadedMetadata={(event) => seekGiftThumbnail(event, gift.thumbnailTime)}
-                  />
+                  <div className={`live-gift-thumbnail-frame ${thumbnailReady ? 'is-ready' : ''}`}>
+                    <span className="live-gift-thumbnail-fallback" aria-hidden="true">F</span>
+                    <video
+                      className="live-gift-thumbnail"
+                      src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
+                      muted
+                      playsInline
+                      preload="auto"
+                      onLoadedMetadata={(event) => {
+                        seekGiftThumbnail(event, gift.thumbnailTime)
+                        if (!gift.thumbnailTime) markThumbnailReady(gift.id)
+                      }}
+                      onSeeked={() => markThumbnailReady(gift.id)}
+                      onCanPlay={(event) => {
+                        if (!gift.thumbnailTime || event.currentTarget.currentTime > 0) markThumbnailReady(gift.id)
+                      }}
+                    />
+                  </div>
                 ) : (
                   <span>{gift.emoji}</span>
                 )}
