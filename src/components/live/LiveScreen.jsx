@@ -4,7 +4,9 @@ import EndLiveSummaryPanel from './EndLiveSummaryPanel.jsx'
 import LiveActions from './LiveActions.jsx'
 import LiveChat from './LiveChat.jsx'
 import LiveHeader from './LiveHeader.jsx'
+import LiveProfileSheet from './LiveProfileSheet.jsx'
 import PreLiveSetupPanel from './PreLiveSetupPanel.jsx'
+import { useLiveProfileSheet } from '../../hooks/useLiveProfileSheet.js'
 
 export default function LiveScreen({
   isLive,
@@ -41,7 +43,11 @@ export default function LiveScreen({
   addTestCoins,
   cohostTrayOpen,
   presenceState,
+  currentUserId,
+  followNetwork,
 }) {
+  const profileSheet = useLiveProfileSheet()
+
   if (!isLive && sessionSummary.summary) {
     return (
       <EndLiveSummaryPanel
@@ -92,6 +98,8 @@ export default function LiveScreen({
         startLive={startLive}
         liveTitle={liveSetup.active?.title}
         presenceState={presenceState}
+        currentUserId={currentUserId}
+        onOpenIdentity={profileSheet.open}
       />
 
       <LiveActions
@@ -112,6 +120,13 @@ export default function LiveScreen({
         setCommentText={setCommentText}
         submitComment={submitComment}
         onGiftClick={() => setGiftTrayOpen(true)}
+        onOpenIdentity={profileSheet.open}
+      />
+
+      <LiveProfileSheet
+        sheet={profileSheet}
+        currentUserId={currentUserId}
+        followNetwork={followNetwork}
       />
 
       <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
