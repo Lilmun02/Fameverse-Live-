@@ -50,6 +50,7 @@ export function useCohostViewer({
   const targetSourceIdRef = useRef(null)
   const pendingTargetIceRef = useRef([])
   const latestTargetsRef = useRef([])
+  const activeCohostRef = useRef(null)
   const statusRef = useRef('idle')
   const [status, setStatus] = useState('idle')
   const [localStream, setLocalStream] = useState(null)
@@ -59,6 +60,11 @@ export function useCohostViewer({
   const changeStatus = useCallback((next) => {
     statusRef.current = next
     setStatus(next)
+  }, [])
+
+  const applyActiveCohost = useCallback((next) => {
+    activeCohostRef.current = next
+    setActiveCohost(next)
   }, [])
 
   const send = useCallback((event, payload = {}) => {
@@ -159,23 +165,24 @@ export function useCohostViewer({
       setLocalStream(stream)
       changeStatus('live')
       const profile = { userId, displayName, avatarUrl: avatarUrl || null }
-      setActiveCohost({ viewerId, ...profile })
+      applyActiveCohost({ viewerId, ...profile })
       await send('cohost-active', { viewerId, ...profile })
       syncTargets(latestTargetsRef.current)
     } catch {
       clearSource()
+      applyActiveCohost(null)
       changeStatus('idle')
       setToast?.('Camera and microphone are required to co-host')
       void send('cohost-failed', { viewerId, userId })
     }
-  }, [avatarUrl, changeStatus, clearSource, displayName, send, setToast, syncTargets, userId, viewerId])
+  }, [applyActiveCohost, avatarUrl, changeStatus, clearSource, displayName, send, setToast, syncTargets, userId, viewerId])
 
   useEffect(() => {
     if (!enabled || !roomId || !viewerId || !userId) {
       clearSource()
       closeTargetPeer()
       changeStatus('idle')
-      setActiveCohost(null)
+      applyActiveCohost(null)
       return undefined
     }
 
@@ -190,7 +197,7 @@ export function useCohostViewer({
       const offerId = payload.offerId
       targetOfferIdRef.current = offerId
       targetSourceIdRef.current = payload.sourceViewerId
-      if (payload.profile) setActiveCohost({ viewerId: payload.sourceViewerId, ...payload.profile })
+      if (payload.profile) applyActiveCohost({ viewerId: payload.sourceViewerId, ...payload.profile })
 
       const peer = createCohostPeer({
         iceServers: LIVE_RELAY_ICE_SERVERS,
@@ -247,7 +254,7 @@ export function useCohostViewer({
       })
       .on('broadcast', { event: 'cohost-active' }, ({ payload }) => {
         if (!payload?.viewerId || payload.viewerId === viewerId) return
-        setActiveCohost({
+        applyActiveCohost({
           viewerId: payload.viewerId,
           userId: payload.userId || null,
           displayName: payload.displayName || 'Co-host',
@@ -291,10 +298,13 @@ export function useCohostViewer({
       })
       .on('broadcast', { event: 'cohost-ended' }, ({ payload }) => {
         if (!payload?.viewerId) return
-        if (payload.viewerId === viewerId) clearSource()
-        if (activeCohost?.viewerId === payload.viewerId || targetSourceIdRef.current === payload.viewerId) {
+        if (payload.viewerId === viewerId) {
+          clearSource()
+          applyActiveCohost(null)
+        }
+        if (activeCohostRef.current?.viewerId === payload.viewerId || targetSourceIdRef.current === payload.viewerId) {
           closeTargetPeer()
-          setActiveCohost(null)
+          applyActiveCohost(null)
         }
       })
       .subscribe()
@@ -305,13 +315,13 @@ export function useCohostViewer({
       channelRef.current = null
       clearSource()
       closeTargetPeer()
-      setActiveCohost(null)
+      applyActiveCohost(null)
       void removeLiveRelayChannel(channel)
     }
-  }, [activeCohost?.viewerId, changeStatus, clearSource, closeTargetPeer, enabled, roomId, send, startSource, syncTargets, userId, viewerId])
+  }, [applyActiveCohost, changeStatus, clearSource, closeTargetPeer, enabled, roomId, send, startSource, syncTargets, userId, viewerId])
 
   const requestCohost = useCallback(() => {
-    if (statusRef.current !== 'idle' || !viewerId || !userId) return false
+    if (statusRef.current !== 'idle' || !viewerId || !userId || activeCohostRef.current) return false
     const requestId = makeRequestId()
     changeStatus('requested')
     void send('cohost-request', {
@@ -328,8 +338,8 @@ export function useCohostViewer({
     if (!localStreamRef.current || !viewerId) return
     void send('cohost-source-left', { viewerId, userId })
     clearSource()
-    setActiveCohost(null)
-  }, [clearSource, send, userId, viewerId])
+    applyActiveCohost(null)
+  }, [applyActiveCohost, clearSource, send, userId, viewerId])
 
   return {
     status,
