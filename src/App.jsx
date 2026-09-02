@@ -20,7 +20,7 @@ import { useLiveSetup } from './hooks/useLiveSetup.js'
 import { useLiveTapTotals } from './hooks/useLiveTapTotals.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
-const SPLASH_MINIMUM_MS = 900
+const SPLASH_MINIMUM_MS = 1800
 
 export default function App() {
   const [toast, setToast] = useState('')
