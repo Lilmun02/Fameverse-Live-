@@ -8,9 +8,11 @@ import LiveScreen from './components/live/LiveScreen.jsx'
 import ViewerLiveScreen from './components/live/ViewerLiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
+import { useCohostHost } from './hooks/useCohostHost.js'
 import { useCreatorDiscovery } from './hooks/useCreatorDiscovery.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
+import { useGifterLevel } from './hooks/useGifterLevel.js'
 import { useLiveActivity } from './hooks/useLiveActivity.js'
 import { useLiveBroadcast } from './hooks/useLiveBroadcast.js'
 import { useLiveDiscovery } from './hooks/useLiveDiscovery.js'
@@ -54,6 +56,12 @@ export default function App() {
     stream: live.mediaStream,
     enabled: live.isLive && Boolean(presence.room?.id),
   })
+  const cohostHost = useCohostHost({
+    roomId: presence.room?.id,
+    enabled: live.isLive && Boolean(presence.room?.id),
+    viewerIds: broadcast.viewerIds,
+    setToast,
+  })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
   const liveDiscovery = useLiveDiscovery({
     userId: actorId,
@@ -71,11 +79,14 @@ export default function App() {
     ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(account.profile.created_at))
     : 'Beta 2026'
   const activeActivityRoomId = live.isLive ? presence.room?.id : viewingRoom?.id
+  const gifter = useGifterLevel({ userId: actorId, roomId: activeActivityRoomId, setToast })
 
   const gifts = useGiftSystem({
     isLive: live.isLive || Boolean(viewingRoom),
     displayName,
     actorId,
+    gifterLevel: gifter.level,
+    recordGifterGift: gifter.recordGift,
     setToast,
     setChat,
     onGiftAccepted: (giftEvent) => {
@@ -87,6 +98,7 @@ export default function App() {
     roomId: activeActivityRoomId,
     displayName,
     actorId,
+    gifterLevel: gifter.level,
     enabled: Boolean(account.session && activeActivityRoomId),
     setMessages: setChat,
     onRemoteGift: gifts.receiveGift,
@@ -131,6 +143,7 @@ export default function App() {
     const result = await live.startLive()
 
     if (wasLive) {
+      cohostHost.endCohost()
       const presenceEnded = await presence.endPresence()
       sessionSummary.finishSession({ title: roomTitle, viewerCount })
       gifts.stopGiftPlayback()
@@ -189,6 +202,7 @@ export default function App() {
   }
 
   const signOut = async () => {
+    cohostHost.endCohost()
     gifts.stopGiftPlayback()
     await presence.endPresence()
     liveSetup.reset()
@@ -248,6 +262,9 @@ export default function App() {
           sendGift={gifts.sendGift}
           addTestCoins={gifts.addTestCoins}
           currentUserId={actorId}
+          currentDisplayName={displayName}
+          currentAvatarUrl={account.profile?.avatar_url || null}
+          setToast={setToast}
         />
       ) : (
         <>
@@ -298,6 +315,7 @@ export default function App() {
                 setCohostTrayOpen={setCohostTrayOpen}
                 micMuted={live.micMuted}
                 toggleMic={live.toggleMic}
+                cameraOff={live.cameraOff}
                 toggleCamera={live.toggleCamera}
                 flipCamera={live.flipCamera}
                 shareRoom={shareRoom}
@@ -310,6 +328,7 @@ export default function App() {
                 sendGift={gifts.sendGift}
                 addTestCoins={gifts.addTestCoins}
                 cohostTrayOpen={cohostTrayOpen}
+                cohost={cohostHost}
                 presenceState={presence.state}
                 currentUserId={actorId}
                 followNetwork={followNetwork}
