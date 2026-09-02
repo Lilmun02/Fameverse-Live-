@@ -22,6 +22,7 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
   const offerIdRef = useRef(null)
   const pendingIceRef = useRef([])
   const activeRef = useRef(null)
+  const viewerIdsRef = useRef(viewerIds)
   const [requests, setRequests] = useState([])
   const [activeCohost, setActiveCohost] = useState(null)
   const [remoteStream, setRemoteStream] = useState(null)
@@ -47,10 +48,15 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
   }, [clearPeer])
 
   const publishTargets = useCallback((cohost = activeRef.current) => {
-    if (!cohost?.viewerId || !roomId) return
-    const targetIds = [targetId, ...viewerIds.filter((id) => id && id !== cohost.viewerId)]
+    if (!cohost?.viewerId || !roomId || !targetId) return
+    const targetIds = [targetId, ...viewerIdsRef.current.filter((id) => id && id !== cohost.viewerId)]
     void send('cohost-peer-list', { viewerId: cohost.viewerId, targetIds })
-  }, [roomId, send, targetId, viewerIds])
+  }, [roomId, send, targetId])
+
+  useEffect(() => {
+    viewerIdsRef.current = viewerIds
+    if (activeRef.current?.status === 'live') publishTargets(activeRef.current)
+  }, [publishTargets, viewerIds])
 
   useEffect(() => {
     if (!enabled || !roomId) {
@@ -167,10 +173,6 @@ export function useCohostHost({ roomId, enabled, viewerIds = [], setToast }) {
       void removeLiveRelayChannel(channel)
     }
   }, [clearActive, clearPeer, enabled, publishTargets, roomId, send, setToast, targetId])
-
-  useEffect(() => {
-    if (activeRef.current?.status === 'live') publishTargets(activeRef.current)
-  }, [publishTargets, viewerIds])
 
   const acceptRequest = useCallback((request) => {
     if (!request?.viewerId || activeRef.current) return false
