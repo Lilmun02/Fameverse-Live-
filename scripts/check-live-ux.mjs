@@ -82,7 +82,8 @@ assert.match(giftAudio, /createConstantSource/, 'Remote gift audio must keep an 
 assert.match(giftAudio, /sessionActive/, 'Gift audio keep-alive must be scoped to an active host/viewer Live session.')
 assert.match(giftEngine, /startAudioSession:\s*startGiftAudioSession/, 'Gift engine must expose persistent audio session start.')
 assert.match(giftEngine, /stopAudioSession:\s*stopGiftAudioSession/, 'Gift engine must expose persistent audio session stop.')
-assert.match(giftEngine, /playGiftChime\(\)/, 'Premium gift playback must include audible Fameverse feedback.')
+assert.doesNotMatch(giftEngine, /playGiftChime\(\)/, 'Premium gifts must not add an unrequested synthetic intro chime.')
+assert.doesNotMatch(giftAudio, /createOscillator|scheduleTone|playUnlockedChime/, 'Gift audio unlock must stay silent and never synthesize extra tones.')
 
 assert.match(giftTray, /readyThumbnails/, 'Gift tray must track preview readiness.')
 assert.match(giftTray, /live-gift-thumbnail-fallback/, 'Gift tray needs a branded fallback before video preview is ready.')
@@ -91,4 +92,4 @@ assert.match(giftEngine, /\.mobile-live-shell\.is-live, \.fv-viewer-live/, 'Prem
 assert.match(giftEngineCss, /\.fv-gift-engine\.is-playing \.fv-gift-video\s*\{\s*opacity:\s*1/, 'Premium gift video must not reveal a black frame before playback starts.')
 assert.match(giftEngineCss, /\.fv-gift-engine::before/, 'Premium gift loading state must stay branded instead of black.')
 
-console.log('Live UX checks passed: device-truth delivery, isolated approved layout, working controls, and persistent remote gift audio are locked.')
+console.log('Live UX checks passed: device-truth delivery, isolated approved layout, working controls, persistent remote gift audio, and silent gift-video startup are locked.')
