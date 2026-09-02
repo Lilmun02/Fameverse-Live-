@@ -1,4 +1,6 @@
 Approved reference: Neon Infamous Late Night Livestream.
 Top: back, creator avatar, creator name, LIVE badge, Following under creator name, one viewer+Fame stats pill right.
+Center stage brand: LIVE ON FAMEVERSE, host name, live title, F rule, MUSIC. ENERGY. COMMUNITY. Dim when camera is live.
+Right rail: falling F and flame marks.
 Bottom: lightweight chat stack; compact Say something pill; separate Gift circle tight to the chat; separate Send circle; large glowing F menu at far right.
 Gift activity may be highlighted; ordinary comments are not large cards.
