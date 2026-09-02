@@ -34,6 +34,7 @@ export default function LiveChat({
         <div ref={chatScrollRef} className="fam-chat-stack fv-live-chat-feed" aria-label="Live comments">
           {liveMessages.map((item) => {
             const identityEnabled = Boolean(item.userId && onOpenIdentity)
+            const level = Math.max(1, Number(item.gifterLevel || 1))
             return (
               <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
                 <button
@@ -48,6 +49,7 @@ export default function LiveChat({
                 </button>
                 <div className="fam-chat-copy">
                   <div className="fam-chat-identity">
+                    <span className="fam-gifter-level" aria-label={`Gift level ${level}`}>Lv. {level}</span>
                     {identityEnabled ? (
                       <button
                         type="button"
