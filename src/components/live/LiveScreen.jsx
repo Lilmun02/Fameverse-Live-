@@ -80,6 +80,14 @@ export default function LiveScreen({
           </div>
         )}
         <div className="live-vignette fam-live-vignette" />
+        <div className={`fv-live-stage-brand ${mediaStream && !cameraOff ? 'is-dim' : ''}`} aria-hidden="true">
+          <span className="fv-live-stage-arch" />
+          <small>LIVE ON FAMEVERSE</small>
+          <strong>{displayName}</strong>
+          <em>{liveSetup.active?.title || 'Late Night Vibes'}</em>
+          <span className="fv-live-stage-rule">F</span>
+          <i>MUSIC. ENERGY. COMMUNITY.</i>
+        </div>
       </div>
 
       <LiveHeader
