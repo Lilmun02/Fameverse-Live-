@@ -27,6 +27,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     simpleGiftActiveRef.current = false
     clearTimeout(premiumRepeatTimerRef.current)
     window.FameverseGiftEngine?.stop?.()
+    window.FameverseGiftEngine?.stopAudioSession?.()
   }, [])
 
   const clearSimpleGiftPlayback = useCallback(() => {
@@ -44,6 +45,7 @@ export function useGiftSystem({ isLive, displayName, setToast, setChat, onGiftAc
     setPremiumRepeat(null)
     setGiftTrayOpen(false)
     window.FameverseGiftEngine?.stop?.()
+    window.FameverseGiftEngine?.stopAudioSession?.()
   }, [clearSimpleGiftPlayback, isLive])
 
   const addTestCoins = (amount = 10000) => {
