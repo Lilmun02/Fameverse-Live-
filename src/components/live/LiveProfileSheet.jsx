@@ -52,6 +52,7 @@ export default function LiveProfileSheet({ sheet, currentUserId, followNetwork }
             )}
             <strong>{profile.displayName}</strong>
             {profile.username && <small>@{profile.username}</small>}
+            <span className="fam-gifter-level">Lv. {Math.max(1, Number(profile.gifterLevel || 1))}</span>
             {profile.bio ? <p>{profile.bio}</p> : null}
             <div className="fv-live-profile-counts">
               <span><b>{profile.followerCount}</b> Followers</span>
