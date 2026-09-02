@@ -31,11 +31,6 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
   const [viewerCount, setViewerCount] = useState(0)
   const hasStream = Boolean(stream)
 
-  const updateViewerCount = () => {
-    const connected = [...peersRef.current.values()].filter((entry) => entry.connected).length
-    setViewerCount(connected)
-  }
-
   useEffect(() => {
     streamRef.current = stream
     if (!stream) return
@@ -63,12 +58,18 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
 
     const send = (event, payload) => sendLiveRelayEvent(channel, event, payload)
 
+    const publishViewerCount = () => {
+      const nextCount = [...peers.values()].filter((entry) => entry.connected).length
+      setViewerCount(nextCount)
+      void send('viewer-count', { roomId, viewerCount: nextCount })
+    }
+
     const removePeer = (viewerId) => {
       const entry = peers.get(viewerId)
       if (!entry) return
       closeCohostPeer(entry.peer)
       peers.delete(viewerId)
-      updateViewerCount()
+      publishViewerCount()
     }
 
     const flushPendingIce = async (entry) => {
@@ -112,7 +113,7 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
           if (!current || current.peer !== peer) return
           if (state === 'connected') {
             current.connected = true
-            updateViewerCount()
+            publishViewerCount()
           } else if (state === 'failed' || state === 'closed') {
             removePeer(viewerId)
           }
@@ -160,7 +161,11 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
         removePeer(payload?.viewerId)
       })
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') void send('host-ready', { roomId })
+        if (status === 'SUBSCRIBED') {
+          const currentCount = [...peers.values()].filter((entry) => entry.connected).length
+          void send('host-ready', { roomId, viewerCount: currentCount })
+          void send('viewer-count', { roomId, viewerCount: currentCount })
+        }
       })
 
     return () => {
