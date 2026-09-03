@@ -7,6 +7,7 @@ on:
       - feature/**
       - fix/**
       - hardening/**
+      - release/**
   pull_request:
     branches:
       - main
