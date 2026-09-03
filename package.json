@@ -3,8 +3,13 @@
   "private": true,
   "version": "0.2.0-beta.1",
   "type": "module",
+  "packageManager": "npm@11.6.0",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.contracts.json --noEmit",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "playwright test",
     "check:lines": "node scripts/check-line-limits.mjs",
     "check:presence": "node scripts/check-live-presence.mjs",
     "check:algorithm": "node scripts/check-verse-momentum.mjs",
@@ -13,15 +18,23 @@
     "check:discovery": "node scripts/check-discovery-ux.mjs",
     "check:identity": "node scripts/check-live-identity.mjs",
     "check:cohost-gifter": "node scripts/check-cohost-gifter.mjs",
-    "build": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && npm run check:identity && npm run check:cohost-gifter && vite build",
+    "check:laws": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && npm run check:identity && npm run check:cohost-gifter",
+    "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run check:laws && vite build",
+    "build": "npm run verify",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.112.4",
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "@vitejs/plugin-react": "6.1.1",
+    "vite": "8.2.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "eslint": "10.9.1",
+    "globals": "17.12.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
 }

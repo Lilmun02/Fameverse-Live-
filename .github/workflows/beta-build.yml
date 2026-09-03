@@ -1,16 +1,28 @@
-name: Fameverse Beta Build
+name: Fameverse Engineering Gate
 
 on:
   push:
     branches:
       - beta/**
+      - feature/**
+      - fix/**
+      - hardening/**
   pull_request:
     branches:
       - main
+      - beta/vercel-ready
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fameverse-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,8 +32,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install
+      - name: Pin npm runner
+        run: npm install --global npm@11.6.0 --no-audit --no-fund
 
-      - name: Build beta
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Static checks, unit tests, Fameverse laws, and production build
         run: npm run build
+
+      - name: Install Chromium for browser QA
+        run: npx playwright install --with-deps chromium
+
+      - name: Mobile browser smoke test
+        run: npm run test:e2e
