@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gifts } from '../../config/gifts.js'
+import { gifts, MAX_BETA_GIFT_QUANTITY } from '../../config/gifts.js'
 import { seekGiftThumbnail } from '../../utils/media.js'
 
 const QUICK_GIFT_AMOUNTS = [1, 5, 10]
@@ -103,6 +103,7 @@ export default function LiveGiftTray({
                       type="number"
                       inputMode="numeric"
                       min="1"
+                      max={MAX_BETA_GIFT_QUANTITY}
                       step="1"
                       value={amountValue}
                       aria-label={`Custom amount for ${gift.label}`}
