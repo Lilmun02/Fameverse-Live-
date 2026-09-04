@@ -29,6 +29,7 @@ export default function ProfileScreen({
   signOut,
   setTab,
   followNetwork,
+  gifterLevel = 1,
 }) {
   const openProfileMode = (mode) => {
     setPolicyPage(null)
@@ -54,6 +55,7 @@ export default function ProfileScreen({
         followingCount={followNetwork.followingCount}
         busyTargetId={followNetwork.busyTargetId}
         toggleFollow={followNetwork.toggleFollow}
+        gifterLevel={gifterLevel}
       />
     )
   }
@@ -83,13 +85,8 @@ export default function ProfileScreen({
 
   if (profileMode !== 'settings') return null
 
-  if (policyPage) {
-    return <LegalPage page={legalPages[policyPage]} onBack={() => setPolicyPage(null)} />
-  }
-
-  if (settingsDetail) {
-    return <SettingsDetail type={settingsDetail} email={session.user.email} onBack={() => setSettingsDetail(null)} />
-  }
+  if (policyPage) return <LegalPage page={legalPages[policyPage]} onBack={() => setPolicyPage(null)} />
+  if (settingsDetail) return <SettingsDetail type={settingsDetail} email={session.user.email} onBack={() => setSettingsDetail(null)} />
 
   return (
     <SettingsHome
