@@ -11,6 +11,18 @@ Fameverse is developed with AI assistance, but releases must be governed like a 
 3. **QA** — automated static checks, unit tests, Fameverse regression laws, production build, and browser smoke tests reject known-bad code automatically.
 4. **Release engineer** — promotes only a tested commit SHA. Source/CI/deployment state must never be described as physical-device verification.
 
+## Functional completeness law
+
+For every Fameverse core feature, major feature, or product update, a visible enabled function must actually function before that feature can be called complete.
+
+- Buttons, toggles, menus, forms, uploads, invites, follow controls, payment actions, and other enabled interactive controls must be wired to their intended real state/service/backend path.
+- A control may not exist only to look finished, trigger a pretend success toast, or point to placeholder logic.
+- If the real function is intentionally unavailable, the control must be omitted or visibly disabled with a truthful reason.
+- The happy path and the relevant failure path must be covered by automated checks where practical, then exercised in browser/device QA when hardware or platform behavior is involved.
+- Review explicitly checks for dead controls before promotion. A dead control on a core or major update is a release-blocking defect.
+
+In short: **if Fameverse presents it as a function, it shall function.**
+
 ## Automatic gate
 
 Every qualifying GitHub push runs the following sequence:
@@ -27,6 +39,7 @@ Every qualifying GitHub push runs the following sequence:
    - Discovery UX
    - Live identity
    - co-host / gifter foundation
+   - profile functionality
 5. Vite production build.
 6. Playwright mobile-browser smoke test.
 
@@ -45,6 +58,7 @@ Automation cannot prove hardware, operating-system, network, or acoustic behavio
 - premium gift video and original audio playback
 - 1x / 5x / 10x repeated gift playback
 - PWA update/reopen behavior
+- profile photo selection/upload and immediate rendered identity refresh
 
 A green GitHub gate means **source and automated verification passed**. It does not mean the feature is physically verified.
 

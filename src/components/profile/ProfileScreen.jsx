@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { legalPages } from '../../config/legal.js'
+import { loadGifterStats } from '../../services/gifterLevels.js'
 import CreatorStudio from './CreatorStudio.jsx'
 import ProfileEdit from './ProfileEdit.jsx'
 import ProfileView from './ProfileView.jsx'
@@ -29,8 +31,21 @@ export default function ProfileScreen({
   signOut,
   setTab,
   followNetwork,
-  gifterLevel = 1,
 }) {
+  const [gifterLevel, setGifterLevel] = useState(1)
+
+  useEffect(() => {
+    let active = true
+    loadGifterStats(profile?.id)
+      .then((stats) => {
+        if (active) setGifterLevel(Math.max(1, Number(stats.level || 1)))
+      })
+      .catch(() => {
+        if (active) setGifterLevel(1)
+      })
+    return () => { active = false }
+  }, [profile?.id])
+
   const openProfileMode = (mode) => {
     setPolicyPage(null)
     setSettingsDetail(null)
@@ -79,12 +94,14 @@ export default function ProfileScreen({
         setProfileDraft={setProfileDraft}
         saveProfile={saveProfile}
         profileBusy={profileBusy}
+        profile={profile}
+        initial={initial}
+        displayName={displayName}
       />
     )
   }
 
   if (profileMode !== 'settings') return null
-
   if (policyPage) return <LegalPage page={legalPages[policyPage]} onBack={() => setPolicyPage(null)} />
   if (settingsDetail) return <SettingsDetail type={settingsDetail} email={session.user.email} onBack={() => setSettingsDetail(null)} />
 

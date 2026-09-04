@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { uploadProfileAvatar } from '../services/profileAvatars.js'
 import { supabase } from '../services/supabase.js'
 import { cleanUsername } from '../utils/profile.js'
+
+const PROFILE_FIELDS = 'id, username, display_name, bio, avatar_url, created_at, updated_at'
 
 export function useAccount({ setToast, onBeforeSignOut }) {
   const [authReady, setAuthReady] = useState(false)
@@ -41,7 +44,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     const loadProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
+        .select(PROFILE_FIELDS)
         .eq('id', session.user.id)
         .single()
 
@@ -92,9 +95,9 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     if (error) setAuthMessage(error.message)
   }
 
-  const saveProfile = async (event) => {
-    event.preventDefault()
-    if (!session?.user?.id) return false
+  const saveProfile = async (event, avatarFile = null) => {
+    event?.preventDefault?.()
+    if (!session?.user?.id || profileBusy) return false
 
     const nextUsername = cleanUsername(profileDraft.username)
     if (profileDraft.username && nextUsername.length < 3) {
@@ -103,16 +106,30 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     }
 
     setProfileBusy(true)
+    let avatarUrl = profile?.avatar_url || null
+
+    if (avatarFile) {
+      try {
+        avatarUrl = await uploadProfileAvatar(session.user.id, avatarFile)
+      } catch (error) {
+        setProfileBusy(false)
+        setToast(error?.message || 'Could not upload profile photo')
+        return false
+      }
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .update({
         display_name: profileDraft.display_name.trim() || 'Fameverse User',
         username: nextUsername || null,
         bio: profileDraft.bio.trim().slice(0, 160),
+        avatar_url: avatarUrl,
       })
       .eq('id', session.user.id)
-      .select('id, username, display_name, bio, avatar_url, created_at, updated_at')
+      .select(PROFILE_FIELDS)
       .single()
+
     setProfileBusy(false)
 
     if (error) {
@@ -121,8 +138,12 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     }
 
     setProfile(data)
-    setProfileDraft({ display_name: data.display_name || '', username: data.username || '', bio: data.bio || '' })
-    setToast('Profile saved')
+    setProfileDraft({
+      display_name: data.display_name || '',
+      username: data.username || '',
+      bio: data.bio || '',
+    })
+    setToast(avatarFile ? 'Profile and photo saved' : 'Profile saved')
     return true
   }
 

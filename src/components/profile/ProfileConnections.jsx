@@ -8,8 +8,9 @@ export default function ProfileConnections({
 }) {
   if (!mode) return null
 
-  const items = mode === 'followers' ? followers : following
-  const title = mode === 'followers' ? 'Followers' : 'Following'
+  const friends = followers.filter((item) => item.relation?.key === 'friend')
+  const items = mode === 'followers' ? followers : mode === 'friends' ? friends : following
+  const title = mode === 'followers' ? 'Followers' : mode === 'friends' ? 'Friends' : 'Following'
 
   return (
     <section className="profile-connections" aria-label={title}>
@@ -27,7 +28,9 @@ export default function ProfileConnections({
             const initial = (item.display_name || item.username || 'F').trim().charAt(0).toUpperCase()
             return (
               <div className="profile-connection-row" key={item.id}>
-                <div className="avatar profile-connection-avatar">{initial}</div>
+                {item.avatar_url
+                  ? <img className="avatar profile-connection-avatar" src={item.avatar_url} alt="" />
+                  : <div className="avatar profile-connection-avatar">{initial}</div>}
                 <div className="profile-connection-copy">
                   <strong>{item.display_name || 'Fameverse User'}</strong>
                   <small>{item.username ? `@${item.username}` : '@newuser'}</small>
@@ -48,7 +51,7 @@ export default function ProfileConnections({
         <div className="profile-connections-empty">
           <span>◎</span>
           <strong>No {title.toLowerCase()} yet</strong>
-          <p>{mode === 'followers' ? 'People who follow you will appear here.' : 'People you follow will appear here.'}</p>
+          <p>{mode === 'followers' ? 'People who follow you will appear here.' : mode === 'friends' ? 'Mutual follows become Fameverse friends.' : 'People you follow will appear here.'}</p>
         </div>
       )}
     </section>

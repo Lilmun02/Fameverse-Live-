@@ -17,7 +17,7 @@ export default function ProfileView({
   gifterLevel = 1,
 }) {
   const [connectionsMode, setConnectionsMode] = useState(null)
-  const friendCount = followers.filter((person) => person.relation?.key === 'friend').length
+  const friends = followers.filter((person) => person.relation?.key === 'friend')
   const level = Math.max(1, Number(gifterLevel || 1))
 
   return (
@@ -31,7 +31,9 @@ export default function ProfileView({
 
       <div className="fv-profile-main">
         <div className="fv-profile-avatar-wrap">
-          {profile?.avatar_url ? <img className="fv-profile-avatar" src={profile.avatar_url} alt={`${displayName} profile`} /> : <div className="fv-profile-avatar fallback">{initial}</div>}
+          {profile?.avatar_url
+            ? <img className="fv-profile-avatar" src={profile.avatar_url} alt={`${displayName} profile`} />
+            : <div className="fv-profile-avatar fallback">{initial}</div>}
           <button type="button" className="fv-profile-avatar-edit" onClick={() => openProfileMode('edit')} aria-label="Edit profile photo">✎</button>
         </div>
 
@@ -39,7 +41,7 @@ export default function ProfileView({
           <h1>{displayName}</h1>
           <span>{username}</span>
           <div className="fv-profile-badges" aria-label="Fameverse identity badges">
-            <span className="fv-profile-level">✦ Lv. {level}</span>
+            <span className="fv-profile-level">✦ Gifter · Lv. {level}</span>
           </div>
           <p>{profile?.bio || 'Add a bio so people know what you are about.'}</p>
         </div>
@@ -47,10 +49,17 @@ export default function ProfileView({
         <div className="fv-profile-stats">
           <button type="button" onClick={() => setConnectionsMode('following')}><strong>{followingCount}</strong><span>Following</span></button>
           <button type="button" onClick={() => setConnectionsMode('followers')}><strong>{followerCount}</strong><span>Followers</span></button>
-          <div><strong>{friendCount}</strong><span>Friends</span></div>
+          <button type="button" onClick={() => setConnectionsMode('friends')}><strong>{friends.length}</strong><span>Friends</span></button>
         </div>
 
-        <ProfileConnections mode={connectionsMode} followers={followers} following={following} busyTargetId={busyTargetId} toggleFollow={toggleFollow} onClose={() => setConnectionsMode(null)} />
+        <ProfileConnections
+          mode={connectionsMode}
+          followers={followers}
+          following={following}
+          busyTargetId={busyTargetId}
+          toggleFollow={toggleFollow}
+          onClose={() => setConnectionsMode(null)}
+        />
 
         <div className="fv-profile-actions single">
           <button type="button" className="primary" onClick={() => openProfileMode('edit')}>Edit profile</button>
@@ -59,8 +68,8 @@ export default function ProfileView({
         <div className="fv-profile-identity-card">
           <div>
             <span>GIFTER IDENTITY</span>
-            <strong>Gifter Level {level}</strong>
-            <p>Your Fameverse gifting level stays attached to your identity as you support creators.</p>
+            <strong>Level {level}</strong>
+            <p>Your real Fameverse gifter level stays attached to your identity as you support creators.</p>
           </div>
           <div className="fv-profile-level-orb" aria-hidden="true">{level}</div>
         </div>
