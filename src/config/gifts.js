@@ -1,5 +1,8 @@
 export const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
 
+// Custom beta gift sends may be large for progression/load testing, but remain bounded.
+export const MAX_BETA_GIFT_QUANTITY = 100000
+
 export const gifts = [
   {
     id: 'welcome-to-fameverse',
