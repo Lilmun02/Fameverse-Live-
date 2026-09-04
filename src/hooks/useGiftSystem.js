@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { MAX_BETA_GIFT_QUANTITY } from '../config/gifts.js'
 import { loadCoins } from '../utils/pwa.js'
 
 const SIMPLE_GIFT_DURATION_MS = 1800
@@ -122,6 +123,10 @@ export function useGiftSystem({
     const normalizedQuantity = Number(quantity)
     if (!Number.isSafeInteger(normalizedQuantity) || normalizedQuantity < 1) {
       setToast('Enter a whole gift amount of 1 or more')
+      return false
+    }
+    if (normalizedQuantity > MAX_BETA_GIFT_QUANTITY) {
+      setToast(`Beta gift limit is ${MAX_BETA_GIFT_QUANTITY.toLocaleString()} per send`)
       return false
     }
 
