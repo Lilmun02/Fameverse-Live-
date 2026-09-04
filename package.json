@@ -19,7 +19,8 @@
     "check:identity": "node scripts/check-live-identity.mjs",
     "check:cohost-gifter": "node scripts/check-cohost-gifter.mjs",
     "check:profile": "node scripts/check-profile-functionality.mjs",
-    "check:laws": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && npm run check:identity && npm run check:cohost-gifter && npm run check:profile",
+    "check:gift-contract": "node scripts/check-gift-quantity-contract.mjs",
+    "check:laws": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && npm run check:identity && npm run check:cohost-gifter && npm run check:profile && npm run check:gift-contract",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run check:laws && vite build",
     "build": "npm run verify",
     "preview": "vite preview --host 0.0.0.0"
