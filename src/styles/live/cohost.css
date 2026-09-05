@@ -1,26 +1,46 @@
-/* Real one-guest co-host layout. Keeps existing Live chrome above both video panes. */
+/* Real one-guest co-host layout. Camera panes are bounded portrait cards, never full-height strips. */
+
+.mobile-live-shell.is-live.has-cohost,
+.fv-viewer-live.has-cohost {
+  --fv-cohost-pane-top: max(102px, calc(env(safe-area-inset-top) + 88px));
+  --fv-cohost-pane-height: min(calc(50vw * 16 / 9), 52dvh, 460px);
+}
 
 .mobile-live-shell.is-live.has-cohost .host-video.active,
 .mobile-live-shell.is-live.has-cohost .fam-camera-off {
+  top: var(--fv-cohost-pane-top);
+  bottom: auto;
   left: 0;
   right: auto;
   width: 50%;
+  height: var(--fv-cohost-pane-height);
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
 }
 
 .fv-viewer-live.has-cohost .fv-viewer-live-video {
   position: absolute;
-  inset: 0 auto 0 0;
+  top: var(--fv-cohost-pane-top);
+  bottom: auto;
+  left: 0;
+  right: auto;
   width: 50%;
-  height: 100%;
+  height: var(--fv-cohost-pane-height);
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
 }
 
-.fv-cohost-video-tile {
+.mobile-live-shell.is-live.has-cohost .fv-cohost-video-tile,
+.fv-viewer-live.has-cohost .fv-cohost-video-tile {
   position: absolute;
-  top: 0;
+  top: var(--fv-cohost-pane-top);
   right: 0;
-  bottom: 0;
+  bottom: auto;
   width: 50%;
+  height: var(--fv-cohost-pane-height);
+  aspect-ratio: 9 / 16;
   overflow: hidden;
+  border-left: 1px solid rgba(221, 176, 255, .18);
   background:
     radial-gradient(circle at 50% 34%, rgba(133, 52, 216, .22), transparent 45%),
     #08030d;
@@ -42,7 +62,7 @@
 .fv-cohost-video-tile > span {
   position: absolute;
   left: 10px;
-  top: max(108px, calc(env(safe-area-inset-top) + 92px));
+  top: 10px;
   max-width: calc(100% - 20px);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -200,6 +220,11 @@
 }
 
 @media (max-width: 360px) {
+  .mobile-live-shell.is-live.has-cohost,
+  .fv-viewer-live.has-cohost {
+    --fv-cohost-pane-top: max(96px, calc(env(safe-area-inset-top) + 82px));
+  }
+
   .fv-cohost-request-card,
   .fv-cohost-active-card {
     grid-template-columns: 40px minmax(0, 1fr);
