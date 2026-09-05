@@ -76,6 +76,7 @@ export default function ViewerLiveScreen({
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
   const cohostStream = cohost.localStream || cohost.remoteStream
   const isSelfCohost = Boolean(cohost.localStream)
+  const hasDirectHostAudio = Boolean(isSelfCohost && cohost.directHostStream?.getAudioTracks?.().length)
   const isFollowing = useMemo(
     () => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)),
     [followNetwork?.following, room?.host_user_id],
@@ -172,11 +173,18 @@ export default function ViewerLiveScreen({
   return (
     <section className={`fv-viewer-live ${cohostStream ? 'has-cohost' : ''}`} aria-label={`Watching ${hostLabel} live`}>
       <div className="fv-viewer-live-stage" onPointerDown={onTap}>
-        <video ref={videoRef} autoPlay playsInline className="fv-viewer-live-video" />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted={hasDirectHostAudio}
+          className="fv-viewer-live-video"
+        />
         <CohostVideoTile
           stream={cohostStream}
           label={cohost.activeCohost?.displayName || 'Co-host'}
           local={isSelfCohost}
+          audioReturnStream={isSelfCohost ? cohost.directHostStream : null}
         />
         <div className="fv-viewer-live-vignette" aria-hidden="true" />
 
