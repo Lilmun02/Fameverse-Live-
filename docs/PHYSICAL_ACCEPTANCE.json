@@ -1,0 +1,14 @@
+{
+  "cohost": {
+    "status": "pending",
+    "tested_commit": null,
+    "fingerprint": null,
+    "checks": {
+      "invite_accept": false,
+      "dual_camera": false,
+      "portrait_geometry": false,
+      "audio_no_echo_or_whistle": false,
+      "leave_cleanup": false
+    }
+  }
+}
