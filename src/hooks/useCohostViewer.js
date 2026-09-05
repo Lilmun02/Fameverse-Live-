@@ -33,6 +33,10 @@ function stopStream(stream) {
   stream?.getTracks?.().forEach((track) => track.stop())
 }
 
+function isHostTarget(targetId) {
+  return typeof targetId === 'string' && targetId.startsWith('host:')
+}
+
 export function useCohostViewer({
   roomId,
   viewerId,
@@ -56,6 +60,7 @@ export function useCohostViewer({
   const [status, setStatus] = useState('idle')
   const [localStream, setLocalStream] = useState(null)
   const [remoteStream, setRemoteStream] = useState(null)
+  const [directHostStream, setDirectHostStream] = useState(null)
   const [activeCohost, setActiveCohost] = useState(null)
   const [incomingInvite, setIncomingInvite] = useState(null)
 
@@ -82,6 +87,7 @@ export function useCohostViewer({
   const closeSourcePeers = useCallback(() => {
     sourcePeersRef.current.forEach(({ peer }) => closeCohostPeer(peer))
     sourcePeersRef.current.clear()
+    setDirectHostStream(null)
   }, [])
 
   const closeTargetPeer = useCallback(() => {
@@ -120,10 +126,15 @@ export function useCohostViewer({
           candidate: serializeCandidate(candidate),
         })
       },
+      onTrack: (event) => {
+        if (!isHostTarget(targetId)) return
+        setDirectHostStream(event.streams?.[0] || new MediaStream([event.track]))
+      },
       onConnectionStateChange: (state) => {
         if (state === 'failed' || state === 'closed') {
           const current = sourcePeersRef.current.get(targetId)
           if (current?.peer === peer) sourcePeersRef.current.delete(targetId)
+          if (isHostTarget(targetId)) setDirectHostStream(null)
         }
       },
     })
@@ -143,6 +154,7 @@ export function useCohostViewer({
     } catch {
       closeCohostPeer(peer)
       sourcePeersRef.current.delete(targetId)
+      if (isHostTarget(targetId)) setDirectHostStream(null)
     }
   }, [send, viewerId])
 
@@ -154,6 +166,7 @@ export function useCohostViewer({
       if (!normalized.includes(targetId)) {
         closeCohostPeer(peer)
         sourcePeersRef.current.delete(targetId)
+        if (isHostTarget(targetId)) setDirectHostStream(null)
       }
     })
     if (!localStreamRef.current) return
@@ -168,6 +181,8 @@ export function useCohostViewer({
         video: { facingMode: 'user' },
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       })
+      const audioTrack = stream.getAudioTracks()[0]
+      if (audioTrack && 'contentHint' in audioTrack) audioTrack.contentHint = 'speech'
       localStreamRef.current = stream
       setLocalStream(stream)
       changeStatus('live')
@@ -380,6 +395,7 @@ export function useCohostViewer({
     status,
     localStream,
     remoteStream,
+    directHostStream,
     activeCohost,
     incomingInvite,
     requestCohost,
