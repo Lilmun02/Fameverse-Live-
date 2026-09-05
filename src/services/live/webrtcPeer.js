@@ -23,6 +23,25 @@ export function attachLocalStream(peer, stream) {
   })
 }
 
+export async function syncLocalStream(peer, stream) {
+  if (!peer) return
+  const nextTracks = new Map((stream?.getTracks?.() || []).map((track) => [track.kind, track]))
+  const matchedKinds = new Set()
+
+  for (const sender of peer.getSenders()) {
+    const kind = sender.track?.kind
+    if (!kind) continue
+    const nextTrack = nextTracks.get(kind) || null
+    matchedKinds.add(kind)
+    if (sender.track !== nextTrack) await sender.replaceTrack(nextTrack)
+  }
+
+  if (!stream) return
+  stream.getTracks().forEach((track) => {
+    if (!matchedKinds.has(track.kind)) peer.addTrack(track, stream)
+  })
+}
+
 export async function createCohostOffer(peer) {
   const offer = await peer.createOffer()
   await peer.setLocalDescription(offer)
