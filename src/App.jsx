@@ -72,6 +72,7 @@ export default function App() {
     roomId: presence.room?.id,
     enabled: live.isLive && Boolean(presence.room?.id),
     viewerRoster: broadcast.viewerRoster,
+    stream: live.mediaStream,
     setToast,
   })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
