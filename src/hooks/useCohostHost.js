@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   acceptCohostOffer,
   addCohostIceCandidate,
+  attachLocalStream,
   closeCohostPeer,
   createCohostPeer,
+  syncLocalStream,
 } from '../services/live/webrtcPeer.js'
 import {
   createLiveRelayChannel,
@@ -21,13 +23,14 @@ function makeInviteId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export function useCohostHost({ roomId, enabled, viewerRoster = [], setToast }) {
+export function useCohostHost({ roomId, enabled, viewerRoster = [], stream = null, setToast }) {
   const channelRef = useRef(null)
   const peerRef = useRef(null)
   const offerIdRef = useRef(null)
   const pendingIceRef = useRef([])
   const activeRef = useRef(null)
   const viewerRosterRef = useRef(viewerRoster)
+  const hostStreamRef = useRef(stream)
   const [requests, setRequests] = useState([])
   const [pendingInvite, setPendingInvite] = useState(null)
   const [activeCohost, setActiveCohost] = useState(null)
@@ -63,6 +66,11 @@ export function useCohostHost({ roomId, enabled, viewerRoster = [], setToast }) 
     const targetIds = [targetId, ...viewerIds().filter((id) => id !== cohost.viewerId)]
     void send('cohost-peer-list', { viewerId: cohost.viewerId, targetIds })
   }, [roomId, send, targetId, viewerIds])
+
+  useEffect(() => {
+    hostStreamRef.current = stream
+    if (peerRef.current) void syncLocalStream(peerRef.current, stream).catch(() => {})
+  }, [stream])
 
   useEffect(() => {
     viewerRosterRef.current = viewerRoster
@@ -119,6 +127,7 @@ export function useCohostHost({ roomId, enabled, viewerRoster = [], setToast }) 
         },
       })
       peerRef.current = peer
+      attachLocalStream(peer, hostStreamRef.current)
 
       try {
         const answer = await acceptCohostOffer(peer, payload.offer)
