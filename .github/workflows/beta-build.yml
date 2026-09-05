@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -41,6 +43,10 @@ jobs:
 
       - name: Static checks, unit tests, Fameverse laws, and production build
         run: npm run build
+
+      - name: Release physical acceptance lock
+        if: startsWith(github.ref, 'refs/heads/beta/') || startsWith(github.ref, 'refs/heads/release/') || github.base_ref == 'beta/vercel-ready'
+        run: npm run check:release-physical
 
       - name: Install Chromium for browser QA
         run: npx playwright install --with-deps chromium
