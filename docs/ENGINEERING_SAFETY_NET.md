@@ -11,6 +11,16 @@ Fameverse is developed with AI assistance, but releases must be governed like a 
 3. **QA** — automated static checks, unit tests, Fameverse regression laws, production build, and browser smoke tests reject known-bad code automatically.
 4. **Release engineer** — promotes only a tested commit SHA. Source/CI/deployment state must never be described as physical-device verification.
 
+## Owner learning workflow
+
+Meaningful fixes and major feature work follow **Build it → Explain it → Verify it**.
+
+- **Build it:** implement the scoped change on the correct branch without unrelated redesign or feature creep.
+- **Explain it:** identify the controlling file(s), show what was broken, explain why it failed in plain language, and state exactly what changed.
+- **Verify it:** run the automated gate, then perform physical/browser testing when runtime, camera, microphone, realtime networking, payments, or device behavior is involved.
+- The explanation is part of the workflow so the owner can increasingly inspect, understand, and repair Fameverse directly rather than relying on unverified AI claims.
+- Teaching must not delay an active release-blocking repair. During a critical fix, finish the repair and acceptance path first, then review the code with the owner.
+
 ## Functional completeness law
 
 For every Fameverse core feature, major feature, or product update, a visible enabled function must actually function before that feature can be called complete.
