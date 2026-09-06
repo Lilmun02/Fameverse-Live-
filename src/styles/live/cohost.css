@@ -1,46 +1,36 @@
-/* Real one-guest co-host layout. Camera panes are bounded portrait cards, never full-height strips. */
+/* Fameverse one-guest co-host layout contract: two equal square camera boxes, side by side. */
 
 .mobile-live-shell.is-live.has-cohost,
 .fv-viewer-live.has-cohost {
-  --fv-cohost-pane-top: max(102px, calc(env(safe-area-inset-top) + 88px));
-  /* 50vw × 16/9 = 88.8889vw. Keep this precomputed: iOS Safari may reject * and / inside calc(). */
-  --fv-cohost-pane-height: min(88.8889vw, 52dvh, 460px);
+  --fv-cohost-square-top: max(102px, calc(env(safe-area-inset-top) + 88px));
+  --fv-cohost-square-size: min(50vw, 44dvh, 420px);
 }
 
 .mobile-live-shell.is-live.has-cohost .host-video.active,
-.mobile-live-shell.is-live.has-cohost .fam-camera-off {
-  top: var(--fv-cohost-pane-top);
-  bottom: auto;
-  left: 0;
-  right: auto;
-  width: 50%;
-  height: var(--fv-cohost-pane-height);
-  aspect-ratio: 9 / 16;
-  object-fit: cover;
-}
-
+.mobile-live-shell.is-live.has-cohost .fam-camera-off,
 .fv-viewer-live.has-cohost .fv-viewer-live-video {
-  position: absolute;
-  top: var(--fv-cohost-pane-top);
-  bottom: auto;
-  left: 0;
-  right: auto;
-  width: 50%;
-  height: var(--fv-cohost-pane-height);
-  aspect-ratio: 9 / 16;
-  object-fit: cover;
+  position: absolute !important;
+  top: var(--fv-cohost-square-top) !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  width: var(--fv-cohost-square-size) !important;
+  height: var(--fv-cohost-square-size) !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
 }
 
 .mobile-live-shell.is-live.has-cohost .fv-cohost-video-tile,
 .fv-viewer-live.has-cohost .fv-cohost-video-tile {
-  position: absolute;
-  top: var(--fv-cohost-pane-top);
-  right: 0;
-  bottom: auto;
-  width: 50%;
-  height: var(--fv-cohost-pane-height);
-  aspect-ratio: 9 / 16;
-  overflow: hidden;
+  position: absolute !important;
+  top: var(--fv-cohost-square-top) !important;
+  bottom: auto !important;
+  left: var(--fv-cohost-square-size) !important;
+  right: auto !important;
+  width: var(--fv-cohost-square-size) !important;
+  height: var(--fv-cohost-square-size) !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
   border-left: 1px solid rgba(221, 176, 255, .18);
   background:
     radial-gradient(circle at 50% 34%, rgba(133, 52, 216, .22), transparent 45%),
@@ -223,7 +213,7 @@
 @media (max-width: 360px) {
   .mobile-live-shell.is-live.has-cohost,
   .fv-viewer-live.has-cohost {
-    --fv-cohost-pane-top: max(96px, calc(env(safe-area-inset-top) + 82px));
+    --fv-cohost-square-top: max(96px, calc(env(safe-area-inset-top) + 82px));
   }
 
   .fv-cohost-request-card,
