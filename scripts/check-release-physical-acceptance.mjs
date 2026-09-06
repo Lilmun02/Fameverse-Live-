@@ -30,7 +30,7 @@ const cohost = manifest?.cohost || {}
 const requiredChecks = [
   'invite_accept',
   'dual_camera',
-  'portrait_geometry',
+  'square_geometry',
   'audio_no_echo_or_whistle',
   'leave_cleanup',
 ]
