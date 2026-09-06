@@ -6,7 +6,7 @@
     "checks": {
       "invite_accept": false,
       "dual_camera": false,
-      "portrait_geometry": false,
+      "square_geometry": false,
       "audio_no_echo_or_whistle": false,
       "leave_cleanup": false
     }
