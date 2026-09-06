@@ -1,37 +1,102 @@
 .fv-gifter-badge {
   --fv-gifter-accent: #a64cff;
+  --fv-gifter-accent-2: #efe5ff;
+  --fv-gifter-accent-3: #5c1ca9;
   --fv-gifter-glow: rgba(166, 76, 255, .24);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   max-width: 100%;
-  padding: 5px 10px 5px 6px;
-  border: 1px solid color-mix(in srgb, var(--fv-gifter-accent) 48%, transparent);
-  border-radius: 999px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--fv-gifter-accent) 18%, #121016), #0d0b11 72%);
-  box-shadow: 0 0 20px var(--fv-gifter-glow);
+  padding: 7px 12px 7px 7px;
+  border: 1px solid color-mix(in srgb, var(--fv-gifter-accent) 58%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--fv-gifter-accent) 12%, #17131e), #0c0a10 72%),
+    #0c0a10;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 10px 28px rgba(0,0,0,.24), 0 0 22px var(--fv-gifter-glow);
   color: #f8f4fb;
 }
 
 .fv-gifter-badge-mark {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--fv-gifter-accent) 70%, #fff 8%);
-  border-radius: 10px;
-  background: radial-gradient(circle at 34% 24%, color-mix(in srgb, var(--fv-gifter-accent) 72%, #fff 16%), var(--fv-gifter-accent) 54%, #24102f 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 0 14px var(--fv-gifter-glow);
-  color: #fff;
-  font-size: .88rem;
-  font-weight: 950;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--fv-gifter-accent) 62%, rgba(255,255,255,.14));
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 32% 18%, color-mix(in srgb, var(--fv-gifter-accent-2) 28%, transparent), transparent 38%),
+    linear-gradient(145deg, color-mix(in srgb, var(--fv-gifter-accent) 25%, #17131e), #0b0910 76%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 0 16px var(--fv-gifter-glow);
+  color: var(--fv-gifter-accent);
+}
+
+.fv-gifter-badge-svg {
+  width: 31px;
+  height: 31px;
+  overflow: visible;
+  filter: drop-shadow(0 0 5px var(--fv-gifter-glow));
+}
+
+.fv-gifter-badge-svg path,
+.fv-gifter-badge-svg ellipse,
+.fv-gifter-badge-svg circle {
+  vector-effect: non-scaling-stroke;
+}
+
+.fv-gifter-shield {
+  fill: color-mix(in srgb, var(--fv-gifter-accent-3) 54%, #0d0a13);
+  stroke: color-mix(in srgb, var(--fv-gifter-accent-2) 76%, #fff 24%);
+  stroke-width: 1.5;
+}
+
+.fv-gifter-shield-inner {
+  fill: color-mix(in srgb, var(--fv-gifter-accent) 28%, #17121d);
+  stroke: color-mix(in srgb, var(--fv-gifter-accent) 70%, #fff 18%);
+  stroke-width: 1;
+}
+
+.fv-gifter-core,
+.fv-gifter-crown path,
+.fv-gifter-jewel {
+  fill: color-mix(in srgb, var(--fv-gifter-accent-2) 84%, #fff 16%);
+  stroke: color-mix(in srgb, var(--fv-gifter-accent) 74%, #fff 20%);
+  stroke-width: .75;
+  stroke-linejoin: round;
+}
+
+.fv-gifter-jewel {
+  fill: color-mix(in srgb, var(--fv-gifter-accent) 82%, #fff 18%);
+}
+
+.fv-gifter-wings path {
+  fill: color-mix(in srgb, var(--fv-gifter-accent) 42%, #dfe7ff 58%);
+  stroke: color-mix(in srgb, var(--fv-gifter-accent-2) 72%, #fff 28%);
+  stroke-width: .9;
+  stroke-linejoin: round;
+}
+
+.fv-gifter-laurel path,
+.fv-gifter-rays path,
+.fv-gifter-orbit ellipse,
+.fv-gifter-orbit circle {
+  fill: none;
+  stroke: color-mix(in srgb, var(--fv-gifter-accent-2) 82%, #fff 18%);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fv-gifter-orbit circle {
+  fill: var(--fv-gifter-accent-2);
 }
 
 .fv-gifter-badge-copy {
   min-width: 0;
   display: grid;
-  gap: 1px;
+  gap: 2px;
   text-align: left;
 }
 
@@ -41,62 +106,72 @@
 .fv-gifter-badge-copy strong {
   overflow: hidden;
   color: #fff;
-  font-size: .63rem;
+  font-size: .67rem;
   font-weight: 950;
+  letter-spacing: .01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .fv-gifter-badge-copy small {
-  color: color-mix(in srgb, var(--fv-gifter-accent) 62%, #fff 38%);
-  font-size: .52rem;
-  font-weight: 900;
+  color: color-mix(in srgb, var(--fv-gifter-accent) 68%, #fff 32%);
+  font-size: .54rem;
+  font-weight: 950;
 }
 
-.fv-gifter-badge-small { min-height: 34px; }
-.fv-gifter-badge-small .fv-gifter-badge-mark { width: 25px; height: 25px; flex-basis: 25px; border-radius: 8px; font-size: .72rem; }
+.fv-gifter-badge-small { min-height: 34px; padding: 5px 9px 5px 5px; border-radius: 14px; gap: 7px; }
+.fv-gifter-badge-small .fv-gifter-badge-mark { width: 28px; height: 28px; flex-basis: 28px; border-radius: 9px; }
+.fv-gifter-badge-small .fv-gifter-badge-svg { width: 23px; height: 23px; }
 .fv-gifter-badge-small .fv-gifter-badge-copy strong { font-size: .58rem; }
 .fv-gifter-badge-small .fv-gifter-badge-copy small { font-size: .48rem; }
 
 .fv-gifter-badge-large {
-  min-width: 142px;
-  padding: 8px 12px 8px 8px;
-  border-radius: 18px;
+  min-width: 158px;
+  padding: 9px 14px 9px 9px;
+  border-radius: 20px;
 }
-.fv-gifter-badge-large .fv-gifter-badge-mark { width: 42px; height: 42px; flex-basis: 42px; border-radius: 13px; font-size: 1.08rem; }
-.fv-gifter-badge-large .fv-gifter-badge-copy strong { font-size: .72rem; }
-.fv-gifter-badge-large .fv-gifter-badge-copy small { font-size: .56rem; }
+.fv-gifter-badge-large .fv-gifter-badge-mark { width: 50px; height: 50px; flex-basis: 50px; border-radius: 16px; }
+.fv-gifter-badge-large .fv-gifter-badge-svg { width: 43px; height: 43px; }
+.fv-gifter-badge-large .fv-gifter-badge-copy strong { font-size: .75rem; }
+.fv-gifter-badge-large .fv-gifter-badge-copy small { font-size: .58rem; }
 
-.fv-gifter-badge[data-gifter-tier='spark'] { --fv-gifter-accent: #a64cff; --fv-gifter-glow: rgba(166,76,255,.24); }
-.fv-gifter-badge[data-gifter-tier='bronze'] { --fv-gifter-accent: #ba7047; --fv-gifter-glow: rgba(186,112,71,.2); }
-.fv-gifter-badge[data-gifter-tier='silver'] { --fv-gifter-accent: #c9d0dc; --fv-gifter-glow: rgba(201,208,220,.18); }
-.fv-gifter-badge[data-gifter-tier='gold'] { --fv-gifter-accent: #e7bd48; --fv-gifter-glow: rgba(231,189,72,.2); }
-.fv-gifter-badge[data-gifter-tier='platinum'] { --fv-gifter-accent: #9dbfff; --fv-gifter-glow: rgba(157,191,255,.2); }
-.fv-gifter-badge[data-gifter-tier='diamond'] { --fv-gifter-accent: #62d6ff; --fv-gifter-glow: rgba(98,214,255,.22); }
-.fv-gifter-badge[data-gifter-tier='royal'] { --fv-gifter-accent: #a861ff; --fv-gifter-glow: rgba(168,97,255,.25); }
-.fv-gifter-badge[data-gifter-tier='legendary'] { --fv-gifter-accent: #ff5fcf; --fv-gifter-glow: rgba(255,95,207,.24); }
-.fv-gifter-badge[data-gifter-tier='fame-icon'] { --fv-gifter-accent: #ffd45e; --fv-gifter-glow: rgba(255,212,94,.28); }
+.fv-gifter-badge[data-gifter-tier='spark'] { --fv-gifter-accent: #a64cff; --fv-gifter-accent-2: #f2ddff; --fv-gifter-accent-3: #471070; --fv-gifter-glow: rgba(166,76,255,.28); }
+.fv-gifter-badge[data-gifter-tier='bronze'] { --fv-gifter-accent: #c67b4b; --fv-gifter-accent-2: #ffd7b7; --fv-gifter-accent-3: #5f2d16; --fv-gifter-glow: rgba(198,123,75,.24); }
+.fv-gifter-badge[data-gifter-tier='silver'] { --fv-gifter-accent: #cfd5e1; --fv-gifter-accent-2: #ffffff; --fv-gifter-accent-3: #43495a; --fv-gifter-glow: rgba(207,213,225,.22); }
+.fv-gifter-badge[data-gifter-tier='gold'] { --fv-gifter-accent: #e9bd4e; --fv-gifter-accent-2: #fff1a7; --fv-gifter-accent-3: #6f4711; --fv-gifter-glow: rgba(233,189,78,.26); }
+.fv-gifter-badge[data-gifter-tier='platinum'] { --fv-gifter-accent: #a6bfff; --fv-gifter-accent-2: #eef2ff; --fv-gifter-accent-3: #3e4f82; --fv-gifter-glow: rgba(166,191,255,.26); }
+.fv-gifter-badge[data-gifter-tier='diamond'] { --fv-gifter-accent: #63d9ff; --fv-gifter-accent-2: #e6fbff; --fv-gifter-accent-3: #174d70; --fv-gifter-glow: rgba(99,217,255,.29); }
+.fv-gifter-badge[data-gifter-tier='royal'] { --fv-gifter-accent: #a861ff; --fv-gifter-accent-2: #ffd66b; --fv-gifter-accent-3: #4e176f; --fv-gifter-glow: rgba(168,97,255,.31); }
+.fv-gifter-badge[data-gifter-tier='legendary'] { --fv-gifter-accent: #ff5fcf; --fv-gifter-accent-2: #ffd36b; --fv-gifter-accent-3: #771c58; --fv-gifter-glow: rgba(255,95,207,.32); }
+.fv-gifter-badge[data-gifter-tier='fame-icon'] { --fv-gifter-accent: #c05cff; --fv-gifter-accent-2: #8ee9ff; --fv-gifter-accent-3: #3a145a; --fv-gifter-glow: rgba(188,92,255,.38); }
 
 .fv-gifter-identity-card {
   align-items: stretch;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(232,196,94,.34);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(49,22,64,.34), rgba(13,11,17,.92) 70%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 10px 28px rgba(0,0,0,.2);
 }
 
 .fv-gifter-progress-copy { min-width: 0; align-self: center; }
 .fv-gifter-progress-copy > span,
 .fv-gifter-progress-copy > strong { display: block; }
-.fv-gifter-progress-copy > span { color: #a67ac6; font-size: .5rem; font-weight: 950; letter-spacing: .11em; }
+.fv-gifter-progress-copy > span { color: #b990dc; font-size: .5rem; font-weight: 950; letter-spacing: .11em; }
 .fv-gifter-progress-copy > strong { margin-top: 4px; font-size: .84rem; }
-.fv-gifter-progress-copy > p { margin: 5px 0 0; color: #8f8996; font-size: .61rem; line-height: 1.4; }
+.fv-gifter-progress-copy > p { margin: 5px 0 0; color: #9a909f; font-size: .61rem; line-height: 1.4; }
 
 .fv-gifter-progress-track {
   width: 100%;
-  height: 6px;
+  height: 7px;
   margin-top: 9px;
   overflow: hidden;
+  border: 1px solid rgba(255,255,255,.07);
   border-radius: 999px;
-  background: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.055);
 }
 
 .fv-gifter-progress-track > span {
