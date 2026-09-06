@@ -15,7 +15,6 @@ const invitePrompt = read('src/components/live/CohostInvitePrompt.jsx')
 const cohostTile = read('src/components/live/CohostVideoTile.jsx')
 const liveScreen = read('src/components/live/LiveScreen.jsx')
 const viewerScreen = read('src/components/live/ViewerLiveScreen.jsx')
-const cohostCss = read('src/styles/live/cohost.css')
 const giftService = read('src/services/gifterLevels.js')
 const giftHook = read('src/hooks/useGifterLevel.js')
 const giftSystem = read('src/hooks/useGiftSystem.js')
@@ -62,7 +61,8 @@ assert.match(liveScreen, /<CohostVideoTile/, 'Host must render the real co-host 
 assert.match(liveScreen, /viewers=\{cohost\?\.viewers \|\| \[\]\}/, 'Host sheet must use the real connected viewer roster.')
 assert.match(liveScreen, /onInvite=\{cohost\?\.inviteViewer\}/, 'Host sheet Invite button must use the real invite handler.')
 assert.match(cohostTile, /video\.srcObject = stream/, 'Co-host tile must attach the actual MediaStream.')
-assert.match(cohostCss, /has-cohost[\s\S]*width:\s*50%/, 'One-guest co-host mode must use a split video layout.')
+assert.match(liveScreen, /cohostStream \? 'has-cohost' : ''/, 'Host Live must enter the co-host layout state when a real co-host stream exists.')
+assert.match(viewerScreen, /isSelfCohost \|\| remoteCohostStream/, 'Viewer Live must enter the co-host layout state from real co-host media state.')
 
 assert.match(migration, /create table if not exists public\.gifter_stats/, 'Gifter progression must persist per account.')
 assert.match(migration, /create table if not exists public\.gift_events/, 'Beta gifts must have a real server-side event ledger.')
@@ -90,4 +90,4 @@ assert.match(portalBattle, /1 minute[\s\S]*3 minutes[\s\S]*5 minutes/, 'Portal B
 assert.match(portalBattle, /purple flame/, 'Portal Battle must retain the purple flame portal intro concept.')
 assert.doesNotMatch(app, /Portal Battle|battle timer|battle score/i, 'Portal Battle must remain roadmap-only during this pass.')
 
-console.log('Co-host + Gifter checks passed: host invite roster, explicit viewer consent, real media relay, real premium combo playback, persistent Lv progression, and Portal Battle scope lock are active.')
+console.log('Co-host + Gifter checks passed: host invite roster, explicit viewer consent, real media relay, real premium combo playback, persistent Lv progression, and Portal Battle scope lock are active. Co-host geometry is owned by the dedicated physical contract and rendered-browser test.')
