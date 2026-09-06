@@ -35,6 +35,7 @@ import './styles/base/pwa-update.css'
 import './styles/live/profile-sheet.css'
 import './styles/live/cohost.css'
 import './styles/live/live-contract.css'
+import './styles/live/cohost-square-lock.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
