@@ -1,3 +1,5 @@
+import GifterBadge from '../profile/GifterBadge.jsx'
+
 function stopLiveTap(event) {
   event.stopPropagation()
 }
@@ -12,7 +14,15 @@ export default function LiveProfileSheet({ sheet, currentUserId, followNetwork }
   const profile = sheet.profile
   const isSelf = Boolean(currentUserId && sheet.userId === currentUserId)
   const isFollowing = Boolean(followNetwork?.following?.some((item) => item.id === sheet.userId))
+  const isFollower = Boolean(followNetwork?.followers?.some((item) => item.id === sheet.userId))
   const busy = followNetwork?.busyTargetId === sheet.userId
+  const relationshipLabel = isFollowing && isFollower
+    ? 'Friends'
+    : isFollowing
+      ? 'Following'
+      : isFollower
+        ? 'Follow Back'
+        : 'Follow'
 
   const toggleFollow = async () => {
     if (isSelf || !sheet.userId || busy) return
@@ -52,7 +62,7 @@ export default function LiveProfileSheet({ sheet, currentUserId, followNetwork }
             )}
             <strong>{profile.displayName}</strong>
             {profile.username && <small>@{profile.username}</small>}
-            <span className="fam-gifter-level">Lv. {Math.max(1, Number(profile.gifterLevel || 1))}</span>
+            <GifterBadge level={profile.gifterLevel} size="small" />
             {profile.bio ? <p>{profile.bio}</p> : null}
             <div className="fv-live-profile-counts">
               <span><b>{profile.followerCount}</b> Followers</span>
@@ -61,11 +71,11 @@ export default function LiveProfileSheet({ sheet, currentUserId, followNetwork }
             {!isSelf && (
               <button
                 type="button"
-                className={`fv-live-profile-follow ${isFollowing ? 'is-following' : ''}`}
+                className={`fv-live-profile-follow ${isFollowing ? 'is-following' : ''} ${isFollowing && isFollower ? 'is-friend' : ''}`}
                 disabled={busy}
                 onClick={toggleFollow}
               >
-                {busy ? '…' : isFollowing ? 'Following' : 'Follow'}
+                {busy ? '…' : relationshipLabel}
               </button>
             )}
           </div>
