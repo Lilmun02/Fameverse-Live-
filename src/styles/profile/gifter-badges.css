@@ -1,0 +1,116 @@
+.fv-gifter-badge {
+  --fv-gifter-accent: #a64cff;
+  --fv-gifter-glow: rgba(166, 76, 255, .24);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid color-mix(in srgb, var(--fv-gifter-accent) 48%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--fv-gifter-accent) 18%, #121016), #0d0b11 72%);
+  box-shadow: 0 0 20px var(--fv-gifter-glow);
+  color: #f8f4fb;
+}
+
+.fv-gifter-badge-mark {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--fv-gifter-accent) 70%, #fff 8%);
+  border-radius: 10px;
+  background: radial-gradient(circle at 34% 24%, color-mix(in srgb, var(--fv-gifter-accent) 72%, #fff 16%), var(--fv-gifter-accent) 54%, #24102f 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 0 14px var(--fv-gifter-glow);
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 950;
+}
+
+.fv-gifter-badge-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.fv-gifter-badge-copy strong,
+.fv-gifter-badge-copy small { display: block; }
+
+.fv-gifter-badge-copy strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: .63rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fv-gifter-badge-copy small {
+  color: color-mix(in srgb, var(--fv-gifter-accent) 62%, #fff 38%);
+  font-size: .52rem;
+  font-weight: 900;
+}
+
+.fv-gifter-badge-small { min-height: 34px; }
+.fv-gifter-badge-small .fv-gifter-badge-mark { width: 25px; height: 25px; flex-basis: 25px; border-radius: 8px; font-size: .72rem; }
+.fv-gifter-badge-small .fv-gifter-badge-copy strong { font-size: .58rem; }
+.fv-gifter-badge-small .fv-gifter-badge-copy small { font-size: .48rem; }
+
+.fv-gifter-badge-large {
+  min-width: 142px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 18px;
+}
+.fv-gifter-badge-large .fv-gifter-badge-mark { width: 42px; height: 42px; flex-basis: 42px; border-radius: 13px; font-size: 1.08rem; }
+.fv-gifter-badge-large .fv-gifter-badge-copy strong { font-size: .72rem; }
+.fv-gifter-badge-large .fv-gifter-badge-copy small { font-size: .56rem; }
+
+.fv-gifter-badge[data-gifter-tier='spark'] { --fv-gifter-accent: #a64cff; --fv-gifter-glow: rgba(166,76,255,.24); }
+.fv-gifter-badge[data-gifter-tier='bronze'] { --fv-gifter-accent: #ba7047; --fv-gifter-glow: rgba(186,112,71,.2); }
+.fv-gifter-badge[data-gifter-tier='silver'] { --fv-gifter-accent: #c9d0dc; --fv-gifter-glow: rgba(201,208,220,.18); }
+.fv-gifter-badge[data-gifter-tier='gold'] { --fv-gifter-accent: #e7bd48; --fv-gifter-glow: rgba(231,189,72,.2); }
+.fv-gifter-badge[data-gifter-tier='platinum'] { --fv-gifter-accent: #9dbfff; --fv-gifter-glow: rgba(157,191,255,.2); }
+.fv-gifter-badge[data-gifter-tier='diamond'] { --fv-gifter-accent: #62d6ff; --fv-gifter-glow: rgba(98,214,255,.22); }
+.fv-gifter-badge[data-gifter-tier='royal'] { --fv-gifter-accent: #a861ff; --fv-gifter-glow: rgba(168,97,255,.25); }
+.fv-gifter-badge[data-gifter-tier='legendary'] { --fv-gifter-accent: #ff5fcf; --fv-gifter-glow: rgba(255,95,207,.24); }
+.fv-gifter-badge[data-gifter-tier='fame-icon'] { --fv-gifter-accent: #ffd45e; --fv-gifter-glow: rgba(255,212,94,.28); }
+
+.fv-gifter-identity-card {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.fv-gifter-progress-copy { min-width: 0; align-self: center; }
+.fv-gifter-progress-copy > span,
+.fv-gifter-progress-copy > strong { display: block; }
+.fv-gifter-progress-copy > span { color: #a67ac6; font-size: .5rem; font-weight: 950; letter-spacing: .11em; }
+.fv-gifter-progress-copy > strong { margin-top: 4px; font-size: .84rem; }
+.fv-gifter-progress-copy > p { margin: 5px 0 0; color: #8f8996; font-size: .61rem; line-height: 1.4; }
+
+.fv-gifter-progress-track {
+  width: 100%;
+  height: 6px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+}
+
+.fv-gifter-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7930dc, #c963ff);
+  box-shadow: 0 0 14px rgba(166,76,255,.35);
+}
+
+.fv-live-profile-body > .fv-gifter-badge { margin-top: 2px; }
+.fv-live-profile-follow.is-friend { border-color: rgba(193,122,255,.48); background: rgba(103,43,155,.2); color: #e0bcff; }
+
+@media (max-width: 360px) {
+  .fv-gifter-identity-card { grid-template-columns: 1fr; }
+  .fv-gifter-badge-large { justify-self: start; }
+}
