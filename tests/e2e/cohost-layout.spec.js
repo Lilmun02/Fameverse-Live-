@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test'
 
 async function mountContractFixture(page, shellClass, hostMarkup) {
   await page.evaluate(({ shellClass, hostMarkup }) => {
-    document.querySelector('[data-cohost-contract-fixture]')?.remove()
-    const shell = document.createElement('section')
+    globalThis.document.querySelector('[data-cohost-contract-fixture]')?.remove()
+    const shell = globalThis.document.createElement('section')
     shell.dataset.cohostContractFixture = 'true'
     shell.className = shellClass
     shell.innerHTML = `
@@ -12,7 +12,7 @@ async function mountContractFixture(page, shellClass, hostMarkup) {
         <div class="fv-cohost-video-tile"><video></video><span>Co-host</span></div>
       </div>
     `
-    document.body.appendChild(shell)
+    globalThis.document.body.appendChild(shell)
   }, { shellClass, hostMarkup })
 }
 
