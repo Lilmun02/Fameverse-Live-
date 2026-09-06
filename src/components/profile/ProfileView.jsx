@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { FAMEVERSE_RELEASE } from '../../config/version.js'
+import { getGifterProgress } from '../../services/gifterLevels.js'
+import GifterBadge from './GifterBadge.jsx'
 import ProfileConnections from './ProfileConnections.jsx'
+
+const coinFormatter = new Intl.NumberFormat('en-US')
 
 export default function ProfileView({
   initial,
@@ -14,11 +18,12 @@ export default function ProfileView({
   followingCount,
   busyTargetId,
   toggleFollow,
-  gifterLevel = 1,
+  gifterStats,
 }) {
   const [connectionsMode, setConnectionsMode] = useState(null)
   const friends = followers.filter((person) => person.relation?.key === 'friend')
-  const level = Math.max(1, Number(gifterLevel || 1))
+  const totalCoinsSent = Math.max(0, Number(gifterStats?.totalCoinsSent || 0))
+  const progress = getGifterProgress(totalCoinsSent)
 
   return (
     <section className="panel full-panel profile-panel refined-profile fv-profile">
@@ -41,7 +46,7 @@ export default function ProfileView({
           <h1>{displayName}</h1>
           <span>{username}</span>
           <div className="fv-profile-badges" aria-label="Fameverse identity badges">
-            <span className="fv-profile-level">✦ Gifter · Lv. {level}</span>
+            <GifterBadge level={progress.level} size="small" />
           </div>
           <p>{profile?.bio || 'Add a bio so people know what you are about.'}</p>
         </div>
@@ -65,13 +70,27 @@ export default function ProfileView({
           <button type="button" className="primary" onClick={() => openProfileMode('edit')}>Edit profile</button>
         </div>
 
-        <div className="fv-profile-identity-card">
-          <div>
+        <div className="fv-profile-identity-card fv-gifter-identity-card">
+          <GifterBadge level={progress.level} size="large" />
+          <div className="fv-gifter-progress-copy">
             <span>GIFTER IDENTITY</span>
-            <strong>Level {level}</strong>
-            <p>Your real Fameverse gifter level stays attached to your identity as you support creators.</p>
+            <strong>Level {progress.level}</strong>
+            <p>
+              {progress.isMaxLevel
+                ? `${coinFormatter.format(totalCoinsSent)} gift coins sent · maximum gifter level reached.`
+                : `${coinFormatter.format(progress.coinsToNext)} gift coins until Lv. ${progress.nextLevel}.`}
+            </p>
+            <div
+              className="fv-gifter-progress-track"
+              role="progressbar"
+              aria-label={`Gifter level ${progress.level} progress`}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={Math.round(progress.progress * 100)}
+            >
+              <span style={{ width: `${Math.round(progress.progress * 100)}%` }} />
+            </div>
           </div>
-          <div className="fv-profile-level-orb" aria-hidden="true">{level}</div>
         </div>
 
         <button type="button" className="fv-studio-row" onClick={() => openProfileMode('studio')}>
