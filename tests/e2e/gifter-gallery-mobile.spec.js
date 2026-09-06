@@ -10,8 +10,10 @@ test('Gifter Badge QA gallery stays inside the mobile viewport', async ({ page }
   const cards = page.locator('.fv-gifter-gallery-grid article')
   await expect(cards).toHaveCount(9)
 
-  const viewportWidth = await page.evaluate(() => window.innerWidth)
-  const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+  const { viewportWidth, documentWidth } = await page.evaluate(() => ({
+    viewportWidth: globalThis.innerWidth,
+    documentWidth: globalThis.document.documentElement.scrollWidth,
+  }))
   expect(documentWidth).toBeLessThanOrEqual(viewportWidth + 1)
 
   const cardBoxes = await cards.evaluateAll((elements) => elements.map((element) => {
