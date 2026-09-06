@@ -37,6 +37,7 @@ import './styles/base/pwa-update.css'
 import './styles/live/profile-sheet.css'
 import './styles/live/live-contract.css'
 import './styles/live/cohost.css'
+import './styles/profile/gifter-gallery-mobile-lock.css'
 
 const params = new URLSearchParams(window.location.search)
 const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App

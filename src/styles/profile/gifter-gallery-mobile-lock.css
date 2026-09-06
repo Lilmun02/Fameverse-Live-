@@ -1,0 +1,43 @@
+.fv-gifter-gallery {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.fv-gifter-gallery > header,
+.fv-gifter-gallery-grid,
+.fv-gifter-gallery-contexts {
+  width: min(100%, 760px);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.fv-gifter-gallery-grid article,
+.fv-gifter-gallery-contexts > article,
+.fv-gifter-gallery .fv-gifter-badge {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .fv-gifter-gallery {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .fv-gifter-gallery-grid,
+  .fv-gifter-gallery-contexts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fv-gifter-gallery-grid article,
+  .fv-gifter-gallery-contexts > article,
+  .fv-gifter-badge-large {
+    width: 100%;
+  }
+
+  .fv-gifter-badge-copy strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
