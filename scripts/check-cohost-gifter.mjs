@@ -62,7 +62,7 @@ assert.match(liveScreen, /viewers=\{cohost\?\.viewers \|\| \[\]\}/, 'Host sheet 
 assert.match(liveScreen, /onInvite=\{cohost\?\.inviteViewer\}/, 'Host sheet Invite button must use the real invite handler.')
 assert.match(cohostTile, /video\.srcObject = stream/, 'Co-host tile must attach the actual MediaStream.')
 assert.match(liveScreen, /cohostStream \? 'has-cohost' : ''/, 'Host Live must enter the co-host layout state when a real co-host stream exists.')
-assert.match(viewerScreen, /isSelfCohost \|\| remoteCohostStream/, 'Viewer Live must enter the co-host layout state from real co-host media state.')
+assert.match(viewerScreen, /const cohostStream = cohost\.localStream \|\| cohost\.remoteStream[\s\S]*cohostStream \? 'has-cohost' : ''/, 'Viewer Live must enter the co-host layout state from the real local or remote co-host stream.')
 
 assert.match(migration, /create table if not exists public\.gifter_stats/, 'Gifter progression must persist per account.')
 assert.match(migration, /create table if not exists public\.gift_events/, 'Beta gifts must have a real server-side event ledger.')
