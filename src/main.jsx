@@ -4,6 +4,7 @@ import './features/feedback/beta-feedback.js'
 import './features/gifts/renderer/gift-engine.js'
 import { registerFameversePwaUpdates } from './services/app/pwaUpdate.js'
 import App from './App.jsx'
+import GifterBadgeGallery from './components/profile/GifterBadgeGallery.jsx'
 import './styles/base/global.css'
 import './styles/gifts/base.css'
 import './styles/live/core.css'
@@ -37,9 +38,12 @@ import './styles/live/profile-sheet.css'
 import './styles/live/live-contract.css'
 import './styles/live/cohost.css'
 
+const params = new URLSearchParams(window.location.search)
+const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <RootComponent />
   </React.StrictMode>
 )
 
