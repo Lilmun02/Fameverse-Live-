@@ -8,6 +8,8 @@ import LegalPage from '../settings/LegalPage.jsx'
 import SettingsDetail from '../settings/SettingsDetail.jsx'
 import SettingsHome from '../settings/SettingsHome.jsx'
 
+const EMPTY_GIFTER_STATS = Object.freeze({ totalCoinsSent: 0, giftCount: 0, level: 1 })
+
 export default function ProfileScreen({
   profileMode,
   setProfileMode,
@@ -32,16 +34,16 @@ export default function ProfileScreen({
   setTab,
   followNetwork,
 }) {
-  const [gifterLevel, setGifterLevel] = useState(1)
+  const [gifterStats, setGifterStats] = useState(EMPTY_GIFTER_STATS)
 
   useEffect(() => {
     let active = true
     loadGifterStats(profile?.id)
       .then((stats) => {
-        if (active) setGifterLevel(Math.max(1, Number(stats.level || 1)))
+        if (active) setGifterStats(stats)
       })
       .catch(() => {
-        if (active) setGifterLevel(1)
+        if (active) setGifterStats(EMPTY_GIFTER_STATS)
       })
     return () => { active = false }
   }, [profile?.id])
@@ -70,7 +72,7 @@ export default function ProfileScreen({
         followingCount={followNetwork.followingCount}
         busyTargetId={followNetwork.busyTargetId}
         toggleFollow={followNetwork.toggleFollow}
-        gifterLevel={gifterLevel}
+        gifterStats={gifterStats}
       />
     )
   }
