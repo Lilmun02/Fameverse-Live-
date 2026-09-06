@@ -62,11 +62,6 @@ export default function LiveChat({
                     ) : (
                       <strong>{item.user}</strong>
                     )}
-                    {item.badge && (
-                      <span className="fam-gifter-badge">
-                        <span aria-hidden="true">{item.badge.icon}</span> {item.badge.label}
-                      </span>
-                    )}
                   </div>
                   <span className="fam-chat-message">{item.text}</span>
                 </div>
