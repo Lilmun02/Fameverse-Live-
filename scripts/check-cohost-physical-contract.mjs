@@ -6,18 +6,21 @@ function read(path) {
 }
 
 const app = read('src/App.jsx')
+const main = read('src/main.jsx')
 const hostHook = read('src/hooks/useCohostHost.js')
 const viewerHook = read('src/hooks/useCohostViewer.js')
 const viewerScreen = read('src/components/live/ViewerLiveScreen.jsx')
 const tile = read('src/components/live/CohostVideoTile.jsx')
 const peer = read('src/services/live/webrtcPeer.js')
-const css = read('src/styles/live/cohost.css')
+const squareCss = read('src/styles/live/cohost-square-lock.css')
 
-assert.match(css, /--fv-cohost-pane-height:\s*min\(88\.8889vw,\s*52dvh,\s*460px\)/, 'Co-host panes must use Safari-safe height-bounded portrait dimensions.')
-assert.doesNotMatch(css, /--fv-cohost-pane-height:[^;]*(?:\*|\/\s*9)/, 'Co-host pane height must not rely on unsupported CSS multiplication/division.')
-assert.match(css, /aspect-ratio:\s*9\s*\/\s*16/, 'Co-host camera panes must preserve a 9:16 portrait ratio.')
-assert.match(css, /bottom:\s*auto/, 'Co-host panes must not stretch from top to bottom of the viewport.')
-assert.doesNotMatch(css, /\.fv-cohost-video-tile\s*\{[\s\S]{0,220}bottom:\s*0/, 'Co-host tile must never return to a full-height vertical strip.')
+assert.match(main, /import '\.\/styles\/live\/live-contract\.css'[\s\S]*import '\.\/styles\/live\/cohost-square-lock\.css'/, 'Square co-host contract must load after every other Live layout stylesheet.')
+assert.match(squareCss, /--fv-cohost-square-size:\s*min\(50vw,\s*44dvh,\s*420px\)/, 'Each co-host camera box must use the shared square size token.')
+assert.match(squareCss, /width:\s*var\(--fv-cohost-square-size\)\s*!important;[\s\S]*height:\s*var\(--fv-cohost-square-size\)\s*!important;/, 'Co-host box width and height must be identical.')
+assert.match(squareCss, /aspect-ratio:\s*1\s*\/\s*1\s*!important/, 'Co-host cameras must be square, never portrait picture frames.')
+assert.doesNotMatch(squareCss, /aspect-ratio:\s*9\s*\/\s*16/, 'Final co-host layout must never restore 9:16 portrait panes.')
+assert.match(squareCss, /left:\s*var\(--fv-cohost-square-size\)\s*!important/, 'Co-host square must sit immediately beside the host square.')
+assert.match(squareCss, /bottom:\s*auto\s*!important/, 'Square camera boxes must not stretch to the bottom of the viewport.')
 
 assert.match(app, /stream:\s*live\.mediaStream/, 'Host co-host controller must receive the current real Live stream.')
 assert.match(hostHook, /attachLocalStream\(peer, hostStreamRef\.current\)/, 'Host must return its media on the direct co-host peer.')
@@ -31,4 +34,4 @@ assert.match(tile, /COHOST_RETURN_VOLUME\s*=\s*0\.32/, 'Direct host return must 
 assert.match(tile, /FEEDBACK_MUTE_MS\s*=\s*1400/, 'Feedback guard mute window must remain enabled.')
 assert.match(tile, /feedbackLike[\s\S]*audio\.volume\s*=\s*0/, 'Feedback guard must be able to cut the direct return when a sustained tonal loop is detected.')
 
-console.log('Co-host physical contract passed: Safari-safe portrait geometry, direct duplex audio return, relay muting, and feedback guard are hard-locked.')
+console.log('Co-host physical contract passed: square side-by-side geometry, direct duplex audio return, relay muting, and feedback guard are hard-locked.')
