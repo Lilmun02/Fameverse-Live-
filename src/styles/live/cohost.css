@@ -3,7 +3,8 @@
 .mobile-live-shell.is-live.has-cohost,
 .fv-viewer-live.has-cohost {
   --fv-cohost-pane-top: max(102px, calc(env(safe-area-inset-top) + 88px));
-  --fv-cohost-pane-height: min(calc(50vw * 16 / 9), 52dvh, 460px);
+  /* 50vw × 16/9 = 88.8889vw. Keep this precomputed: iOS Safari may reject * and / inside calc(). */
+  --fv-cohost-pane-height: min(88.8889vw, 52dvh, 460px);
 }
 
 .mobile-live-shell.is-live.has-cohost .host-video.active,
