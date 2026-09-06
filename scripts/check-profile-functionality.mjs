@@ -15,11 +15,11 @@ const rules = [
   },
   {
     file: 'src/components/profile/ProfileScreen.jsx',
-    required: ['loadGifterStats', 'setGifterLevel', 'gifterLevel={gifterLevel}'],
+    required: ['loadGifterStats', 'setGifterStats', 'gifterStats={gifterStats}'],
   },
   {
     file: 'src/components/profile/ProfileView.jsx',
-    required: ["setConnectionsMode('following')", "setConnectionsMode('followers')", "setConnectionsMode('friends')", "openProfileMode('edit')", "openProfileMode('settings')", "openProfileMode('studio')"],
+    required: ["setConnectionsMode('following')", "setConnectionsMode('followers')", "setConnectionsMode('friends')", "openProfileMode('edit')", "openProfileMode('settings')", "openProfileMode('studio')", '<GifterBadge'],
   },
   {
     file: 'src/components/profile/ProfileConnections.jsx',
