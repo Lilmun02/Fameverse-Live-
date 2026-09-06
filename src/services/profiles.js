@@ -1,3 +1,4 @@
+import { computeGifterLevel } from './gifterLevels.js'
 import { supabase } from './supabase.js'
 
 const LIVE_PROFILE_FIELDS = 'id, username, display_name, bio, avatar_url'
@@ -21,12 +22,14 @@ export async function loadLiveIdentity(userId) {
   ] = await Promise.all([
     supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', userId),
     supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', userId),
-    supabase.from('gifter_stats').select('level').eq('user_id', userId).maybeSingle(),
+    supabase.from('gifter_stats').select('total_coins_sent, level').eq('user_id', userId).maybeSingle(),
   ])
 
   if (followerError) throw followerError
   if (followingError) throw followingError
   if (gifterError) throw gifterError
+
+  const totalCoinsSent = Math.max(0, Number(gifterStats?.total_coins_sent || 0))
 
   return {
     id: profile.id,
@@ -36,6 +39,7 @@ export async function loadLiveIdentity(userId) {
     avatarUrl: profile.avatar_url || null,
     followerCount: followerCount || 0,
     followingCount: followingCount || 0,
-    gifterLevel: Math.max(1, Number(gifterStats?.level || 1)),
+    totalCoinsSent,
+    gifterLevel: computeGifterLevel(totalCoinsSent),
   }
 }
