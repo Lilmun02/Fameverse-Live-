@@ -68,97 +68,114 @@
   backdrop-filter: blur(10px);
 }
 
-.fv-cohost-sheet { max-height: min(72dvh, 570px); overflow-y: auto; }
+/* FAM Co-host V1: co-host management lives inside the one adaptive host F menu. */
+.fam-live-control-menu.has-cohost-controls {
+  width: min(286px, calc(100vw - 28px));
+  max-height: min(68dvh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
 
-.fv-cohost-section-title {
-  margin: 14px 2px 7px;
-  color: #a994b6;
-  font-size: .55rem;
+.fam-live-control-menu.has-cohost-controls::-webkit-scrollbar { display: none; }
+
+.fam-live-control-section-label {
+  padding: 8px 10px 6px;
+  color: #9d86ad;
+  font-size: .52rem;
   font-weight: 950;
   letter-spacing: .11em;
 }
 
-.fv-cohost-request-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
+.fam-live-control-divider {
+  height: 1px;
+  margin: 6px 7px 2px;
+  background: rgba(255,255,255,.07);
 }
 
-.fv-cohost-request-card,
-.fv-cohost-active-card {
+.fam-live-cohost-list { display: grid; gap: 6px; }
+
+.fam-live-cohost-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 9px;
-  padding: 10px;
-  border: 1px solid rgba(193, 122, 255, .16);
-  border-radius: 15px;
-  background: rgba(255,255,255,.035);
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid rgba(194, 126, 255, .12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
 }
 
-.fv-cohost-request-avatar {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(197, 123, 255, .3);
-  border-radius: 50%;
-  background: linear-gradient(145deg, #8735dc, #3a1454);
-  color: #fff;
-  object-fit: cover;
-  font-size: .75rem;
-  font-weight: 950;
-}
+.fam-live-cohost-row > div:nth-child(2) { min-width: 0; }
 
-.fv-cohost-request-card > div:nth-child(2),
-.fv-cohost-active-card > div { min-width: 0; }
-
-.fv-cohost-request-card strong,
-.fv-cohost-request-card small,
-.fv-cohost-active-card strong,
-.fv-cohost-active-card small { display: block; }
-
-.fv-cohost-request-card strong,
-.fv-cohost-active-card strong {
+.fam-live-cohost-row strong,
+.fam-live-cohost-row small {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: .72rem;
 }
 
-.fv-cohost-request-card small,
-.fv-cohost-active-card small {
-  margin-top: 3px;
-  color: #9e90a7;
-  font-size: .56rem;
+.fam-live-cohost-row strong { color: #f5eaff; font-size: .66rem; }
+.fam-live-cohost-row small { margin-top: 2px; color: #97899f; font-size: .51rem; }
+
+.fam-live-cohost-avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(202, 133, 255, .26);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #7730cf, #38124f);
+  color: #fff;
+  object-fit: cover;
+  font-size: .62rem;
+  font-weight: 950;
 }
 
-.fv-cohost-request-actions { display: flex; gap: 5px; }
-
-.fv-cohost-request-actions button,
-.fv-cohost-active-card > button {
-  min-height: 34px;
+.fam-live-control-menu.has-cohost-controls .fam-live-cohost-row > button,
+.fam-live-control-menu.has-cohost-controls .fam-live-cohost-actions button {
+  width: auto;
+  min-height: 32px;
   padding: 0 9px;
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.09);
   border-radius: 999px;
-  background: rgba(255,255,255,.04);
-  color: #c8bacf;
-  font-size: .54rem;
+  background: rgba(255,255,255,.035);
+  color: #cbbdd2;
+  font-size: .51rem;
   font-weight: 900;
 }
 
-.fv-cohost-request-actions .is-accept {
-  border-color: rgba(177, 87, 255, .36);
-  background: linear-gradient(135deg, #7530d8, #a543ed);
+.fam-live-control-menu.has-cohost-controls .fam-live-cohost-row > button.is-primary,
+.fam-live-control-menu.has-cohost-controls .fam-live-cohost-actions button.is-primary {
+  border-color: rgba(175, 84, 255, .34);
+  background: linear-gradient(135deg, #7130ca, #9f40e7);
   color: #fff;
 }
 
-.fv-cohost-active-card > button.is-danger {
-  border-color: rgba(255, 78, 112, .24);
-  color: #ff8fa6;
+.fam-live-control-menu.has-cohost-controls .fam-live-cohost-row > button.is-danger {
+  border-color: rgba(255, 83, 118, .2);
+  color: #ff91a7;
 }
 
+.fam-live-cohost-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fam-live-cohost-empty {
+  margin: 0 4px 4px;
+  padding: 10px;
+  border: 1px dashed rgba(185, 121, 233, .15);
+  border-radius: 11px;
+  color: #8f8297;
+  font-size: .55rem;
+  line-height: 1.4;
+}
+
+/* Viewer invite prompt stays visible and explicit before camera/microphone permission is used. */
 .fv-cohost-invite-backdrop { z-index: 1200; }
 
 .fv-cohost-invite-prompt {
@@ -216,17 +233,20 @@
     --fv-cohost-square-top: max(96px, calc(env(safe-area-inset-top) + 82px));
   }
 
-  .fv-cohost-request-card,
-  .fv-cohost-active-card {
-    grid-template-columns: 40px minmax(0, 1fr);
+  .fam-live-control-menu.has-cohost-controls {
+    width: min(274px, calc(100vw - 20px));
   }
 
-  .fv-cohost-request-actions,
-  .fv-cohost-active-card > button {
+  .fam-live-cohost-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .fam-live-cohost-row > button,
+  .fam-live-cohost-actions {
     grid-column: 1 / -1;
     justify-self: stretch;
   }
 
-  .fv-cohost-request-actions button,
-  .fv-cohost-active-card > button { flex: 1; }
+  .fam-live-cohost-row > button { width: 100% !important; }
+  .fam-live-cohost-actions button { flex: 1; }
 }

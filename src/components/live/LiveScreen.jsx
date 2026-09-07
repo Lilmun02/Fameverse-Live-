@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
-import CohostSheet from './CohostSheet.jsx'
 import CohostVideoTile from './CohostVideoTile.jsx'
 import EndLiveSummaryPanel from './EndLiveSummaryPanel.jsx'
 import LiveActions from './LiveActions.jsx'
@@ -30,7 +29,6 @@ export default function LiveScreen({
   sessionSummary,
   premiumRepeat,
   setGiftTrayOpen,
-  setCohostTrayOpen,
   micMuted,
   toggleMic,
   toggleCamera,
@@ -44,7 +42,6 @@ export default function LiveScreen({
   coins,
   sendGift,
   addTestCoins,
-  cohostTrayOpen,
   cohost,
   presenceState,
   currentUserId,
@@ -117,7 +114,7 @@ export default function LiveScreen({
 
       <LiveActions
         premiumRepeat={premiumRepeat}
-        setCohostTrayOpen={setCohostTrayOpen}
+        cohost={cohost}
         micMuted={micMuted}
         toggleMic={toggleMic}
         cameraOff={cameraOff}
@@ -150,20 +147,6 @@ export default function LiveScreen({
       />
 
       <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
-      <CohostSheet
-        open={cohostTrayOpen}
-        onClose={() => setCohostTrayOpen(false)}
-        shareRoom={shareRoom}
-        viewers={cohost?.viewers || []}
-        requests={cohost?.requests || []}
-        pendingInvite={cohost?.pendingInvite || null}
-        activeCohost={cohost?.activeCohost || null}
-        onInvite={cohost?.inviteViewer}
-        onCancelInvite={cohost?.cancelInvite}
-        onAccept={cohost?.acceptRequest}
-        onDecline={cohost?.declineRequest}
-        onEndCohost={cohost?.endCohost}
-      />
     </section>
   )
 }
