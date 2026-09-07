@@ -46,7 +46,7 @@ assert.doesNotMatch(viewer, /setTab\(|navigate\(/, 'Live profile interaction mus
 
 assert.match(sheetHook, /loadLiveIdentity/, 'Profile sheet must load real profile rows.')
 assert.match(profiles, /from\('profiles'\)/, 'Profile data must come from the real profiles table.')
-assert.match(profiles, /from\('follows'\)/, 'Follower/following counts must come from real follows.')
+assert.match(profiles, /rpc\('get_profile_social_counts'/, 'Follower, following, and friend counts must come from the backend social-count authority.')
 assert.match(sheet, /followNetwork\?\.toggleFollow/, 'Profile sheet Follow must reuse the real follow network.')
 assert.match(sheet, /isSelf/, 'Profile sheet must block self-follow.')
 assert.match(follows, /from\('follows'\)\.insert/, 'Follow writes must remain on the existing follows service.')
@@ -61,4 +61,4 @@ assert.doesNotMatch(viewer, /fv-live-stage-brand|fv-live-fall/, 'Identity work m
 assert.match(viewer, /className="is-fame"><b aria-hidden="true">F<\/b>/, 'Identity work must not replace the approved Fame stat F icon.')
 assert.ok(main.indexOf("./styles/live/profile-sheet.css") < main.indexOf("./styles/live/live-contract.css"), 'Final Live contract must still load after the profile sheet CSS.')
 
-console.log('Live identity checks passed: real tappable profiles, real follows, real gift level source, and no scope-creep redesign.')
+console.log('Live identity checks passed: real tappable profiles, backend-authoritative social counts, real follow actions, real gift level source, and no scope-creep redesign.')
