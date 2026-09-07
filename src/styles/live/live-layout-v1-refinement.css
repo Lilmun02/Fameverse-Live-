@@ -48,7 +48,7 @@
 .mobile-live-shell.is-live.has-cohost,
 .fv-viewer-live.has-cohost {
   --fv-cohost-edge: 7px;
-  --fv-cohost-gap: 6px;
+  --fv-cohost-gap: 2px;
   --fv-cohost-square-top: max(106px, calc(env(safe-area-inset-top) + 92px));
   --fv-cohost-square-size: min(calc((100vw - (var(--fv-cohost-edge) * 2) - var(--fv-cohost-gap)) / 2), 43dvh, 420px);
 }
@@ -110,7 +110,7 @@
   .mobile-live-shell.is-live.has-cohost,
   .fv-viewer-live.has-cohost {
     --fv-cohost-edge: 5px;
-    --fv-cohost-gap: 5px;
+    --fv-cohost-gap: 2px;
     --fv-cohost-square-top: max(100px, calc(env(safe-area-inset-top) + 86px));
   }
 

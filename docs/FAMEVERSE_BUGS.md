@@ -34,9 +34,9 @@ This law exists to catch bug cousins while the responsible system is already und
 
 ## Live statistics
 
-- Total tracked: **8**
+- Total tracked: **9**
 - Open: **0**
-- Fix candidates: **0**
+- Fix candidates: **1**
 - Locked: **6**
 - Reopened right now: **0**
 - Legacy recheck: **2**
@@ -54,6 +54,7 @@ This law exists to catch bug cousins while the responsible system is already und
 | FVB-006 | LOCKED | Low | Live profile | Host/self in-Live profile displayed FameTaps even though the host does not want that metric shown by default. | 2026-09-07 | `6ccd93357f915e9e99879d6f75244a66cce67e95` | Live profile law requires self profile to hide FameTaps while preserving Gifts Sent. | PASS — owner approved the final self-profile contract. | 0 |
 | FVB-007 | LOCKED | High | Main profile / gifter identity | Main profile was visually dry and did not expose the approved gifter level, tier progression, next unlock requirements, or locked/blurred future badges; privileged Owner/Admin identity also suppressed the progression presentation. | 2026-09-07 | `2aea5c08a9427a12dd6917f429d000ead5ae3925` | Gifter badge law now requires the saved nine-tier ladder, exact coin curve, blurred future artwork, next-level requirement, Gifts Sent, and Followers/Following/Friends order. | PASS — user physically accepted Profile Gifter Progress V1 on iPhone. | 0 |
 | FVB-008 | LOCKED | Medium | Gift tray / mobile layout | Selected gift / Custom / Send footer could look cramped and become partially clipped at the bottom of the tray on iPhone browser chrome. | 2026-09-07 | `d0fb59428b5430f67bce773554022d6cc9e60895` | Tray is a shrink-safe flex column, gift grid shrinks/scrolls first, action footer reserves space, and safe-area bottom breathing room is enforced. | PASS — iPhone tray footer remained visible and uncramped. | 0 |
+| FVB-009 | FIX_CANDIDATE | Medium | Co-host / mobile layout | Preview-approved Live Layout V1 refinement introduced a 5px rendered gap between the two co-host squares, violating the existing ≤2px side-by-side geometry lock. | 2026-09-07 | pending follow-up SHA | `tests/e2e/cohost-layout.spec.js` requires equal 1:1 panes and ≤2px horizontal separation for host and viewer layouts. | Automated browser recheck pending; physical co-host geometry still required. | 0 |
 
 ## FVB-004 recurrence trace
 
@@ -82,6 +83,20 @@ The tray now uses a flex column, the gift grid is the shrinkable/scrollable regi
 
 **LOCK**  
 The gift-tray resilience law guards footer geometry. Physical iPhone tray QA passed at `d0fb59428b5430f67bce773554022d6cc9e60895`; FVB-008 is locked.
+
+## FVB-009 trace
+
+**VERIFY**  
+Engineering Gate run `34169027380` rendered both host and viewer co-host pairs with a 5px horizontal separation. The existing browser contract allows no more than 2px.
+
+**TRACE**  
+The visual refinement added `--fv-cohost-gap: 6px` and a 5px mobile override. The underlying equal-square layout remained correct; only the new decorative spacing violated the established geometry lock.
+
+**SPRAY**  
+Keep the approved equal-square refinement, but constrain the host/co-host separation to 2px on all mobile widths instead of weakening the regression test.
+
+**LOCK**  
+`tests/e2e/cohost-layout.spec.js` remains unchanged and must pass for both host and viewer. Physical dual-device square geometry remains required before FVB-009 can become `LOCKED`.
 
 ## Reporting rule
 
