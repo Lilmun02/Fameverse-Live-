@@ -11,6 +11,7 @@ const giftHook = read('src/hooks/useGifterLevel.js')
 const walletHook = read('src/hooks/useGiftWallet.js')
 const walletService = read('src/services/giftWallet.js')
 const gifterService = read('src/services/gifterLevels.js')
+const giftEngine = read('src/features/gifts/renderer/gift-engine.js')
 const pwa = read('src/utils/pwa.js')
 const migration = read('supabase/migrations/20260906_add_authoritative_beta_wallet.sql')
 
@@ -37,11 +38,18 @@ assert.doesNotMatch(giftHook, /predicted|optimistic/i, 'Gifter progression must 
 assert.match(giftSystem, /await recordGifterGift/, 'Gift UI must wait for the backend transaction before displaying accepted gift activity.')
 assert.match(giftSystem, /sendQueueRef/, 'Rapid gift sends must be serialized instead of racing wallet debits.')
 assert.match(giftSystem, /setWalletBalance\?\.\(nextBalance\)/, 'Gift UI must adopt the balance returned by the backend transaction.')
+assert.match(giftSystem, /FameverseGiftEngine\?\.prepare\?\.\(gift\.rendererId\)/, 'Premium gift media must begin buffering on the sender gesture before the backend round trip.')
 assert.doesNotMatch(giftSystem, /localStorage|loadCoins/, 'Gift balance must never be read from or written to browser localStorage.')
+
+assert.match(giftEngine, /const preparedGiftVideos = new Map\(\)/, 'Premium video elements must be reused instead of recreated for every gift.')
+assert.match(giftEngine, /prepare:\s*prepareGiftMedia/, 'Gift engine must expose an explicit premium-media warmup path.')
+assert.doesNotMatch(giftEngine, /removeAttribute\('src'\)/, 'Stopping one premium gift must not discard the buffered media source.')
+assert.match(giftEngine, /activeGift\.video\.currentTime = 0/, 'Reusable premium media must rewind cleanly between queued gifts.')
+
 assert.doesNotMatch(pwa, /loadCoins|fameverse-owner-test-coins/, 'Legacy local test-wallet helpers must stay retired.')
 assert.match(app, /useGiftWallet/, 'The signed-in app must load its authoritative Supabase wallet.')
 assert.match(app, /coins:\s*wallet\.balance/, 'Gift UI must display the Supabase wallet balance.')
 assert.match(app, /setWalletBalance:\s*wallet\.applyBalance/, 'Server gift confirmations must update the shared wallet state.')
 assert.match(app, /addTestCoins:\s*wallet\.refill/, 'Beta refill control must be wired to the server wallet RPC.')
 
-console.log('[gift-backend-law] Supabase wallet, append-only ledger, atomic debit, server-confirmed progression, and no client-authoritative coins are locked')
+console.log('[gift-backend-law] Supabase wallet, atomic debit, server-confirmed progression, serialized sends, and buffered premium-media reuse are locked')

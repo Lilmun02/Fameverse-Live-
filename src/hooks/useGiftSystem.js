@@ -210,6 +210,10 @@ export function useGiftSystem({
       return Promise.resolve(false)
     }
 
+    if (gift?.rendererId) {
+      window.FameverseGiftEngine?.prepare?.(gift.rendererId)
+    }
+
     const task = sendQueueRef.current.then(() => commitGift(gift, normalizedQuantity, keepTrayOpen))
     sendQueueRef.current = task.catch(() => false)
     return task

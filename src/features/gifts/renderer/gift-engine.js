@@ -21,9 +21,50 @@ const giftRegistry = Object.freeze({
 
 let activeGift = null
 let giftQueue = []
+const preparedGiftVideos = new Map()
 
 function isLiveActive() {
   return Boolean(document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'))
+}
+
+function findGiftConfig(giftKey) {
+  return giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey) || null
+}
+
+function createPreparedVideo(config) {
+  const video = document.createElement('video')
+  video.className = 'fv-gift-video'
+  video.src = config.video
+  video.preload = 'auto'
+  video.playsInline = true
+  video.autoplay = false
+  video.controls = false
+  video.loop = false
+  video.muted = false
+  video.volume = 0.82
+  video.setAttribute('playsinline', '')
+  video.setAttribute('webkit-playsinline', '')
+  return video
+}
+
+function getPreparedVideo(config) {
+  let video = preparedGiftVideos.get(config.id)
+  if (!video) {
+    video = createPreparedVideo(config)
+    preparedGiftVideos.set(config.id, video)
+  }
+  return video
+}
+
+function prepareGiftMedia(giftKey) {
+  const config = findGiftConfig(giftKey)
+  if (!config?.video) return false
+
+  const video = getPreparedVideo(config)
+  if (video.readyState < 3) {
+    try { video.load() } catch {}
+  }
+  return true
 }
 
 function destroyActiveScene() {
@@ -31,9 +72,10 @@ function destroyActiveScene() {
 
   clearTimeout(activeGift.timer)
   if (activeGift.video) {
+    activeGift.video.onended = null
+    activeGift.video.onplaying = null
     try { activeGift.video.pause() } catch {}
-    activeGift.video.removeAttribute('src')
-    try { activeGift.video.load() } catch {}
+    try { activeGift.video.currentTime = 0 } catch {}
   }
   activeGift.root?.remove()
   activeGift = null
@@ -65,18 +107,11 @@ function buildVideoScene(config, meta) {
   root.setAttribute('role', 'status')
   root.setAttribute('aria-live', 'polite')
 
-  const video = document.createElement('video')
+  const video = getPreparedVideo(config)
   video.className = 'fv-gift-video'
-  video.src = config.video
-  video.preload = 'auto'
-  video.playsInline = true
-  video.autoplay = false
-  video.controls = false
-  video.loop = false
   video.muted = false
   video.volume = 0.82
-  video.setAttribute('playsinline', '')
-  video.setAttribute('webkit-playsinline', '')
+  try { video.currentTime = 0 } catch {}
 
   const metaBar = document.createElement('div')
   metaBar.className = 'fv-gift-meta'
@@ -132,8 +167,8 @@ function startGiftScene(config, meta) {
     playNextQueuedGift()
   }
 
-  scene.video.addEventListener('ended', finish, { once: true })
-  scene.video.addEventListener('playing', () => scene.root.classList.add('is-playing'), { once: true })
+  scene.video.onended = finish
+  scene.video.onplaying = () => scene.root.classList.add('is-playing')
   activeGift.timer = window.setTimeout(finish, config.duration + 1200)
 
   const start = scene.video.play()
@@ -157,9 +192,10 @@ function buildComboEntries(config, meta, quantity) {
 }
 
 function playGift(giftKey, meta = {}) {
-  const config = giftRegistry[giftKey] || Object.values(giftRegistry).find((gift) => gift.id === giftKey)
+  const config = findGiftConfig(giftKey)
   if (!config || !isLiveActive()) return false
 
+  prepareGiftMedia(config.id)
   const requestedQuantity = Number(meta.quantity)
   const quantity = Number.isSafeInteger(requestedQuantity) && requestedQuantity > 0 ? requestedQuantity : 1
   const entries = buildComboEntries(config, meta, quantity)
@@ -181,6 +217,7 @@ document.addEventListener('fameverse:gift', (event) => {
 
 window.FameverseGiftEngine = Object.freeze({
   play: playGift,
+  prepare: prepareGiftMedia,
   primeAudio: primeGiftAudio,
   startAudioSession: startGiftAudioSession,
   stopAudioSession: stopGiftAudioSession,
