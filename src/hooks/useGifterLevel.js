@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { computeGifterLevel, loadGifterStats, recordBetaGift } from '../services/gifterLevels.js'
+import { loadGifterStats, recordBetaGift } from '../services/gifterLevels.js'
 
 const EMPTY_STATS = Object.freeze({ totalCoinsSent: 0, giftCount: 0, level: 1 })
 
-export function useGifterLevel({ userId, roomId, setToast }) {
+export function useGifterLevel({ userId, roomId }) {
   const [stats, setStats] = useState(EMPTY_STATS)
   const statsRef = useRef(EMPTY_STATS)
 
@@ -32,28 +32,18 @@ export function useGifterLevel({ userId, roomId, setToast }) {
     return () => { active = false }
   }, [applyStats, userId])
 
-  const recordGift = useCallback((gift, quantity) => {
+  const recordGift = useCallback(async (gift, quantity) => {
+    if (!roomId || !gift?.id) throw new Error('missing live room for gift')
+
     const normalizedQuantity = Math.max(1, Number(quantity) || 1)
-    const previous = statsRef.current
-    const predictedCoins = previous.totalCoinsSent + Math.max(0, Number(gift?.cost || 0)) * normalizedQuantity
-    const predicted = {
-      totalCoinsSent: predictedCoins,
-      giftCount: previous.giftCount + normalizedQuantity,
-      level: computeGifterLevel(predictedCoins),
-    }
-    applyStats(predicted)
-
-    if (!roomId || !gift?.id) return predicted.level
-
-    recordBetaGift({ roomId, giftId: gift.id, quantity: normalizedQuantity })
-      .then((confirmed) => applyStats(confirmed))
-      .catch(() => {
-        applyStats(previous)
-        setToast?.('Gift sent · gifter level sync is reconnecting')
-      })
-
-    return predicted.level
-  }, [applyStats, roomId, setToast])
+    const confirmed = await recordBetaGift({
+      roomId,
+      giftId: gift.id,
+      quantity: normalizedQuantity,
+    })
+    applyStats(confirmed)
+    return confirmed
+  }, [applyStats, roomId])
 
   return { ...stats, recordGift }
 }

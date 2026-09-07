@@ -19,11 +19,12 @@ function normalizeStats(row) {
     totalCoinsSent,
     giftCount: Number(row?.gift_count ?? row?.giftCount ?? 0),
     level: computeGifterLevel(totalCoinsSent),
+    walletBalance: Number(row?.wallet_balance ?? row?.walletBalance ?? 0),
   }
 }
 
 export async function loadGifterStats(userId) {
-  if (!userId) return { totalCoinsSent: 0, giftCount: 0, level: 1 }
+  if (!userId) return { totalCoinsSent: 0, giftCount: 0, level: 1, walletBalance: 0 }
 
   const { data, error } = await supabase
     .from('gifter_stats')

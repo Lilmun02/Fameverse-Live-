@@ -70,7 +70,8 @@ assert.match(migration, /record_beta_gift/, 'Gift progression writes must go thr
 assert.match(migration, /when 'welcome-to-fameverse' then 100[\s\S]*when 'rose' then 1/, 'Server must validate known beta gift prices instead of trusting client coin totals.')
 assert.match(giftService, /from\('gifter_stats'\)/, 'Client gifter level must load from the persistent stats table.')
 assert.match(giftService, /rpc\('record_beta_gift'/, 'Client gift progression must call the server ledger RPC.')
-assert.match(giftHook, /computeGifterLevel/, 'Gifter level must use the shared progression formula for optimistic UI.')
+assert.match(giftHook, /await recordBetaGift/, 'Gifter level must wait for the server-confirmed gift transaction.')
+assert.doesNotMatch(giftHook, /predicted|optimistic/i, 'Gifter level must not restore client-authoritative optimistic progression.')
 assert.match(app, /useGifterLevel/, 'The signed-in account must load its real gifter level.')
 assert.match(app, /recordGifterGift: gifter\.recordGift/, 'Gift sends must record persistent progression.')
 assert.match(giftSystem, /gifterLevel: eventLevel/, 'Local gift activity must carry the sender gift level.')
@@ -90,4 +91,4 @@ assert.match(portalBattle, /1 minute[\s\S]*3 minutes[\s\S]*5 minutes/, 'Portal B
 assert.match(portalBattle, /purple flame/, 'Portal Battle must retain the purple flame portal intro concept.')
 assert.doesNotMatch(app, /Portal Battle|battle timer|battle score/i, 'Portal Battle must remain roadmap-only during this pass.')
 
-console.log('Co-host + Gifter checks passed: host invite roster, explicit viewer consent, real media relay, real premium combo playback, persistent Lv progression, and Portal Battle scope lock are active. Co-host geometry is owned by the dedicated physical contract and rendered-browser test.')
+console.log('Co-host + Gifter checks passed: host invite roster, explicit viewer consent, real media relay, real premium combo playback, persistent server-confirmed Lv progression, and Portal Battle scope lock are active. Co-host geometry is owned by the dedicated physical contract and rendered-browser test.')

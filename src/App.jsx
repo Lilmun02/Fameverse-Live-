@@ -12,6 +12,7 @@ import { useCohostHost } from './hooks/useCohostHost.js'
 import { useCreatorDiscovery } from './hooks/useCreatorDiscovery.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
+import { useGiftWallet } from './hooks/useGiftWallet.js'
 import { useGifterLevel } from './hooks/useGifterLevel.js'
 import { useLiveActivity } from './hooks/useLiveActivity.js'
 import { useLiveBroadcast } from './hooks/useLiveBroadcast.js'
@@ -92,14 +93,19 @@ export default function App() {
     ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(account.profile.created_at))
     : 'Beta 2026'
   const activeActivityRoomId = live.isLive ? presence.room?.id : viewingRoom?.id
-  const gifter = useGifterLevel({ userId: actorId, roomId: activeActivityRoomId, setToast })
+  const wallet = useGiftWallet({ userId: actorId, setToast })
+  const gifter = useGifterLevel({ userId: actorId, roomId: activeActivityRoomId })
 
   const gifts = useGiftSystem({
     isLive: live.isLive || Boolean(viewingRoom),
     displayName,
     actorId,
     gifterLevel: gifter.level,
+    coins: wallet.balance,
+    walletReady: wallet.ready,
+    setWalletBalance: wallet.applyBalance,
     recordGifterGift: gifter.recordGift,
+    addTestCoins: wallet.refill,
     setToast,
     setChat,
     onGiftAccepted: (giftEvent) => {

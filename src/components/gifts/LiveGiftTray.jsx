@@ -28,11 +28,11 @@ export default function LiveGiftTray({
   }
 
   const sendQuickGift = (gift, quantity) => {
-    sendGift(gift, quantity, { keepTrayOpen: true })
+    void sendGift(gift, quantity, { keepTrayOpen: true })
   }
 
-  const sendCustomGift = (gift) => {
-    const sent = sendGift(gift, Number(giftAmountValue(gift.id)))
+  const sendCustomGift = async (gift) => {
+    const sent = await sendGift(gift, Number(giftAmountValue(gift.id)))
     if (sent) setCustomGiftId(null)
   }
 
@@ -109,7 +109,7 @@ export default function LiveGiftTray({
                       aria-label={`Custom amount for ${gift.label}`}
                       onChange={(event) => updateGiftAmount(gift.id, event.target.value)}
                     />
-                    <button type="button" onClick={() => sendCustomGift(gift)}>
+                    <button type="button" onClick={() => void sendCustomGift(gift)}>
                       Send ×{amountValue || '0'}
                     </button>
                   </div>
@@ -120,7 +120,7 @@ export default function LiveGiftTray({
         </div>
         <div className="test-wallet-row">
           <small>Beta tester balance</small>
-          <button onClick={() => addTestCoins(10000)}>+10K test coins</button>
+          <button onClick={() => void addTestCoins(10000)}>+10K test coins</button>
         </div>
       </div>
     </div>
