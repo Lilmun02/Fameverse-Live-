@@ -1,8 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { gifts, MAX_BETA_GIFT_QUANTITY } from '../../config/gifts.js'
-import { seekGiftThumbnail } from '../../utils/media.js'
 
-const QUICK_GIFT_AMOUNTS = [1, 5, 10]
+const CATEGORIES = [
+  { id: 'all', label: 'All' },
+  { id: 'classic', label: 'Classic' },
+  { id: 'fameverse', label: 'Fameverse' },
+]
+const CUSTOM_PRESETS = [5, 10, 25, 50]
+
+function GiftVisual({ gift, className = '' }) {
+  if (gift.poster) {
+    return <img className={className} src={gift.poster} alt="" />
+  }
+  return <span className={className} aria-hidden="true">{gift.emoji || gift.activityEmoji || '✦'}</span>
+}
 
 export default function LiveGiftTray({
   open,
@@ -11,118 +22,159 @@ export default function LiveGiftTray({
   sendGift,
   addTestCoins,
 }) {
-  const [customGiftId, setCustomGiftId] = useState(null)
-  const [giftAmounts, setGiftAmounts] = useState({})
-  const [readyThumbnails, setReadyThumbnails] = useState({})
+  const [category, setCategory] = useState('all')
+  const [selectedGiftId, setSelectedGiftId] = useState(gifts[0]?.id || null)
+  const [customOpen, setCustomOpen] = useState(false)
+  const [customQuantity, setCustomQuantity] = useState(1)
 
-  if (!open) return null
+  const selectedGift = gifts.find((gift) => gift.id === selectedGiftId) || gifts[0] || null
+  const visibleGifts = useMemo(() => (
+    category === 'all' ? gifts : gifts.filter((gift) => gift.category === category)
+  ), [category])
 
-  const giftAmountValue = (giftId) => giftAmounts[giftId] ?? '1'
+  if (!open || !selectedGift) return null
 
-  const updateGiftAmount = (giftId, value) => {
-    setGiftAmounts((amounts) => ({ ...amounts, [giftId]: value }))
+  const normalizeQuantity = (value) => {
+    const parsed = Number(value)
+    if (!Number.isSafeInteger(parsed)) return 1
+    return Math.min(MAX_BETA_GIFT_QUANTITY, Math.max(1, parsed))
   }
 
-  const markThumbnailReady = (giftId) => {
-    setReadyThumbnails((ready) => (ready[giftId] ? ready : { ...ready, [giftId]: true }))
+  const selectGift = (gift) => {
+    setSelectedGiftId(gift.id)
+    setCustomOpen(false)
+    setCustomQuantity(1)
   }
 
-  const sendQuickGift = (gift, quantity) => {
-    void sendGift(gift, quantity, { keepTrayOpen: true })
+  const sendOne = async () => {
+    await sendGift(selectedGift, 1, { keepTrayOpen: true })
   }
 
-  const sendCustomGift = async (gift) => {
-    const sent = await sendGift(gift, Number(giftAmountValue(gift.id)))
-    if (sent) setCustomGiftId(null)
+  const sendCustom = async () => {
+    const quantity = normalizeQuantity(customQuantity)
+    const sent = await sendGift(selectedGift, quantity, { keepTrayOpen: true })
+    if (sent) {
+      setCustomOpen(false)
+      setCustomQuantity(1)
+    }
   }
+
+  const totalCost = selectedGift.cost * normalizeQuantity(customQuantity)
 
   return (
-    <div className="live-sheet-backdrop" onClick={onClose}>
-      <div className="live-sheet gift-test-sheet" onClick={(event) => event.stopPropagation()}>
+    <div className="live-sheet-backdrop fv-gift-tray-backdrop" onClick={onClose}>
+      <section className="live-sheet gift-test-sheet fv-gift-tray" onClick={(event) => event.stopPropagation()} aria-label="Send a gift">
         <div className="sheet-handle" />
-        <div className="sheet-heading">
-          <div><span>GIFTS · BETA TEST</span><strong>Send gifts</strong></div>
-          <div className="test-balance">🪙 {coins.toLocaleString()}</div>
-        </div>
-        <p>Tap 1×, 5×, or 10× to send that amount while keeping the gift tray open. Custom amount is still available.</p>
-        <div className="live-gift-grid">
-          {gifts.map((gift) => {
-            const customOpen = customGiftId === gift.id
-            const amountValue = giftAmountValue(gift.id)
-            const thumbnailReady = Boolean(readyThumbnails[gift.id])
+
+        <header className="fv-gift-tray-head">
+          <div>
+            <span>GIFTS</span>
+            <strong>Send a Gift</strong>
+          </div>
+          <div className="fv-gift-wallet">🪙 {coins.toLocaleString()}</div>
+        </header>
+
+        <nav className="fv-gift-categories" aria-label="Gift categories">
+          {CATEGORIES.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={category === item.id ? 'is-active' : ''}
+              onClick={() => setCategory(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="fv-gift-grid" role="list">
+          {visibleGifts.map((gift) => {
+            const selected = gift.id === selectedGift.id
             return (
-              <div
-                className={`live-gift-item ${gift.cinematic ? 'live-gift-item-cinematic' : ''} ${customOpen ? 'is-custom-open' : ''}`}
+              <button
+                type="button"
                 key={gift.id}
+                role="listitem"
+                className={`fv-gift-card ${selected ? 'is-selected' : ''}`}
+                aria-pressed={selected}
+                onClick={() => selectGift(gift)}
               >
-                {gift.video ? (
-                  <div className={`live-gift-thumbnail-frame ${thumbnailReady ? 'is-ready' : ''}`}>
-                    <span className="live-gift-thumbnail-fallback" aria-hidden="true">F</span>
-                    <video
-                      className="live-gift-thumbnail"
-                      src={`${gift.video}#t=${gift.thumbnailTime || 0}`}
-                      muted
-                      playsInline
-                      preload="auto"
-                      onLoadedMetadata={(event) => {
-                        seekGiftThumbnail(event, gift.thumbnailTime)
-                        if (!gift.thumbnailTime) markThumbnailReady(gift.id)
-                      }}
-                      onSeeked={() => markThumbnailReady(gift.id)}
-                      onCanPlay={(event) => {
-                        if (!gift.thumbnailTime || event.currentTarget.currentTime > 0) markThumbnailReady(gift.id)
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <span>{gift.emoji}</span>
-                )}
+                <GiftVisual gift={gift} className={gift.poster ? 'fv-gift-card-poster' : 'fv-gift-card-symbol'} />
                 <strong>{gift.label}</strong>
-                <small>{gift.cost} {gift.cost === 1 ? 'coin' : 'coins'} each</small>
-                <div className="gift-quick-amounts" aria-label={`${gift.label} quick amounts`}>
-                  {QUICK_GIFT_AMOUNTS.map((quantity) => (
-                    <button
-                      type="button"
-                      key={quantity}
-                      onClick={() => sendQuickGift(gift, quantity)}
-                    >
-                      {quantity}×
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className="gift-amount-toggle"
-                  onClick={() => setCustomGiftId(customOpen ? null : gift.id)}
-                >
-                  Custom amount
-                </button>
-                {customOpen && (
-                  <div className="gift-custom-row">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min="1"
-                      max={MAX_BETA_GIFT_QUANTITY}
-                      step="1"
-                      value={amountValue}
-                      aria-label={`Custom amount for ${gift.label}`}
-                      onChange={(event) => updateGiftAmount(gift.id, event.target.value)}
-                    />
-                    <button type="button" onClick={() => void sendCustomGift(gift)}>
-                      Send ×{amountValue || '0'}
-                    </button>
-                  </div>
-                )}
-              </div>
+                <small>🪙 {gift.cost.toLocaleString()}</small>
+              </button>
             )
           })}
         </div>
-        <div className="test-wallet-row">
-          <small>Beta tester balance</small>
-          <button onClick={() => void addTestCoins(10000)}>+10K test coins</button>
+
+        <div className="fv-gift-selection-bar">
+          <div className="fv-gift-selection-copy">
+            <GiftVisual gift={selectedGift} className={selectedGift.poster ? 'fv-gift-selection-poster' : 'fv-gift-selection-symbol'} />
+            <div>
+              <small>Selected</small>
+              <strong>{selectedGift.label}</strong>
+            </div>
+          </div>
+          <button type="button" className="fv-gift-custom-open" onClick={() => setCustomOpen(true)}>
+            Custom
+          </button>
+          <button type="button" className="fv-gift-send-primary" onClick={() => void sendOne()}>
+            Send · 🪙 {selectedGift.cost.toLocaleString()}
+          </button>
         </div>
-      </div>
+
+        <div className="fv-gift-beta-row">
+          <small>Beta tester balance</small>
+          <button type="button" onClick={() => void addTestCoins(10000)}>+10K</button>
+        </div>
+
+        {customOpen && (
+          <div className="fv-gift-custom-backdrop" onClick={() => setCustomOpen(false)}>
+            <section className="fv-gift-custom-sheet" onClick={(event) => event.stopPropagation()} aria-label={`Custom amount for ${selectedGift.label}`}>
+              <div className="sheet-handle" />
+              <header>
+                <div className="fv-gift-custom-title">
+                  <GiftVisual gift={selectedGift} className={selectedGift.poster ? 'fv-gift-custom-poster' : 'fv-gift-custom-symbol'} />
+                  <div>
+                    <small>Send</small>
+                    <strong>{selectedGift.label}</strong>
+                  </div>
+                </div>
+                <button type="button" aria-label="Close custom amount" onClick={() => setCustomOpen(false)}>×</button>
+              </header>
+
+              <div className="fv-gift-quantity-stepper">
+                <button type="button" onClick={() => setCustomQuantity((value) => normalizeQuantity(Number(value) - 1))}>−</button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  max={MAX_BETA_GIFT_QUANTITY}
+                  value={customQuantity}
+                  onChange={(event) => setCustomQuantity(normalizeQuantity(event.target.value))}
+                  aria-label="Gift quantity"
+                />
+                <button type="button" onClick={() => setCustomQuantity((value) => normalizeQuantity(Number(value) + 1))}>+</button>
+              </div>
+
+              <div className="fv-gift-custom-presets">
+                {CUSTOM_PRESETS.map((quantity) => (
+                  <button type="button" key={quantity} onClick={() => setCustomQuantity(quantity)}>×{quantity}</button>
+                ))}
+              </div>
+
+              <div className="fv-gift-custom-total">
+                <span>Total cost</span>
+                <strong>🪙 {totalCost.toLocaleString()}</strong>
+              </div>
+
+              <button type="button" className="fv-gift-custom-send" onClick={() => void sendCustom()}>
+                Send ×{normalizeQuantity(customQuantity)}
+              </button>
+            </section>
+          </div>
+        )}
+      </section>
     </div>
   )
 }

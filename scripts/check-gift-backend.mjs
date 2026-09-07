@@ -12,6 +12,8 @@ const walletHook = read('src/hooks/useGiftWallet.js')
 const walletService = read('src/services/giftWallet.js')
 const gifterService = read('src/services/gifterLevels.js')
 const giftEngine = read('src/features/gifts/renderer/gift-engine.js')
+const giftTray = read('src/components/gifts/LiveGiftTray.jsx')
+const giftConfig = read('src/config/gifts.js')
 const pwa = read('src/utils/pwa.js')
 const migration = read('supabase/migrations/20260906_add_authoritative_beta_wallet.sql')
 
@@ -46,10 +48,16 @@ assert.match(giftEngine, /prepare:\s*prepareGiftMedia/, 'Gift engine must expose
 assert.doesNotMatch(giftEngine, /removeAttribute\('src'\)/, 'Stopping one premium gift must not discard the buffered media source.')
 assert.match(giftEngine, /activeGift\.video\.currentTime = 0/, 'Reusable premium media must rewind cleanly between queued gifts.')
 
+assert.match(giftConfig, /poster:\s*'\/gifts\/welcome-to-fameverse-poster\.webp'/, 'Welcome gift tray must use a static poster instead of Safari video seeking.')
+assert.doesNotMatch(giftTray, /<video|seekGiftThumbnail|thumbnailTime/, 'Gift tray must not seek remote video to manufacture thumbnails.')
+assert.match(giftTray, /fv-gift-categories/, 'Gift tray must keep gifts organized by category.')
+assert.match(giftTray, /fv-gift-custom-sheet/, 'Custom quantities must open in their own mini sheet instead of cramping every gift card.')
+assert.match(giftTray, /await sendGift\(selectedGift, quantity, \{ keepTrayOpen: true \}\)/, 'Custom gift sends must stay wired to the authoritative gift send path.')
+
 assert.doesNotMatch(pwa, /loadCoins|fameverse-owner-test-coins/, 'Legacy local test-wallet helpers must stay retired.')
 assert.match(app, /useGiftWallet/, 'The signed-in app must load its authoritative Supabase wallet.')
 assert.match(app, /coins:\s*wallet\.balance/, 'Gift UI must display the Supabase wallet balance.')
 assert.match(app, /setWalletBalance:\s*wallet\.applyBalance/, 'Server gift confirmations must update the shared wallet state.')
 assert.match(app, /addTestCoins:\s*wallet\.refill/, 'Beta refill control must be wired to the server wallet RPC.')
 
-console.log('[gift-backend-law] Supabase wallet, atomic debit, server-confirmed progression, serialized sends, and buffered premium-media reuse are locked')
+console.log('[gift-backend-law] Supabase wallet, atomic debit, buffered premium media, static tray poster, categorized tray, and separate custom quantity flow are locked')
