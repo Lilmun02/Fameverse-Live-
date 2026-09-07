@@ -47,6 +47,10 @@
   margin-top: 4px;
 }
 
+.fv-live-profile-room-stats.is-self {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .fv-live-profile-room-stats span {
   display: grid;
   gap: 2px;
