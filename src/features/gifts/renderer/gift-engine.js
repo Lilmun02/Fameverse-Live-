@@ -21,9 +21,56 @@ const giftRegistry = Object.freeze({
 
 let activeGift = null
 let giftQueue = []
+const giftMediaCache = new Map()
 
 function isLiveActive() {
   return Boolean(document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'))
+}
+
+function getGiftVideo(config) {
+  const cached = giftMediaCache.get(config.id)
+  if (cached) return cached
+
+  const video = document.createElement('video')
+  video.className = 'fv-gift-video'
+  video.src = config.video
+  video.preload = 'auto'
+  video.playsInline = true
+  video.autoplay = false
+  video.controls = false
+  video.loop = false
+  video.muted = false
+  video.defaultMuted = false
+  video.volume = 0.82
+  video.disablePictureInPicture = true
+  video.setAttribute('playsinline', '')
+  video.setAttribute('webkit-playsinline', '')
+  video.setAttribute('disableRemotePlayback', '')
+
+  try { video.load() } catch {}
+  giftMediaCache.set(config.id, video)
+  return video
+}
+
+function primeGiftMedia() {
+  for (const config of Object.values(giftRegistry)) {
+    if (config.video) getGiftVideo(config)
+  }
+  return true
+}
+
+function primeGiftPlayback() {
+  primeGiftMedia()
+  return primeGiftAudio()
+}
+
+function resetGiftVideo(video) {
+  if (!video) return
+  try { video.pause() } catch {}
+  video.muted = false
+  video.defaultMuted = false
+  video.volume = 0.82
+  try { video.currentTime = 0 } catch {}
 }
 
 function destroyActiveScene() {
@@ -31,9 +78,9 @@ function destroyActiveScene() {
 
   clearTimeout(activeGift.timer)
   if (activeGift.video) {
-    try { activeGift.video.pause() } catch {}
-    activeGift.video.removeAttribute('src')
-    try { activeGift.video.load() } catch {}
+    if (activeGift.onEnded) activeGift.video.removeEventListener('ended', activeGift.onEnded)
+    if (activeGift.onPlaying) activeGift.video.removeEventListener('playing', activeGift.onPlaying)
+    resetGiftVideo(activeGift.video)
   }
   activeGift.root?.remove()
   activeGift = null
@@ -65,18 +112,9 @@ function buildVideoScene(config, meta) {
   root.setAttribute('role', 'status')
   root.setAttribute('aria-live', 'polite')
 
-  const video = document.createElement('video')
-  video.className = 'fv-gift-video'
-  video.src = config.video
-  video.preload = 'auto'
-  video.playsInline = true
-  video.autoplay = false
-  video.controls = false
-  video.loop = false
-  video.muted = false
-  video.volume = 0.82
-  video.setAttribute('playsinline', '')
-  video.setAttribute('webkit-playsinline', '')
+  const video = getGiftVideo(config)
+  resetGiftVideo(video)
+  video.remove()
 
   const metaBar = document.createElement('div')
   metaBar.className = 'fv-gift-meta'
@@ -119,21 +157,24 @@ function startGiftScene(config, meta) {
   document.documentElement.classList.add('fv-gift-engine-active')
   document.body.appendChild(scene.root)
 
+  const finish = () => {
+    if (!activeGift || activeGift.video !== scene.video) return
+    playNextQueuedGift()
+  }
+  const onPlaying = () => scene.root.classList.add('is-playing')
+
   activeGift = {
     ...scene,
     timer: null,
     id: config.id,
     comboIndex: meta.comboIndex || 1,
     comboTotal: meta.comboTotal || 1,
-  }
-
-  const finish = () => {
-    if (!activeGift || activeGift.video !== scene.video) return
-    playNextQueuedGift()
+    onEnded: finish,
+    onPlaying,
   }
 
   scene.video.addEventListener('ended', finish, { once: true })
-  scene.video.addEventListener('playing', () => scene.root.classList.add('is-playing'), { once: true })
+  scene.video.addEventListener('playing', onPlaying, { once: true })
   activeGift.timer = window.setTimeout(finish, config.duration + 1200)
 
   const start = scene.video.play()
@@ -174,6 +215,9 @@ function playGift(giftKey, meta = {}) {
   return startGiftScene(first.config, first.meta)
 }
 
+document.addEventListener('pointerdown', primeGiftMedia, { capture: true, passive: true, once: true })
+document.addEventListener('touchstart', primeGiftMedia, { capture: true, passive: true, once: true })
+
 document.addEventListener('fameverse:gift', (event) => {
   const detail = event.detail || {}
   if (detail.id) playGift(detail.id, detail)
@@ -181,7 +225,7 @@ document.addEventListener('fameverse:gift', (event) => {
 
 window.FameverseGiftEngine = Object.freeze({
   play: playGift,
-  primeAudio: primeGiftAudio,
+  primeAudio: primeGiftPlayback,
   startAudioSession: startGiftAudioSession,
   stopAudioSession: stopGiftAudioSession,
   registry: giftRegistry,
