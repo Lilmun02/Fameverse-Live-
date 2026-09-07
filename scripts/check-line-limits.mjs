@@ -21,13 +21,11 @@ const REQUIRED_GUARDS = [
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true })
   const files = []
-
   for (const entry of entries) {
     const fullPath = join(directory, entry.name)
     if (entry.isDirectory()) files.push(...await walk(fullPath))
     else if (CHECKED_EXTENSIONS.has(extname(entry.name))) files.push(fullPath)
   }
-
   return files
 }
 
@@ -40,7 +38,6 @@ for (const file of files) {
   const content = await readFile(file, 'utf8')
   const rel = relative(sourceRoot, file).replaceAll('\\', '/')
   const lines = content === '' ? 0 : content.split(/\r?\n/).length
-
   if (lines > MAX_LINES) violations.push({ file: rel, lines })
 
   if (!rel.startsWith('legacy/disabled/')) {
@@ -59,10 +56,8 @@ for (const guard of REQUIRED_GUARDS) {
   }
 }
 
-// Gift tray invariant: successful gift sends close the tray by default. The only
-// allowed exception is an explicitly requested quick-amount tap (1×/5×/10×),
-// which keeps the tray open so the sender can tap another amount. The tray UI
-// owns amount selection; the hook owns transaction/close behavior.
+// Approved Gift Tray V1: compact categorized tray, one selected gift action,
+// custom amount in its own mini sheet, and all sends still use useGiftSystem.
 {
   const giftHook = await readFile(join(sourceRoot, 'hooks/useGiftSystem.js'), 'utf8')
   const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
@@ -71,26 +66,32 @@ for (const guard of REQUIRED_GUARDS) {
   const conditionalCloseIndex = acceptedChatIndex >= 0
     ? giftHook.indexOf('if (!keepTrayOpen) setGiftTrayOpen(false)', acceptedChatIndex)
     : -1
-  const quickAmountsDeclared = giftTray.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
-  const quickSendKeepsTrayOpen = giftTray.includes('sendGift(gift, quantity, { keepTrayOpen: true })')
+  const categoriesLocked = giftTray.includes('const CATEGORIES = [')
+    && giftTray.includes("{ id: 'classic', label: 'Classic' }")
+    && giftTray.includes("{ id: 'fameverse', label: 'Fameverse' }")
+  const customSheetLocked = giftTray.includes('fv-gift-custom-sheet')
+    && giftTray.includes('CUSTOM_PRESETS = [5, 10, 25, 50]')
+    && giftTray.includes('max={MAX_BETA_GIFT_QUANTITY}')
+  const selectedSendLocked = giftTray.includes('sendGift(selectedGift, 1, { keepTrayOpen: true })')
+    && giftTray.includes('sendGift(selectedGift, quantity, { keepTrayOpen: true })')
 
   if (
     acceptedChatIndex < 0
     || rendererBranchIndex < 0
     || conditionalCloseIndex < 0
     || conditionalCloseIndex > rendererBranchIndex
-    || !quickAmountsDeclared
-    || !quickSendKeepsTrayOpen
+    || !categoriesLocked
+    || !customSheetLocked
+    || !selectedSendLocked
   ) {
     architectureViolations.push(
-      'Gift tray contract failed: successful sends must close by default, while only 1×/5×/10× quick-amount taps may explicitly keep the tray open.',
+      'Gift tray contract failed: categorized compact tray, separate custom sheet, selected gift sends, and hook-owned close behavior must remain wired.',
     )
   }
 }
 
-// Gift amount/pricing invariant: current non-cinematic beta gifts remain 1 coin
-// each, quick amounts remain 1×/5×/10×, custom amount remains available, and
-// every simple gift presentation visibly includes the actual ×N quantity.
+// Pricing/quantity law: current simple beta gifts remain 1 coin, Welcome remains
+// 100 coins, custom amount remains bounded, and on-screen simple gifts show ×N.
 {
   const giftConfig = await readFile(join(sourceRoot, 'config/gifts.js'), 'utf8')
   const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
@@ -100,27 +101,19 @@ for (const guard of REQUIRED_GUARDS) {
     const pattern = new RegExp(`id: '${id}',[^\\n]*cost: 1`)
     return pattern.test(giftConfig)
   })
-  const quickAmountsLocked = giftTray.includes('const QUICK_GIFT_AMOUNTS = [1, 5, 10]')
-  const customAmountLocked = giftTray.includes('Custom amount')
-    && giftTray.includes('Send ×{amountValue')
+  const welcomePriceLocked = /id: 'welcome-to-fameverse'[\s\S]*?cost: 100/.test(giftConfig)
+  const customAmountLocked = giftTray.includes('Custom')
+    && giftTray.includes('Send ×{normalizeQuantity(customQuantity)}')
   const quantityDisplayLocked = giftOverlay.includes('×{giftOverlay.count || 1}')
 
-  if (
-    !basicPricesLocked
-    || !quickAmountsLocked
-    || !customAmountLocked
-    || !quantityDisplayLocked
-  ) {
+  if (!basicPricesLocked || !welcomePriceLocked || !customAmountLocked || !quantityDisplayLocked) {
     architectureViolations.push(
-      'Gift amount contract failed: basic gifts must stay 1 coin, 1×/5×/10× quick amounts and custom amount must remain available, and simple gift overlays must always display ×N.',
+      'Gift amount contract failed: simple gifts must stay 1 coin, Welcome 100 coins, bounded custom amount must remain available, and simple overlays must display ×N.',
     )
   }
 }
 
-// Live chat scrolling invariant: the whole session stays available, new messages
-// auto-follow inside the chat region, and the Live shell itself never becomes the
-// scroll target on iOS/PWA. LiveChat owns scroll behavior; polish.css owns the
-// pinned shell/scroll viewport contract.
+// Live chat scrolling invariant.
 {
   const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
   const liveChat = await readFile(join(sourceRoot, 'components/live/LiveChat.jsx'), 'utf8')
@@ -138,13 +131,12 @@ for (const guard of REQUIRED_GUARDS) {
 
   if (!fullSessionChat || !autoFollow || !chatOwnsScroll || !shellPinned) {
     architectureViolations.push(
-      'Live chat scrolling contract failed: retain the full session, auto-follow new comments, keep chat vertically scrollable, and keep the Live shell pinned/non-scrollable.',
+      'Live chat scrolling contract failed: retain full session, auto-follow comments, keep chat scrollable, and keep Live shell pinned.',
     )
   }
 }
 
-// Live session invariant: ending a Live must clear both committed chat messages
-// and the unsent comment draft inside the End Live path.
+// End Live must clear both committed chat and the unsent draft.
 {
   const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
   const endLiveIndex = app.indexOf('if (wasLive)')
@@ -182,4 +174,4 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: startup recovery, media health, gift tray quick-amount exception, gift amount/pricing, live chat scrolling, and End Live chat reset contracts are active; disabled media wrappers are not imported.')
+console.log('Architecture guard passed: startup recovery, media health, approved compact gift tray, gift pricing/quantity, live chat scrolling, and End Live cleanup contracts are active.')
