@@ -1,0 +1,124 @@
+/* Live Layout V1 visual refinement. Preview-approved visual contract only. */
+
+.mobile-live-shell.is-live,
+.fv-viewer-live,
+.fv-viewer-live-stage {
+  background: #030105;
+}
+
+.mobile-live-shell.is-live:not(.has-cohost) .fam-live-video-surface,
+.fv-viewer-live:not(.has-cohost) .fv-viewer-live-stage {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(126, 48, 202, .16), transparent 34rem),
+    #020103;
+}
+
+.mobile-live-shell.is-live:not(.has-cohost) .host-video.active,
+.fv-viewer-live:not(.has-cohost) .fv-viewer-live-video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.mobile-live-shell.is-live .fam-live-vignette,
+.fv-viewer-live .fv-viewer-live-vignette {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.66) 0%, rgba(0,0,0,.12) 18%, transparent 42%, transparent 58%, rgba(0,0,0,.78) 100%),
+    radial-gradient(circle at center, transparent 52%, rgba(0,0,0,.18) 100%) !important;
+}
+
+.mobile-live-shell.is-live .fam-live-header,
+.fv-viewer-live .fv-viewer-live-header {
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,.22));
+}
+
+.mobile-live-shell.is-live .fv-live-chat-feed,
+.fv-viewer-live .fv-live-chat-feed {
+  max-height: min(31dvh, 250px) !important;
+  padding-bottom: 3px;
+}
+
+.mobile-live-shell.is-live .fam-chat-line.is-gift,
+.fv-viewer-live .fam-chat-line.is-gift {
+  border-color: rgba(196, 119, 255, .28) !important;
+  background: linear-gradient(90deg, rgba(82, 20, 132, .86), rgba(15, 6, 22, .74)) !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,.24) !important;
+}
+
+.mobile-live-shell.is-live.has-cohost,
+.fv-viewer-live.has-cohost {
+  --fv-cohost-edge: 7px;
+  --fv-cohost-gap: 6px;
+  --fv-cohost-square-top: max(106px, calc(env(safe-area-inset-top) + 92px));
+  --fv-cohost-square-size: min(calc((100vw - (var(--fv-cohost-edge) * 2) - var(--fv-cohost-gap)) / 2), 43dvh, 420px);
+}
+
+.mobile-live-shell.is-live.has-cohost .host-video.active,
+.mobile-live-shell.is-live.has-cohost .fam-camera-off,
+.fv-viewer-live.has-cohost .fv-viewer-live-video {
+  top: var(--fv-cohost-square-top) !important;
+  left: var(--fv-cohost-edge) !important;
+  width: var(--fv-cohost-square-size) !important;
+  height: var(--fv-cohost-square-size) !important;
+  border: 1px solid rgba(218, 171, 255, .20);
+  border-radius: 16px;
+  box-shadow: 0 16px 34px rgba(0,0,0,.26);
+  object-fit: cover !important;
+  overflow: hidden;
+}
+
+.mobile-live-shell.is-live.has-cohost .fv-cohost-video-tile,
+.fv-viewer-live.has-cohost .fv-cohost-video-tile {
+  top: var(--fv-cohost-square-top) !important;
+  left: calc(var(--fv-cohost-edge) + var(--fv-cohost-square-size) + var(--fv-cohost-gap)) !important;
+  width: var(--fv-cohost-square-size) !important;
+  height: var(--fv-cohost-square-size) !important;
+  border: 1px solid rgba(218, 171, 255, .20) !important;
+  border-radius: 16px;
+  box-shadow: 0 16px 34px rgba(0,0,0,.26);
+}
+
+.mobile-live-shell.is-live.has-cohost .fv-cohost-video-tile > span,
+.fv-viewer-live.has-cohost .fv-cohost-video-tile > span {
+  top: auto;
+  bottom: 9px;
+  left: 9px;
+  max-width: calc(100% - 18px);
+  border-color: rgba(213, 151, 255, .25);
+  background: rgba(8, 3, 12, .66);
+  color: #f0ddff;
+}
+
+.mobile-live-shell.is-live.has-cohost .fam-live-vignette,
+.fv-viewer-live.has-cohost .fv-viewer-live-vignette {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.16) 18%, transparent 38%, transparent 54%, rgba(0,0,0,.82) 100%) !important;
+}
+
+.mobile-live-shell.is-live.has-cohost .fv-live-chat-feed,
+.fv-viewer-live.has-cohost .fv-live-chat-feed {
+  bottom: calc(max(70px, env(safe-area-inset-bottom) + 62px));
+  max-height: min(29dvh, 228px) !important;
+}
+
+.mobile-live-shell.is-live .fam-comment-composer.fv-live-composer,
+.fv-viewer-live .fam-comment-composer.fv-live-composer {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 390px) {
+  .mobile-live-shell.is-live.has-cohost,
+  .fv-viewer-live.has-cohost {
+    --fv-cohost-edge: 5px;
+    --fv-cohost-gap: 5px;
+    --fv-cohost-square-top: max(100px, calc(env(safe-area-inset-top) + 86px));
+  }
+
+  .mobile-live-shell.is-live.has-cohost .host-video.active,
+  .mobile-live-shell.is-live.has-cohost .fam-camera-off,
+  .mobile-live-shell.is-live.has-cohost .fv-cohost-video-tile,
+  .fv-viewer-live.has-cohost .fv-viewer-live-video,
+  .fv-viewer-live.has-cohost .fv-cohost-video-tile {
+    border-radius: 14px;
+  }
+}
