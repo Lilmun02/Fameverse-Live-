@@ -61,7 +61,10 @@ function BadgeArtwork({ tier }) {
   )
 }
 
-export default function GifterBadge({ level = 1, size = 'medium', showLevel = true }) {
+export default function GifterBadge({ level = 1, size = 'medium', showLevel = true, totalCoinsSent = null }) {
+  const hasEarnedBadge = totalCoinsSent === null || Math.max(0, Number(totalCoinsSent) || 0) > 0
+  if (!hasEarnedBadge) return null
+
   const normalizedLevel = Math.min(99, Math.max(1, Math.floor(Number(level) || 1)))
   const badge = getGifterBadgeForLevel(normalizedLevel)
 

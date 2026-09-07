@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { FAMEVERSE_RELEASE } from '../../config/version.js'
-import { getGifterProgress } from '../../services/gifterLevels.js'
 import GifterBadge from './GifterBadge.jsx'
 import ProfileConnections from './ProfileConnections.jsx'
-
-const coinFormatter = new Intl.NumberFormat('en-US')
 
 export default function ProfileView({
   initial,
@@ -23,7 +20,7 @@ export default function ProfileView({
   const [connectionsMode, setConnectionsMode] = useState(null)
   const friends = followers.filter((person) => person.relation?.key === 'friend')
   const totalCoinsSent = Math.max(0, Number(gifterStats?.totalCoinsSent || 0))
-  const progress = getGifterProgress(totalCoinsSent)
+  const gifterLevel = Math.max(1, Number(gifterStats?.level || 1))
 
   return (
     <section className="panel full-panel profile-panel refined-profile fv-profile">
@@ -45,9 +42,11 @@ export default function ProfileView({
         <div className="fv-profile-identity">
           <h1>{displayName}</h1>
           <span>{username}</span>
-          <div className="fv-profile-badges" aria-label="Fameverse identity badges">
-            <GifterBadge level={progress.level} size="small" />
-          </div>
+          {totalCoinsSent > 0 && (
+            <div className="fv-profile-badges" aria-label="Earned Fameverse identity badge">
+              <GifterBadge level={gifterLevel} size="small" totalCoinsSent={totalCoinsSent} />
+            </div>
+          )}
           <p>{profile?.bio || 'Add a bio so people know what you are about.'}</p>
         </div>
 
@@ -68,29 +67,6 @@ export default function ProfileView({
 
         <div className="fv-profile-actions single">
           <button type="button" className="primary" onClick={() => openProfileMode('edit')}>Edit profile</button>
-        </div>
-
-        <div className="fv-profile-identity-card fv-gifter-identity-card">
-          <GifterBadge level={progress.level} size="large" />
-          <div className="fv-gifter-progress-copy">
-            <span>GIFTER IDENTITY</span>
-            <strong>Level {progress.level}</strong>
-            <p>
-              {progress.isMaxLevel
-                ? `${coinFormatter.format(totalCoinsSent)} gift coins sent · maximum gifter level reached.`
-                : `${coinFormatter.format(progress.coinsToNext)} gift coins until Lv. ${progress.nextLevel}.`}
-            </p>
-            <div
-              className="fv-gifter-progress-track"
-              role="progressbar"
-              aria-label={`Gifter level ${progress.level} progress`}
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow={Math.round(progress.progress * 100)}
-            >
-              <span style={{ width: `${Math.round(progress.progress * 100)}%` }} />
-            </div>
-          </div>
         </div>
 
         <button type="button" className="fv-studio-row" onClick={() => openProfileMode('studio')}>

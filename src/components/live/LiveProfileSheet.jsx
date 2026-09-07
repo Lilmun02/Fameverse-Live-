@@ -62,7 +62,13 @@ export default function LiveProfileSheet({ sheet, currentUserId, followNetwork }
             )}
             <strong>{profile.displayName}</strong>
             {profile.username && <small>@{profile.username}</small>}
-            <GifterBadge level={profile.gifterLevel} size="small" />
+            {profile.totalCoinsSent > 0 && (
+              <GifterBadge
+                level={profile.gifterLevel}
+                size="small"
+                totalCoinsSent={profile.totalCoinsSent}
+              />
+            )}
             {profile.bio ? <p>{profile.bio}</p> : null}
             <div className="fv-live-profile-counts">
               <span><b>{profile.followerCount}</b> Followers</span>
