@@ -23,6 +23,19 @@ function serializeCandidate(candidate) {
   return candidate?.toJSON ? candidate.toJSON() : candidate
 }
 
+function normalizeViewerRoster(value) {
+  if (!Array.isArray(value)) return null
+  return value
+    .filter((viewer) => viewer?.userId)
+    .slice(0, 200)
+    .map((viewer) => ({
+      viewerId: viewer.viewerId || null,
+      userId: viewer.userId,
+      displayName: viewer.displayName || 'Fameverse viewer',
+      avatarUrl: viewer.avatarUrl || null,
+    }))
+}
+
 export function useLiveViewer({
   roomId,
   enabled = true,
@@ -38,6 +51,7 @@ export function useLiveViewer({
   const [remoteStream, setRemoteStream] = useState(null)
   const [state, setState] = useState('idle')
   const [viewerCount, setViewerCount] = useState(0)
+  const [viewerRoster, setViewerRoster] = useState([])
 
   const changeState = (next) => {
     stateRef.current = next
@@ -49,6 +63,7 @@ export function useLiveViewer({
       changeState('idle')
       setRemoteStream(null)
       setViewerCount(0)
+      setViewerRoster([])
       return undefined
     }
 
@@ -57,6 +72,7 @@ export function useLiveViewer({
     const channel = createLiveRelayChannel(roomId)
     changeState('connecting')
     setViewerCount(0)
+    setViewerRoster([])
 
     const send = (event, payload = {}) => sendLiveRelayEvent(channel, event, { viewerId, ...payload })
 
@@ -84,8 +100,9 @@ export function useLiveViewer({
 
     const applyViewerCount = (payload) => {
       const nextCount = Number(payload?.viewerCount)
-      if (!Number.isFinite(nextCount) || nextCount < 0) return
-      setViewerCount(Math.floor(nextCount))
+      if (Number.isFinite(nextCount) && nextCount >= 0) setViewerCount(Math.floor(nextCount))
+      const nextRoster = normalizeViewerRoster(payload?.viewerRoster)
+      if (nextRoster) setViewerRoster(nextRoster)
     }
 
     const flushPendingIce = async (peer, offerId) => {
@@ -167,6 +184,7 @@ export function useLiveViewer({
         closePeer()
         setRemoteStream(null)
         setViewerCount(0)
+        setViewerRoster([])
         changeState('ended')
       })
       .subscribe((status) => {
@@ -183,6 +201,7 @@ export function useLiveViewer({
       closePeer()
       setRemoteStream(null)
       setViewerCount(0)
+      setViewerRoster([])
       void removeLiveRelayChannel(channel)
     }
   }, [avatarUrl, displayName, enabled, roomId, userId])
@@ -192,5 +211,6 @@ export function useLiveViewer({
     remoteStream,
     state,
     viewerCount,
+    viewerRoster,
   }
 }

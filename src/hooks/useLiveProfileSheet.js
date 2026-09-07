@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { loadLiveIdentity } from '../services/profiles.js'
+import { loadLiveViewerIdentityStats } from '../services/live/viewerIdentityStats.js'
 
-export function useLiveProfileSheet() {
+export function useLiveProfileSheet(roomId = null) {
   const [userId, setUserId] = useState(null)
   const [profile, setProfile] = useState(null)
   const [status, setStatus] = useState('idle')
@@ -29,15 +30,23 @@ export function useLiveProfileSheet() {
     let active = true
     setStatus('loading')
 
-    loadLiveIdentity(userId)
-      .then((identity) => {
+    Promise.all([
+      loadLiveIdentity(userId),
+      loadLiveViewerIdentityStats(roomId, [userId]).catch(() => []),
+    ])
+      .then(([identity, roomStats]) => {
         if (!active) return
         if (!identity) {
           setProfile(null)
           setStatus('missing')
           return
         }
-        setProfile(identity)
+        const liveStats = roomStats?.[0] || null
+        setProfile({
+          ...identity,
+          roomGiftCount: liveStats?.roomGiftCount || 0,
+          roomFameTaps: liveStats?.roomFameTaps || 0,
+        })
         setStatus('ready')
       })
       .catch(() => {
@@ -48,7 +57,7 @@ export function useLiveProfileSheet() {
     return () => {
       active = false
     }
-  }, [refreshToken, userId])
+  }, [refreshToken, roomId, userId])
 
   return {
     open,

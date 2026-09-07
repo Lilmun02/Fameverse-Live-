@@ -10,6 +10,7 @@ export default function LiveHeader({
   presenceState,
   currentUserId,
   onOpenIdentity,
+  onOpenViewers,
 }) {
   if (!isLive) return null
 
@@ -32,7 +33,9 @@ export default function LiveHeader({
       </button>
       <div className="fam-header-meta">
         <span className="fam-viewer-chip" aria-label={`${viewerCount} viewers and ${tapCount} Fame Taps`}>
-          <span aria-hidden="true">👥</span> {viewerCount}
+          <button type="button" className="fam-viewer-count-button" onClick={onOpenViewers} aria-label={`Open ${viewerCount} live viewers`}>
+            <span aria-hidden="true">👥</span> {viewerCount}
+          </button>
           <i aria-hidden="true" />
           <span className="fam-header-fame" aria-hidden="true">F</span> {tapCount}
         </span>

@@ -8,6 +8,11 @@ function stopLiveTap(event) {
   event.stopPropagation()
 }
 
+function giftCountLabel(quantity) {
+  const count = Math.max(1, Number(quantity) || 1)
+  return `${count.toLocaleString()} ${count === 1 ? 'gift' : 'gifts'}`
+}
+
 export default function LiveChat({
   liveMessages,
   commentText,
@@ -35,8 +40,34 @@ export default function LiveChat({
           {liveMessages.map((item) => {
             const identityEnabled = Boolean(item.userId && onOpenIdentity)
             const level = Math.max(1, Number(item.gifterLevel || 1))
+
+            if (item.kind === 'gift') {
+              return (
+                <div className="fam-chat-line is-gift" key={item.id}>
+                  <button
+                    type="button"
+                    className="fv-gifter-bubble"
+                    disabled={!identityEnabled}
+                    onPointerDown={stopLiveTap}
+                    onClick={() => identityEnabled && onOpenIdentity(item.userId)}
+                    aria-label={identityEnabled ? `Open ${item.user} profile, ${giftCountLabel(item.quantity)}` : giftCountLabel(item.quantity)}
+                  >
+                    <span className="fam-chat-avatar" aria-hidden="true">{initialFor(item.user)}</span>
+                    <span className="fv-gifter-bubble-copy">
+                      <span className="fam-chat-identity">
+                        <span className="fam-gifter-level" aria-label={`Gift level ${level}`}>Lv. {level}</span>
+                        <strong>{item.user}</strong>
+                      </span>
+                      <small>{giftCountLabel(item.quantity)}</small>
+                    </span>
+                    <span className="fv-gifter-bubble-chevron" aria-hidden="true">›</span>
+                  </button>
+                </div>
+              )
+            }
+
             return (
-              <div className={`fam-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
+              <div className="fam-chat-line" key={item.id}>
                 <button
                   type="button"
                   className="fam-chat-avatar"

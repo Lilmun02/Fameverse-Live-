@@ -4,6 +4,7 @@ import CohostInvitePrompt from './CohostInvitePrompt.jsx'
 import CohostVideoTile from './CohostVideoTile.jsx'
 import LiveChat from './LiveChat.jsx'
 import LiveProfileSheet from './LiveProfileSheet.jsx'
+import LiveViewerSheet from './LiveViewerSheet.jsx'
 import { useCohostViewer } from '../../hooks/useCohostViewer.js'
 import { useLiveProfileSheet } from '../../hooks/useLiveProfileSheet.js'
 import { useLiveTapTotals } from '../../hooks/useLiveTapTotals.js'
@@ -47,7 +48,8 @@ export default function ViewerLiveScreen({
   const [needsPlay, setNeedsPlay] = useState(false)
   const [tapParticles, setTapParticles] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
-  const profileSheet = useLiveProfileSheet()
+  const [viewerSheetOpen, setViewerSheetOpen] = useState(false)
+  const profileSheet = useLiveProfileSheet(room?.id || null)
   const relay = useLiveViewer({
     roomId: room?.id,
     enabled: Boolean(room?.id),
@@ -141,6 +143,11 @@ export default function ViewerLiveScreen({
 
   const openHostProfile = () => {
     if (room?.host_user_id) profileSheet.open(room.host_user_id)
+  }
+
+  const openViewerProfile = (userId) => {
+    setViewerSheetOpen(false)
+    profileSheet.open(userId)
   }
 
   const shareLive = () => {
@@ -274,7 +281,9 @@ export default function ViewerLiveScreen({
           </div>
 
           <div className="fv-viewer-live-stats" aria-label={`${relay.viewerCount} viewers and ${serverTotal} Fame Taps`}>
-            <span><b aria-hidden="true">👥</b>{formatStat(relay.viewerCount)}</span>
+            <button type="button" className="fv-viewer-count-button" onClick={() => setViewerSheetOpen(true)} aria-label={`Open ${relay.viewerCount} live viewers`}>
+              <b aria-hidden="true">👥</b>{formatStat(relay.viewerCount)}
+            </button>
             <i aria-hidden="true" />
             <span className="is-fame"><b aria-hidden="true">F</b>{formatStat(serverTotal)}</span>
           </div>
@@ -339,6 +348,14 @@ export default function ViewerLiveScreen({
         hostName={hostName}
         onAccept={cohost.acceptInvite}
         onDecline={cohost.declineInvite}
+      />
+
+      <LiveViewerSheet
+        open={viewerSheetOpen}
+        onClose={() => setViewerSheetOpen(false)}
+        roomId={room?.id || null}
+        viewers={relay.viewerRoster}
+        onOpenIdentity={openViewerProfile}
       />
 
       <LiveProfileSheet

@@ -77,7 +77,11 @@ export function useLiveBroadcast({ roomId, stream, enabled }) {
       setViewerIds(connectedIds)
       setViewerRoster(roster)
       setViewerCount(connectedIds.length)
-      void send('viewer-count', { roomId, viewerCount: connectedIds.length })
+      void send('viewer-count', {
+        roomId,
+        viewerCount: connectedIds.length,
+        viewerRoster: roster,
+      })
     }
 
     const removePeer = (viewerId) => {

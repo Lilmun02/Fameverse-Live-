@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
 import CohostSheet from './CohostSheet.jsx'
 import CohostVideoTile from './CohostVideoTile.jsx'
@@ -6,6 +7,7 @@ import LiveActions from './LiveActions.jsx'
 import LiveChat from './LiveChat.jsx'
 import LiveHeader from './LiveHeader.jsx'
 import LiveProfileSheet from './LiveProfileSheet.jsx'
+import LiveViewerSheet from './LiveViewerSheet.jsx'
 import PreLiveSetupPanel from './PreLiveSetupPanel.jsx'
 import { useLiveProfileSheet } from '../../hooks/useLiveProfileSheet.js'
 
@@ -48,8 +50,14 @@ export default function LiveScreen({
   currentUserId,
   followNetwork,
 }) {
+  const [viewerSheetOpen, setViewerSheetOpen] = useState(false)
   const profileSheet = useLiveProfileSheet()
   const cohostStream = cohost?.remoteStream || null
+
+  const openViewerProfile = (userId) => {
+    setViewerSheetOpen(false)
+    profileSheet.open(userId)
+  }
 
   if (!isLive && sessionSummary.summary) {
     return (
@@ -104,6 +112,7 @@ export default function LiveScreen({
         presenceState={presenceState}
         currentUserId={currentUserId}
         onOpenIdentity={profileSheet.open}
+        onOpenViewers={() => setViewerSheetOpen(true)}
       />
 
       <LiveActions
@@ -125,6 +134,13 @@ export default function LiveScreen({
         submitComment={submitComment}
         onGiftClick={() => setGiftTrayOpen(true)}
         onOpenIdentity={profileSheet.open}
+      />
+
+      <LiveViewerSheet
+        open={viewerSheetOpen}
+        onClose={() => setViewerSheetOpen(false)}
+        viewers={cohost?.viewers || []}
+        onOpenIdentity={openViewerProfile}
       />
 
       <LiveProfileSheet
