@@ -15,6 +15,7 @@
     "check:algorithm": "node scripts/check-verse-momentum.mjs",
     "check:taps": "node scripts/check-tap-integrity.mjs",
     "check:ux": "node scripts/check-live-ux.mjs",
+    "check:live-profile": "node scripts/check-live-profile-relationship.mjs",
     "check:discovery": "node scripts/check-discovery-ux.mjs",
     "check:identity": "node scripts/check-live-identity.mjs",
     "check:cohost-gifter": "node scripts/check-cohost-gifter.mjs",
@@ -25,7 +26,7 @@
     "check:gifter-badges": "node scripts/check-gifter-badge-system.mjs",
     "check:creator-backend": "node scripts/check-creator-backend.mjs",
     "check:release-physical": "node scripts/check-release-physical-acceptance.mjs",
-    "check:laws": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:discovery && npm run check:identity && npm run check:cohost-gifter && npm run check:cohost-physical && npm run check:profile && npm run check:gift-contract && npm run check:gift-backend && npm run check:gifter-badges && npm run check:creator-backend",
+    "check:laws": "npm run check:lines && npm run check:presence && npm run check:taps && npm run check:algorithm && npm run check:ux && npm run check:live-profile && npm run check:discovery && npm run check:identity && npm run check:cohost-gifter && npm run check:cohost-physical && npm run check:profile && npm run check:gift-contract && npm run check:gift-backend && npm run check:gifter-badges && npm run check:creator-backend",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run check:laws && vite build",
     "build": "npm run verify",
     "preview": "vite preview --host 0.0.0.0"

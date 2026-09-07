@@ -52,13 +52,14 @@ export default function LiveProfileSheet({ sheet, currentUserId, followNetwork }
               <GifterBadge level={profile.gifterLevel} size="small" totalCoinsSent={profile.totalCoinsSent} />
             )}
             <div className="fv-live-profile-room-stats" aria-label="Activity in this Live">
-              <span><b>{Math.max(0, Number(profile.roomGiftCount || 0)).toLocaleString()}</b><small>Gifts</small></span>
+              <span><b>{Math.max(0, Number(profile.roomGiftCount || 0)).toLocaleString()}</b><small>Gifts Sent</small></span>
               <span><b>{Math.max(0, Number(profile.roomFameTaps || 0)).toLocaleString()}</b><small>FameTaps</small></span>
             </div>
             {profile.bio ? <p>{profile.bio}</p> : null}
-            <div className="fv-live-profile-counts">
-              <span><b>{profile.followerCount}</b> Followers</span>
-              <span><b>{profile.followingCount}</b> Following</span>
+            <div className="fv-live-profile-counts" aria-label="Profile connections">
+              <span><b>{Math.max(0, Number(profile.followerCount || 0)).toLocaleString()}</b><small>Followers</small></span>
+              <span><b>{Math.max(0, Number(profile.followingCount || 0)).toLocaleString()}</b><small>Following</small></span>
+              <span><b>{Math.max(0, Number(profile.friendCount || 0)).toLocaleString()}</b><small>Friends</small></span>
             </div>
             {!isSelf && (
               <button type="button" className={`fv-live-profile-follow ${isFollowing ? 'is-following' : ''} ${isFollowing && isFollower ? 'is-friend' : ''}`} disabled={busy} onClick={toggleFollow}>

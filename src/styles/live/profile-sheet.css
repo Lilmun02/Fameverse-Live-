@@ -60,14 +60,31 @@
 .fv-live-profile-room-stats small { color: #a997b7; font-size: .58rem; }
 
 .fv-live-profile-counts {
-  display: flex;
-  gap: 16px;
+  width: min(100%, 320px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   margin-top: 4px;
   color: #b9a6c8;
-  font-size: .68rem;
 }
 
-.fv-live-profile-counts b { color: #fff; margin-right: 4px; }
+.fv-live-profile-counts span {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.fv-live-profile-counts b {
+  color: #fff;
+  font-size: .76rem;
+}
+
+.fv-live-profile-counts small {
+  color: #b9a6c8;
+  font-size: .62rem;
+  white-space: nowrap;
+}
 
 .fv-live-profile-follow {
   min-width: 148px;

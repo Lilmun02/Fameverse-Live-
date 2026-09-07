@@ -4,6 +4,21 @@ import { supabase } from './supabase.js'
 
 const LIVE_PROFILE_FIELDS = 'id, username, display_name, bio, avatar_url'
 
+async function loadSocialCounts(userId) {
+  const { data, error } = await supabase.rpc('get_profile_social_counts', {
+    p_user_id: userId,
+  })
+
+  if (error) throw error
+  const row = Array.isArray(data) ? data[0] : data
+
+  return {
+    followerCount: Math.max(0, Number(row?.follower_count || 0)),
+    followingCount: Math.max(0, Number(row?.following_count || 0)),
+    friendCount: Math.max(0, Number(row?.friend_count || 0)),
+  }
+}
+
 export async function loadLiveIdentity(userId) {
   if (!userId) return null
 
@@ -17,19 +32,15 @@ export async function loadLiveIdentity(userId) {
   if (!profile) return null
 
   const [
-    { count: followerCount, error: followerError },
-    { count: followingCount, error: followingError },
+    socialCounts,
     { data: gifterStats, error: gifterError },
     accountRole,
   ] = await Promise.all([
-    supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', userId),
-    supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', userId),
+    loadSocialCounts(userId),
     supabase.from('gifter_stats').select('total_coins_sent, level').eq('user_id', userId).maybeSingle(),
     loadAccountRole(userId),
   ])
 
-  if (followerError) throw followerError
-  if (followingError) throw followingError
   if (gifterError) throw gifterError
 
   const totalCoinsSent = Math.max(0, Number(gifterStats?.total_coins_sent || 0))
@@ -40,8 +51,9 @@ export async function loadLiveIdentity(userId) {
     displayName: profile.display_name || profile.username || 'Fameverse User',
     bio: profile.bio || '',
     avatarUrl: profile.avatar_url || null,
-    followerCount: followerCount || 0,
-    followingCount: followingCount || 0,
+    followerCount: socialCounts.followerCount,
+    followingCount: socialCounts.followingCount,
+    friendCount: socialCounts.friendCount,
     totalCoinsSent,
     gifterLevel: computeGifterLevel(totalCoinsSent),
     accountRole,
