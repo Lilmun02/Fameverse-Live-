@@ -11,6 +11,7 @@ const badgeComponent = read('src/components/profile/GifterBadge.jsx')
 const profileView = read('src/components/profile/ProfileView.jsx')
 const liveProfile = read('src/components/live/LiveProfileSheet.jsx')
 const liveProfileData = read('src/services/profiles.js')
+const accountRoles = read('src/services/accountRoles.js')
 const liveChat = read('src/components/live/LiveChat.jsx')
 const liveActivity = read('src/hooks/useLiveActivity.js')
 const migration = read('supabase/migrations/20260906_lock_gifter_progression_curve.sql')
@@ -38,12 +39,16 @@ assert.doesNotMatch(badgeComponent, /\{badge\.icon\}/, 'Cheap glyph placeholders
 
 const profileBadgeOccurrences = profileView.match(/<GifterBadge/g) || []
 assert.equal(profileBadgeOccurrences.length, 1, 'Main profile must render at most one earned gifter badge.')
-assert.match(profileView, /totalCoinsSent > 0 && \(/, 'Main profile must hide the gifter badge until the user has actually gifted.')
+assert.match(profileView, /totalCoinsSent > 0 && !hideGifterBadge && \(/, 'Main profile must hide gifter identity until earned and keep owner/admin identities out of user gifter badges.')
+assert.match(profileView, /isPrivilegedIdentityRole\(profile\?\.account_role\)/, 'Main profile must derive privileged identity from the backend role, never display-name guessing.')
 assert.match(profileView, /totalCoinsSent=\{totalCoinsSent\}/, 'Main profile badge must receive the authoritative earned coin total.')
 assert.doesNotMatch(profileView, /fv-gifter-identity-card|coinsToNext|nextBadge|next badge/i, 'Public profile must not duplicate gifter identity or spoil future badge progression.')
 
+assert.match(accountRoles, /new Set\(\['owner', 'admin'\]\)/, 'Owner and admin identities must be explicitly privileged.')
 assert.match(liveProfileData, /totalCoinsSent/, 'In-Live profile data must expose authoritative total gift coins.')
-assert.match(liveProfile, /profile\.totalCoinsSent > 0 && \(/, 'In-Live profile must hide the gifter badge until it is earned.')
+assert.match(liveProfileData, /accountRole/, 'In-Live profile data must expose backend account role identity.')
+assert.match(liveProfile, /profile\.totalCoinsSent > 0 && !hideGifterBadge && \(/, 'In-Live profile must hide unearned badges and suppress user gifter badges for owner/admin identities.')
+assert.match(liveProfile, /isPrivilegedIdentityRole\(profile\?\.accountRole\)/, 'In-Live owner/admin identity suppression must use the backend account role.')
 assert.match(liveProfile, /totalCoinsSent=\{profile\.totalCoinsSent\}/, 'In-Live profile badge must use authoritative earned coin totals.')
 assert.match(liveProfile, /'Follow Back'/, 'In-Live profile must retain Follow Back state from the existing follow network.')
 assert.match(liveProfile, /'Friends'/, 'In-Live profile must retain Friends state from the existing follow network.')
@@ -53,4 +58,4 @@ assert.doesNotMatch(liveActivity, /badge:/, 'Realtime Live activity must not bro
 assert.match(migration, /\(11, 15000::bigint\)/, 'Server progression must keep 15,000 gift coins at Lv.11.')
 assert.match(migration, /update public\.gifter_stats/, 'Existing gifter stats must be recalculated when the progression migration is applied.')
 
-console.log('[gifter-badge-law] Gifter Badge V1 artwork, earned-only profile badges, no future spoilers, progression, and Live level-only identity are locked')
+console.log('[gifter-badge-law] Gifter Badge V1 artwork, earned-only badges, owner/admin exclusion, no future spoilers, progression, and Live level-only identity are locked')
