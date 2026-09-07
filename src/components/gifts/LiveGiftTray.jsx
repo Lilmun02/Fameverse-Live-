@@ -43,12 +43,12 @@ export default function LiveGiftTray({
   }
 
   const sendOne = async () => {
-    await sendGift(selectedGift, 1, { keepTrayOpen: true })
+    await sendGift(selectedGift, 1)
   }
 
   const sendCustom = async () => {
     const quantity = normalizeQuantity(customQuantity)
-    const sent = await sendGift(selectedGift, quantity, { keepTrayOpen: true })
+    const sent = await sendGift(selectedGift, quantity)
     if (sent) {
       setCustomOpen(false)
       setCustomQuantity(1)

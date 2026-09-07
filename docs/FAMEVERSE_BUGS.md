@@ -36,8 +36,8 @@ This law exists to catch bug cousins while the responsible system is already und
 
 - Total tracked: **8**
 - Open: **0**
-- Fix candidates: **2**
-- Locked: **4**
+- Fix candidates: **0**
+- Locked: **6**
 - Reopened right now: **0**
 - Legacy recheck: **2**
 - Reopens recorded since registry start: **1**
@@ -49,11 +49,11 @@ This law exists to catch bug cousins while the responsible system is already und
 | FVB-001 | LEGACY_RECHECK | Critical | Live media | Camera could shut off while repeatedly flipping cameras. | 2026-08-25 | — | Media/camera checks exist, but legacy root cause was not preserved. | Fresh retest required before declaring current state. | 0 |
 | FVB-002 | LEGACY_RECHECK | Critical | Startup/PWA | App could transition through black/white screens or lose the intended splash/startup behavior. | 2026-08-25 | — | Startup/device-truth checks now exist, but the historical root cause was not preserved in this registry. | Fresh installed-device retest required before declaring current state. | 0 |
 | FVB-003 | LOCKED | High | Gifts / iPhone media | 100-coin Welcome gift could play without its original audio on iPhone. | 2026-09-07 | `8c70ba4b2768e70ea8376617fce03ff521857b9c` | Premium media is prepared on the send gesture and reused; gift backend/media laws guard the path. | PASS — original audio physically accepted on iPhone. | 0 |
-| FVB-004 | FIX_CANDIDATE | Medium | Gift tray | Welcome gift thumbnail can briefly render Safari's broken-image placeholder before the real static poster appears. This is a recurrence of the prior thumbnail defect family. | 2026-09-07 | pending exact candidate SHA | Static poster remains mandatory; strengthened candidate preloads poster media, hides failed pixels until `load`, retries bounded failures, and adds a dedicated gift-tray resilience law. | PENDING — must open tray repeatedly on iPhone and confirm no broken icon/flicker. | 1 |
+| FVB-004 | LOCKED | Medium | Gift tray | Welcome gift thumbnail could briefly render Safari's broken-image placeholder before the real static poster appeared. This was a recurrence of the prior thumbnail defect family. | 2026-09-07 | `d0fb59428b5430f67bce773554022d6cc9e60895` | Static poster remains mandatory; poster media preloads early, failed pixels stay hidden until `load`, retries are bounded, and the gift-tray resilience law guards the path. | PASS — repeated iPhone tray test showed no broken icon/flicker. | 1 |
 | FVB-005 | LOCKED | High | Gifts / identity | Tapping a sent gift/gifter bubble had no effect. | 2026-09-07 | `812696a77e15643a97a411028e0ba321948b12a5` | Live UX law requires gifter bubble tap → sender in-Live profile and forbids exposing gift type. | PASS — user physically accepted bubble/profile interaction. | 0 |
 | FVB-006 | LOCKED | Low | Live profile | Host/self in-Live profile displayed FameTaps even though the host does not want that metric shown by default. | 2026-09-07 | `6ccd93357f915e9e99879d6f75244a66cce67e95` | Live profile law requires self profile to hide FameTaps while preserving Gifts Sent. | PASS — owner approved the final self-profile contract. | 0 |
 | FVB-007 | LOCKED | High | Main profile / gifter identity | Main profile was visually dry and did not expose the approved gifter level, tier progression, next unlock requirements, or locked/blurred future badges; privileged Owner/Admin identity also suppressed the progression presentation. | 2026-09-07 | `2aea5c08a9427a12dd6917f429d000ead5ae3925` | Gifter badge law now requires the saved nine-tier ladder, exact coin curve, blurred future artwork, next-level requirement, Gifts Sent, and Followers/Following/Friends order. | PASS — user physically accepted Profile Gifter Progress V1 on iPhone. | 0 |
-| FVB-008 | FIX_CANDIDATE | Medium | Gift tray / mobile layout | Selected gift / Custom / Send footer can look cramped and become partially clipped at the bottom of the tray on iPhone browser chrome. | 2026-09-07 | pending exact candidate SHA | Candidate makes the tray a shrink-safe flex column, lets the gift grid shrink/scroll first, reserves a 66px action footer, and adds safe-area bottom breathing room. | PENDING — iPhone tray footer must remain fully visible and uncramped. | 0 |
+| FVB-008 | LOCKED | Medium | Gift tray / mobile layout | Selected gift / Custom / Send footer could look cramped and become partially clipped at the bottom of the tray on iPhone browser chrome. | 2026-09-07 | `d0fb59428b5430f67bce773554022d6cc9e60895` | Tray is a shrink-safe flex column, gift grid shrinks/scrolls first, action footer reserves space, and safe-area bottom breathing room is enforced. | PASS — iPhone tray footer remained visible and uncramped. | 0 |
 
 ## FVB-004 recurrence trace
 
@@ -64,10 +64,10 @@ Physical iPhone screenshots showed Safari's broken-image placeholder in the Welc
 The original static-poster repair removed fragile remote-video seeking, but `LiveGiftTray.jsx` still inserted a raw `<img src={gift.poster}>` only when the tray rendered. There was no early preload, explicit ready state, error masking, or bounded retry. A transient first request could therefore expose Safari's broken-image UI until a later remount retried the resource.
 
 **SPRAY**  
-Candidate: prime poster images when the gift tray module loads; render poster pixels only after a successful `load`; hide failed/broken-image pixels; retry the same local poster a maximum of two times.
+Poster images now prime when the gift tray module loads; poster pixels render only after a successful `load`; broken pixels remain hidden; the same local poster retries at most twice.
 
 **LOCK**  
-Candidate adds `check-gift-tray-resilience.mjs` to the Engineering Gate. Physical iPhone repetition is still required before FVB-004 returns to `LOCKED`.
+`check-gift-tray-resilience.mjs` runs in the Engineering Gate. Physical iPhone repetition passed at `d0fb59428b5430f67bce773554022d6cc9e60895`; FVB-004 is locked again with reopen count 1.
 
 ## FVB-008 trace
 
@@ -78,10 +78,10 @@ Physical iPhone screenshot showed the Selected gift / Custom / Send area pressed
 The tray had `max-height: min(56svh, 560px)` plus `overflow: hidden`, while the gift grid retained its own fixed maximum height and the action/footer rows could not reserve space. On shorter visual viewports, the whole sheet clipped instead of shrinking the scrollable grid first.
 
 **SPRAY**  
-Candidate converts the tray to a flex column, makes the gift grid the shrinkable/scrollable region, gives the action row its own minimum height, and reserves explicit safe-area breathing room.
+The tray now uses a flex column, the gift grid is the shrinkable/scrollable region, the action row owns a minimum height, and the footer reserves explicit safe-area breathing room.
 
 **LOCK**  
-Candidate regression law checks poster resilience and footer geometry. Physical iPhone tray QA is still required.
+The gift-tray resilience law guards footer geometry. Physical iPhone tray QA passed at `d0fb59428b5430f67bce773554022d6cc9e60895`; FVB-008 is locked.
 
 ## Reporting rule
 

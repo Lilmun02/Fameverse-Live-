@@ -57,7 +57,8 @@ for (const guard of REQUIRED_GUARDS) {
 }
 
 // Approved Gift Tray V1: compact categorized tray, one selected gift action,
-// custom amount in its own mini sheet, and all sends still use useGiftSystem.
+// custom amount in its own mini sheet, and successful sends close only after
+// useGiftSystem receives server-authoritative acceptance.
 {
   const giftHook = await readFile(join(sourceRoot, 'hooks/useGiftSystem.js'), 'utf8')
   const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
@@ -72,8 +73,9 @@ for (const guard of REQUIRED_GUARDS) {
   const customSheetLocked = giftTray.includes('fv-gift-custom-sheet')
     && giftTray.includes('CUSTOM_PRESETS = [5, 10, 25, 50]')
     && giftTray.includes('max={MAX_BETA_GIFT_QUANTITY}')
-  const selectedSendLocked = giftTray.includes('sendGift(selectedGift, 1, { keepTrayOpen: true })')
-    && giftTray.includes('sendGift(selectedGift, quantity, { keepTrayOpen: true })')
+  const selectedSendLocked = giftTray.includes('sendGift(selectedGift, 1)')
+    && giftTray.includes('sendGift(selectedGift, quantity)')
+    && !giftTray.includes('keepTrayOpen: true')
 
   if (
     acceptedChatIndex < 0
@@ -85,7 +87,7 @@ for (const guard of REQUIRED_GUARDS) {
     || !selectedSendLocked
   ) {
     architectureViolations.push(
-      'Gift tray contract failed: categorized compact tray, separate custom sheet, selected gift sends, and hook-owned close behavior must remain wired.',
+      'Gift tray contract failed: categorized compact tray, separate custom sheet, selected gift sends, and backend-confirmed close-after-send behavior must remain wired.',
     )
   }
 }

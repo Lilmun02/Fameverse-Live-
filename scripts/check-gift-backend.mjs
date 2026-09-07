@@ -52,7 +52,8 @@ assert.match(giftConfig, /poster:\s*'\/gifts\/welcome-to-fameverse-poster\.webp'
 assert.doesNotMatch(giftTray, /<video|seekGiftThumbnail|thumbnailTime/, 'Gift tray must not seek remote video to manufacture thumbnails.')
 assert.match(giftTray, /fv-gift-categories/, 'Gift tray must keep gifts organized by category.')
 assert.match(giftTray, /fv-gift-custom-sheet/, 'Custom quantities must open in their own mini sheet instead of cramping every gift card.')
-assert.match(giftTray, /await sendGift\(selectedGift, quantity, \{ keepTrayOpen: true \}\)/, 'Custom gift sends must stay wired to the authoritative gift send path.')
+assert.match(giftTray, /await sendGift\(selectedGift, quantity\)/, 'Custom gift sends must stay wired to the authoritative gift send path.')
+assert.doesNotMatch(giftTray, /keepTrayOpen:\s*true/, 'Gift tray sends must not bypass the approved close-after-success behavior.')
 
 assert.doesNotMatch(pwa, /loadCoins|fameverse-owner-test-coins/, 'Legacy local test-wallet helpers must stay retired.')
 assert.match(app, /useGiftWallet/, 'The signed-in app must load its authoritative Supabase wallet.')
@@ -60,4 +61,4 @@ assert.match(app, /coins:\s*wallet\.balance/, 'Gift UI must display the Supabase
 assert.match(app, /setWalletBalance:\s*wallet\.applyBalance/, 'Server gift confirmations must update the shared wallet state.')
 assert.match(app, /addTestCoins:\s*wallet\.refill/, 'Beta refill control must be wired to the server wallet RPC.')
 
-console.log('[gift-backend-law] Supabase wallet, atomic debit, buffered premium media, static tray poster, categorized tray, and separate custom quantity flow are locked')
+console.log('[gift-backend-law] Supabase wallet, atomic debit, buffered premium media, static tray poster, categorized tray, close-after-success sends, and separate custom quantity flow are locked')
