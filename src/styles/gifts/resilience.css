@@ -1,0 +1,105 @@
+.fv-gift-poster-shell {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(170, 74, 255, .18), transparent 64%),
+    linear-gradient(145deg, rgba(58, 24, 78, .7), rgba(15, 9, 20, .96));
+}
+
+.fv-gift-poster-shell img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .14s ease;
+}
+
+.fv-gift-poster-shell.is-ready img {
+  opacity: 1;
+  visibility: visible;
+}
+
+.gift-test-sheet.fv-gift-tray {
+  display: flex;
+  flex-direction: column;
+  max-height: min(58svh, 590px);
+  padding: 10px 14px max(24px, calc(18px + env(safe-area-inset-bottom)));
+}
+
+.fv-gift-tray .fv-gift-tray-head,
+.fv-gift-tray .fv-gift-categories,
+.fv-gift-tray .fv-gift-selection-bar,
+.fv-gift-tray .fv-gift-beta-row {
+  flex: 0 0 auto;
+}
+
+.fv-gift-tray .fv-gift-grid {
+  flex: 1 1 auto;
+  min-height: 116px;
+  max-height: none;
+  overscroll-behavior: contain;
+  padding: 4px 1px 12px;
+}
+
+.fv-gift-tray .fv-gift-selection-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 66px;
+  margin-top: 8px;
+  padding: 12px 2px 8px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.fv-gift-tray .fv-gift-selection-copy {
+  min-width: 0;
+}
+
+.fv-gift-tray .fv-gift-custom-open {
+  min-width: 72px;
+}
+
+.fv-gift-tray .fv-gift-send-primary {
+  min-width: 132px;
+  min-height: 44px;
+}
+
+.fv-gift-tray .fv-gift-beta-row {
+  padding: 9px 2px 0;
+}
+
+@media (max-width: 410px) {
+  .fv-gift-tray .fv-gift-selection-bar {
+    grid-template-columns: minmax(0, 1fr) 68px 124px;
+    gap: 8px;
+  }
+
+  .fv-gift-tray .fv-gift-selection-poster {
+    width: 42px;
+    height: 28px;
+  }
+
+  .fv-gift-tray .fv-gift-selection-copy strong {
+    font-size: .64rem;
+  }
+
+  .fv-gift-tray .fv-gift-custom-open,
+  .fv-gift-tray .fv-gift-send-primary {
+    min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+@media (max-height: 700px) {
+  .gift-test-sheet.fv-gift-tray {
+    max-height: min(64svh, 560px);
+  }
+
+  .fv-gift-tray .fv-gift-grid {
+    min-height: 96px;
+  }
+}

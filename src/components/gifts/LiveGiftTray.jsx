@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { gifts, MAX_BETA_GIFT_QUANTITY } from '../../config/gifts.js'
+import GiftVisual, { primeGiftPosters } from './GiftVisual.jsx'
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -8,12 +9,7 @@ const CATEGORIES = [
 ]
 const CUSTOM_PRESETS = [5, 10, 25, 50]
 
-function GiftVisual({ gift, className = '' }) {
-  if (gift.poster) {
-    return <img className={className} src={gift.poster} alt="" />
-  }
-  return <span className={className} aria-hidden="true">{gift.emoji || gift.activityEmoji || '✦'}</span>
-}
+primeGiftPosters(gifts)
 
 export default function LiveGiftTray({
   open,
