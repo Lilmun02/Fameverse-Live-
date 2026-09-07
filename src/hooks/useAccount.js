@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { loadAccountRole } from '../services/accountRoles.js'
 import { uploadProfileAvatar } from '../services/profileAvatars.js'
 import { supabase } from '../services/supabase.js'
 import { cleanUsername } from '../utils/profile.js'
@@ -42,19 +43,23 @@ export function useAccount({ setToast, onBeforeSignOut }) {
 
     let active = true
     const loadProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(PROFILE_FIELDS)
-        .eq('id', session.user.id)
-        .single()
+      const [profileResult, accountRole] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select(PROFILE_FIELDS)
+          .eq('id', session.user.id)
+          .single(),
+        loadAccountRole(session.user.id),
+      ])
 
       if (!active) return
-      if (error) {
+      if (profileResult.error) {
         setToast('Signed in · profile is still initializing')
         return
       }
 
-      setProfile(data)
+      const data = profileResult.data
+      setProfile({ ...data, account_role: accountRole })
       setProfileDraft({
         display_name: data.display_name || '',
         username: data.username || '',
@@ -62,7 +67,9 @@ export function useAccount({ setToast, onBeforeSignOut }) {
       })
     }
 
-    loadProfile()
+    loadProfile().catch(() => {
+      if (active) setToast('Signed in · profile identity is still initializing')
+    })
     return () => { active = false }
   }, [session?.user?.id, setToast])
 
@@ -137,7 +144,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
       return false
     }
 
-    setProfile(data)
+    setProfile({ ...data, account_role: profile?.account_role || null })
     setProfileDraft({
       display_name: data.display_name || '',
       username: data.username || '',

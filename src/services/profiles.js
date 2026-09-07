@@ -1,3 +1,4 @@
+import { loadAccountRole } from './accountRoles.js'
 import { computeGifterLevel } from './gifterLevels.js'
 import { supabase } from './supabase.js'
 
@@ -19,10 +20,12 @@ export async function loadLiveIdentity(userId) {
     { count: followerCount, error: followerError },
     { count: followingCount, error: followingError },
     { data: gifterStats, error: gifterError },
+    accountRole,
   ] = await Promise.all([
     supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', userId),
     supabase.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', userId),
     supabase.from('gifter_stats').select('total_coins_sent, level').eq('user_id', userId).maybeSingle(),
+    loadAccountRole(userId),
   ])
 
   if (followerError) throw followerError
@@ -41,5 +44,6 @@ export async function loadLiveIdentity(userId) {
     followingCount: followingCount || 0,
     totalCoinsSent,
     gifterLevel: computeGifterLevel(totalCoinsSent),
+    accountRole,
   }
 }
