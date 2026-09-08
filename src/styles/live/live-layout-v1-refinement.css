@@ -106,6 +106,44 @@
   padding-bottom: max(0px, env(safe-area-inset-bottom));
 }
 
+/*
+ * iOS standalone PWA normalization.
+ * Android already renders the approved geometry correctly, so this is
+ * deliberately WebKit + standalone scoped. The solo stage and active video
+ * are pinned to the actual fixed Live shell instead of allowing an intrinsic
+ * portrait box to reappear inside the viewport.
+ */
+@supports (-webkit-touch-callout: none) {
+  @media (display-mode: standalone) {
+    .mobile-live-shell.is-live:not(.has-cohost) .fam-live-video-surface {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-width: 100% !important;
+      min-height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      overflow: hidden !important;
+    }
+
+    .mobile-live-shell.is-live:not(.has-cohost) .host-video.active {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-width: 100% !important;
+      min-height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      aspect-ratio: auto !important;
+      object-fit: cover !important;
+      object-position: center center !important;
+      display: block !important;
+    }
+  }
+}
+
 @media (max-width: 390px) {
   .mobile-live-shell.is-live.has-cohost,
   .fv-viewer-live.has-cohost {
