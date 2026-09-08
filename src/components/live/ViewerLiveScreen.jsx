@@ -78,7 +78,9 @@ export default function ViewerLiveScreen({
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
   const cohostStream = cohost.localStream || cohost.remoteStream
   const isSelfCohost = Boolean(cohost.localStream)
-  const hasDirectHostAudio = Boolean(isSelfCohost && cohost.directHostStream)
+  const hostPlaybackStream = isSelfCohost && cohost.directHostStream
+    ? cohost.directHostStream
+    : relay.remoteStream
   const isFollowing = useMemo(
     () => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)),
     [followNetwork?.following, room?.host_user_id],
@@ -87,8 +89,8 @@ export default function ViewerLiveScreen({
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
-    video.srcObject = relay.remoteStream || null
-    if (!relay.remoteStream) {
+    video.srcObject = hostPlaybackStream || null
+    if (!hostPlaybackStream) {
       setNeedsPlay(false)
       return
     }
@@ -96,7 +98,7 @@ export default function ViewerLiveScreen({
     video.play()
       .then(() => setNeedsPlay(false))
       .catch(() => setNeedsPlay(true))
-  }, [relay.remoteStream])
+  }, [hostPlaybackStream])
 
   useEffect(() => () => {
     particleTimersRef.current.forEach((timer) => window.clearTimeout(timer))
@@ -184,18 +186,16 @@ export default function ViewerLiveScreen({
           ref={videoRef}
           autoPlay
           playsInline
-          muted={hasDirectHostAudio}
           className="fv-viewer-live-video"
         />
         <CohostVideoTile
           stream={cohostStream}
           label={cohost.activeCohost?.displayName || 'Co-host'}
           local={isSelfCohost}
-          audioReturnStream={isSelfCohost ? cohost.directHostStream : null}
         />
         <div className="fv-viewer-live-vignette" aria-hidden="true" />
 
-        {!relay.remoteStream && !ended && (
+        {!hostPlaybackStream && !ended && (
           <div className="fv-viewer-live-connecting" aria-live="polite">
             <span className="fv-viewer-live-pulse" aria-hidden="true" />
             <strong>{relay.state === 'degraded' ? 'Reconnecting…' : 'Connecting to Live…'}</strong>
