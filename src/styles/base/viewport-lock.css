@@ -3,11 +3,23 @@ body,
 #root {
   width: 100%;
   max-width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
   overscroll-behavior-x: none;
 }
 
+:root {
+  --fv-visible-viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --fv-visible-viewport-height: 100dvh;
+  }
+}
+
 body {
+  min-height: var(--fv-visible-viewport-height);
   touch-action: pan-y;
 }
 
@@ -18,6 +30,34 @@ main,
 .honest-empty-state {
   max-width: 100%;
   min-width: 0;
+}
+
+/*
+ * Live rooms must bind to the currently visible viewport rather than a stale
+ * layout viewport. This keeps iOS Safari/PWA browser chrome and safe areas
+ * from changing the apparent room height relative to Android.
+ */
+.live-app-shell,
+.live-app-shell main,
+.mobile-live-shell,
+.fv-viewer-live,
+.fv-viewer-live-stage {
+  min-height: var(--fv-visible-viewport-height);
+}
+
+.mobile-live-shell.is-live,
+.fv-viewer-live,
+.fv-viewer-live-stage {
+  height: var(--fv-visible-viewport-height);
+  max-height: var(--fv-visible-viewport-height);
+}
+
+.mobile-live-shell.is-live,
+.fv-viewer-live {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .honest-empty-state strong,
