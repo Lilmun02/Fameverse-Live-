@@ -12,6 +12,7 @@ import { useLiveViewer } from '../../hooks/useLiveViewer.js'
 import { useViewerTapCapture } from '../../hooks/useViewerTapCapture.js'
 
 const TAP_PARTICLE_LIFETIME_MS = 1250
+const MAX_ACTIVE_TAP_PARTICLES = 24
 const compactNumber = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 
 function formatStat(value) {
@@ -44,9 +45,9 @@ export default function ViewerLiveScreen({
 }) {
   const videoRef = useRef(null)
   const particleIdRef = useRef(0)
+  const particleLayerRef = useRef(null)
   const particleTimersRef = useRef(new Set())
   const [needsPlay, setNeedsPlay] = useState(false)
-  const [tapParticles, setTapParticles] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
   const [viewerSheetOpen, setViewerSheetOpen] = useState(false)
   const profileSheet = useLiveProfileSheet(room?.id || null)
@@ -103,6 +104,7 @@ export default function ViewerLiveScreen({
   useEffect(() => () => {
     particleTimersRef.current.forEach((timer) => window.clearTimeout(timer))
     particleTimersRef.current.clear()
+    particleLayerRef.current?.replaceChildren()
   }, [])
 
   const playVideo = () => {
@@ -112,6 +114,9 @@ export default function ViewerLiveScreen({
   }
 
   const spawnTapParticles = (event) => {
+    const layer = particleLayerRef.current
+    if (!layer) return
+
     const rect = event.currentTarget.getBoundingClientRect()
     const baseX = event.clientX - rect.left
     const baseY = event.clientY - rect.top
@@ -121,9 +126,25 @@ export default function ViewerLiveScreen({
       { id: `${seed}-fire`, symbol: '🔥', x: baseX + 8, y: baseY + 2, drift: 22, delay: 70 },
     ]
 
-    setTapParticles((items) => [...items.slice(-22), ...nextParticles])
+    while (layer.childElementCount > MAX_ACTIVE_TAP_PARTICLES - nextParticles.length) {
+      layer.firstElementChild?.remove()
+    }
+
+    const nodes = nextParticles.map((particle) => {
+      const node = document.createElement('span')
+      node.dataset.tapParticleId = particle.id
+      node.className = `fv-viewer-tap-particle ${particle.symbol === 'F' ? 'is-f' : 'is-fire'}`
+      node.textContent = particle.symbol
+      node.style.left = `${particle.x}px`
+      node.style.top = `${particle.y}px`
+      node.style.setProperty('--tap-drift', `${particle.drift}px`)
+      node.style.setProperty('--tap-delay', `${particle.delay}ms`)
+      layer.appendChild(node)
+      return node
+    })
+
     const timer = window.setTimeout(() => {
-      setTapParticles((items) => items.filter((item) => !nextParticles.some((particle) => particle.id === item.id)))
+      nodes.forEach((node) => node.remove())
       particleTimersRef.current.delete(timer)
     }, TAP_PARTICLE_LIFETIME_MS)
     particleTimersRef.current.add(timer)
@@ -222,22 +243,7 @@ export default function ViewerLiveScreen({
           </button>
         )}
 
-        <div className="fv-viewer-live-particles" aria-hidden="true">
-          {tapParticles.map((particle) => (
-            <span
-              key={particle.id}
-              className={`fv-viewer-tap-particle ${particle.symbol === 'F' ? 'is-f' : 'is-fire'}`}
-              style={{
-                left: `${particle.x}px`,
-                top: `${particle.y}px`,
-                '--tap-drift': `${particle.drift}px`,
-                '--tap-delay': `${particle.delay}ms`,
-              }}
-            >
-              {particle.symbol}
-            </span>
-          ))}
-        </div>
+        <div ref={particleLayerRef} className="fv-viewer-live-particles" aria-hidden="true" />
 
         <header className="fv-viewer-live-header" onPointerDown={stopLiveTap}>
           <button type="button" className="fv-viewer-live-back" onClick={onClose} aria-label="Back to Discover">‹</button>
