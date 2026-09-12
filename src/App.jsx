@@ -163,6 +163,7 @@ export default function App() {
     gifts.setGiftTrayOpen(false)
     setCohostTrayOpen(false)
     if (tab !== 'discover') setViewingRoom(null)
+    if (tab === 'live' && !live.isLive) sessionSummary.dismissSummary()
     if (tab !== 'profile') {
       setProfileMode('view')
       setPolicyPage(null)
