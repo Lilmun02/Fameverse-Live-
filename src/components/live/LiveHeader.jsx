@@ -24,6 +24,7 @@ export default function LiveHeader({
         disabled={!identityEnabled}
         onClick={() => identityEnabled && onOpenIdentity(currentUserId)}
         aria-label={identityEnabled ? `Open ${displayName} profile` : undefined}
+        title={displayName}
       >
         <div className="fam-avatar-orbit is-live"><div className="avatar owner live-avatar">{initial}</div></div>
         <div className="fam-creator-copy">
