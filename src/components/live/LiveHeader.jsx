@@ -20,10 +20,11 @@ export default function LiveHeader({
     <div className="fam-live-header" data-presence-state={presenceState || 'unknown'}>
       <button
         type="button"
-        className="fam-live-creator-identity"
+        className="fam-creator-capsule fam-live-creator-identity"
         disabled={!identityEnabled}
         onClick={() => identityEnabled && onOpenIdentity(currentUserId)}
         aria-label={identityEnabled ? `Open ${displayName} profile` : undefined}
+        title={displayName}
       >
         <div className="fam-avatar-orbit is-live"><div className="avatar owner live-avatar">{initial}</div></div>
         <div className="fam-creator-copy">

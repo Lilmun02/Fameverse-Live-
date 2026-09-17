@@ -29,7 +29,7 @@
 
 .mobile-live-shell.is-live .fam-live-header,
 .fv-viewer-live .fv-viewer-live-header {
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,.22));
+  filter: none !important;
 }
 
 .mobile-live-shell.is-live .fv-live-chat-feed,
@@ -138,6 +138,9 @@
       object-fit: cover !important;
       object-position: center center !important;
       display: block !important;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      transform: translateZ(0);
     }
   }
 }
