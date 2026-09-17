@@ -71,7 +71,7 @@ assert.doesNotMatch(liveContract, /\.mobile-live-shell\.is-live \.fam-live-creat
 assert.match(liveContract, /\.fam-creator-name-row strong[\s\S]*text-shadow:\s*none[\s\S]*-webkit-font-smoothing:\s*antialiased/, 'Active Live creator text must remain crisp and free of legacy shadow/filter blur.')
 assert.match(liveContract, /\.live-action-rail,[\s\S]*\.fam-action-rail[\s\S]*display:\s*none !important/, 'Final Live contract must block the removed vertical rail.')
 assert.ok(main.trim().indexOf("./styles/live/live-contract.css") > main.trim().indexOf("./styles/live/live-layout-v1-refinement.css"), 'The active Live contract must load after the final Live refinement stylesheet.')
-assert.ok(main.trim().indexOf("./styles/live/live-contract.css") > main.trim().indexOf("./styles/live/cohost.css"), 'The active Live contract must load after co-host styling so its locked base rules remain canonical.')
+assert.ok(main.trim().indexOf("./styles/live/cohost.css") > main.trim().indexOf("./styles/live/live-contract.css"), 'Canonical co-host CSS must remain after the general Live contract.')
 assert.doesNotMatch(liveV2Css, /\.mobile-live-shell\.is-live\s+\.fam-creator-capsule/, 'Later pre-live styles must never repaint a box behind the creator identity.')
 assert.match(liveHeader, />LIVE<\/span>/, 'Host header must show a clean LIVE badge, not developer sync text.')
 assert.match(liveHeader, /fam-viewer-count-button[\s\S]*onClick=\{onOpenViewers\}/, 'Host viewer count must open the viewer sheet only when tapped.')
