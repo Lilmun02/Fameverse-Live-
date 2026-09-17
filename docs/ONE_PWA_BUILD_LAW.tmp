@@ -1,1 +1,0 @@
-Famaverse uses one canonical PWA build and one canonical Live layout. Platform-specific compatibility code may handle browser lifecycle or viewport measurement, but must not define a different visual Live geometry for iOS versus Android.
