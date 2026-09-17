@@ -1,4 +1,5 @@
-const CACHE = 'fameverse-beta-v22-device-truth'
+const CACHE = 'fameverse-beta-v23-device-parity'
+const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
 const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
@@ -11,6 +12,11 @@ self.addEventListener('activate', (event) => {
     const keys = await caches.keys()
     await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
     await self.clients.claim()
+
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    for (const client of clients) {
+      client.postMessage({ type: UPDATE_MESSAGE, cache: CACHE })
+    }
   })())
 })
 

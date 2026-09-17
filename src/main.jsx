@@ -36,10 +36,10 @@ import './styles/profile/gifter-badges.css'
 import './styles/profile/algorithm-diagnostics.css'
 import './styles/base/pwa-update.css'
 import './styles/live/profile-sheet.css'
-import './styles/live/live-contract.css'
 import './styles/live/cohost.css'
 import './styles/profile/gifter-gallery-mobile-lock.css'
 import './styles/live/live-layout-v1-refinement.css'
+import './styles/live/live-contract.css'
 
 const params = new URLSearchParams(window.location.search)
 const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App

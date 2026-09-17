@@ -5,11 +5,34 @@ export function registerFameversePwaUpdates() {
   let reloading = false
   let lastShellCheckAt = 0
   const pendingKey = 'fameverse-pwa-update-pending'
+  const updateMessageType = 'FAMEVERSE_UPDATE_READY'
   const shellCheckIntervalMs = 15000
+  const watchedRegistrations = new WeakSet()
 
   const liveIsActive = () => Boolean(
     document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
   )
+
+  const readPending = () => {
+    try {
+      if (localStorage.getItem(pendingKey) === '1') return true
+    } catch {}
+    try {
+      return sessionStorage.getItem(pendingKey) === '1'
+    } catch {
+      return false
+    }
+  }
+
+  const storePending = () => {
+    try { localStorage.setItem(pendingKey, '1') } catch {}
+    try { sessionStorage.setItem(pendingKey, '1') } catch {}
+  }
+
+  const clearPending = () => {
+    try { localStorage.removeItem(pendingKey) } catch {}
+    try { sessionStorage.removeItem(pendingKey) } catch {}
+  }
 
   const shellAssetSignature = (doc, baseUrl) => {
     const assets = []
@@ -71,7 +94,7 @@ export function registerFameversePwaUpdates() {
   }
 
   const markPending = () => {
-    sessionStorage.setItem(pendingKey, '1')
+    storePending()
     showNotice(liveIsActive() ? 'deferred' : 'applying')
   }
 
@@ -82,7 +105,7 @@ export function registerFameversePwaUpdates() {
   }
 
   const applyPendingUpdate = () => {
-    if (reloading || sessionStorage.getItem(pendingKey) !== '1') return
+    if (reloading || !readPending()) return
     if (liveIsActive()) {
       showNotice('deferred')
       return
@@ -90,7 +113,7 @@ export function registerFameversePwaUpdates() {
 
     reloading = true
     showNotice('applying')
-    sessionStorage.removeItem(pendingKey)
+    clearPending()
     window.setTimeout(forceNewestShell, 350)
   }
 
@@ -115,14 +138,29 @@ export function registerFameversePwaUpdates() {
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
+  const markWaitingWorker = () => {
+    if (!registration?.waiting || !navigator.serviceWorker.controller) return
+    markPending()
+    applyPendingUpdate()
+  }
+
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!navigator.serviceWorker.controller) return
     markPending()
     applyPendingUpdate()
   })
 
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type !== updateMessageType) return
+    markPending()
+    applyPendingUpdate()
+  })
+
   const watchRegistration = (nextRegistration) => {
-    nextRegistration?.addEventListener('updatefound', () => {
+    if (!nextRegistration || watchedRegistrations.has(nextRegistration)) return
+    watchedRegistrations.add(nextRegistration)
+
+    nextRegistration.addEventListener('updatefound', () => {
       const worker = nextRegistration.installing
       if (!worker) return
 
@@ -139,6 +177,7 @@ export function registerFameversePwaUpdates() {
       registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       watchRegistration(registration)
       await registration.update()
+      markWaitingWorker()
     } catch {}
     await checkAppShell({ force: true })
     applyPendingUpdate()
@@ -148,8 +187,9 @@ export function registerFameversePwaUpdates() {
     if (document.visibilityState !== 'visible') return
     try {
       registration ||= await navigator.serviceWorker.getRegistration()
-      if (registration) watchRegistration(registration)
+      watchRegistration(registration)
       await registration?.update()
+      markWaitingWorker()
     } catch {}
     await checkAppShell()
     applyPendingUpdate()
@@ -158,14 +198,16 @@ export function registerFameversePwaUpdates() {
   window.addEventListener('online', async () => {
     try {
       registration ||= await navigator.serviceWorker.getRegistration()
+      watchRegistration(registration)
       await registration?.update()
+      markWaitingWorker()
     } catch {}
     await checkAppShell({ force: true })
     applyPendingUpdate()
   })
 
   const liveObserver = new MutationObserver(() => {
-    if (sessionStorage.getItem(pendingKey) === '1') applyPendingUpdate()
+    if (readPending()) applyPendingUpdate()
   })
 
   liveObserver.observe(document.documentElement, {
