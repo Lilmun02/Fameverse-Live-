@@ -58,7 +58,8 @@
 
 .fam-live-header > * { pointer-events: auto; }
 
-.fam-creator-capsule {
+.fam-creator-capsule,
+.fam-live-creator-identity {
   min-width: 0;
   max-width: min(56vw, 280px);
   min-height: 52px;
@@ -81,7 +82,8 @@
   touch-action: manipulation;
 }
 
-.fam-creator-capsule:disabled { opacity: 1; }
+.fam-creator-capsule:disabled,
+.fam-live-creator-identity:disabled { opacity: 1; }
 
 .fam-avatar-orbit {
   position: relative;
@@ -348,7 +350,8 @@
 
 @media (max-width: 390px) {
   .fam-live-header { left: 10px; right: 10px; gap: 6px; }
-  .fam-creator-capsule { grid-template-columns: 40px minmax(0,1fr); gap: 7px; max-width: 55vw; min-height: 48px; padding: 3px 10px 3px 4px; }
+  .fam-creator-capsule,
+  .fam-live-creator-identity { grid-template-columns: 40px minmax(0,1fr); gap: 7px; max-width: 55vw; min-height: 48px; padding: 3px 10px 3px 4px; }
   .fam-avatar-orbit { width: 40px; height: 40px; flex-basis: 40px; }
   .fam-avatar-orbit .live-avatar { width: 35px; height: 35px; flex-basis: 35px; }
   .fam-creator-name-row strong { font-size: .8rem; }
