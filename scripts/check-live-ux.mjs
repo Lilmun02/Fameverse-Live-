@@ -60,9 +60,10 @@ assert.match(liveChat, /onClick=\{\(\) => identityEnabled && onOpenIdentity\(ite
 assert.doesNotMatch(liveChat, /gift\.label|item\.giftId/, 'Gifter bubbles must never reveal which gift was sent.')
 assert.doesNotMatch(liveChat, /thank\s*you|thanks\s+for/i, 'Live gifting must not add automated thank-you messaging.')
 
-assert.match(liveHeader, /className="fam-live-creator-identity"/, 'Host identity must use the isolated no-box Live class.')
+assert.match(liveHeader, /className="fam-live-creator-identity"/, 'Host identity must use the canonical isolated Live identity class.')
 assert.doesNotMatch(liveHeader, /fam-creator-capsule/, 'Host identity must not reuse the legacy capsule class.')
-assert.match(liveContract, /\.mobile-live-shell\.is-live \.fam-live-creator-identity[\s\S]*background:\s*transparent !important/, 'Final Live contract must enforce the unboxed host identity.')
+assert.match(liveContract, /\.mobile-live-shell\.is-live \.fam-live-creator-identity[\s\S]*border-radius:\s*999px !important[\s\S]*backdrop-filter:\s*blur\(16px\)/, 'Final Live contract must enforce the approved oval creator identity capsule.')
+assert.doesNotMatch(liveContract, /\.mobile-live-shell\.is-live \.fam-live-creator-identity[\s\S]{0,260}background:\s*transparent !important/, 'Approved creator identity must not regress to the old unboxed header.')
 assert.match(liveContract, /\.live-action-rail,[\s\S]*\.fam-action-rail[\s\S]*display:\s*none !important/, 'Final Live contract must block the removed vertical rail.')
 assert.ok(main.trim().indexOf("./styles/live/live-contract.css") > main.trim().indexOf("./styles/base/pwa-update.css"), 'The active Live contract must load after every older stylesheet.')
 assert.doesNotMatch(liveV2Css, /\.mobile-live-shell\.is-live\s+\.fam-creator-capsule/, 'Later pre-live styles must never repaint a box behind the creator identity.')
@@ -119,4 +120,4 @@ assert.match(giftEngine, /\.mobile-live-shell\.is-live, \.fv-viewer-live/, 'Prem
 assert.match(giftEngineCss, /\.fv-gift-engine\.is-playing \.fv-gift-video\s*\{\s*opacity:\s*1/, 'Premium gift video must not reveal a black frame before playback starts.')
 assert.match(giftEngineCss, /\.fv-gift-engine::before/, 'Premium gift loading state must stay branded instead of black.')
 
-console.log('Live UX checks passed: gifting identity bubbles, viewer sheet, backend viewer stats, device-truth delivery, working controls, persistent gift audio, and static tray media are locked.')
+console.log('Live UX checks passed: gifting identity bubbles, viewer sheet, backend viewer stats, device-truth delivery, working controls, persistent gift audio, static tray media, and approved creator capsule are locked.')
