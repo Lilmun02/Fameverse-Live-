@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
 import CohostVideoTile from './CohostVideoTile.jsx'
 import EndLiveSummaryPanel from './EndLiveSummaryPanel.jsx'
@@ -50,6 +50,64 @@ export default function LiveScreen({
   const [viewerSheetOpen, setViewerSheetOpen] = useState(false)
   const profileSheet = useLiveProfileSheet()
   const cohostStream = cohost?.remoteStream || null
+
+  useEffect(() => {
+    if (!isLive || cohostStream) return undefined
+
+    const standalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true
+    const isiOSWebKit = /iP(ad|hone|od)/.test(window.navigator.userAgent) && /WebKit/i.test(window.navigator.userAgent)
+    if (!standalone || !isiOSWebKit) return undefined
+
+    let frame = 0
+    let settleTimer = 0
+
+    const restoreLiveViewport = () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(settleTimer)
+
+      frame = window.requestAnimationFrame(() => {
+        const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight)
+        if (viewportHeight > 0) {
+          document.documentElement.style.setProperty('--fv-visible-viewport-height', `${viewportHeight}px`)
+        }
+
+        const activeVideo = activeVideoSlot === 0 ? videoPrimaryRef.current : videoSecondaryRef.current
+        if (activeVideo && mediaStream && !cameraOff) {
+          if (activeVideo.srcObject !== mediaStream) activeVideo.srcObject = mediaStream
+          activeVideo.style.removeProperty('width')
+          activeVideo.style.removeProperty('height')
+          void activeVideo.offsetHeight
+          activeVideo.play?.().catch?.(() => {})
+        }
+      })
+
+      settleTimer = window.setTimeout(() => {
+        const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight)
+        if (viewportHeight > 0) {
+          document.documentElement.style.setProperty('--fv-visible-viewport-height', `${viewportHeight}px`)
+        }
+      }, 180)
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') restoreLiveViewport()
+    }
+
+    restoreLiveViewport()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('pageshow', restoreLiveViewport)
+    window.addEventListener('focus', restoreLiveViewport)
+    window.visualViewport?.addEventListener('resize', restoreLiveViewport)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(settleTimer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pageshow', restoreLiveViewport)
+      window.removeEventListener('focus', restoreLiveViewport)
+      window.visualViewport?.removeEventListener('resize', restoreLiveViewport)
+    }
+  }, [isLive, cohostStream, activeVideoSlot, mediaStream, cameraOff, videoPrimaryRef, videoSecondaryRef])
 
   const openViewerProfile = (userId) => {
     setViewerSheetOpen(false)
