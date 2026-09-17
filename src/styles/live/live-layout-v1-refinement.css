@@ -106,43 +106,38 @@
   padding-bottom: max(0px, env(safe-area-inset-bottom));
 }
 
-/* iOS standalone solo Live owns the viewport. Keep the stage fixed to the
- * visible app viewport so WebKit cannot restore the video element's intrinsic
- * portrait box after visibility/capture lifecycle changes. Android and co-host
- * geometry are intentionally outside this rule. */
-@supports (-webkit-touch-callout: none) {
-  @media (display-mode: standalone) {
-    .mobile-live-shell.is-live:not(.has-cohost) .fam-live-video-surface {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: var(--fv-visible-viewport-height, 100dvh) !important;
-      min-width: 100vw !important;
-      min-height: var(--fv-visible-viewport-height, 100dvh) !important;
-      max-width: none !important;
-      max-height: none !important;
-      overflow: hidden !important;
-      contain: layout paint !important;
-    }
+/* One PWA Build Law: solo Live uses one visual geometry on every browser.
+ * Safari/WebKit may still receive lifecycle recovery in React, but it does not
+ * get a separate presentation. Android and iOS execute this same stage rule. */
+.mobile-live-shell.is-live:not(.has-cohost) .fam-live-video-surface {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: var(--fv-visible-viewport-height, 100dvh) !important;
+  min-width: 100vw !important;
+  min-height: var(--fv-visible-viewport-height, 100dvh) !important;
+  max-width: none !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  contain: layout paint !important;
+}
 
-    .mobile-live-shell.is-live:not(.has-cohost) .host-video.active {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: var(--fv-visible-viewport-height, 100dvh) !important;
-      min-width: 100vw !important;
-      min-height: var(--fv-visible-viewport-height, 100dvh) !important;
-      max-width: none !important;
-      max-height: none !important;
-      aspect-ratio: auto !important;
-      object-fit: cover !important;
-      object-position: center center !important;
-      display: block !important;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      transform: translateZ(0);
-    }
-  }
+.mobile-live-shell.is-live:not(.has-cohost) .host-video.active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: var(--fv-visible-viewport-height, 100dvh) !important;
+  min-width: 100vw !important;
+  min-height: var(--fv-visible-viewport-height, 100dvh) !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 @media (max-width: 390px) {
