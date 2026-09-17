@@ -20,29 +20,9 @@ function formatStat(value) {
   return compactNumber.format(Number.isFinite(number) && number > 0 ? number : 0)
 }
 
-function stopLiveTap(event) {
-  event.stopPropagation()
-}
+function stopLiveTap(event) { event.stopPropagation() }
 
-export default function ViewerLiveScreen({
-  room,
-  onClose,
-  followNetwork,
-  shareRoom,
-  liveMessages,
-  commentText,
-  setCommentText,
-  submitComment,
-  giftTrayOpen,
-  setGiftTrayOpen,
-  coins,
-  sendGift,
-  addTestCoins,
-  currentUserId,
-  currentDisplayName,
-  currentAvatarUrl,
-  setToast,
-}) {
+export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRoom, liveMessages, commentText, setCommentText, submitComment, giftTrayOpen, setGiftTrayOpen, coins, sendGift, addTestCoins, currentUserId, currentDisplayName, currentAvatarUrl, setToast }) {
   const videoRef = useRef(null)
   const particleIdRef = useRef(0)
   const particleLayerRef = useRef(null)
@@ -50,28 +30,13 @@ export default function ViewerLiveScreen({
   const [needsPlay, setNeedsPlay] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [viewerSheetOpen, setViewerSheetOpen] = useState(false)
+  const [cohostCameraOn, setCohostCameraOn] = useState(true)
   const profileSheet = useLiveProfileSheet(room?.id || null)
-  const relay = useLiveViewer({
-    roomId: room?.id,
-    enabled: Boolean(room?.id),
-    userId: currentUserId,
-    displayName: currentDisplayName,
-    avatarUrl: currentAvatarUrl,
-  })
-  const cohost = useCohostViewer({
-    roomId: room?.id,
-    viewerId: relay.viewerId,
-    userId: currentUserId,
-    displayName: currentDisplayName,
-    avatarUrl: currentAvatarUrl,
-    enabled: Boolean(room?.id && currentUserId),
-    setToast,
-  })
+  const relay = useLiveViewer({ roomId: room?.id, enabled: Boolean(room?.id), userId: currentUserId, displayName: currentDisplayName, avatarUrl: currentAvatarUrl })
+  const cohost = useCohostViewer({ roomId: room?.id, viewerId: relay.viewerId, userId: currentUserId, displayName: currentDisplayName, avatarUrl: currentAvatarUrl, enabled: Boolean(room?.id && currentUserId), setToast })
   const totals = useLiveTapTotals({ roomId: room?.id })
   const capture = useViewerTapCapture({ roomId: room?.id })
-  const hostLabel = room?.host?.username
-    ? `@${room.host.username}`
-    : room?.host?.displayName || 'Fameverse creator'
+  const hostLabel = room?.host?.username ? `@${room.host.username}` : room?.host?.displayName || 'Fameverse creator'
   const hostName = room?.host?.displayName || hostLabel
   const hostInitial = hostName.trim().charAt(0).toUpperCase() || 'F'
   const hostAvatar = room?.host?.avatarUrl || null
@@ -79,27 +44,20 @@ export default function ViewerLiveScreen({
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
   const cohostStream = cohost.localStream || cohost.remoteStream
   const isSelfCohost = Boolean(cohost.localStream)
-  const hostPlaybackStream = isSelfCohost && cohost.directHostStream
-    ? cohost.directHostStream
-    : relay.remoteStream
-  const isFollowing = useMemo(
-    () => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)),
-    [followNetwork?.following, room?.host_user_id],
-  )
+  const hostPlaybackStream = isSelfCohost && cohost.directHostStream ? cohost.directHostStream : relay.remoteStream
+  const isFollowing = useMemo(() => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)), [followNetwork?.following, room?.host_user_id])
 
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
     video.srcObject = hostPlaybackStream || null
-    if (!hostPlaybackStream) {
-      setNeedsPlay(false)
-      return
-    }
-
-    video.play()
-      .then(() => setNeedsPlay(false))
-      .catch(() => setNeedsPlay(true))
+    if (!hostPlaybackStream) { setNeedsPlay(false); return }
+    video.play().then(() => setNeedsPlay(false)).catch(() => setNeedsPlay(true))
   }, [hostPlaybackStream])
+
+  useEffect(() => {
+    if (!cohost.localStream) setCohostCameraOn(true)
+  }, [cohost.localStream])
 
   useEffect(() => () => {
     particleTimersRef.current.forEach((timer) => window.clearTimeout(timer))
@@ -107,16 +65,11 @@ export default function ViewerLiveScreen({
     particleLayerRef.current?.replaceChildren()
   }, [])
 
-  const playVideo = () => {
-    videoRef.current?.play?.()
-      .then(() => setNeedsPlay(false))
-      .catch(() => setNeedsPlay(true))
-  }
+  const playVideo = () => videoRef.current?.play?.().then(() => setNeedsPlay(false)).catch(() => setNeedsPlay(true))
 
   const spawnTapParticles = (event) => {
     const layer = particleLayerRef.current
     if (!layer) return
-
     const rect = event.currentTarget.getBoundingClientRect()
     const baseX = event.clientX - rect.left
     const baseY = event.clientY - rect.top
@@ -125,258 +78,84 @@ export default function ViewerLiveScreen({
       { id: `${seed}-f`, symbol: 'F', x: baseX - 9, y: baseY - 5, drift: -26, delay: 0 },
       { id: `${seed}-fire`, symbol: '🔥', x: baseX + 8, y: baseY + 2, drift: 22, delay: 70 },
     ]
-
-    while (layer.childElementCount > MAX_ACTIVE_TAP_PARTICLES - nextParticles.length) {
-      layer.firstElementChild?.remove()
-    }
-
+    while (layer.childElementCount > MAX_ACTIVE_TAP_PARTICLES - nextParticles.length) layer.firstElementChild?.remove()
     const nodes = nextParticles.map((particle) => {
       const node = document.createElement('span')
       node.dataset.tapParticleId = particle.id
       node.className = `fv-viewer-tap-particle ${particle.symbol === 'F' ? 'is-f' : 'is-fire'}`
       node.textContent = particle.symbol
-      node.style.left = `${particle.x}px`
-      node.style.top = `${particle.y}px`
-      node.style.setProperty('--tap-drift', `${particle.drift}px`)
-      node.style.setProperty('--tap-delay', `${particle.delay}ms`)
-      layer.appendChild(node)
-      return node
+      node.style.left = `${particle.x}px`; node.style.top = `${particle.y}px`
+      node.style.setProperty('--tap-drift', `${particle.drift}px`); node.style.setProperty('--tap-delay', `${particle.delay}ms`)
+      layer.appendChild(node); return node
     })
-
-    const timer = window.setTimeout(() => {
-      nodes.forEach((node) => node.remove())
-      particleTimersRef.current.delete(timer)
-    }, TAP_PARTICLE_LIFETIME_MS)
+    const timer = window.setTimeout(() => { nodes.forEach((node) => node.remove()); particleTimersRef.current.delete(timer) }, TAP_PARTICLE_LIFETIME_MS)
     particleTimersRef.current.add(timer)
   }
 
   const onTap = (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if (relay.state !== 'connected' || ended) return
-    setMenuOpen(false)
-    playVideo()
-    capture.tap()
-    spawnTapParticles(event)
+    setMenuOpen(false); playVideo(); capture.tap(); spawnTapParticles(event)
   }
-
-  const toggleFollow = () => {
-    if (!room?.host_user_id || followNetwork?.busyTargetId === room.host_user_id) return
-    void followNetwork?.toggleFollow?.(room.host_user_id)
-  }
-
-  const openHostProfile = () => {
-    if (room?.host_user_id) profileSheet.open(room.host_user_id)
-  }
-
-  const openViewerProfile = (userId) => {
-    setViewerSheetOpen(false)
-    profileSheet.open(userId)
-  }
-
-  const shareLive = () => {
-    setMenuOpen(false)
-    void shareRoom?.()
-  }
-
-  const requestCohost = () => {
-    if (cohost.requestCohost()) setMenuOpen(false)
-  }
-
-  const leaveCohost = () => {
-    cohost.leaveCohost()
+  const toggleFollow = () => { if (room?.host_user_id && followNetwork?.busyTargetId !== room.host_user_id) void followNetwork?.toggleFollow?.(room.host_user_id) }
+  const openHostProfile = () => { if (room?.host_user_id) profileSheet.open(room.host_user_id) }
+  const openViewerProfile = (userId) => { setViewerSheetOpen(false); profileSheet.open(userId) }
+  const shareLive = () => { setMenuOpen(false); void shareRoom?.() }
+  const requestCohost = () => { if (cohost.requestCohost()) setMenuOpen(false) }
+  const leaveCohost = () => { cohost.leaveCohost(); setCohostCameraOn(true); setMenuOpen(false) }
+  const toggleCohostCamera = () => {
+    const track = cohost.localStream?.getVideoTracks?.()[0]
+    if (!track) { setToast?.('Co-host camera is unavailable'); return }
+    const next = !track.enabled
+    track.enabled = next
+    setCohostCameraOn(next)
+    setToast?.(next ? 'Camera on' : 'Camera off')
     setMenuOpen(false)
   }
-
-  const openGiftTray = () => {
-    setMenuOpen(false)
-    setGiftTrayOpen(true)
-  }
-
-  const cohostMenuLabel = cohost.status === 'requested'
-    ? 'Request sent'
-    : cohost.status === 'connecting'
-      ? 'Joining co-host…'
-      : cohost.status === 'declined'
-        ? 'Request declined'
-        : 'Request co-host'
+  const openGiftTray = () => { setMenuOpen(false); setGiftTrayOpen(true) }
+  const cohostMenuLabel = cohost.status === 'requested' ? 'Request sent' : cohost.status === 'connecting' ? 'Joining co-host…' : cohost.status === 'declined' ? 'Request declined' : 'Request co-host'
 
   return (
     <section className={`fv-viewer-live ${cohostStream ? 'has-cohost' : ''}`} aria-label={`Watching ${hostLabel} live`}>
       <div className="fv-viewer-live-stage" onPointerDown={onTap}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="fv-viewer-live-video"
-        />
-        <CohostVideoTile
-          stream={cohostStream}
-          label={cohost.activeCohost?.displayName || 'Co-host'}
-          local={isSelfCohost}
-        />
+        <video ref={videoRef} autoPlay playsInline className="fv-viewer-live-video" />
+        <CohostVideoTile stream={cohostStream} label={cohost.activeCohost?.displayName || 'Co-host'} local={isSelfCohost} />
         <div className="fv-viewer-live-vignette" aria-hidden="true" />
-
-        {!hostPlaybackStream && !ended && (
-          <div className="fv-viewer-live-connecting" aria-live="polite">
-            <span className="fv-viewer-live-pulse" aria-hidden="true" />
-            <strong>{relay.state === 'degraded' ? 'Reconnecting…' : 'Connecting to Live…'}</strong>
-            <small>Opening the creator’s live camera and audio.</small>
-          </div>
-        )}
-
-        {ended && (
-          <div className="fv-viewer-live-ended">
-            <strong>This Live ended</strong>
-            <small>Return to Discover to find another live creator.</small>
-            <button type="button" onPointerDown={stopLiveTap} onClick={onClose}>Back to Discover</button>
-          </div>
-        )}
-
-        {needsPlay && !ended && (
-          <button
-            type="button"
-            className="fv-viewer-live-play"
-            onPointerDown={stopLiveTap}
-            onClick={playVideo}
-          >
-            Tap to play Live
-          </button>
-        )}
-
+        {!hostPlaybackStream && !ended && <div className="fv-viewer-live-connecting" aria-live="polite"><span className="fv-viewer-live-pulse" aria-hidden="true" /><strong>{relay.state === 'degraded' ? 'Reconnecting…' : 'Connecting to Live…'}</strong><small>Opening the creator’s live camera and audio.</small></div>}
+        {ended && <div className="fv-viewer-live-ended"><strong>This Live ended</strong><small>Return to Discover to find another live creator.</small><button type="button" onPointerDown={stopLiveTap} onClick={onClose}>Back to Discover</button></div>}
+        {needsPlay && !ended && <button type="button" className="fv-viewer-live-play" onPointerDown={stopLiveTap} onClick={playVideo}>Tap to play Live</button>}
         <div ref={particleLayerRef} className="fv-viewer-live-particles" aria-hidden="true" />
-
         <header className="fv-viewer-live-header" onPointerDown={stopLiveTap}>
           <button type="button" className="fv-viewer-live-back" onClick={onClose} aria-label="Back to Discover">‹</button>
-
           <div className="fv-viewer-live-creator">
-            <button
-              type="button"
-              className="fv-viewer-identity-button"
-              onPointerDown={stopLiveTap}
-              onClick={openHostProfile}
-              aria-label={`Open ${hostName} profile`}
-            >
-              {hostAvatar ? (
-                <img className="fv-viewer-live-avatar" src={hostAvatar} alt="" />
-              ) : (
-                <span className="fv-viewer-live-avatar fv-viewer-live-avatar-fallback">{hostInitial}</span>
-              )}
+            <button type="button" className="fv-viewer-identity-button" onPointerDown={stopLiveTap} onClick={openHostProfile} aria-label={`Open ${hostName} profile`}>
+              {hostAvatar ? <img className="fv-viewer-live-avatar" src={hostAvatar} alt="" /> : <span className="fv-viewer-live-avatar fv-viewer-live-avatar-fallback">{hostInitial}</span>}
             </button>
             <div className="fv-viewer-live-identity">
-              <div className="fv-viewer-live-name-row">
-                <button
-                  type="button"
-                  className="fv-viewer-identity-button"
-                  onPointerDown={stopLiveTap}
-                  onClick={openHostProfile}
-                >
-                  <strong>{hostName}</strong>
-                </button>
-                <span className="fv-viewer-live-badge">LIVE</span>
-              </div>
-              <button
-                type="button"
-                className={`fv-viewer-follow ${isFollowing ? 'is-following' : ''}`}
-                onPointerDown={stopLiveTap}
-                onClick={toggleFollow}
-                disabled={followNetwork?.busyTargetId === room?.host_user_id}
-              >
-                {isFollowing ? '✓ Following' : '+ Follow'}
-              </button>
+              <div className="fv-viewer-live-name-row"><button type="button" className="fv-viewer-identity-button" onPointerDown={stopLiveTap} onClick={openHostProfile}><strong>{hostName}</strong></button><span className="fv-viewer-live-badge">LIVE</span></div>
+              <button type="button" className={`fv-viewer-follow ${isFollowing ? 'is-following' : ''}`} onPointerDown={stopLiveTap} onClick={toggleFollow} disabled={followNetwork?.busyTargetId === room?.host_user_id}>{isFollowing ? '✓ Following' : '+ Follow'}</button>
             </div>
           </div>
-
           <div className="fv-viewer-live-stats" aria-label={`${relay.viewerCount} viewers and ${serverTotal} Fame Taps`}>
-            <button type="button" className="fv-viewer-count-button" onClick={() => setViewerSheetOpen(true)} aria-label={`Open ${relay.viewerCount} live viewers`}>
-              <b aria-hidden="true">👥</b>{formatStat(relay.viewerCount)}
-            </button>
-            <i aria-hidden="true" />
-            <span className="is-fame"><b aria-hidden="true">F</b>{formatStat(serverTotal)}</span>
+            <button type="button" className="fv-viewer-count-button" onClick={() => setViewerSheetOpen(true)} aria-label={`Open ${relay.viewerCount} live viewers`}><b aria-hidden="true">👥</b>{formatStat(relay.viewerCount)}</button><i aria-hidden="true" /><span className="is-fame"><b aria-hidden="true">F</b>{formatStat(serverTotal)}</span>
           </div>
         </header>
-
-        {!ended && (
-          <div className="fv-viewer-live-chat-layer" onPointerDown={stopLiveTap}>
-            <LiveChat
-              liveMessages={liveMessages}
-              commentText={commentText}
-              setCommentText={setCommentText}
-              submitComment={submitComment}
-              onGiftClick={openGiftTray}
-              onOpenIdentity={profileSheet.open}
-            />
-          </div>
-        )}
-
-        {!ended && (
-          <div className="fv-viewer-live-more" onPointerDown={stopLiveTap}>
-            {menuOpen && (
-              <div className="fv-viewer-live-menu" role="menu" aria-label="Live options">
-                {isSelfCohost ? (
-                  <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={leaveCohost}>
-                    <span aria-hidden="true">◫</span>
-                    <b>Leave co-host</b>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onPointerDown={stopLiveTap}
-                    onClick={requestCohost}
-                    disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost) || Boolean(cohost.incomingInvite)}
-                  >
-                    <span aria-hidden="true">◫</span>
-                    <b>{cohost.activeCohost && cohost.status === 'idle' ? 'Co-host occupied' : cohostMenuLabel}</b>
-                  </button>
-                )}
-                <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={shareLive}>
-                  <span aria-hidden="true">↗</span>
-                  <b>Share Live</b>
-                </button>
-              </div>
-            )}
-            <button
-              type="button"
-              className="fv-viewer-live-f-menu"
-              aria-label="Open Fameverse Live menu"
-              aria-expanded={menuOpen}
-              onPointerDown={stopLiveTap}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              F
-            </button>
-          </div>
-        )}
+        {!ended && <div className="fv-viewer-live-chat-layer" onPointerDown={stopLiveTap}><LiveChat liveMessages={liveMessages} commentText={commentText} setCommentText={setCommentText} submitComment={submitComment} onGiftClick={openGiftTray} onOpenIdentity={profileSheet.open} /></div>}
+        {!ended && <div className="fv-viewer-live-more" onPointerDown={stopLiveTap}>
+          {menuOpen && <div className="fv-viewer-live-menu" role="menu" aria-label="Live options">
+            {isSelfCohost ? <>
+              <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={toggleCohostCamera}><span aria-hidden="true">{cohostCameraOn ? '◉' : '○'}</span><b>{cohostCameraOn ? 'Turn camera off' : 'Turn camera on'}</b></button>
+              <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={leaveCohost}><span aria-hidden="true">◫</span><b>Leave co-host</b></button>
+            </> : <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={requestCohost} disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost) || Boolean(cohost.incomingInvite)}><span aria-hidden="true">◫</span><b>{cohost.activeCohost && cohost.status === 'idle' ? 'Co-host occupied' : cohostMenuLabel}</b></button>}
+            <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={shareLive}><span aria-hidden="true">↗</span><b>Share Live</b></button>
+          </div>}
+          <button type="button" className="fv-viewer-live-f-menu" aria-label="Open Fameverse Live menu" aria-expanded={menuOpen} onPointerDown={stopLiveTap} onClick={() => setMenuOpen((open) => !open)}>F</button>
+        </div>}
       </div>
-
-      <CohostInvitePrompt
-        invite={cohost.incomingInvite}
-        hostName={hostName}
-        onAccept={cohost.acceptInvite}
-        onDecline={cohost.declineInvite}
-      />
-
-      <LiveViewerSheet
-        open={viewerSheetOpen}
-        onClose={() => setViewerSheetOpen(false)}
-        roomId={room?.id || null}
-        viewers={relay.viewerRoster}
-        onOpenIdentity={openViewerProfile}
-      />
-
-      <LiveProfileSheet
-        sheet={profileSheet}
-        currentUserId={currentUserId}
-        followNetwork={followNetwork}
-      />
-
-      <LiveGiftTray
-        open={giftTrayOpen}
-        onClose={() => setGiftTrayOpen(false)}
-        coins={coins}
-        sendGift={sendGift}
-        addTestCoins={addTestCoins}
-      />
+      <CohostInvitePrompt invite={cohost.incomingInvite} hostName={hostName} onAccept={cohost.acceptInvite} onDecline={cohost.declineInvite} />
+      <LiveViewerSheet open={viewerSheetOpen} onClose={() => setViewerSheetOpen(false)} roomId={room?.id || null} viewers={relay.viewerRoster} onOpenIdentity={openViewerProfile} />
+      <LiveProfileSheet sheet={profileSheet} currentUserId={currentUserId} followNetwork={followNetwork} />
+      <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
     </section>
   )
 }
