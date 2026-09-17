@@ -41,7 +41,7 @@ function createPreparedVideo(config) {
   video.controls = false
   video.loop = false
   video.muted = false
-  video.volume = 0.82
+  video.volume = 1
   video.setAttribute('playsinline', '')
   video.setAttribute('webkit-playsinline', '')
   return video
@@ -110,7 +110,7 @@ function buildVideoScene(config, meta) {
   const video = getPreparedVideo(config)
   video.className = 'fv-gift-video'
   video.muted = false
-  video.volume = 0.82
+  video.volume = 1
   try { video.currentTime = 0 } catch {}
 
   const metaBar = document.createElement('div')
