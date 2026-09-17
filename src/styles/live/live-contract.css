@@ -96,6 +96,60 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Host header crispness contract: the whole top strip is ordinary painted UI,
+ * not a backdrop-filtered glass layer. This is shared by every PWA device. */
+.mobile-live-shell.is-live .fam-live-header,
+.mobile-live-shell.is-live .fam-live-header * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  text-shadow: none !important;
+  text-rendering: auto;
+  -webkit-font-smoothing: auto;
+  will-change: auto !important;
+  perspective: none !important;
+}
+
+.mobile-live-shell.is-live .fam-live-creator-identity {
+  background: linear-gradient(135deg, #160b1f, #09050d) !important;
+}
+
+.mobile-live-shell.is-live .fam-creator-name-row strong {
+  font-size: 14px;
+  line-height: 15px;
+}
+
+.mobile-live-shell.is-live .fam-creator-copy small {
+  color: #b8acbf;
+  font-size: 10px;
+  line-height: 12px;
+}
+
+.mobile-live-shell.is-live .fam-live-badge {
+  background: linear-gradient(135deg, #7428d8, #a63cff) !important;
+  box-shadow: none !important;
+  font-size: 8px;
+  line-height: 10px;
+}
+
+.mobile-live-shell.is-live .fam-viewer-chip {
+  background: #0b0710 !important;
+  box-shadow: none !important;
+  font-size: 11px;
+}
+
+.mobile-live-shell.is-live .fam-header-fame {
+  text-shadow: none !important;
+  font-size: 13px;
+}
+
+.mobile-live-shell.is-live .fam-end-live {
+  background: #df2449 !important;
+  box-shadow: none !important;
+  font-size: 11px;
+}
+
 .mobile-live-shell.is-live .live-action-rail,
 .mobile-live-shell.is-live .fam-action-rail {
   display: none !important;
@@ -192,7 +246,10 @@
     flex-basis: 35px;
   }
 
-  .mobile-live-shell.is-live .fam-creator-name-row strong { font-size: .80rem; }
+  .mobile-live-shell.is-live .fam-creator-name-row strong {
+    font-size: 13px;
+    line-height: 14px;
+  }
 
   .fv-viewer-live .fv-live-chat-feed {
     left: 10px;
