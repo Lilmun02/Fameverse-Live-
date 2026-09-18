@@ -171,6 +171,20 @@ export function registerFameversePwaUpdates() {
     })
   }
 
+  const pollForUpdates = async () => {
+    if (document.visibilityState !== 'visible') return
+
+    try {
+      registration ||= await navigator.serviceWorker.getRegistration()
+      watchRegistration(registration)
+      await registration?.update()
+      markWaitingWorker()
+    } catch {}
+
+    await checkAppShell({ force: true })
+    applyPendingUpdate()
+  }
+
   window.addEventListener('load', async () => {
     cleanForceRefreshMarker()
     try {
@@ -205,6 +219,10 @@ export function registerFameversePwaUpdates() {
     await checkAppShell({ force: true })
     applyPendingUpdate()
   })
+
+  window.setInterval(() => {
+    void pollForUpdates()
+  }, shellCheckIntervalMs)
 
   const liveObserver = new MutationObserver(() => {
     if (readPending()) applyPendingUpdate()
