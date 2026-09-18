@@ -1,16 +1,21 @@
-const CACHE = 'fameverse-beta-v23-device-parity'
+const CACHE = 'fameverse-one-pwa-v24'
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
-const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg']
+const STATIC_SHELL = ['/manifest.webmanifest', '/icon.svg']
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)))
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(STATIC_SHELL)))
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys()
-    await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+    await Promise.all(
+      keys
+        .filter((key) => key !== CACHE && key.startsWith('fameverse-'))
+        .map((key) => caches.delete(key)),
+    )
+
     await self.clients.claim()
 
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -28,10 +33,16 @@ async function fetchFresh(request) {
   }
 }
 
-async function fetchAndCache(request, cache, cacheKey = request) {
-  const response = await fetchFresh(request)
-  if (response && response.ok) await cache.put(cacheKey, response.clone())
-  return response
+async function networkFirst(request, cacheKey = request) {
+  const cache = await caches.open(CACHE)
+  const fresh = await fetchFresh(request)
+
+  if (fresh && fresh.ok) {
+    await cache.put(cacheKey, fresh.clone())
+    return fresh
+  }
+
+  return (await cache.match(cacheKey)) || null
 }
 
 self.addEventListener('fetch', (event) => {
@@ -51,12 +62,8 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
-      const cache = await caches.open(CACHE)
-      const fresh = await fetchAndCache(request, cache, '/')
-      if (fresh) return fresh
-
-      const fallback = (await cache.match(request)) || (await cache.match('/'))
-      if (fallback) return fallback
+      const response = await networkFirst(request, '/')
+      if (response) return response
 
       return new Response('Fameverse is temporarily unavailable.', {
         status: 503,
@@ -68,12 +75,7 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/assets/')) {
     event.respondWith((async () => {
-      const cache = await caches.open(CACHE)
-      const cached = await cache.match(request)
-      if (cached) return cached
-
-      const response = await fetchFresh(request)
-      if (response && response.ok) await cache.put(request, response.clone())
+      const response = await networkFirst(request)
       return response || new Response('', { status: 504 })
     })())
     return
@@ -82,13 +84,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE)
     const cached = await cache.match(request)
-    const networkPromise = fetchAndCache(request, cache)
+    const fresh = await fetchFresh(request)
 
-    if (cached) {
-      event.waitUntil(networkPromise)
-      return cached
+    if (fresh && fresh.ok) {
+      await cache.put(request, fresh.clone())
+      return fresh
     }
 
-    return (await networkPromise) || new Response('', { status: 504 })
+    return cached || new Response('', { status: 504 })
   })())
 })
