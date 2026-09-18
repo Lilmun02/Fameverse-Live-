@@ -10,12 +10,6 @@ import LiveViewerSheet from './LiveViewerSheet.jsx'
 import PreLiveSetupPanel from './PreLiveSetupPanel.jsx'
 import { useLiveProfileSheet } from '../../hooks/useLiveProfileSheet.js'
 
-const IOS_LIVE_STYLE_PROPS = [
-  'position', 'inset', 'top', 'right', 'bottom', 'left', 'width', 'height',
-  'min-width', 'min-height', 'max-width', 'max-height', 'aspect-ratio',
-  'object-fit', 'object-position', 'display', 'overflow', 'contain',
-]
-
 export default function LiveScreen({
   isLive,
   mediaStream,
@@ -70,54 +64,16 @@ export default function LiveScreen({
 
     const getActiveVideo = () => activeVideoSlot === 0 ? videoPrimaryRef.current : videoSecondaryRef.current
 
-    const getViewportHeight = () => {
+    const syncViewportHeight = () => {
       const height = Math.round(window.visualViewport?.height || window.innerHeight || 0)
-      return height > 0 ? height : 0
-    }
-
-    const applyStandaloneGeometry = () => {
-      const viewportHeight = getViewportHeight()
-      if (!viewportHeight) return
-
-      document.documentElement.style.setProperty('--fv-visible-viewport-height', `${viewportHeight}px`)
-
-      const activeVideo = getActiveVideo()
-      const surface = activeVideo?.closest?.('.fam-live-video-surface')
-      if (surface) {
-        surface.style.setProperty('position', 'fixed', 'important')
-        surface.style.setProperty('inset', '0', 'important')
-        surface.style.setProperty('width', '100vw', 'important')
-        surface.style.setProperty('height', `${viewportHeight}px`, 'important')
-        surface.style.setProperty('min-width', '100vw', 'important')
-        surface.style.setProperty('min-height', `${viewportHeight}px`, 'important')
-        surface.style.setProperty('max-width', 'none', 'important')
-        surface.style.setProperty('max-height', 'none', 'important')
-        surface.style.setProperty('overflow', 'hidden', 'important')
-        surface.style.setProperty('contain', 'layout paint', 'important')
-      }
-
-      if (activeVideo) {
-        activeVideo.style.setProperty('position', 'fixed', 'important')
-        activeVideo.style.setProperty('inset', '0', 'important')
-        activeVideo.style.setProperty('width', '100vw', 'important')
-        activeVideo.style.setProperty('height', `${viewportHeight}px`, 'important')
-        activeVideo.style.setProperty('min-width', '100vw', 'important')
-        activeVideo.style.setProperty('min-height', `${viewportHeight}px`, 'important')
-        activeVideo.style.setProperty('max-width', 'none', 'important')
-        activeVideo.style.setProperty('max-height', 'none', 'important')
-        activeVideo.style.setProperty('aspect-ratio', 'auto', 'important')
-        activeVideo.style.setProperty('object-fit', 'cover', 'important')
-        activeVideo.style.setProperty('object-position', 'center center', 'important')
-        activeVideo.style.setProperty('display', 'block', 'important')
-      }
+      if (height > 0) document.documentElement.style.setProperty('--fv-visible-viewport-height', `${height}px`)
     }
 
     const restoreMediaLayer = () => {
       window.cancelAnimationFrame(firstFrame)
       window.cancelAnimationFrame(secondFrame)
       window.clearTimeout(settleTimer)
-
-      applyStandaloneGeometry()
+      syncViewportHeight()
 
       const activeVideo = getActiveVideo()
       if (!activeVideo || !mediaStream || cameraOff) return
@@ -127,11 +83,10 @@ export default function LiveScreen({
       void activeVideo.offsetHeight
 
       firstFrame = window.requestAnimationFrame(() => {
-        applyStandaloneGeometry()
+        syncViewportHeight()
         secondFrame = window.requestAnimationFrame(() => {
           const currentVideo = getActiveVideo()
           if (!currentVideo || !mediaStream || cameraOff) return
-          applyStandaloneGeometry()
           currentVideo.srcObject = mediaStream
           currentVideo.play?.().catch?.(() => {})
         })
@@ -139,21 +94,12 @@ export default function LiveScreen({
 
       settleTimer = window.setTimeout(() => {
         const currentVideo = getActiveVideo()
-        applyStandaloneGeometry()
+        syncViewportHeight()
         if (currentVideo && mediaStream && !cameraOff) {
           if (currentVideo.srcObject !== mediaStream) currentVideo.srcObject = mediaStream
           currentVideo.play?.().catch?.(() => {})
         }
       }, 240)
-    }
-
-    const clearStandaloneGeometry = () => {
-      const videos = [videoPrimaryRef.current, videoSecondaryRef.current]
-      videos.forEach((video) => {
-        IOS_LIVE_STYLE_PROPS.forEach((property) => video?.style?.removeProperty(property))
-      })
-      const surface = videos.find(Boolean)?.closest?.('.fam-live-video-surface')
-      IOS_LIVE_STYLE_PROPS.forEach((property) => surface?.style?.removeProperty(property))
     }
 
     const onVisibilityChange = () => {
@@ -163,9 +109,9 @@ export default function LiveScreen({
     const onFocus = () => {
       if (document.visibilityState === 'visible') restoreMediaLayer()
     }
-    const onViewportResize = () => applyStandaloneGeometry()
+    const onViewportResize = () => syncViewportHeight()
 
-    applyStandaloneGeometry()
+    syncViewportHeight()
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('pageshow', onPageShow)
     window.addEventListener('focus', onFocus)
@@ -179,7 +125,6 @@ export default function LiveScreen({
       window.removeEventListener('pageshow', onPageShow)
       window.removeEventListener('focus', onFocus)
       window.visualViewport?.removeEventListener('resize', onViewportResize)
-      clearStandaloneGeometry()
     }
   }, [isLive, cohostStream, activeVideoSlot, mediaStream, cameraOff, videoPrimaryRef, videoSecondaryRef])
 

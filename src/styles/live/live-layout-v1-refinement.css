@@ -106,38 +106,34 @@
   padding-bottom: max(0px, env(safe-area-inset-bottom));
 }
 
-/* One PWA Build Law: solo Live uses one visual geometry on every browser.
- * Safari/WebKit may still receive lifecycle recovery in React, but it does not
- * get a separate presentation. Android and iOS execute this same stage rule. */
+/* One PWA Build Law: the Live shell owns the viewport and the video stays inside
+ * that shell on every browser. iOS may refresh the viewport-height token and
+ * media element on resume, but it must never receive separate visual geometry. */
 .mobile-live-shell.is-live:not(.has-cohost) .fam-live-video-surface {
-  position: fixed !important;
+  position: absolute !important;
   inset: 0 !important;
-  width: 100vw !important;
-  height: var(--fv-visible-viewport-height, 100dvh) !important;
-  min-width: 100vw !important;
-  min-height: var(--fv-visible-viewport-height, 100dvh) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
   max-width: none !important;
   max-height: none !important;
   overflow: hidden !important;
-  contain: layout paint !important;
 }
 
 .mobile-live-shell.is-live:not(.has-cohost) .host-video.active {
-  position: fixed !important;
+  position: absolute !important;
   inset: 0 !important;
-  width: 100vw !important;
-  height: var(--fv-visible-viewport-height, 100dvh) !important;
-  min-width: 100vw !important;
-  min-height: var(--fv-visible-viewport-height, 100dvh) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
   max-width: none !important;
   max-height: none !important;
   aspect-ratio: auto !important;
   object-fit: cover !important;
   object-position: center center !important;
   display: block !important;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
 }
 
 @media (max-width: 390px) {
