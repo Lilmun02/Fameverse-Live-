@@ -44,7 +44,10 @@ export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRo
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
   const cohostStream = cohost.localStream || cohost.remoteStream
   const isSelfCohost = Boolean(cohost.localStream)
-  const hostPlaybackStream = isSelfCohost && cohost.directHostStream ? cohost.directHostStream : relay.remoteStream
+  const directHasVideo = Boolean(
+    cohost.directHostStream?.getVideoTracks?.().some((track) => track.readyState === 'live'),
+  )
+  const hostPlaybackStream = isSelfCohost && directHasVideo ? cohost.directHostStream : relay.remoteStream
   const isFollowing = useMemo(() => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)), [followNetwork?.following, room?.host_user_id])
 
   useEffect(() => {
@@ -58,6 +61,13 @@ export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRo
   useEffect(() => {
     if (!cohost.localStream) setCohostCameraOn(true)
   }, [cohost.localStream])
+
+  useEffect(() => {
+    const relayAudio = relay.remoteStream?.getAudioTracks?.() || []
+    const directAudio = cohost.directHostStream?.getAudioTracks?.() || []
+    relayAudio.forEach((track) => { track.enabled = !isSelfCohost || !directHasVideo })
+    directAudio.forEach((track) => { track.enabled = isSelfCohost && directHasVideo })
+  }, [cohost.directHostStream, directHasVideo, isSelfCohost, relay.remoteStream])
 
   useEffect(() => () => {
     particleTimersRef.current.forEach((timer) => window.clearTimeout(timer))
@@ -145,8 +155,8 @@ export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRo
           {menuOpen && <div className="fv-viewer-live-menu" role="menu" aria-label="Live options">
             {isSelfCohost ? <>
               <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={toggleCohostCamera}><span aria-hidden="true">{cohostCameraOn ? '◉' : '○'}</span><b>{cohostCameraOn ? 'Turn camera off' : 'Turn camera on'}</b></button>
-              <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={leaveCohost}><span aria-hidden="true">◫</span><b>Leave co-host</b></button>
-            </> : <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={requestCohost} disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost) || Boolean(cohost.incomingInvite)}><span aria-hidden="true">◫</span><b>{cohost.activeCohost && cohost.status === 'idle' ? 'Co-host occupied' : cohostMenuLabel}</b></button>}
+              <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={leaveCohost}><span aria-hidden="true">◭</span><b>Leave co-host</b></button>
+            </> : <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={requestCohost} disabled={cohost.status !== 'idle' || Boolean(cohost.activeCohost) || Boolean(cohost.incomingInvite)}><span aria-hidden="true">◭</span><b>{cohost.activeCohost && cohost.status === 'idle' ? 'Co-host occupied' : cohostMenuLabel}</b></button>}
             <button type="button" role="menuitem" onPointerDown={stopLiveTap} onClick={shareLive}><span aria-hidden="true">↗</span><b>Share Live</b></button>
           </div>}
           <button type="button" className="fv-viewer-live-f-menu" aria-label="Open Fameverse Live menu" aria-expanded={menuOpen} onPointerDown={stopLiveTap} onClick={() => setMenuOpen((open) => !open)}>F</button>
