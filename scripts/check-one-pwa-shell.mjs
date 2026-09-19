@@ -17,6 +17,8 @@ const app = read('src/App.jsx')
 const liveScreen = read('src/components/live/LiveScreen.jsx')
 const liveLayout = read('src/styles/live/live-layout-v1-refinement.css')
 const liveContract = read('src/styles/live/live-contract.css')
+const livePolish = read('src/styles/live/polish.css')
+const viewportLock = read('src/styles/base/viewport-lock.css')
 const nonLiveLegacy = read('src/styles/legacy/nonlive-preserved.css')
 const jailedRelease = read('src/styles/legacy/disabled/live-release-shell.css')
 const jailedQa = read('src/styles/legacy/disabled/live-qa-shell.css')
@@ -76,6 +78,16 @@ for (const forbiddenRecovery of ['visibilitychange', 'pageshow', "addEventListen
 assert.ok(!liveScreen.includes('fam-live-vignette'), 'Canonical host Live shell must not render a legacy vignette layer.')
 assert.ok(liveScreen.includes('Canonical Live shell law'), 'Live runtime must document the shared-shell ownership contract.')
 
+// One viewport owner law: the outer app wrapper must never become a second fixed
+// viewport shell. Only .mobile-live-shell.is-live in viewport-lock.css may pin the
+// host Live room to the viewport.
+assert.ok(viewportLock.includes('.mobile-live-shell.is-live'), 'Viewport lock must own the canonical host Live shell.')
+assert.ok(viewportLock.includes('position: fixed;'), 'Canonical host Live shell must remain viewport pinned.')
+assert.ok(livePolish.includes('One viewport owner law'), 'Live polish must document the single viewport owner contract.')
+assert.ok(livePolish.includes('.live-app-shell {\n  position: static;'), 'Outer Live app wrapper must remain a normal document wrapper.')
+assert.ok(!livePolish.includes('.live-app-shell {\n  position: fixed;'), 'Outer Live app wrapper must never be a second fixed viewport shell.')
+assert.ok(!livePolish.includes('.live-app-shell .mobile-live-shell {\n  width: 100%;\n  height: 100%;'), 'Outer wrapper must not force a second 100%-height Live shell.')
+
 assert.ok(liveLayout.includes('object-fit: cover !important;'), 'Canonical Live layout must preserve full-canvas cover geometry.')
 assert.ok(liveLayout.includes('One PWA Build Law'), 'Canonical Live layout must document shared geometry.')
 assert.ok(liveContract.includes('Canonical active-Live contract'), 'Canonical Live contract must remain the final active-room contract.')
@@ -86,4 +98,4 @@ for (const source of ['/sw.js', '/manifest.webmanifest', '/', '/index.html']) {
 }
 assert.ok(vercel.includes('no-store, max-age=0, must-revalidate'), 'Canonical shell endpoints must be delivered without browser caching.')
 
-console.log('One-PWA shell guard passed: one host tree, one active Live contract, legacy Live CSS quarantined, hard installed-PWA cutover locked, no cached app shell, and no platform presentation fork.')
+console.log('One-PWA shell guard passed: one host tree, one viewport owner, one active Live contract, legacy Live CSS quarantined, hard installed-PWA cutover locked, no cached app shell, and no platform presentation fork.')
