@@ -1,0 +1,70 @@
+/* QUARANTINED — DO NOT IMPORT.
+ * Historical Live rules removed from active release.css during canonical-shell cleanup.
+ * Kept only for forensic comparison. Canonical Live presentation is owned by
+ * src/styles/live/live-layout-v1-refinement.css + live-contract.css.
+ */
+
+.top-end-live {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: #ef2f55;
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 900;
+  box-shadow: 0 8px 22px rgba(239,47,85,.28);
+}
+
+.live-comment-composer {
+  position: absolute;
+  z-index: 26;
+  left: 14px;
+  right: 82px;
+  bottom: calc(max(14px, env(safe-area-inset-bottom) + 8px));
+  display: grid;
+  grid-template-columns: 1fr 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.live-comment-composer input {
+  min-width: 0;
+  height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  outline: none;
+  background: rgba(8,3,14,.62);
+  color: #fff;
+  font-size: 16px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 26px rgba(0,0,0,.2);
+}
+
+.live-comment-composer input::placeholder { color: #b9adbf; }
+.live-comment-composer input:focus { border-color: rgba(205,138,255,.58); }
+
+.live-comment-composer button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9a3cff, #d05eff);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+.live-comment-composer button:disabled { opacity: .38; }
+
+.mobile-live-shell.is-live .live-action-rail {
+  bottom: calc(max(76px, env(safe-area-inset-bottom) + 64px));
+}
+
+.mobile-live-shell.is-live .live-chat-overlay {
+  bottom: calc(max(72px, env(safe-area-inset-bottom) + 62px));
+}
+
+.live-end-controls { display: none !important; }
