@@ -27,7 +27,7 @@ assert.match(updater, /shellAssetSignature/, 'PWA updater must detect when the r
 assert.match(updater, /fv-force-refresh/, 'PWA updater must reload into the current network shell when a new build exists.')
 
 for (const source of ['/sw.js', '/manifest.webmanifest', '/', '/index.html']) {
-  assert.ok(vercel.includes(`\"source\": \"${source}\"`), `Vercel must define cache policy for ${source}.`)
+  assert.ok(vercel.includes(`"source": "${source}"`), `Vercel must define cache policy for ${source}.`)
 }
 assert.match(vercel, /no-store, max-age=0, must-revalidate/, 'Canonical shell endpoints must be delivered without browser caching.')
 
