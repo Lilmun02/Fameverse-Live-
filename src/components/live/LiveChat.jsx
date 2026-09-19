@@ -36,7 +36,7 @@ export default function LiveChat({
   return (
     <>
       {liveMessages.length > 0 && (
-        <div ref={chatScrollRef} className="fam-chat-stack fv-live-chat-feed" aria-label="Live comments">
+        <div ref={chatScrollRef} className="fvx-chat-feed" aria-label="Live comments">
           {liveMessages.map((item) => {
             const identityEnabled = Boolean(item.userId && onOpenIdentity)
             const level = Math.max(1, Number(item.gifterLevel || 1))
@@ -82,12 +82,7 @@ export default function LiveChat({
                   <div className="fam-chat-identity">
                     <span className="fam-gifter-level" aria-label={`Gift level ${level}`}>Lv. {level}</span>
                     {identityEnabled ? (
-                      <button
-                        type="button"
-                        className="fam-chat-identity-button"
-                        onPointerDown={stopLiveTap}
-                        onClick={() => onOpenIdentity(item.userId)}
-                      >
+                      <button type="button" className="fam-chat-identity-button" onPointerDown={stopLiveTap} onClick={() => onOpenIdentity(item.userId)}>
                         <strong>{item.user}</strong>
                       </button>
                     ) : (
@@ -102,12 +97,8 @@ export default function LiveChat({
         </div>
       )}
 
-      <form
-        className="fam-comment-composer fv-live-composer"
-        onSubmit={submitComment}
-        onPointerDown={stopLiveTap}
-      >
-        <div className="fv-live-comment-entry">
+      <form className="fvx-live-composer" onSubmit={submitComment} onPointerDown={stopLiveTap}>
+        <div className="fvx-comment-entry">
           <input
             value={commentText}
             onChange={(event) => setCommentText(event.target.value)}
@@ -119,23 +110,11 @@ export default function LiveChat({
           />
         </div>
         {onGiftClick && (
-          <button
-            type="button"
-            className="fv-live-gift-button"
-            aria-label="Open gifts"
-            onPointerDown={stopLiveTap}
-            onClick={onGiftClick}
-          >
+          <button type="button" className="fvx-gift-button" aria-label="Open gifts" onPointerDown={stopLiveTap} onClick={onGiftClick}>
             🎁
           </button>
         )}
-        <button
-          className="fv-live-send-button"
-          type="submit"
-          aria-label="Send comment"
-          disabled={!commentText.trim()}
-          onPointerDown={stopLiveTap}
-        >
+        <button className="fvx-send-button" type="submit" aria-label="Send comment" disabled={!commentText.trim()} onPointerDown={stopLiveTap}>
           ↑
         </button>
       </form>
