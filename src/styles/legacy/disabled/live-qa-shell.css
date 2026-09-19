@@ -1,0 +1,84 @@
+/* QUARANTINED — DO NOT IMPORT.
+ * Historical Live QA overrides removed from the active cascade.
+ * Kept only for forensic comparison.
+ */
+
+.top-end-live {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  background: #e7274f;
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 900;
+  box-shadow: 0 8px 24px rgba(231,39,79,.28);
+}
+
+.live-comment-composer {
+  position: absolute;
+  z-index: 26;
+  left: 14px;
+  right: 82px;
+  bottom: calc(max(16px, env(safe-area-inset-bottom) + 8px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-comment-composer input {
+  min-width: 0;
+  flex: 1;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(7,3,12,.66);
+  color: #fff;
+  outline: none;
+  font-size: 16px;
+  backdrop-filter: blur(16px);
+}
+
+.live-comment-composer input::placeholder { color: #b4a7bd; }
+
+.live-comment-composer button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #8c35ff, #d45fff);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.live-comment-composer button:disabled { opacity: .4; }
+.live-chat-overlay { bottom: calc(max(74px, env(safe-area-inset-bottom) + 66px)); }
+.live-action-rail {
+  bottom: calc(max(86px, env(safe-area-inset-bottom) + 78px));
+  gap: 8px;
+}
+
+.camera-off-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  background: #030106;
+}
+.camera-off-placeholder strong { font-size: 1.2rem; }
+.camera-off-placeholder small {
+  max-width: 300px;
+  color: #b6a9c0;
+  line-height: 1.45;
+}
+
+@media (max-width: 460px) {
+  .live-action { min-height: 50px; }
+}
