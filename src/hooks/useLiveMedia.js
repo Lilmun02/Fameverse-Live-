@@ -140,7 +140,7 @@ export function useLiveMedia(setToast) {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
     return navigator.mediaDevices.getUserMedia({
       video: videoConstraints(nextFacing),
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      audio: { echoCancellation: { exact: true }, noiseSuppression: true, autoGainControl: true },
     })
   }
 
