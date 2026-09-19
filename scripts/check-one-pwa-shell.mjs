@@ -14,7 +14,7 @@ const updater = read('src/services/app/pwaUpdate.js')
 const vercel = read('vercel.json')
 const main = read('src/main.jsx')
 const app = read('src/App.jsx')
-const liveScreen = read('src/components/live/LiveScreen.jsx')
+const bottomNav = read('src/components/layout/BottomNav.jsx')
 const viewerContract = read('src/styles/live/viewer-contract.css')
 const nonLiveLegacy = read('src/styles/legacy/nonlive-preserved.css')
 const jailedRelease = read('src/styles/legacy/disabled/live-release-shell.css')
@@ -71,14 +71,25 @@ for (const forbiddenSelector of [
   assert.ok(!nonLiveLegacy.includes(forbiddenSelector), `Preserved non-Live legacy CSS must not own Live selector: ${forbiddenSelector}`)
 }
 
-// App route wiring stays stable, but the retired Host Live implementation must render nothing.
-assert.equal(count(app, "import LiveScreen from './components/live/LiveScreen.jsx'"), 1, 'App keeps one temporary Host Live route boundary for the rebuild.')
-assert.equal(count(app, '<LiveScreen'), 1, 'App must retain only one Host Live route boundary.')
-assert.ok(liveScreen.includes('HOST LIVE HARD RESET'), 'Host Live must remain explicitly reset until the replacement is approved.')
-assert.match(liveScreen, /export default function LiveScreen\(\)\s*\{\s*return null\s*\}/, 'Retired Host Live must render no UI during the reset.')
-for (const forbidden of ['mobile-live-shell', 'fam-live-', 'host-video', 'LiveHeader', 'LiveActions', 'PreLiveSetupPanel', 'userAgent', 'navigator.standalone']) {
-  assert.ok(!liveScreen.includes(forbidden), `Reset Host Live must not retain retired shell token: ${forbidden}`)
+// Host Live is completely absent from the active app until the CEO approves the rebuild.
+for (const forbiddenHostRuntime of [
+  "import LiveScreen from './components/live/LiveScreen.jsx'",
+  '<LiveScreen',
+  'useLiveMedia',
+  'useLivePresence',
+  'useLiveBroadcast',
+  'useCohostHost',
+  'useLiveSetup',
+  'useLiveSessionSummary',
+  'useLiveTapTotals',
+  'const startLive',
+  "tab === 'live'",
+]) {
+  assert.ok(!app.includes(forbiddenHostRuntime), `Active App must not contain Host Live runtime while reset is locked: ${forbiddenHostRuntime}`)
 }
+
+assert.ok(!bottomNav.includes("['live', 'Live']"), 'Bottom navigation must not expose a Host Live entry during the reset.')
+assert.ok(!bottomNav.includes('live:'), 'Bottom navigation must not retain the Host Live icon during the reset.')
 
 assert.ok(viewerContract.includes('.fv-viewer-live'), 'Viewer-only contract must remain scoped to Viewer Live.')
 assert.ok(!viewerContract.includes('.mobile-live-shell'), 'Viewer-only contract must not reintroduce Host Live geometry.')
@@ -88,4 +99,4 @@ for (const source of ['/sw.js', '/manifest.webmanifest', '/', '/index.html']) {
 }
 assert.ok(vercel.includes('no-store, max-age=0, must-revalidate'), 'Canonical shell endpoints must be delivered without browser caching.')
 
-console.log('Host Live reset guard passed: retired Host Live renders nothing, retired Host Live CSS is out of the active bundle, Viewer Live remains isolated, one PWA runtime is locked, and a visible in-app updater is wired.')
+console.log('Host Live removal lock passed: no Host Live route, component, navigation entry, runtime owner, or retired Host Live CSS is active; Viewer Live remains isolated; one PWA runtime and visible updater remain locked.')
