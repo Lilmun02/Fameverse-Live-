@@ -1,0 +1,23 @@
+/* Fresh host Live bridge: neutralize the retired outer Live wrapper without touching App logic. */
+.live-app-shell {
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.live-app-shell > main {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
