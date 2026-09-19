@@ -6,7 +6,7 @@ export function registerFameversePwaUpdates() {
   let lastShellCheckAt = 0
   const pendingKey = 'fameverse-pwa-update-pending'
   const updateMessageType = 'FAMEVERSE_UPDATE_READY'
-  const shellCheckIntervalMs = 15000
+  const shellCheckIntervalMs = 8000
   const watchedRegistrations = new WeakSet()
 
   const liveIsActive = () => Boolean(
@@ -37,7 +37,6 @@ export function registerFameversePwaUpdates() {
   const shellAssetSignature = (doc, baseUrl) => {
     const assets = []
     const nodes = doc.querySelectorAll('script[type="module"][src], link[rel="stylesheet"][href]')
-
     nodes.forEach((node) => {
       const raw = node.getAttribute('src') || node.getAttribute('href')
       if (!raw) return
@@ -47,7 +46,6 @@ export function registerFameversePwaUpdates() {
         assets.push(url.pathname)
       } catch {}
     })
-
     if (!assets.length) return null
     return JSON.stringify([...new Set(assets)].sort())
   }
@@ -62,7 +60,6 @@ export function registerFameversePwaUpdates() {
       headers: { 'Cache-Control': 'no-cache' },
     })
     if (!response.ok) return null
-
     const html = await response.text()
     const doc = new DOMParser().parseFromString(html, 'text/html')
     return shellAssetSignature(doc, window.location.origin)
@@ -79,7 +76,6 @@ export function registerFameversePwaUpdates() {
       notice.innerHTML = '<span class="fv-update-dot" aria-hidden="true"></span><div><strong></strong><small></small></div>'
       document.body.appendChild(notice)
     }
-
     const title = notice.querySelector('strong')
     const detail = notice.querySelector('small')
     if (mode === 'deferred') {
@@ -104,13 +100,17 @@ export function registerFameversePwaUpdates() {
     window.location.replace(url.toString())
   }
 
+  const activateWaitingWorker = () => {
+    try { registration?.waiting?.postMessage({ type: 'SKIP_WAITING' }) } catch {}
+  }
+
   const applyPendingUpdate = () => {
     if (reloading || !readPending()) return
+    activateWaitingWorker()
     if (liveIsActive()) {
       showNotice('deferred')
       return
     }
-
     reloading = true
     showNotice('applying')
     clearPending()
@@ -121,7 +121,6 @@ export function registerFameversePwaUpdates() {
     const now = Date.now()
     if (!force && now - lastShellCheckAt < shellCheckIntervalMs) return
     lastShellCheckAt = now
-
     try {
       const current = currentShellSignature()
       const latest = await latestShellSignature()
@@ -140,6 +139,7 @@ export function registerFameversePwaUpdates() {
 
   const markWaitingWorker = () => {
     if (!registration?.waiting || !navigator.serviceWorker.controller) return
+    activateWaitingWorker()
     markPending()
     applyPendingUpdate()
   }
@@ -159,28 +159,25 @@ export function registerFameversePwaUpdates() {
   const watchRegistration = (nextRegistration) => {
     if (!nextRegistration || watchedRegistrations.has(nextRegistration)) return
     watchedRegistrations.add(nextRegistration)
-
     nextRegistration.addEventListener('updatefound', () => {
       const worker = nextRegistration.installing
       if (!worker) return
-
       worker.addEventListener('statechange', () => {
         if (worker.state !== 'installed' || !navigator.serviceWorker.controller) return
         markPending()
+        activateWaitingWorker()
       })
     })
   }
 
   const pollForUpdates = async () => {
     if (document.visibilityState !== 'visible') return
-
     try {
       registration ||= await navigator.serviceWorker.getRegistration()
       watchRegistration(registration)
       await registration?.update()
       markWaitingWorker()
     } catch {}
-
     await checkAppShell({ force: true })
     applyPendingUpdate()
   }
@@ -188,7 +185,7 @@ export function registerFameversePwaUpdates() {
   window.addEventListener('load', async () => {
     cleanForceRefreshMarker()
     try {
-      registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      registration = await navigator.serviceWorker.register('/sw.js?v=26', { updateViaCache: 'none' })
       watchRegistration(registration)
       await registration.update()
       markWaitingWorker()
@@ -205,7 +202,7 @@ export function registerFameversePwaUpdates() {
       await registration?.update()
       markWaitingWorker()
     } catch {}
-    await checkAppShell()
+    await checkAppShell({ force: true })
     applyPendingUpdate()
   })
 
