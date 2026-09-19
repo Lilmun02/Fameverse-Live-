@@ -51,26 +51,13 @@ export default function LiveScreen({
   const profileSheet = useLiveProfileSheet()
   const cohostStream = cohost?.remoteStream || null
 
-  /*
-   * Canonical Live shell law:
-   * - one component tree for every device
-   * - CSS owns presentation geometry
-   * - useLiveMedia owns camera lifecycle/health
-   * - LiveScreen must not detach/reattach media on focus/visibility/page-show
-   */
-
   const openViewerProfile = (userId) => {
     setViewerSheetOpen(false)
     profileSheet.open(userId)
   }
 
   if (!isLive && sessionSummary.summary) {
-    return (
-      <EndLiveSummaryPanel
-        summary={sessionSummary.summary}
-        onDone={sessionSummary.dismissSummary}
-      />
-    )
+    return <EndLiveSummaryPanel summary={sessionSummary.summary} onDone={sessionSummary.dismissSummary} />
   }
 
   if (!isLive) {
@@ -89,16 +76,30 @@ export default function LiveScreen({
   }
 
   return (
-    <section className={`mobile-live-shell fam-live-shell is-live ${cohostStream ? 'has-cohost' : ''}`}>
-      <div className="live-video-surface fam-live-video-surface">
+    <section className={`fvx-host-live ${cohostStream ? 'is-cohost' : ''}`} data-fresh-host-live="true">
+      <div className="fvx-host-stage">
         {mediaStream && !cameraOff ? (
           <>
-            <video ref={videoPrimaryRef} className={`host-video immersive-video ${activeVideoSlot === 0 ? 'active' : 'inactive'} ${videoSlotFacing[0] === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
-            <video ref={videoSecondaryRef} className={`host-video immersive-video ${activeVideoSlot === 1 ? 'active' : 'inactive'} ${videoSlotFacing[1] === 'user' ? 'mirror' : ''}`} autoPlay muted playsInline />
+            <video
+              ref={videoPrimaryRef}
+              className={`fvx-host-video ${activeVideoSlot === 0 ? 'is-active' : 'is-inactive'} ${videoSlotFacing[0] === 'user' ? 'is-mirror' : ''}`}
+              autoPlay
+              muted
+              playsInline
+            />
+            <video
+              ref={videoSecondaryRef}
+              className={`fvx-host-video ${activeVideoSlot === 1 ? 'is-active' : 'is-inactive'} ${videoSlotFacing[1] === 'user' ? 'is-mirror' : ''}`}
+              autoPlay
+              muted
+              playsInline
+            />
           </>
         ) : (
-          <div className="camera-off-placeholder fam-camera-off">
-            <div className="preview-camera-icon">◉</div><strong>Camera off</strong><small>Your microphone can stay on while video is hidden.</small>
+          <div className="fvx-camera-off">
+            <div className="preview-camera-icon">◉</div>
+            <strong>Camera off</strong>
+            <small>Your microphone can stay on while video is hidden.</small>
           </div>
         )}
         <CohostVideoTile stream={cohostStream} label={cohost?.activeCohost?.displayName || 'Co-host'} />
@@ -140,19 +141,8 @@ export default function LiveScreen({
         onOpenIdentity={profileSheet.open}
       />
 
-      <LiveViewerSheet
-        open={viewerSheetOpen}
-        onClose={() => setViewerSheetOpen(false)}
-        viewers={cohost?.viewers || []}
-        onOpenIdentity={openViewerProfile}
-      />
-
-      <LiveProfileSheet
-        sheet={profileSheet}
-        currentUserId={currentUserId}
-        followNetwork={followNetwork}
-      />
-
+      <LiveViewerSheet open={viewerSheetOpen} onClose={() => setViewerSheetOpen(false)} viewers={cohost?.viewers || []} onOpenIdentity={openViewerProfile} />
+      <LiveProfileSheet sheet={profileSheet} currentUserId={currentUserId} followNetwork={followNetwork} />
       <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
     </section>
   )
