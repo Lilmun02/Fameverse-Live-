@@ -32,7 +32,7 @@ assert.match(hook, /setInterval\(heartbeat, LIVE_PRESENCE_HEARTBEAT_MS\)/, 'Live
 assert.match(app, /startPresence\(roomTitle\)/, 'Go Live must publish authoritative presence.')
 assert.match(app, /endPresence\(\)/, 'End Live must close authoritative presence.')
 assert.match(liveHeader, /data-presence-state=\{presenceState \|\| 'unknown'\}/, 'Phone diagnostics must retain the current Live presence state without forcing developer text into the user UI.')
-assert.match(liveHeader, /className="fam-live-badge">LIVE<\/span>/, 'User-facing host status must remain a clean LIVE badge.')
+assert.match(liveHeader, /className="fvx-live-badge">LIVE<\/span>/, 'User-facing host status must remain a clean LIVE badge in the fresh host header.')
 assert.match(packageJson, /"check:presence"/, 'Production build must run the Live Presence guard.')
 assert.match(migration, /live_rooms_one_active_per_host/, 'Database must enforce one active room per host.')
 assert.match(migration, /enable row level security/, 'Live rooms must keep RLS enabled.')
