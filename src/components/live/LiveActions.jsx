@@ -42,9 +42,9 @@ export default function LiveActions({
   )
 
   return (
-    <div className="fam-live-more" onPointerDown={stopLiveTap}>
+    <div className="fvx-live-more" onPointerDown={stopLiveTap}>
       {menuOpen && (
-        <div className="fam-live-control-menu has-cohost-controls" role="menu" aria-label="Host Live controls">
+        <div className="fvx-live-control-menu has-cohost-controls" role="menu" aria-label="Host Live controls">
           <div className="fam-live-control-section-label">CO-HOST</div>
 
           {activeCohost && (
@@ -115,12 +115,7 @@ export default function LiveActions({
           <button type="button" role="menuitem" onClick={() => runAction(toggleCamera)}>
             <span aria-hidden="true">{cameraOff ? '◉' : '📷'}</span><b>{cameraOff ? 'Camera on' : 'Camera off'}</b>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={isStartingLive || cameraOff}
-            onClick={() => runAction(flipCamera)}
-          >
+          <button type="button" role="menuitem" disabled={isStartingLive || cameraOff} onClick={() => runAction(flipCamera)}>
             <span aria-hidden="true">↻</span><b>Flip camera</b>
           </button>
           <button type="button" role="menuitem" onClick={() => runAction(shareRoom)}>
@@ -130,7 +125,7 @@ export default function LiveActions({
       )}
       <button
         type="button"
-        className="fam-live-f-menu"
+        className="fvx-live-f-menu"
         aria-label="Open host Live controls"
         aria-expanded={menuOpen}
         onPointerDown={stopLiveTap}
