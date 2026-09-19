@@ -3,6 +3,9 @@
 .mobile-live-shell.is-live .fam-live-header {
   filter: none !important;
   -webkit-filter: none !important;
+  transform: none !important;
+  perspective: none !important;
+  will-change: auto !important;
 }
 
 .mobile-live-shell.is-live .fam-live-creator-identity {
@@ -28,6 +31,8 @@
   -webkit-backdrop-filter: none !important;
   filter: none !important;
   -webkit-filter: none !important;
+  transform: none !important;
+  will-change: auto !important;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
@@ -94,6 +99,32 @@
   filter: none !important;
   -webkit-filter: none !important;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Portrait parity law: the top Live chrome uses the same non-composited
+ * presentation at every phone width. Narrow portrait viewports must not fall
+ * back to Safari blur/raster layers while landscape stays crisp. */
+.mobile-live-shell.is-live .fam-header-meta,
+.mobile-live-shell.is-live .fam-viewer-chip,
+.mobile-live-shell.is-live .fam-end-live,
+.mobile-live-shell.is-live .fam-viewer-count-button,
+.mobile-live-shell.is-live .fam-header-fame {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  transform: none !important;
+  will-change: auto !important;
+  text-shadow: none !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mobile-live-shell.is-live .fam-viewer-chip {
+  background: rgba(8,3,13,.94) !important;
+}
+
+.mobile-live-shell.is-live .fam-end-live {
+  background: #e7274f !important;
 }
 
 .mobile-live-shell.is-live .live-action-rail,
@@ -172,28 +203,8 @@
 }
 
 @media (max-width: 390px) {
-  .mobile-live-shell.is-live .fam-live-creator-identity {
-    max-width: 55vw;
-    min-height: 48px;
-    grid-template-columns: 40px minmax(0, 1fr);
-    gap: 7px;
-    padding: 3px 10px 3px 4px !important;
-  }
-
-  .mobile-live-shell.is-live .fam-avatar-orbit {
-    width: 40px;
-    height: 40px;
-    flex-basis: 40px;
-  }
-
-  .mobile-live-shell.is-live .fam-avatar-orbit .live-avatar {
-    width: 35px;
-    height: 35px;
-    flex-basis: 35px;
-  }
-
-  .mobile-live-shell.is-live .fam-creator-name-row strong { font-size: .80rem; }
-
+  /* Only viewer composer spacing may compact at narrow widths. Host Live header
+   * geometry intentionally stays identical to the canonical phone contract. */
   .fv-viewer-live .fv-live-chat-feed {
     left: 10px;
     right: 68px;
