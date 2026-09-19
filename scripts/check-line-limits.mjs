@@ -33,6 +33,10 @@ const sourceRoot = ROOT.pathname
 const files = await walk(sourceRoot)
 const violations = []
 const architectureViolations = []
+const appSource = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
+const hostLiveRemoved = !appSource.includes("import LiveScreen from './components/live/LiveScreen.jsx'")
+  && !appSource.includes('<LiveScreen')
+  && !appSource.includes("tab === 'live'")
 
 for (const file of files) {
   const content = await readFile(file, 'utf8')
@@ -115,12 +119,12 @@ for (const guard of REQUIRED_GUARDS) {
   }
 }
 
-// Live chat scrolling invariant.
-{
-  const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
+// Host-Live-only contracts are enforced whenever Host Live exists. During the
+// CEO-approved hard reset, the stronger requirement is that Host Live is absent.
+if (!hostLiveRemoved) {
   const liveChat = await readFile(join(sourceRoot, 'components/live/LiveChat.jsx'), 'utf8')
   const livePolish = await readFile(join(sourceRoot, 'styles/live/polish.css'), 'utf8')
-  const fullSessionChat = app.includes('const liveMessages = chat') && !app.includes('const liveMessages = chat.slice(')
+  const fullSessionChat = appSource.includes('const liveMessages = chat') && !appSource.includes('const liveMessages = chat.slice(')
   const autoFollow = liveChat.includes('chatNode.scrollTop = chatNode.scrollHeight')
     && liveChat.includes('ref={chatScrollRef}')
   const chatOwnsScroll = livePolish.includes('.mobile-live-shell.is-live .live-chat-overlay')
@@ -136,15 +140,11 @@ for (const guard of REQUIRED_GUARDS) {
       'Live chat scrolling contract failed: retain full session, auto-follow comments, keep chat scrollable, and keep Live shell pinned.',
     )
   }
-}
 
-// End Live must clear both committed chat and the unsent draft.
-{
-  const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
-  const endLiveIndex = app.indexOf('if (wasLive)')
-  const endLiveCloseIndex = endLiveIndex >= 0 ? app.indexOf('\n    }', endLiveIndex) : -1
-  const clearChatIndex = endLiveIndex >= 0 ? app.indexOf('setChat([])', endLiveIndex) : -1
-  const clearDraftIndex = endLiveIndex >= 0 ? app.indexOf("setCommentText('')", endLiveIndex) : -1
+  const endLiveIndex = appSource.indexOf('if (wasLive)')
+  const endLiveCloseIndex = endLiveIndex >= 0 ? appSource.indexOf('\n    }', endLiveIndex) : -1
+  const clearChatIndex = endLiveIndex >= 0 ? appSource.indexOf('setChat([])', endLiveIndex) : -1
+  const clearDraftIndex = endLiveIndex >= 0 ? appSource.indexOf("setCommentText('')", endLiveIndex) : -1
 
   if (
     endLiveIndex < 0
@@ -157,6 +157,10 @@ for (const guard of REQUIRED_GUARDS) {
     architectureViolations.push(
       'Live session contract failed: End Live must clear chat and comment draft inside the wasLive cleanup path. Expected in src/App.jsx',
     )
+  }
+} else {
+  if (appSource.includes('useLiveMedia') || appSource.includes('useLivePresence') || appSource.includes('useLiveBroadcast') || appSource.includes('const startLive')) {
+    architectureViolations.push('Host Live reset contract failed: Host Live runtime ownership is still active in src/App.jsx.')
   }
 }
 
@@ -176,4 +180,6 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log('Architecture guard passed: startup recovery, media health, approved compact gift tray, gift pricing/quantity, live chat scrolling, and End Live cleanup contracts are active.')
+console.log(hostLiveRemoved
+  ? 'Architecture guard passed: Host Live is removed while shared app, viewer, gifting, startup recovery, and media-health contracts remain protected.'
+  : 'Architecture guard passed: startup recovery, media health, approved compact gift tray, gift pricing/quantity, live chat scrolling, and End Live cleanup contracts are active.')
