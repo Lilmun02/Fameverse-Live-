@@ -1,18 +1,19 @@
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
-const MIGRATION_ID = 'one-canonical-pwa-shell-v2'
+const MIGRATION_ID = 'one-canonical-pwa-shell-v3-hard-cutover'
+const MIGRATION_PARAM = 'fv-shell-migration'
 
 /*
  * Canonical PWA shell migration.
  *
  * Fameverse has exactly one installed-web-app runtime for Android and iPhone.
- * This worker never serves HTML, CSS, JS, or navigation from CacheStorage. Its
- * only job is to destroy legacy shell caches, claim existing installations,
- * and tell open clients that the canonical network shell is ready.
+ * This worker never serves HTML, CSS, JS, or navigation from CacheStorage.
  *
- * Legacy guard bridge only (comments, never executable):
- * fameverse-beta-v23-device-parity is retired.
- * request.mode === 'navigate' -> fetchAndCache(request, cache, '/') -> if (fresh) return fresh
- * fv-shell-check is retired because the canonical worker has no fetch handler.
+ * v3 is a one-time hard cutover for existing installed PWAs that can remain
+ * suspended on an obsolete document even after the canonical worker activates.
+ * On activation we delete every legacy cache, claim every window, then navigate
+ * each same-origin PWA window to its current URL with a migration marker. Because
+ * there is no fetch handler and the app shell is served no-store, that navigation
+ * must load the current network shell instead of reviving the retired iOS shell.
  */
 
 self.addEventListener('install', () => {
@@ -32,6 +33,17 @@ self.addEventListener('activate', (event) => {
 
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     for (const client of clients) {
+      try {
+        const url = new URL(client.url)
+        if (url.origin !== self.location.origin) continue
+
+        if (url.searchParams.get(MIGRATION_PARAM) !== MIGRATION_ID) {
+          url.searchParams.set(MIGRATION_PARAM, MIGRATION_ID)
+          await client.navigate(url.toString())
+          continue
+        }
+      } catch {}
+
       client.postMessage({ type: UPDATE_MESSAGE, migration: MIGRATION_ID })
     }
   })())

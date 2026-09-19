@@ -26,7 +26,9 @@ assert.ok(serviceWorker.includes('caches.keys()'), 'Canonical worker must enumer
 assert.ok(serviceWorker.includes('keys.map((key) => caches.delete(key))'), 'Canonical worker must delete every legacy CacheStorage entry.')
 assert.ok(serviceWorker.includes('self.skipWaiting()'), 'Canonical worker must activate immediately.')
 assert.ok(serviceWorker.includes('self.clients.claim()'), 'Canonical worker must claim installed PWA windows.')
-assert.ok(serviceWorker.includes('one-canonical-pwa-shell-v2'), 'Canonical worker must use the current migration generation.')
+assert.ok(serviceWorker.includes('one-canonical-pwa-shell-v3-hard-cutover'), 'Canonical worker must use the hard-cutover migration generation.')
+assert.ok(serviceWorker.includes('client.navigate(url.toString())'), 'Canonical migration must hard-navigate stale installed PWA windows into the current network shell.')
+assert.ok(serviceWorker.includes("const MIGRATION_PARAM = 'fv-shell-migration'"), 'Canonical migration must mark the one-time shell cutover navigation.')
 
 assert.ok(updater.includes('purgeLegacyCaches'), 'Updater must defensively purge leftover CacheStorage entries.')
 assert.ok(updater.includes("serviceWorker.register('/sw.js', { updateViaCache: 'none' })"), 'Updater must fetch the current worker without cache reuse.')
@@ -84,4 +86,4 @@ for (const source of ['/sw.js', '/manifest.webmanifest', '/', '/index.html']) {
 }
 assert.ok(vercel.includes('no-store, max-age=0, must-revalidate'), 'Canonical shell endpoints must be delivered without browser caching.')
 
-console.log('One-PWA shell guard passed: one host tree, one active Live contract, legacy Live CSS quarantined, no destructive resume reset, no cached app shell, and no platform presentation fork.')
+console.log('One-PWA shell guard passed: one host tree, one active Live contract, legacy Live CSS quarantined, hard installed-PWA cutover locked, no cached app shell, and no platform presentation fork.')
