@@ -1,0 +1,37 @@
+/* Gift overlay placement preserved for viewer/live activity independently of Host Live shell. */
+.gift-overlay-simple {
+  top: auto !important;
+  left: 24px !important;
+  right: auto !important;
+  bottom: calc(max(152px, env(safe-area-inset-bottom) + 144px)) !important;
+  transform: none !important;
+  width: min(calc(100vw - 128px), 360px) !important;
+  min-height: 52px;
+  padding: 9px 12px !important;
+  border-radius: 16px !important;
+  background: rgba(8, 4, 13, .82) !important;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28) !important;
+  animation: live-gift-combo 1.8s ease both !important;
+}
+
+.gift-overlay-simple .gift-overlay-emoji {
+  font-size: 1.55rem !important;
+}
+
+.gift-overlay-simple strong {
+  color: #d79aff;
+}
+
+@keyframes live-gift-combo {
+  0% { opacity: 0; transform: translateY(10px) scale(.96); }
+  12%, 78% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(.98); }
+}
+
+@media (max-width: 390px) {
+  .gift-overlay-simple {
+    left: 16px !important;
+    width: min(calc(100vw - 112px), 330px) !important;
+  }
+}

@@ -24,7 +24,7 @@ body { background: var(--fv-bg); }
   padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border: 0;
   border-top: 1px solid var(--fv-line);
   border-radius: 0;
