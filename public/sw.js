@@ -1,94 +1,33 @@
-const CACHE = 'fameverse-beta-v23-device-parity-v24-one-pwa'
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
-const STATIC_SHELL = ['/manifest.webmanifest', '/icon.svg']
+const MIGRATION_ID = 'one-canonical-pwa-shell-v1'
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(STATIC_SHELL)))
+self.addEventListener('install', () => {
+  // This worker replaces every older Fameverse worker immediately.
   self.skipWaiting()
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
+    // Canonical-shell migration: remove every CacheStorage entry for this origin.
+    // Famaverse no longer keeps an HTML/app-shell cache that can resurrect an
+    // older iOS or Android runtime. Navigation and assets come from the current
+    // production build through the network/browser cache only.
     const keys = await caches.keys()
-    await Promise.all(
-      keys
-        .filter((key) => key !== CACHE && key.startsWith('fameverse-'))
-        .map((key) => caches.delete(key)),
-    )
+    await Promise.all(keys.map((key) => caches.delete(key)))
 
     await self.clients.claim()
 
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     for (const client of clients) {
-      client.postMessage({ type: UPDATE_MESSAGE, cache: CACHE })
+      client.postMessage({ type: UPDATE_MESSAGE, migration: MIGRATION_ID })
     }
   })())
 })
 
-async function fetchFresh(request) {
-  try {
-    return await fetch(request, { cache: 'no-store' })
-  } catch {
-    return null
-  }
-}
-
-async function fetchAndCache(request, cache, cacheKey = request) {
-  const response = await fetchFresh(request)
-  if (response && response.ok) await cache.put(cacheKey, response.clone())
-  return response
-}
-
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return
-
-  const request = event.request
-  const url = new URL(request.url)
-  if (url.origin !== self.location.origin) return
-
-  if (url.searchParams.has('fv-shell-check')) {
-    event.respondWith((async () => {
-      const response = await fetchFresh(request)
-      return response || new Response('', { status: 504 })
-    })())
-    return
-  }
-
-  if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE)
-      const fresh = await fetchAndCache(request, cache, '/')
-      if (fresh) return fresh
-
-      const fallback = (await cache.match(request)) || (await cache.match('/'))
-      if (fallback) return fallback
-
-      return new Response('Fameverse is temporarily unavailable.', {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      })
-    })())
-    return
-  }
-
-  if (url.pathname.startsWith('/assets/')) {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE)
-      const fresh = await fetchAndCache(request, cache)
-      if (fresh) return fresh
-
-      const fallback = await cache.match(request)
-      return fallback || new Response('', { status: 504 })
-    })())
-    return
-  }
-
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE)
-    const fresh = await fetchAndCache(request, cache)
-    if (fresh) return fresh
-
-    const fallback = await cache.match(request)
-    return fallback || new Response('', { status: 504 })
-  })())
-})
+// Intentionally no fetch handler.
+// One PWA means one canonical network shell. The service worker exists only to
+// migrate installed PWAs, purge legacy caches, claim clients, and signal updates.
