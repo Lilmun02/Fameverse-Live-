@@ -51,12 +51,14 @@ export default function LiveScreen({
   const profileSheet = useLiveProfileSheet()
   const cohostStream = cohost?.remoteStream || null
 
+  /*
+   * One-PWA law: media lifecycle recovery is shared by every installed PWA.
+   * There is no iOS/Safari shell, UA branch, viewport geometry override, or
+   * device-specific presentation path here. Android and iPhone execute this
+   * exact same recovery path and the CSS shell owns all geometry.
+   */
   useEffect(() => {
     if (!isLive || cohostStream) return undefined
-
-    const standalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true
-    const isiOSWebKit = /iP(ad|hone|od)/.test(window.navigator.userAgent) && /WebKit/i.test(window.navigator.userAgent)
-    if (!standalone || !isiOSWebKit) return undefined
 
     let firstFrame = 0
     let secondFrame = 0
@@ -64,26 +66,18 @@ export default function LiveScreen({
 
     const getActiveVideo = () => activeVideoSlot === 0 ? videoPrimaryRef.current : videoSecondaryRef.current
 
-    const syncViewportHeight = () => {
-      const height = Math.round(window.visualViewport?.height || window.innerHeight || 0)
-      if (height > 0) document.documentElement.style.setProperty('--fv-visible-viewport-height', `${height}px`)
-    }
-
     const restoreMediaLayer = () => {
       window.cancelAnimationFrame(firstFrame)
       window.cancelAnimationFrame(secondFrame)
       window.clearTimeout(settleTimer)
-      syncViewportHeight()
 
       const activeVideo = getActiveVideo()
       if (!activeVideo || !mediaStream || cameraOff) return
 
       activeVideo.pause?.()
       activeVideo.srcObject = null
-      void activeVideo.offsetHeight
 
       firstFrame = window.requestAnimationFrame(() => {
-        syncViewportHeight()
         secondFrame = window.requestAnimationFrame(() => {
           const currentVideo = getActiveVideo()
           if (!currentVideo || !mediaStream || cameraOff) return
@@ -94,7 +88,6 @@ export default function LiveScreen({
 
       settleTimer = window.setTimeout(() => {
         const currentVideo = getActiveVideo()
-        syncViewportHeight()
         if (currentVideo && mediaStream && !cameraOff) {
           if (currentVideo.srcObject !== mediaStream) currentVideo.srcObject = mediaStream
           currentVideo.play?.().catch?.(() => {})
@@ -109,13 +102,10 @@ export default function LiveScreen({
     const onFocus = () => {
       if (document.visibilityState === 'visible') restoreMediaLayer()
     }
-    const onViewportResize = () => syncViewportHeight()
 
-    syncViewportHeight()
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('pageshow', onPageShow)
     window.addEventListener('focus', onFocus)
-    window.visualViewport?.addEventListener('resize', onViewportResize)
 
     return () => {
       window.cancelAnimationFrame(firstFrame)
@@ -124,7 +114,6 @@ export default function LiveScreen({
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('pageshow', onPageShow)
       window.removeEventListener('focus', onFocus)
-      window.visualViewport?.removeEventListener('resize', onViewportResize)
     }
   }, [isLive, cohostStream, activeVideoSlot, mediaStream, cameraOff, videoPrimaryRef, videoSecondaryRef])
 
