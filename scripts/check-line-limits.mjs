@@ -120,6 +120,7 @@ for (const guard of REQUIRED_GUARDS) {
   const app = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
   const liveChat = await readFile(join(sourceRoot, 'components/live/LiveChat.jsx'), 'utf8')
   const livePolish = await readFile(join(sourceRoot, 'styles/live/polish.css'), 'utf8')
+  const viewportLock = await readFile(join(sourceRoot, 'styles/base/viewport-lock.css'), 'utf8')
   const fullSessionChat = app.includes('const liveMessages = chat') && !app.includes('const liveMessages = chat.slice(')
   const autoFollow = liveChat.includes('chatNode.scrollTop = chatNode.scrollHeight')
     && liveChat.includes('ref={chatScrollRef}')
@@ -127,13 +128,15 @@ for (const guard of REQUIRED_GUARDS) {
     && livePolish.includes('overflow-y: auto')
     && livePolish.includes('touch-action: pan-y')
     && livePolish.includes('pointer-events: auto')
-  const shellPinned = livePolish.includes('.live-app-shell {')
-    && livePolish.includes('position: fixed')
-    && livePolish.includes('overflow: hidden')
+  const shellPinned = viewportLock.includes('.mobile-live-shell.is-live')
+    && viewportLock.includes('position: fixed')
+    && viewportLock.includes('overflow: hidden')
+    && livePolish.includes('.live-app-shell {\n  position: static;')
+    && livePolish.includes('overflow: visible')
 
   if (!fullSessionChat || !autoFollow || !chatOwnsScroll || !shellPinned) {
     architectureViolations.push(
-      'Live chat scrolling contract failed: retain full session, auto-follow comments, keep chat scrollable, and keep Live shell pinned.',
+      'Live chat scrolling contract failed: retain full session, auto-follow comments, keep chat scrollable, and keep the one canonical Live shell pinned.',
     )
   }
 }
