@@ -5,6 +5,7 @@ import {
   addCohostIceCandidate,
   attachLocalStream,
   closeCohostPeer,
+  collectRemoteStream,
   createCohostOffer,
   createCohostPeer,
 } from '../services/live/webrtcPeer.js'
@@ -53,6 +54,8 @@ export function useCohostViewer({
   const targetOfferIdRef = useRef(null)
   const targetSourceIdRef = useRef(null)
   const pendingTargetIceRef = useRef([])
+  const hostMediaRef = useRef(null)
+  const targetMediaRef = useRef(null)
   const latestTargetsRef = useRef([])
   const activeCohostRef = useRef(null)
   const statusRef = useRef('idle')
@@ -87,6 +90,7 @@ export function useCohostViewer({
   const closeSourcePeers = useCallback(() => {
     sourcePeersRef.current.forEach(({ peer }) => closeCohostPeer(peer))
     sourcePeersRef.current.clear()
+    hostMediaRef.current = null
     setDirectHostStream(null)
   }, [])
 
@@ -96,6 +100,7 @@ export function useCohostViewer({
     targetOfferIdRef.current = null
     targetSourceIdRef.current = null
     pendingTargetIceRef.current = []
+    targetMediaRef.current = null
     setRemoteStream(null)
   }, [])
 
@@ -128,7 +133,7 @@ export function useCohostViewer({
       },
       onTrack: (event) => {
         if (!isHostTarget(targetId)) return
-        setDirectHostStream(event.streams?.[0] || new MediaStream([event.track]))
+        setDirectHostStream(collectRemoteStream(hostMediaRef, event))
       },
       onConnectionStateChange: (state) => {
         if (state === 'failed' || state === 'closed') {
@@ -179,7 +184,7 @@ export function useCohostViewer({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user' },
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: { echoCancellation: { exact: true }, noiseSuppression: true, autoGainControl: true },
       })
       const audioTrack = stream.getAudioTracks()[0]
       if (audioTrack && 'contentHint' in audioTrack) audioTrack.contentHint = 'speech'
@@ -236,7 +241,7 @@ export function useCohostViewer({
         },
         onTrack: (event) => {
           if (!active || targetPeerRef.current !== peer) return
-          setRemoteStream(event.streams?.[0] || new MediaStream([event.track]))
+          setRemoteStream(collectRemoteStream(targetMediaRef, event))
         },
         onConnectionStateChange: (state) => {
           if (!active || targetPeerRef.current !== peer) return
