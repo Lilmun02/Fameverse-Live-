@@ -10,7 +10,7 @@ export function registerFameversePwaUpdates() {
   const watchedRegistrations = new WeakSet()
 
   const liveIsActive = () => Boolean(
-    document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
+    document.querySelector('.fvx-host-live, .fv-viewer-live'),
   )
 
   const purgeLegacyCaches = async () => {
