@@ -1,4 +1,4 @@
-/* Live Layout V1 visual refinement. Preview-approved visual contract only. */
+/* Live Layout V1 visual refinement. Canonical one-PWA visual contract. */
 
 .mobile-live-shell.is-live,
 .fv-viewer-live,
@@ -20,11 +20,13 @@
   object-fit: cover !important;
 }
 
+/* The shared Android-approved camera presentation is neutral: no vignette or
+ * device-specific fade is allowed to sit over the camera feed. */
 .mobile-live-shell.is-live .fam-live-vignette,
-.fv-viewer-live .fv-viewer-live-vignette {
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.66) 0%, rgba(0,0,0,.12) 18%, transparent 42%, transparent 58%, rgba(0,0,0,.78) 100%),
-    radial-gradient(circle at center, transparent 52%, rgba(0,0,0,.18) 100%) !important;
+.fv-viewer-live .fv-viewer-live-vignette,
+.mobile-live-shell.is-live.has-cohost .fam-live-vignette,
+.fv-viewer-live.has-cohost .fv-viewer-live-vignette {
+  background: transparent !important;
 }
 
 .mobile-live-shell.is-live .fam-live-header,
@@ -89,12 +91,6 @@
   color: #f0ddff;
 }
 
-.mobile-live-shell.is-live.has-cohost .fam-live-vignette,
-.fv-viewer-live.has-cohost .fv-viewer-live-vignette {
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.16) 18%, transparent 38%, transparent 54%, rgba(0,0,0,.82) 100%) !important;
-}
-
 .mobile-live-shell.is-live.has-cohost .fv-live-chat-feed,
 .fv-viewer-live.has-cohost .fv-live-chat-feed {
   bottom: calc(max(70px, env(safe-area-inset-bottom) + 62px));
@@ -106,9 +102,8 @@
   padding-bottom: max(0px, env(safe-area-inset-bottom));
 }
 
-/* One PWA Build Law: the Live shell owns the viewport and the video stays inside
- * that shell on every browser. iOS may refresh the viewport-height token and
- * media element on resume, but it must never receive separate visual geometry. */
+/* One PWA Build Law: one shell owns the viewport and the video stays inside
+ * that same shell on every browser. There is no platform-specific geometry. */
 .mobile-live-shell.is-live:not(.has-cohost) .fam-live-video-surface {
   position: absolute !important;
   inset: 0 !important;
