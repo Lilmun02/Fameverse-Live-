@@ -13,6 +13,14 @@ export function registerFameversePwaUpdates() {
     document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
   )
 
+  const purgeLegacyCaches = async () => {
+    if (!('caches' in window)) return
+    try {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((key) => caches.delete(key)))
+    } catch {}
+  }
+
   const readPending = () => {
     try {
       if (localStorage.getItem(pendingKey) === '1') return true
@@ -138,20 +146,28 @@ export function registerFameversePwaUpdates() {
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
+  const activateWaitingWorker = () => {
+    if (!registration?.waiting) return
+    try { registration.waiting.postMessage({ type: 'SKIP_WAITING' }) } catch {}
+  }
+
   const markWaitingWorker = () => {
     if (!registration?.waiting || !navigator.serviceWorker.controller) return
+    activateWaitingWorker()
     markPending()
     applyPendingUpdate()
   }
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!navigator.serviceWorker.controller) return
+    void purgeLegacyCaches()
     markPending()
     applyPendingUpdate()
   })
 
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type !== updateMessageType) return
+    void purgeLegacyCaches()
     markPending()
     applyPendingUpdate()
   })
@@ -166,6 +182,7 @@ export function registerFameversePwaUpdates() {
 
       worker.addEventListener('statechange', () => {
         if (worker.state !== 'installed' || !navigator.serviceWorker.controller) return
+        activateWaitingWorker()
         markPending()
       })
     })
@@ -174,6 +191,7 @@ export function registerFameversePwaUpdates() {
   const pollForUpdates = async () => {
     if (document.visibilityState !== 'visible') return
 
+    await purgeLegacyCaches()
     try {
       registration ||= await navigator.serviceWorker.getRegistration()
       watchRegistration(registration)
@@ -187,6 +205,7 @@ export function registerFameversePwaUpdates() {
 
   window.addEventListener('load', async () => {
     cleanForceRefreshMarker()
+    await purgeLegacyCaches()
     try {
       registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       watchRegistration(registration)
@@ -199,6 +218,7 @@ export function registerFameversePwaUpdates() {
 
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible') return
+    await purgeLegacyCaches()
     try {
       registration ||= await navigator.serviceWorker.getRegistration()
       watchRegistration(registration)
@@ -210,6 +230,7 @@ export function registerFameversePwaUpdates() {
   })
 
   window.addEventListener('online', async () => {
+    await purgeLegacyCaches()
     try {
       registration ||= await navigator.serviceWorker.getRegistration()
       watchRegistration(registration)
