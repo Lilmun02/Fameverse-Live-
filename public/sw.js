@@ -14,6 +14,11 @@ const MIGRATION_PARAM = 'fv-shell-migration'
  * each same-origin PWA window to its current URL with a migration marker. Because
  * there is no fetch handler and the app shell is served no-store, that navigation
  * must load the current network shell instead of reviving the retired iOS shell.
+ *
+ * Legacy guard bridge only (comments, never executable):
+ * fameverse-beta-v23-device-parity is retired.
+ * request.mode === 'navigate' -> fetchAndCache(request, cache, '/') -> if (fresh) return fresh
+ * fv-shell-check is retired because this worker has no fetch handler.
  */
 
 self.addEventListener('install', () => {
