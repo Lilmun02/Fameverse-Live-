@@ -20,11 +20,12 @@
   object-fit: cover !important;
 }
 
+/* Keep the camera image neutral. The old vignette visibly darkened/faded the
+ * feed near the top and bottom, which made the installed PWA look softer than
+ * the approved Android/reference presentation. */
 .mobile-live-shell.is-live .fam-live-vignette,
 .fv-viewer-live .fv-viewer-live-vignette {
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.66) 0%, rgba(0,0,0,.12) 18%, transparent 42%, transparent 58%, rgba(0,0,0,.78) 100%),
-    radial-gradient(circle at center, transparent 52%, rgba(0,0,0,.18) 100%) !important;
+  background: transparent !important;
 }
 
 .mobile-live-shell.is-live .fam-live-header,
@@ -91,8 +92,7 @@
 
 .mobile-live-shell.is-live.has-cohost .fam-live-vignette,
 .fv-viewer-live.has-cohost .fv-viewer-live-vignette {
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.16) 18%, transparent 38%, transparent 54%, rgba(0,0,0,.82) 100%) !important;
+  background: transparent !important;
 }
 
 .mobile-live-shell.is-live.has-cohost .fv-live-chat-feed,
