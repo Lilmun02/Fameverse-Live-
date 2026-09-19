@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v23-device-parity-v24-one-pwa'
+const CACHE = 'fameverse-beta-v23-device-parity-v25-cohost-media'
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
 const STATIC_SHELL = ['/manifest.webmanifest', '/icon.svg']
 
@@ -11,9 +11,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys()
     await Promise.all(
-      keys
-        .filter((key) => key !== CACHE && key.startsWith('fameverse-'))
-        .map((key) => caches.delete(key)),
+      keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)),
     )
 
     await self.clients.claim()

@@ -42,8 +42,26 @@ export async function syncLocalStream(peer, stream) {
   })
 }
 
+export function collectRemoteStream(storeRef, event) {
+  if (!storeRef.current) storeRef.current = new MediaStream()
+  const collected = storeRef.current
+  const incomingTracks = event.streams?.[0]?.getTracks?.().length
+    ? event.streams[0].getTracks()
+    : event.track
+      ? [event.track]
+      : []
+
+  incomingTracks.forEach((track) => {
+    if (!collected.getTracks().some((existing) => existing.id === track.id)) {
+      collected.addTrack(track)
+    }
+  })
+
+  return new MediaStream(collected.getTracks())
+}
+
 export async function createCohostOffer(peer) {
-  const offer = await peer.createOffer()
+  const offer = await peer.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true })
   await peer.setLocalDescription(offer)
   return peer.localDescription
 }
