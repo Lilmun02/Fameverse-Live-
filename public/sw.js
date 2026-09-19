@@ -1,4 +1,4 @@
-const CACHE = 'fameverse-beta-v23-device-parity-v25-cohost-media'
+const CACHE = 'fameverse-beta-v26-ios-prod-shell'
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
 const STATIC_SHELL = ['/manifest.webmanifest', '/icon.svg']
 
@@ -7,15 +7,15 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
+})
+
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys()
-    await Promise.all(
-      keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)),
-    )
-
+    await Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
     await self.clients.claim()
-
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     for (const client of clients) {
       client.postMessage({ type: UPDATE_MESSAGE, cache: CACHE })
@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
-  if (url.searchParams.has('fv-shell-check')) {
+  if (url.pathname === '/sw.js' || url.searchParams.has('fv-shell-check') || url.searchParams.has('fv-force-refresh')) {
     event.respondWith((async () => {
       const response = await fetchFresh(request)
       return response || new Response('', { status: 504 })
@@ -57,10 +57,8 @@ self.addEventListener('fetch', (event) => {
       const cache = await caches.open(CACHE)
       const fresh = await fetchAndCache(request, cache, '/')
       if (fresh) return fresh
-
       const fallback = (await cache.match(request)) || (await cache.match('/'))
       if (fallback) return fallback
-
       return new Response('Fameverse is temporarily unavailable.', {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -74,7 +72,6 @@ self.addEventListener('fetch', (event) => {
       const cache = await caches.open(CACHE)
       const fresh = await fetchAndCache(request, cache)
       if (fresh) return fresh
-
       const fallback = await cache.match(request)
       return fallback || new Response('', { status: 504 })
     })())
@@ -85,7 +82,6 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(CACHE)
     const fresh = await fetchAndCache(request, cache)
     if (fresh) return fresh
-
     const fallback = await cache.match(request)
     return fallback || new Response('', { status: 504 })
   })())
