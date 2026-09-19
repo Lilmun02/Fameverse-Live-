@@ -35,7 +35,7 @@ assert.match(chat, /onOpenIdentity = null/, 'LiveChat must expose identity openi
 assert.match(chat, /onClick=\{\(\) => identityEnabled && onOpenIdentity\(item\.userId\)\}/, 'Comment avatars must open the real sender profile.')
 assert.match(chat, /className="fam-chat-identity-button"/, 'Comment names must be tappable when a real user id exists.')
 
-assert.match(header, /className="fam-live-creator-identity"/, 'Host top identity must keep the canonical no-box class.')
+assert.match(header, /className="fvx-creator"/, 'Host top identity must use the fresh isolated creator class.')
 assert.match(header, /onOpenIdentity\(currentUserId\)/, 'Host top identity must open the host real profile.')
 assert.match(liveScreen, /onOpenIdentity=\{profileSheet\.open\}/, 'Host comments must open the profile sheet.')
 assert.match(liveScreen, /<LiveProfileSheet/, 'Host Live must mount the profile sheet over the Live.')
@@ -61,4 +61,4 @@ assert.doesNotMatch(viewer, /fv-live-stage-brand|fv-live-fall/, 'Identity work m
 assert.match(viewer, /className="is-fame"><b aria-hidden="true">F<\/b>/, 'Identity work must not replace the approved Fame stat F icon.')
 assert.ok(main.indexOf("./styles/live/profile-sheet.css") < main.indexOf("./styles/live/live-contract.css"), 'Final Live contract must still load after the profile sheet CSS.')
 
-console.log('Live identity checks passed: real tappable profiles, backend-authoritative social counts, real follow actions, real gift level source, and no scope-creep redesign.')
+console.log('Live identity checks passed: real tappable profiles, backend-authoritative social counts, real follow actions, real gift level source, and fresh host identity without scope creep.')
