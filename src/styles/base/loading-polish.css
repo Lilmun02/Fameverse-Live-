@@ -1,0 +1,41 @@
+/* App loading continuity preserved independently from Host Live. */
+.foundation-loading {
+  position: fixed;
+  inset: 0;
+  min-height: 100dvh !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto;
+  place-content: center;
+  justify-items: center;
+  gap: 10px !important;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(145,55,255,.30), transparent 28rem),
+    linear-gradient(180deg,#10051f,#07010d 60%,#020104) !important;
+}
+
+.foundation-loading::before {
+  content: 'F';
+  width: 74px;
+  height: 74px;
+  margin-bottom: 6px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg,#7d2cff,#d05eff);
+  box-shadow: 0 18px 50px rgba(110,32,205,.34);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 950;
+}
+
+.foundation-loading strong {
+  font-size: clamp(1.5rem, 6vw, 2rem) !important;
+  line-height: 1;
+  letter-spacing: .045em;
+}
+
+.foundation-loading small {
+  margin-top: 4px;
+  color: #b5a6c1 !important;
+  font-size: .82rem !important;
+}
