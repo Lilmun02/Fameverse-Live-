@@ -1,94 +1,38 @@
-const CACHE = 'fameverse-beta-v23-device-parity-v24-one-pwa'
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
-const STATIC_SHELL = ['/manifest.webmanifest', '/icon.svg']
+const SHELL_GENERATION = 'canonical-single-pwa-v1'
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(STATIC_SHELL)))
+self.addEventListener('install', () => {
   self.skipWaiting()
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys()
-    await Promise.all(
-      keys
-        .filter((key) => key !== CACHE && key.startsWith('fameverse-'))
-        .map((key) => caches.delete(key)),
-    )
+    await Promise.all(keys.map((key) => caches.delete(key)))
 
     await self.clients.claim()
 
-    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    const clients = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true,
+    })
+
     for (const client of clients) {
-      client.postMessage({ type: UPDATE_MESSAGE, cache: CACHE })
+      client.postMessage({
+        type: UPDATE_MESSAGE,
+        generation: SHELL_GENERATION,
+      })
     }
   })())
 })
 
-async function fetchFresh(request) {
-  try {
-    return await fetch(request, { cache: 'no-store' })
-  } catch {
-    return null
-  }
-}
-
-async function fetchAndCache(request, cache, cacheKey = request) {
-  const response = await fetchFresh(request)
-  if (response && response.ok) await cache.put(cacheKey, response.clone())
-  return response
-}
-
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return
-
-  const request = event.request
-  const url = new URL(request.url)
-  if (url.origin !== self.location.origin) return
-
-  if (url.searchParams.has('fv-shell-check')) {
-    event.respondWith((async () => {
-      const response = await fetchFresh(request)
-      return response || new Response('', { status: 504 })
-    })())
-    return
-  }
-
-  if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE)
-      const fresh = await fetchAndCache(request, cache, '/')
-      if (fresh) return fresh
-
-      const fallback = (await cache.match(request)) || (await cache.match('/'))
-      if (fallback) return fallback
-
-      return new Response('Fameverse is temporarily unavailable.', {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      })
-    })())
-    return
-  }
-
-  if (url.pathname.startsWith('/assets/')) {
-    event.respondWith((async () => {
-      const cache = await caches.open(CACHE)
-      const fresh = await fetchAndCache(request, cache)
-      if (fresh) return fresh
-
-      const fallback = await cache.match(request)
-      return fallback || new Response('', { status: 504 })
-    })())
-    return
-  }
-
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE)
-    const fresh = await fetchAndCache(request, cache)
-    if (fresh) return fresh
-
-    const fallback = await cache.match(request)
-    return fallback || new Response('', { status: 504 })
-  })())
-})
+// Canonical single-PWA runtime:
+// - no HTML/app-shell caching
+// - no platform-specific shell
+// - no cached navigation fallback that can resurrect an older build
+// - immutable Vite assets rely on normal HTTP caching instead
+// All requests intentionally fall through to the browser/network.
