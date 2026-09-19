@@ -79,11 +79,14 @@ assert.ok(liveScreen.includes('Canonical Live shell law'), 'Live runtime must do
 assert.ok(liveLayout.includes('object-fit: cover !important;'), 'Canonical Live layout must preserve full-canvas cover geometry.')
 assert.ok(liveLayout.includes('One PWA Build Law'), 'Canonical Live layout must document shared geometry.')
 assert.ok(liveContract.includes('Canonical active-Live contract'), 'Canonical Live contract must remain the final active-room contract.')
-assert.ok(liveContract.includes('backdrop-filter: none !important;'), 'Canonical creator header must forbid blur compositing.')
+assert.ok(liveContract.includes('Portrait parity law'), 'Canonical Live contract must explicitly lock portrait/landscape parity.')
+assert.match(liveContract, /\.mobile-live-shell\.is-live \.fam-viewer-chip[\s\S]*backdrop-filter:\s*none !important;/, 'Top viewer chip must not use Safari blur compositing.')
+assert.match(liveContract, /\.mobile-live-shell\.is-live \.fam-live-creator-identity[\s\S]*transform:\s*none !important;[\s\S]*will-change:\s*auto !important;/, 'Creator identity must stay on the normal compositing layer.')
+assert.doesNotMatch(liveContract, /@media \(max-width:\s*390px\)[\s\S]*\.mobile-live-shell\.is-live \.fam-live-creator-identity/, 'Narrow portrait width must not switch the host header to a second geometry contract.')
 
 for (const source of ['/sw.js', '/manifest.webmanifest', '/', '/index.html']) {
   assert.ok(vercel.includes(`\"source\": \"${source}\"`), `Vercel must define no-store delivery for ${source}.`)
 }
 assert.ok(vercel.includes('no-store, max-age=0, must-revalidate'), 'Canonical shell endpoints must be delivered without browser caching.')
 
-console.log('One-PWA shell guard passed: one host tree, one active Live contract, legacy Live CSS quarantined, hard installed-PWA cutover locked, no cached app shell, and no platform presentation fork.')
+console.log('One-PWA shell guard passed: one host tree, one active Live contract, legacy Live CSS quarantined, hard installed-PWA cutover locked, portrait/landscape header parity locked, no cached app shell, and no platform presentation fork.')
