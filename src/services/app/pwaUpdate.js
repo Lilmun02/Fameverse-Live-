@@ -9,9 +9,9 @@ export function registerFameversePwaUpdates() {
   const shellCheckIntervalMs = 15000
   const watchedRegistrations = new WeakSet()
 
-  const liveIsActive = () => Boolean(
-    document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
-  )
+  // Host Live is intentionally removed during the hard reset. Viewer Live remains
+  // protected so an update never interrupts somebody who is currently watching.
+  const liveIsActive = () => Boolean(document.querySelector('.fv-viewer-live'))
 
   const purgeLegacyCaches = async () => {
     if (!('caches' in window)) return
@@ -76,43 +76,13 @@ export function registerFameversePwaUpdates() {
     return shellAssetSignature(doc, window.location.origin)
   }
 
-  const showNotice = (mode) => {
-    let notice = document.querySelector('[data-fameverse-update-notice]')
-    if (!notice) {
-      notice = document.createElement('div')
-      notice.dataset.fameverseUpdateNotice = 'true'
-      notice.className = 'fv-update-notice'
-      notice.setAttribute('role', 'status')
-      notice.setAttribute('aria-live', 'polite')
-      notice.innerHTML = '<span class="fv-update-dot" aria-hidden="true"></span><div><strong></strong><small></small></div>'
-      document.body.appendChild(notice)
-    }
-
-    const title = notice.querySelector('strong')
-    const detail = notice.querySelector('small')
-    if (mode === 'deferred') {
-      title.textContent = 'Fameverse update ready'
-      detail.textContent = 'It will install automatically after this Live ends.'
-      notice.dataset.mode = 'deferred'
-    } else {
-      title.textContent = 'Updating Fameverse'
-      detail.textContent = 'Restarting into the newest version…'
-      notice.dataset.mode = 'applying'
-    }
-  }
-
-  const markPending = () => {
-    storePending()
-    showNotice(liveIsActive() ? 'deferred' : 'applying')
-  }
-
   const forceNewestShell = () => {
     const url = new URL(window.location.href)
     url.searchParams.set('fv-force-refresh', String(Date.now()))
     window.location.replace(url.toString())
   }
 
-  const applyPendingUpdate = () => {
+  const applyUpdateNow = () => {
     if (reloading || !readPending()) return
     if (liveIsActive()) {
       showNotice('deferred')
@@ -122,7 +92,56 @@ export function registerFameversePwaUpdates() {
     reloading = true
     showNotice('applying')
     clearPending()
-    window.setTimeout(forceNewestShell, 350)
+    window.setTimeout(forceNewestShell, 650)
+  }
+
+  const showNotice = (mode) => {
+    let notice = document.querySelector('[data-fameverse-update-notice]')
+    if (!notice) {
+      notice = document.createElement('div')
+      notice.dataset.fameverseUpdateNotice = 'true'
+      notice.className = 'fv-update-notice'
+      notice.setAttribute('role', 'status')
+      notice.setAttribute('aria-live', 'polite')
+      notice.innerHTML = '<span class="fv-update-dot" aria-hidden="true"></span><div><strong></strong><small></small></div><button type="button" data-fameverse-update-action>Update now</button>'
+      document.body.appendChild(notice)
+      notice.querySelector('[data-fameverse-update-action]')?.addEventListener('click', applyUpdateNow)
+    }
+
+    const title = notice.querySelector('strong')
+    const detail = notice.querySelector('small')
+    const action = notice.querySelector('[data-fameverse-update-action]')
+
+    if (mode === 'deferred') {
+      title.textContent = 'Fameverse update ready'
+      detail.textContent = 'Finish this Live, then update to the newest version.'
+      if (action) action.hidden = true
+      notice.dataset.mode = 'deferred'
+      return
+    }
+
+    if (mode === 'applying') {
+      title.textContent = 'Updating Fameverse'
+      detail.textContent = 'Restarting into the newest version…'
+      if (action) action.hidden = true
+      notice.dataset.mode = 'applying'
+      return
+    }
+
+    title.textContent = 'Fameverse update available'
+    detail.textContent = 'Tap Update now to load the newest version.'
+    if (action) action.hidden = false
+    notice.dataset.mode = 'available'
+  }
+
+  const markPending = () => {
+    storePending()
+    showNotice(liveIsActive() ? 'deferred' : 'available')
+  }
+
+  const presentPendingUpdate = () => {
+    if (reloading || !readPending()) return
+    showNotice(liveIsActive() ? 'deferred' : 'available')
   }
 
   const checkAppShell = async ({ force = false } = {}) => {
@@ -135,7 +154,6 @@ export function registerFameversePwaUpdates() {
       const latest = await latestShellSignature()
       if (!current || !latest || current === latest) return
       markPending()
-      applyPendingUpdate()
     } catch {}
   }
 
@@ -155,21 +173,18 @@ export function registerFameversePwaUpdates() {
     if (!registration?.waiting || !navigator.serviceWorker.controller) return
     activateWaitingWorker()
     markPending()
-    applyPendingUpdate()
   }
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!navigator.serviceWorker.controller) return
     void purgeLegacyCaches()
     markPending()
-    applyPendingUpdate()
   })
 
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type !== updateMessageType) return
     void purgeLegacyCaches()
     markPending()
-    applyPendingUpdate()
   })
 
   const watchRegistration = (nextRegistration) => {
@@ -200,7 +215,7 @@ export function registerFameversePwaUpdates() {
     } catch {}
 
     await checkAppShell({ force: true })
-    applyPendingUpdate()
+    presentPendingUpdate()
   }
 
   window.addEventListener('load', async () => {
@@ -213,7 +228,7 @@ export function registerFameversePwaUpdates() {
       markWaitingWorker()
     } catch {}
     await checkAppShell({ force: true })
-    applyPendingUpdate()
+    presentPendingUpdate()
   })
 
   document.addEventListener('visibilitychange', async () => {
@@ -226,7 +241,7 @@ export function registerFameversePwaUpdates() {
       markWaitingWorker()
     } catch {}
     await checkAppShell()
-    applyPendingUpdate()
+    presentPendingUpdate()
   })
 
   window.addEventListener('online', async () => {
@@ -238,7 +253,7 @@ export function registerFameversePwaUpdates() {
       markWaitingWorker()
     } catch {}
     await checkAppShell({ force: true })
-    applyPendingUpdate()
+    presentPendingUpdate()
   })
 
   window.setInterval(() => {
@@ -246,7 +261,7 @@ export function registerFameversePwaUpdates() {
   }, shellCheckIntervalMs)
 
   const liveObserver = new MutationObserver(() => {
-    if (readPending()) applyPendingUpdate()
+    if (readPending()) presentPendingUpdate()
   })
 
   liveObserver.observe(document.documentElement, {
