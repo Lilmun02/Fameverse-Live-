@@ -57,24 +57,23 @@
   display: none;
 }
 
-/* The Live experience itself must never become the scroll target. iOS standalone
-   mode may retain document scroll after keyboard/gesture interactions, so pin the
-   Live shell to the visual screen and leave vertical scrolling to chat. */
+/* One viewport owner law:
+ * .mobile-live-shell.is-live (viewport-lock.css) is the only element allowed to
+ * pin the host Live room to the viewport. The outer .live-app-shell must stay a
+ * normal document wrapper so WebKit never has to composite one fixed shell
+ * inside another fixed shell over the camera video. */
 .live-app-shell {
-  position: fixed;
-  inset: 0;
+  position: static;
+  inset: auto;
   width: 100%;
-  height: 100dvh;
-  min-height: 0;
-  overflow: hidden;
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
 }
 
-.live-app-shell main,
-.live-app-shell .mobile-live-shell {
+.live-app-shell main {
   width: 100%;
-  height: 100%;
   min-height: 0;
-  overflow: hidden;
 }
 
 /* Make React's auth-loading state visually continuous with the HTML boot splash. */
