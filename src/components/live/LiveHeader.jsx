@@ -35,7 +35,7 @@ export default function LiveHeader({
 
       <div className="fvx-header-meta">
         <span className="fvx-viewer-chip" aria-label={`${viewerCount} viewers and ${tapCount} Fame Taps`}>
-          <button type="button" onClick={onOpenViewers} aria-label={`Open ${viewerCount} live viewers`}>
+          <button type="button" className="fvx-viewer-count-button" onClick={onOpenViewers} aria-label={`Open ${viewerCount} live viewers`}>
             <span aria-hidden="true">👥</span> {viewerCount}
           </button>
           <i aria-hidden="true" />
