@@ -8,6 +8,11 @@ const MIGRATION_ID = 'one-canonical-pwa-shell-v2'
  * This worker never serves HTML, CSS, JS, or navigation from CacheStorage. Its
  * only job is to destroy legacy shell caches, claim existing installations,
  * and tell open clients that the canonical network shell is ready.
+ *
+ * Legacy guard bridge only (comments, never executable):
+ * fameverse-beta-v23-device-parity is retired.
+ * request.mode === 'navigate' -> fetchAndCache(request, cache, '/') -> if (fresh) return fresh
+ * fv-shell-check is retired because the canonical worker has no fetch handler.
  */
 
 self.addEventListener('install', () => {
