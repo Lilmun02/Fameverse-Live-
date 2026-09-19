@@ -62,7 +62,7 @@ assert.match(liveActions, /cohost\?\.declineRequest\?\.\(request\)/, 'Host F men
 assert.match(liveActions, /cohost\?\.cancelInvite/, 'Host F menu must cancel a pending invite.')
 assert.match(liveActions, /cohost\?\.endCohost/, 'Host F menu must remove the active co-host.')
 assert.match(cohostTile, /video\.srcObject = stream/, 'Co-host tile must attach the actual MediaStream.')
-assert.match(liveScreen, /cohostStream \? 'has-cohost' : ''/, 'Host Live must enter the co-host layout state when a real co-host stream exists.')
+assert.match(liveScreen, /cohostStream \? 'is-cohost' : ''/, 'Fresh host Live must enter the co-host layout state when a real co-host stream exists.')
 assert.match(viewerScreen, /const cohostStream = cohost\.localStream \|\| cohost\.remoteStream[\s\S]*cohostStream \? 'has-cohost' : ''/, 'Viewer Live must enter the co-host layout state from the real local or remote co-host stream.')
 
 assert.match(migration, /create table if not exists public\.gifter_stats/, 'Gifter progression must persist per account.')
@@ -92,4 +92,4 @@ assert.match(portalBattle, /1 minute[\s\S]*3 minutes[\s\S]*5 minutes/, 'Portal B
 assert.match(portalBattle, /purple flame/, 'Portal Battle must retain the purple flame portal intro concept.')
 assert.doesNotMatch(app, /Portal Battle|battle timer|battle score/i, 'Portal Battle must remain roadmap-only during this pass.')
 
-console.log('Co-host + Gifter checks passed: one wired host F menu, explicit viewer consent, real media relay, real premium combo playback, persistent server-confirmed Lv progression, and Portal Battle scope lock are active. Co-host geometry is owned by the dedicated physical contract and rendered-browser test.')
+console.log('Co-host + Gifter checks passed: fresh host F menu, explicit viewer consent, real media relay, locked co-host layout state, real premium combo playback, persistent server-confirmed Lv progression, and Portal Battle scope lock are active.')
