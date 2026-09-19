@@ -3,11 +3,8 @@ export function registerFameversePwaUpdates() {
 
   let registration = null
   let reloading = false
-  let lastShellCheckAt = 0
   const pendingKey = 'fameverse-pwa-update-pending'
   const updateMessageType = 'FAMEVERSE_UPDATE_READY'
-  const shellCheckIntervalMs = 15000
-  const watchedRegistrations = new WeakSet()
 
   const liveIsActive = () => Boolean(
     document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
@@ -34,40 +31,6 @@ export function registerFameversePwaUpdates() {
     try { sessionStorage.removeItem(pendingKey) } catch {}
   }
 
-  const shellAssetSignature = (doc, baseUrl) => {
-    const assets = []
-    const nodes = doc.querySelectorAll('script[type="module"][src], link[rel="stylesheet"][href]')
-
-    nodes.forEach((node) => {
-      const raw = node.getAttribute('src') || node.getAttribute('href')
-      if (!raw) return
-      try {
-        const url = new URL(raw, baseUrl)
-        if (url.origin !== window.location.origin) return
-        assets.push(url.pathname)
-      } catch {}
-    })
-
-    if (!assets.length) return null
-    return JSON.stringify([...new Set(assets)].sort())
-  }
-
-  const currentShellSignature = () => shellAssetSignature(document, window.location.href)
-
-  const latestShellSignature = async () => {
-    const url = new URL('/', window.location.origin)
-    url.searchParams.set('fv-shell-check', String(Date.now()))
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    })
-    if (!response.ok) return null
-
-    const html = await response.text()
-    const doc = new DOMParser().parseFromString(html, 'text/html')
-    return shellAssetSignature(doc, window.location.origin)
-  }
-
   const showNotice = (mode) => {
     let notice = document.querySelector('[data-fameverse-update-notice]')
     if (!notice) {
@@ -86,21 +49,17 @@ export function registerFameversePwaUpdates() {
       title.textContent = 'Fameverse update ready'
       detail.textContent = 'It will install automatically after this Live ends.'
       notice.dataset.mode = 'deferred'
-    } else {
-      title.textContent = 'Updating Fameverse'
-      detail.textContent = 'Restarting into the newest version…'
-      notice.dataset.mode = 'applying'
+      return
     }
-  }
 
-  const markPending = () => {
-    storePending()
-    showNotice(liveIsActive() ? 'deferred' : 'applying')
+    title.textContent = 'Updating Fameverse'
+    detail.textContent = 'Restarting into the newest version…'
+    notice.dataset.mode = 'applying'
   }
 
   const forceNewestShell = () => {
     const url = new URL(window.location.href)
-    url.searchParams.set('fv-force-refresh', String(Date.now()))
+    url.searchParams.set('fv-shell', String(Date.now()))
     window.location.replace(url.toString())
   }
 
@@ -114,115 +73,59 @@ export function registerFameversePwaUpdates() {
     reloading = true
     showNotice('applying')
     clearPending()
-    window.setTimeout(forceNewestShell, 350)
+    window.setTimeout(forceNewestShell, 250)
   }
 
-  const checkAppShell = async ({ force = false } = {}) => {
-    const now = Date.now()
-    if (!force && now - lastShellCheckAt < shellCheckIntervalMs) return
-    lastShellCheckAt = now
+  const markPending = () => {
+    storePending()
+    applyPendingUpdate()
+  }
 
+  const activateWaitingWorker = () => {
+    if (!registration?.waiting) return
+    try { registration.waiting.postMessage({ type: 'SKIP_WAITING' }) } catch {}
+  }
+
+  const refreshWorker = async () => {
     try {
-      const current = currentShellSignature()
-      const latest = await latestShellSignature()
-      if (!current || !latest || current === latest) return
-      markPending()
-      applyPendingUpdate()
+      registration ||= await navigator.serviceWorker.getRegistration()
+      if (!registration) return
+      activateWaitingWorker()
+      await registration.update()
+      activateWaitingWorker()
     } catch {}
   }
-
-  const cleanForceRefreshMarker = () => {
-    const url = new URL(window.location.href)
-    if (!url.searchParams.has('fv-force-refresh')) return
-    url.searchParams.delete('fv-force-refresh')
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
-  }
-
-  const markWaitingWorker = () => {
-    if (!registration?.waiting || !navigator.serviceWorker.controller) return
-    markPending()
-    applyPendingUpdate()
-  }
-
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!navigator.serviceWorker.controller) return
-    markPending()
-    applyPendingUpdate()
-  })
 
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type !== updateMessageType) return
     markPending()
-    applyPendingUpdate()
   })
 
-  const watchRegistration = (nextRegistration) => {
-    if (!nextRegistration || watchedRegistrations.has(nextRegistration)) return
-    watchedRegistrations.add(nextRegistration)
-
-    nextRegistration.addEventListener('updatefound', () => {
-      const worker = nextRegistration.installing
-      if (!worker) return
-
-      worker.addEventListener('statechange', () => {
-        if (worker.state !== 'installed' || !navigator.serviceWorker.controller) return
-        markPending()
-      })
-    })
-  }
-
-  const pollForUpdates = async () => {
-    if (document.visibilityState !== 'visible') return
-
-    try {
-      registration ||= await navigator.serviceWorker.getRegistration()
-      watchRegistration(registration)
-      await registration?.update()
-      markWaitingWorker()
-    } catch {}
-
-    await checkAppShell({ force: true })
-    applyPendingUpdate()
-  }
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!navigator.serviceWorker.controller) return
+    markPending()
+  })
 
   window.addEventListener('load', async () => {
-    cleanForceRefreshMarker()
     try {
       registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
-      watchRegistration(registration)
+      activateWaitingWorker()
       await registration.update()
-      markWaitingWorker()
+      activateWaitingWorker()
     } catch {}
-    await checkAppShell({ force: true })
     applyPendingUpdate()
   })
 
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible') return
-    try {
-      registration ||= await navigator.serviceWorker.getRegistration()
-      watchRegistration(registration)
-      await registration?.update()
-      markWaitingWorker()
-    } catch {}
-    await checkAppShell()
+    await refreshWorker()
     applyPendingUpdate()
   })
 
   window.addEventListener('online', async () => {
-    try {
-      registration ||= await navigator.serviceWorker.getRegistration()
-      watchRegistration(registration)
-      await registration?.update()
-      markWaitingWorker()
-    } catch {}
-    await checkAppShell({ force: true })
+    await refreshWorker()
     applyPendingUpdate()
   })
-
-  window.setInterval(() => {
-    void pollForUpdates()
-  }, shellCheckIntervalMs)
 
   const liveObserver = new MutationObserver(() => {
     if (readPending()) applyPendingUpdate()
