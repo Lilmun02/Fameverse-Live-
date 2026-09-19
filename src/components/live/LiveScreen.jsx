@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import '../../styles/live/fresh-host-live.css'
 import LiveGiftTray from '../gifts/LiveGiftTray.jsx'
 import CohostVideoTile from './CohostVideoTile.jsx'
 import EndLiveSummaryPanel from './EndLiveSummaryPanel.jsx'
