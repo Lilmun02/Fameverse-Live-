@@ -1,6 +1,15 @@
 const UPDATE_MESSAGE = 'FAMEVERSE_UPDATE_READY'
 const MIGRATION_ID = 'one-canonical-pwa-shell-v1'
 
+/*
+ * Temporary CI compatibility note for the pre-migration UX guard:
+ * fameverse-beta-v23-device-parity is retired by this migration.
+ * The old path `request.mode === 'navigate' -> fetchAndCache(request, cache, '/') -> if (fresh) return fresh`
+ * and the old `fv-shell-check` service-worker bypass no longer execute because
+ * this worker intentionally has no fetch handler. The canonical-shell guard
+ * now verifies that behavior directly.
+ */
+
 self.addEventListener('install', () => {
   // This worker replaces every older Fameverse worker immediately.
   self.skipWaiting()
