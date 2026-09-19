@@ -4,6 +4,7 @@ import {
   addCohostIceCandidate,
   attachLocalStream,
   closeCohostPeer,
+  collectRemoteStream,
   createCohostPeer,
   syncLocalStream,
 } from '../services/live/webrtcPeer.js'
@@ -31,6 +32,7 @@ export function useCohostHost({ roomId, enabled, viewerRoster = [], stream = nul
   const activeRef = useRef(null)
   const viewerRosterRef = useRef(viewerRoster)
   const hostStreamRef = useRef(stream)
+  const remoteMediaRef = useRef(null)
   const [requests, setRequests] = useState([])
   const [pendingInvite, setPendingInvite] = useState(null)
   const [activeCohost, setActiveCohost] = useState(null)
@@ -47,6 +49,7 @@ export function useCohostHost({ roomId, enabled, viewerRoster = [], stream = nul
     peerRef.current = null
     offerIdRef.current = null
     pendingIceRef.current = []
+    remoteMediaRef.current = null
     setRemoteStream(null)
   }, [])
 
@@ -119,7 +122,7 @@ export function useCohostHost({ roomId, enabled, viewerRoster = [], stream = nul
         },
         onTrack: (event) => {
           if (!active || peerRef.current !== peer) return
-          setRemoteStream(event.streams?.[0] || new MediaStream([event.track]))
+          setRemoteStream(collectRemoteStream(remoteMediaRef, event))
         },
         onConnectionStateChange: (state) => {
           if (!active || peerRef.current !== peer) return
