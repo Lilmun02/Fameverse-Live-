@@ -1,0 +1,280 @@
+/* Fresh host Live build. This stylesheet owns the host Live presentation only. */
+
+.fresh-live-app-shell {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 100dvh;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.fresh-live-app-shell > main {
+  display: block;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+.fvx-host-live {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+
+.fvx-host-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.fvx-host-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fvx-host-video.is-active { opacity: 1; z-index: 2; }
+.fvx-host-video.is-inactive { opacity: 0; z-index: 1; }
+.fvx-host-video.is-mirror { transform: scaleX(-1); }
+
+.fvx-camera-off {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px;
+  background: #050108;
+  text-align: center;
+}
+
+.fvx-camera-off small { max-width: 300px; color: #b8aabe; }
+
+.fvx-live-header {
+  position: absolute;
+  z-index: 30;
+  top: max(14px, env(safe-area-inset-top));
+  left: 18px;
+  right: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.fvx-live-header > * { pointer-events: auto; }
+
+.fvx-creator {
+  min-width: 0;
+  max-width: min(58vw, 310px);
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 5px 13px 5px 6px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #160c20, #08040d);
+  box-shadow: 0 10px 28px rgba(0,0,0,.30);
+  color: #fff;
+  text-align: left;
+  overflow: hidden;
+  filter: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.fvx-avatar-wrap {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #9f43ff;
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(153,57,246,.34);
+}
+
+.fvx-avatar-wrap::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #09050d;
+  border-radius: 50%;
+  background: #ff3159;
+}
+
+.fvx-avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #7626e8, #b44dff);
+  font-size: .82rem;
+  font-weight: 950;
+}
+
+.fvx-creator-copy { min-width: 0; overflow: hidden; }
+.fvx-creator-row { min-width: 0; display: flex; align-items: center; gap: 6px; }
+.fvx-creator-row strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88rem; line-height: 1.05; font-weight: 900; }
+.fvx-creator-copy small { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.70); font-size: .62rem; }
+.fvx-live-badge { flex: 0 0 auto; padding: 4px 8px; border-radius: 999px; background: linear-gradient(135deg,#7428d8,#a63cff); font-size: .49rem; font-weight: 950; letter-spacing: .08em; }
+
+.fvx-header-meta { display: flex; align-items: center; gap: 7px; padding-top: 5px; }
+.fvx-viewer-chip,
+.fvx-end-live { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; color: #fff; filter: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.fvx-viewer-chip { gap: 6px; padding: 0 11px; border: 1px solid rgba(255,255,255,.13); background: #100a16; font-size: .66rem; font-weight: 850; }
+.fvx-viewer-chip button { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; }
+.fvx-viewer-chip i { width: 1px; height: 17px; background: rgba(255,255,255,.22); }
+.fvx-header-fame { color: #bd63ff; font-weight: 1000; }
+.fvx-end-live { padding: 0 14px; border: 1px solid rgba(255,88,117,.30); background: #e3264f; font-size: .65rem; font-weight: 900; }
+
+.fvx-live-more {
+  position: absolute;
+  z-index: 34;
+  right: 12px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  display: grid;
+  justify-items: end;
+  gap: 9px;
+}
+
+.fvx-live-f-menu {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #a442ff;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #c66fff, #7423c5 56%, #210a30 100%);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(83,21,130,.20), 0 0 24px rgba(153,57,246,.58), 0 10px 25px rgba(0,0,0,.26);
+  font-size: 1.48rem;
+  font-style: italic;
+  font-weight: 1000;
+}
+
+.fvx-live-control-menu {
+  width: min(280px, calc(100vw - 24px));
+  max-height: min(60dvh, 460px);
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid rgba(191,126,255,.24);
+  border-radius: 18px;
+  background: #0b0710;
+  box-shadow: 0 16px 42px rgba(0,0,0,.42);
+}
+
+.fvx-live-control-menu > button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+}
+
+.fvx-live-control-menu > button:active { background: rgba(143,54,232,.18); }
+.fvx-live-control-menu > button:disabled { opacity: .42; }
+.fvx-live-control-menu > button span { width: 20px; text-align: center; color: #c27bff; }
+.fvx-live-control-menu > button b { font-size: .68rem; }
+
+.fvx-chat-feed {
+  position: absolute;
+  z-index: 24;
+  left: 18px;
+  right: 86px;
+  bottom: calc(max(74px, env(safe-area-inset-bottom) + 66px));
+  max-height: min(31dvh, 250px);
+  display: grid;
+  gap: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+.fvx-chat-feed::-webkit-scrollbar { display: none; }
+
+.fvx-live-composer {
+  position: absolute;
+  z-index: 34;
+  left: 18px;
+  right: 82px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 46px 46px;
+  align-items: center;
+  gap: 8px;
+}
+
+.fvx-comment-entry { min-width: 0; height: 46px; }
+.fvx-comment-entry input { width: 100%; height: 46px; padding: 0 16px; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; outline: 0; background: #0b0710; color: #fff; font-size: 16px; box-shadow: 0 10px 24px rgba(0,0,0,.22); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.fvx-gift-button,
+.fvx-send-button { width: 46px; height: 46px; display: grid; place-items: center; padding: 0; border-radius: 50%; color: #fff; }
+.fvx-gift-button { border: 1px solid rgba(202,145,255,.34); background: #130b19; font-size: 1.08rem; }
+.fvx-send-button { border: 1px solid rgba(221,185,255,.18); background: linear-gradient(145deg,#6d24d5,#a241f4); font-size: 1rem; }
+.fvx-send-button:disabled { opacity: .42; }
+
+.fvx-host-live.is-cohost .fvx-host-video.is-active {
+  top: max(102px, calc(env(safe-area-inset-top) + 88px));
+  left: 7px;
+  right: auto;
+  bottom: auto;
+  width: calc(50vw - 8px);
+  height: min(43dvh, calc(50vw - 8px));
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.fvx-host-live .fv-cohost-video-tile {
+  position: absolute;
+  z-index: 6;
+  top: max(102px, calc(env(safe-area-inset-top) + 88px));
+  right: 7px;
+  left: auto;
+  width: calc(50vw - 8px);
+  height: min(43dvh, calc(50vw - 8px));
+  overflow: hidden;
+  border: 1px solid rgba(218,171,255,.24);
+  border-radius: 16px;
+  background: #050108;
+}
+.fvx-host-live .fv-cohost-video-tile video { width: 100%; height: 100%; object-fit: cover; }
+
+@media (max-width: 390px) {
+  .fvx-live-header { left: 12px; right: 12px; }
+  .fvx-creator { max-width: 57vw; }
+  .fvx-chat-feed { left: 12px; right: 76px; }
+  .fvx-live-composer { left: 12px; right: 72px; grid-template-columns: minmax(0,1fr) 44px 44px; gap: 6px; }
+  .fvx-gift-button, .fvx-send-button { width: 44px; height: 44px; }
+  .fvx-live-f-menu { width: 52px; height: 52px; }
+}
