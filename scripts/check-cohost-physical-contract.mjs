@@ -33,7 +33,11 @@ assert.match(hostHook, /syncLocalStream\(peerRef\.current, stream\)/, 'Host came
 assert.match(peer, /export async function syncLocalStream/, 'WebRTC layer must support replacing active host tracks.')
 assert.match(viewerHook, /directHostStream/, 'Self co-host must expose a direct low-latency host return stream.')
 assert.match(viewerHook, /echoCancellation:\s*true[\s\S]*noiseSuppression:\s*true[\s\S]*autoGainControl:\s*true/, 'Co-host microphone capture must request acoustic echo controls.')
-assert.match(viewerScreen, /const hostPlaybackStream = isSelfCohost && cohost\.directHostStream[\s\S]*\? cohost\.directHostStream[\s\S]*: relay\.remoteStream/, 'Self co-host must switch the main host player to the direct host stream instead of layering a second audio return.')
+assert.match(viewerScreen, /const directHasVideo = Boolean\([\s\S]*getVideoTracks[\s\S]*readyState === 'live'/, 'Direct co-host handoff must wait for a live host video track.')
+assert.match(viewerScreen, /const directHasAudio = Boolean\([\s\S]*getAudioTracks[\s\S]*readyState === 'live'/, 'Direct co-host handoff must wait for a live host audio track.')
+assert.match(viewerScreen, /const directReady = directHasVideo && directHasAudio/, 'Direct host playback must not switch until both media tracks are ready.')
+assert.match(viewerScreen, /const hostPlaybackStream = isSelfCohost && cohost\.directHostStream && directReady[\s\S]*\? cohost\.directHostStream[\s\S]*: relay\.remoteStream/, 'Self co-host must switch the main host player to the complete direct host stream instead of layering a second audio return.')
+assert.match(viewerScreen, /const useDirect = isSelfCohost && directReady[\s\S]*relayAudio\.forEach\(\(track\) => \{ track\.enabled = !useDirect \}\)[\s\S]*directAudio\.forEach\(\(track\) => \{ track\.enabled = useDirect \}\)/, 'Relay and direct host audio must be mutually exclusive during co-host handoff to prevent whistle/feedback.')
 assert.match(viewerScreen, /video\.srcObject = hostPlaybackStream \|\| null/, 'The main host video element must own the active host audio/video playback path.')
 assert.doesNotMatch(viewerScreen, /muted=\{hasDirectHostAudio\}/, 'Do not mute one host player while starting a second host audio element.')
 assert.doesNotMatch(viewerScreen, /audioReturnStream=/, 'Viewer screen must not create a second host audio return path.')
@@ -49,4 +53,4 @@ assert.match(liveActions, /cohost\?\.cancelInvite/, 'Host F menu must wire invit
 assert.match(liveActions, /cohost\?\.endCohost/, 'Host F menu must wire active co-host removal.')
 assert.match(css, /\.fam-live-control-menu\.has-cohost-controls/, 'Co-host controls must stay inside the adaptive host F menu styling contract.')
 
-console.log('Co-host static contract passed: square layout, one audible host return path, self-preview muted, viewer invite prompt preserved, and one wired host F menu.')
+console.log('Co-host static contract passed: square layout, one mutually-exclusive audible host return path, self-preview muted, viewer invite prompt preserved, and one wired host F menu.')
