@@ -1,0 +1,86 @@
+workflows:
+  native-foundation:
+    name: Fameverse Native Foundation
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    working_directory: native/flutter_v1
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        FAMEVERSE_NATIVE_STAGE: "bootstrap"
+
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: 'native/flutter-v1'
+          include: true
+          source: true
+      cancel_previous_builds: true
+
+    scripts:
+      - name: Bootstrap ephemeral iOS and Android platform shells
+        script: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_platforms
+          flutter create \
+            --platforms=ios,android \
+            --org com.fameverse.dev \
+            --project-name fameverse_live \
+            --no-pub \
+            /tmp/fameverse_flutter_platforms
+          rm -rf ios android
+          cp -R /tmp/fameverse_flutter_platforms/ios ./ios
+          cp -R /tmp/fameverse_flutter_platforms/android ./android
+
+      - name: Resolve Flutter packages
+        script: |
+          set -euo pipefail
+          flutter pub get
+
+      - name: Enforce Fameverse native foundation law
+        script: |
+          set -euo pipefail
+          dart run tool/check_native_contract.dart
+
+      - name: Enforce Dart formatting
+        script: |
+          set -euo pipefail
+          dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          flutter analyze
+
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          flutter test
+
+      - name: Build Android debug artifact
+        script: |
+          set -euo pipefail
+          flutter build apk --debug
+
+      - name: Build unsigned iOS debug artifact
+        script: |
+          set -euo pipefail
+          flutter build ios --debug --no-codesign
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
+      - build/ios/iphoneos/*.app
+      - flutter_drive.log
+
+# Signing and publishing are intentionally absent from the bootstrap workflow.
+# They are added only after Apple/Google account authorization, final identifiers,
+# and release gates are explicitly approved. Never commit signing secrets here.
