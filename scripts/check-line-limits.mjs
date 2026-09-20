@@ -34,9 +34,9 @@ const files = await walk(sourceRoot)
 const violations = []
 const architectureViolations = []
 const appSource = await readFile(join(sourceRoot, 'App.jsx'), 'utf8')
-const hostLiveRemoved = !appSource.includes("import LiveScreen from './components/live/LiveScreen.jsx'")
-  && !appSource.includes('<LiveScreen')
-  && !appSource.includes("tab === 'live'")
+const hostLiveV2Active = appSource.includes("import HostLiveV2 from './components/live/HostLiveV2.jsx'")
+  && appSource.includes('<HostLiveV2')
+  && appSource.includes("tab === 'live'")
 
 for (const file of files) {
   const content = await readFile(file, 'utf8')
@@ -53,16 +53,13 @@ for (const file of files) {
 }
 
 for (const guard of REQUIRED_GUARDS) {
-  const filePath = join(sourceRoot, guard.file)
-  const content = await readFile(filePath, 'utf8')
+  const content = await readFile(join(sourceRoot, guard.file), 'utf8')
   if (!guard.snippets.every((snippet) => content.includes(snippet))) {
     architectureViolations.push(`${guard.message} Expected in src/${guard.file}`)
   }
 }
 
-// Approved Gift Tray V1: compact categorized tray, one selected gift action,
-// custom amount in its own mini sheet, and successful sends close only after
-// useGiftSystem receives server-authoritative acceptance.
+// Approved Gift Tray V1 contract.
 {
   const giftHook = await readFile(join(sourceRoot, 'hooks/useGiftSystem.js'), 'utf8')
   const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
@@ -90,62 +87,51 @@ for (const guard of REQUIRED_GUARDS) {
     || !customSheetLocked
     || !selectedSendLocked
   ) {
-    architectureViolations.push(
-      'Gift tray contract failed: categorized compact tray, separate custom sheet, selected gift sends, and backend-confirmed close-after-send behavior must remain wired.',
-    )
+    architectureViolations.push('Gift tray contract failed: approved categorized tray and backend-confirmed close-after-send behavior must remain wired.')
   }
 }
 
-// Pricing/quantity law: current simple beta gifts remain 1 coin, Welcome remains
-// 100 coins, custom amount remains bounded, and on-screen simple gifts show ×N.
+// Gift pricing/quantity contract.
 {
   const giftConfig = await readFile(join(sourceRoot, 'config/gifts.js'), 'utf8')
   const giftTray = await readFile(join(sourceRoot, 'components/gifts/LiveGiftTray.jsx'), 'utf8')
   const giftOverlay = await readFile(join(sourceRoot, 'components/gifts/GiftOverlay.jsx'), 'utf8')
   const basicGiftIds = ['rose', 'heart', 'fire', 'star', 'crown']
-  const basicPricesLocked = basicGiftIds.every((id) => {
-    const pattern = new RegExp(`id: '${id}',[^\\n]*cost: 1`)
-    return pattern.test(giftConfig)
-  })
+  const basicPricesLocked = basicGiftIds.every((id) => new RegExp(`id: '${id}',[^\\n]*cost: 1`).test(giftConfig))
   const welcomePriceLocked = /id: 'welcome-to-fameverse'[\s\S]*?cost: 100/.test(giftConfig)
-  const customAmountLocked = giftTray.includes('Custom')
-    && giftTray.includes('Send ×{normalizeQuantity(customQuantity)}')
+  const customAmountLocked = giftTray.includes('Custom') && giftTray.includes('Send ×{normalizeQuantity(customQuantity)}')
   const quantityDisplayLocked = giftOverlay.includes('×{giftOverlay.count || 1}')
 
   if (!basicPricesLocked || !welcomePriceLocked || !customAmountLocked || !quantityDisplayLocked) {
-    architectureViolations.push(
-      'Gift amount contract failed: simple gifts must stay 1 coin, Welcome 100 coins, bounded custom amount must remain available, and simple overlays must display ×N.',
-    )
+    architectureViolations.push('Gift amount contract failed: simple gifts, Welcome pricing, bounded custom amount, and ×N display must remain locked.')
   }
 }
 
-// Host-Live-only contracts are enforced whenever Host Live exists. During the
-// CEO-approved hard reset, the stronger requirement is that Host Live is absent.
-if (!hostLiveRemoved) {
-  const liveChat = await readFile(join(sourceRoot, 'components/live/LiveChat.jsx'), 'utf8')
-  const livePolish = await readFile(join(sourceRoot, 'styles/live/polish.css'), 'utf8')
+if (hostLiveV2Active) {
+  const hostLive = await readFile(join(sourceRoot, 'components/live/HostLiveV2.jsx'), 'utf8')
+  const hostCss = await readFile(join(sourceRoot, 'styles/live/host-live-v2.css'), 'utf8')
+  const main = await readFile(join(sourceRoot, 'main.jsx'), 'utf8')
   const fullSessionChat = appSource.includes('const liveMessages = chat') && !appSource.includes('const liveMessages = chat.slice(')
-  const autoFollow = liveChat.includes('chatNode.scrollTop = chatNode.scrollHeight')
-    && liveChat.includes('ref={chatScrollRef}')
-  const chatOwnsScroll = livePolish.includes('.mobile-live-shell.is-live .live-chat-overlay')
-    && livePolish.includes('overflow-y: auto')
-    && livePolish.includes('touch-action: pan-y')
-    && livePolish.includes('pointer-events: auto')
-  const shellPinned = livePolish.includes('.live-app-shell {')
-    && livePolish.includes('position: fixed')
-    && livePolish.includes('overflow: hidden')
-
-  if (!fullSessionChat || !autoFollow || !chatOwnsScroll || !shellPinned) {
-    architectureViolations.push(
-      'Live chat scrolling contract failed: retain full session, auto-follow comments, keep chat scrollable, and keep Live shell pinned.',
-    )
-  }
-
   const endLiveIndex = appSource.indexOf('if (wasLive)')
   const endLiveCloseIndex = endLiveIndex >= 0 ? appSource.indexOf('\n    }', endLiveIndex) : -1
   const clearChatIndex = endLiveIndex >= 0 ? appSource.indexOf('setChat([])', endLiveIndex) : -1
   const clearDraftIndex = endLiveIndex >= 0 ? appSource.indexOf("setCommentText('')", endLiveIndex) : -1
 
+  if (!fullSessionChat || !hostLive.includes('node.scrollTop = node.scrollHeight')) {
+    architectureViolations.push('Live V2 chat contract failed: retain full session and auto-follow comments.')
+  }
+  if (!hostCss.includes('.fv2-host-live') || !hostCss.includes('position: fixed') || !hostCss.includes('height: 100dvh')) {
+    architectureViolations.push('Live V2 shell contract failed: one fixed full-viewport fv2 shell must own Host Live geometry.')
+  }
+  if (hostCss.includes('backdrop-filter') || hostCss.includes('filter: blur')) {
+    architectureViolations.push('Live V2 clarity contract failed: cloudy/frosted blur is forbidden.')
+  }
+  if (!main.includes("./styles/live/host-live-v2.css")) {
+    architectureViolations.push('Live V2 stylesheet must be loaded by src/main.jsx.')
+  }
+  if (appSource.includes("import LiveScreen from './components/live/LiveScreen.jsx'") || appSource.includes('<LiveScreen')) {
+    architectureViolations.push('Retired Host Live component must not be active beside Live V2.')
+  }
   if (
     endLiveIndex < 0
     || endLiveCloseIndex < 0
@@ -154,14 +140,10 @@ if (!hostLiveRemoved) {
     || clearChatIndex > endLiveCloseIndex
     || clearDraftIndex > endLiveCloseIndex
   ) {
-    architectureViolations.push(
-      'Live session contract failed: End Live must clear chat and comment draft inside the wasLive cleanup path. Expected in src/App.jsx',
-    )
+    architectureViolations.push('Live V2 session contract failed: End must clear chat and draft inside the wasLive cleanup path.')
   }
-} else {
-  if (appSource.includes('useLiveMedia') || appSource.includes('useLivePresence') || appSource.includes('useLiveBroadcast') || appSource.includes('const startLive')) {
-    architectureViolations.push('Host Live reset contract failed: Host Live runtime ownership is still active in src/App.jsx.')
-  }
+} else if (appSource.includes('useLiveMedia') || appSource.includes('useLivePresence') || appSource.includes('useLiveBroadcast') || appSource.includes('const startLive')) {
+  architectureViolations.push('Host Live runtime is active without the approved HostLiveV2 shell.')
 }
 
 if (violations.length) {
@@ -180,6 +162,6 @@ if (violations.length || architectureViolations.length) {
 }
 
 console.log(`Source line guard passed: ${files.length} files checked, all <= ${MAX_LINES} lines.`)
-console.log(hostLiveRemoved
-  ? 'Architecture guard passed: Host Live is removed while shared app, viewer, gifting, startup recovery, and media-health contracts remain protected.'
-  : 'Architecture guard passed: startup recovery, media health, approved compact gift tray, gift pricing/quantity, live chat scrolling, and End Live cleanup contracts are active.')
+console.log(hostLiveV2Active
+  ? 'Architecture guard passed: approved Host Live V2 is the only active host shell; clarity, chat, media health, gifts, and End cleanup remain protected.'
+  : 'Architecture guard passed: Host Live is absent while shared app contracts remain protected.')
