@@ -1,7 +1,7 @@
 {
-  "name": "Fameverse Live Beta",
+  "name": "Fameverse Live",
   "short_name": "Fameverse",
-  "description": "Fameverse Live beta testing app",
+  "description": "Fameverse Live",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#07010d",
