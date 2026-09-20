@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640" role="img" aria-labelledby="title desc">
+  <title id="title">Ember Dragon</title>
+  <desc id="desc">Fameverse Ember Dragon premium gift poster with a black dragon, red eyes, embers and storm lightning.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="72%">
+      <stop offset="0" stop-color="#4a1708"/>
+      <stop offset=".46" stop-color="#160b12"/>
+      <stop offset="1" stop-color="#050409"/>
+    </radialGradient>
+    <linearGradient id="ember" x1="0" y1="1" x2="1" y2="0">
+      <stop stop-color="#ff4b12"/>
+      <stop offset=".55" stop-color="#ff9c24"/>
+      <stop offset="1" stop-color="#ffd066"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="360" height="640" rx="38" fill="url(#bg)"/>
+  <path d="M35 88 106 30 92 112 145 67 180 136 215 67 268 112 254 30 325 88" fill="none" stroke="#8b2f17" stroke-width="5" opacity=".6"/>
+  <path d="M45 130 94 162 64 184M315 130 266 162 296 184" stroke="#f1d7ff" stroke-width="4" opacity=".65"/>
+  <path d="M180 164c-58 2-92 37-103 91 33-21 63-25 90-4-34 15-59 50-61 92 24-23 48-37 74-39 26 2 50 16 74 39-2-42-27-77-61-92 27-21 57-17 90 4-11-54-45-89-103-91Z" fill="#0c0b10" stroke="#ff6d1f" stroke-width="4"/>
+  <path d="M158 211c9-15 35-15 44 0l-9 71h-26Z" fill="#17131a" stroke="#6a2a18" stroke-width="3"/>
+  <path d="M155 225h12M193 225h12" stroke="#ff2b20" stroke-width="8" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M110 377c36-37 104-37 140 0-19 47-50 73-70 92-20-19-51-45-70-92Z" fill="#171014" stroke="url(#ember)" stroke-width="6"/>
+  <path d="M129 395c15 16 28 20 51 5 23 15 36 11 51-5" fill="none" stroke="#ff7b25" stroke-width="5"/>
+  <g fill="#ff8b27" filter="url(#glow)"><circle cx="73" cy="354" r="5"/><circle cx="288" cy="333" r="4"/><circle cx="95" cy="465" r="3"/><circle cx="272" cy="455" r="5"/><circle cx="54" cy="422" r="3"/></g>
+  <text x="180" y="520" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="27">EMBER DRAGON</text>
+  <text x="180" y="552" text-anchor="middle" fill="#ff9a3c" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="15" letter-spacing="3">PREMIUM GIFT</text>
+  <rect x="88" y="584" width="184" height="34" rx="17" fill="#09070d" stroke="#ff6121" opacity=".94"/>
+  <text x="180" y="607" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="14" letter-spacing="2">FAMEVERSE LIVE</text>
+</svg>
