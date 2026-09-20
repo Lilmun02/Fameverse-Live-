@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640" role="img" aria-labelledby="title desc">
+  <title id="title">Celestial Phoenix</title>
+  <desc id="desc">Fameverse Celestial Phoenix premium gift poster with radiant gold and purple wings, fire and a celestial glow.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="74%">
+      <stop offset="0" stop-color="#52247c"/>
+      <stop offset=".48" stop-color="#1c0d31"/>
+      <stop offset="1" stop-color="#050409"/>
+    </radialGradient>
+    <linearGradient id="fire" x1=".1" y1="1" x2=".9" y2="0">
+      <stop stop-color="#ff4e1e"/>
+      <stop offset=".42" stop-color="#ff9d28"/>
+      <stop offset=".72" stop-color="#ffe071"/>
+      <stop offset="1" stop-color="#fff8d0"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0" y1=".5" x2="1" y2=".5">
+      <stop stop-color="#9d3cff"/>
+      <stop offset=".5" stop-color="#ffae34"/>
+      <stop offset="1" stop-color="#a847ff"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="360" height="640" rx="38" fill="url(#bg)"/>
+  <g fill="#fff3bd" opacity=".72"><circle cx="49" cy="88" r="2"/><circle cx="304" cy="71" r="3"/><circle cx="77" cy="191" r="2"/><circle cx="292" cy="211" r="2"/><circle cx="247" cy="116" r="2"/></g>
+  <circle cx="180" cy="280" r="116" fill="none" stroke="#ad55ff" stroke-width="3" opacity=".45"/>
+  <circle cx="180" cy="280" r="84" fill="none" stroke="#ffb23b" stroke-width="4" opacity=".5"/>
+  <path d="M176 247C126 180 72 174 35 191c28 10 47 29 64 54-30-10-54-5-76 12 35 10 64 31 91 60-11-2-29 0-44 12 40 1 72 13 106 44Z" fill="url(#wing)" stroke="#ffd46e" stroke-width="4"/>
+  <path d="M184 247c50-67 104-73 141-56-28 10-47 29-64 54 30-10 54-5 76 12-35 10-64 31-91 60 11-2 29 0 44 12-40 1-72 13-106 44Z" fill="url(#wing)" stroke="#ffd46e" stroke-width="4"/>
+  <path d="M180 174c23 32 30 61 17 89 20 20 28 47 19 82-10 39-30 79-36 117-6-38-26-78-36-117-9-35-1-62 19-82-13-28-6-57 17-89Z" fill="url(#fire)" stroke="#fff0a0" stroke-width="4" filter="url(#glow)"/>
+  <path d="M161 276c12 9 26 9 38 0" fill="none" stroke="#fff6db" stroke-width="5" stroke-linecap="round"/>
+  <path d="M180 364c-13 22-25 45-31 71 16-12 25-13 31-6 6-7 15-6 31 6-6-26-18-49-31-71Z" fill="#ff7821" filter="url(#glow)"/>
+  <text x="180" y="520" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="24">CELESTIAL PHOENIX</text>
+  <text x="180" y="552" text-anchor="middle" fill="#ffd36a" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="15" letter-spacing="3">PREMIUM GIFT</text>
+  <rect x="88" y="584" width="184" height="34" rx="17" fill="#09070d" stroke="#a94bff" opacity=".94"/>
+  <text x="180" y="607" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="14" letter-spacing="2">FAMEVERSE LIVE</text>
+</svg>
