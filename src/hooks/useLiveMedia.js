@@ -236,6 +236,13 @@ export function useLiveMedia(setToast) {
       const nextVideoTrack = cameraStream.getVideoTracks()[0]
       if (!nextVideoTrack || nextVideoTrack.readyState !== 'live') throw new Error('camera-track-missing')
 
+      // iOS/WebKit can keep stale intrinsic geometry on a reused hidden video slot.
+      // Reset the staging element before attaching the replacement camera so the
+      // next decoded frame establishes fresh full-stage geometry.
+      stagingVideo.pause?.()
+      stagingVideo.srcObject = null
+      stagingVideo.removeAttribute('src')
+      stagingVideo.load?.()
       configureVideo(stagingVideo, cameraStream)
       await stagingVideo.play()
       await waitForVideoFrame(stagingVideo)
