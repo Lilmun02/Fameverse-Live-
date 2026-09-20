@@ -5,8 +5,6 @@ function initialFor(value) {
 export default function GiftOverlay({ giftOverlay }) {
   if (!giftOverlay) return null
 
-  const count = Math.max(1, Number(giftOverlay.count) || 1)
-
   return (
     <div className="gift-overlay-simple fv-live-gift-toast" role="status" aria-live="polite">
       <span className="fv-live-gift-avatar" aria-hidden="true">{initialFor(giftOverlay.sender)}</span>
@@ -15,7 +13,7 @@ export default function GiftOverlay({ giftOverlay }) {
         <small>sent {giftOverlay.label}</small>
       </div>
       <span className="gift-overlay-emoji fv-live-gift-visual" aria-hidden="true">{giftOverlay.emoji || '✦'}</span>
-      <strong className="fv-live-gift-count">×{count.toLocaleString()}</strong>
+      <strong className="fv-live-gift-count">×{giftOverlay.count || 1}</strong>
     </div>
   )
 }
