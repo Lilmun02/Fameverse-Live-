@@ -1,0 +1,47 @@
+/*
+ * Host Live V2 video-stage compositor lock.
+ *
+ * iOS/WebKit can preserve the intrinsic rectangle of a <video> element that was
+ * display:none while a replacement camera stream was warming up. Host Live V2
+ * uses two video slots for seamless camera flipping, so both slots must remain
+ * full-canvas composited layers at all times. We switch slots with opacity only.
+ *
+ * Do not add layout, header, chat, composer, or F-menu rules here.
+ */
+.fv2-host-live .fv2-stage {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+  background: #020104;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video.is-active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video.is-mirrored {
+  transform: scaleX(-1) !important;
+}
