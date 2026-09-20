@@ -4,7 +4,7 @@ import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
 import HomeScreen from './components/home/HomeScreen.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
-import LiveScreen from './components/live/LiveScreen.jsx'
+import HostLiveV2 from './components/live/HostLiveV2.jsx'
 import ViewerLiveScreen from './components/live/ViewerLiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
@@ -341,7 +341,7 @@ export default function App() {
             )}
 
             {tab === 'live' && (
-              <LiveScreen
+              <HostLiveV2
                 isLive={live.isLive}
                 mediaStream={live.mediaStream}
                 cameraOff={live.cameraOff}
@@ -352,18 +352,17 @@ export default function App() {
                 displayName={displayName}
                 username={username}
                 initial={initial}
+                avatarUrl={account.profile?.avatar_url || null}
                 viewerCount={viewerCount}
                 tapCount={tapTotals.rawTaps}
                 isStartingLive={live.isStartingLive}
                 startLive={startLive}
                 liveSetup={liveSetup}
                 sessionSummary={sessionSummary}
-                premiumRepeat={gifts.premiumRepeat}
                 setGiftTrayOpen={gifts.setGiftTrayOpen}
                 setCohostTrayOpen={setCohostTrayOpen}
                 micMuted={live.micMuted}
                 toggleMic={live.toggleMic}
-                cameraOff={live.cameraOff}
                 toggleCamera={live.toggleCamera}
                 flipCamera={live.flipCamera}
                 shareRoom={shareRoom}
@@ -377,7 +376,6 @@ export default function App() {
                 addTestCoins={gifts.addTestCoins}
                 cohostTrayOpen={cohostTrayOpen}
                 cohost={cohostHost}
-                presenceState={presence.state}
                 currentUserId={actorId}
                 followNetwork={followNetwork}
               />

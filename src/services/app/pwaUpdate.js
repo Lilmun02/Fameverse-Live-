@@ -10,7 +10,7 @@ export function registerFameversePwaUpdates() {
   const watchedRegistrations = new WeakSet()
 
   const liveIsActive = () => Boolean(
-    document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'),
+    document.querySelector('.fv2-host-live, .mobile-live-shell.is-live, .fv-viewer-live'),
   )
 
   const purgeLegacyCaches = async () => {
@@ -87,6 +87,8 @@ export function registerFameversePwaUpdates() {
       notice.innerHTML = '<span class="fv-update-dot" aria-hidden="true"></span><div><strong></strong><small></small></div>'
       document.body.appendChild(notice)
     }
+
+    if (notice.dataset.mode === mode) return
 
     const title = notice.querySelector('strong')
     const detail = notice.querySelector('small')

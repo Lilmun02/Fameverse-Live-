@@ -1,0 +1,413 @@
+.fv2-host-live {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #020104;
+  color: #fff;
+  isolation: isolate;
+}
+
+.fv2-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #020104;
+}
+
+.fv2-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  object-fit: cover;
+  object-position: center;
+}
+
+.fv2-video.is-active { display: block; }
+.fv2-video.is-mirrored { transform: scaleX(-1); }
+
+.fv2-camera-off {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  text-align: center;
+  background: #08050e;
+}
+
+.fv2-camera-off strong { font-size: 20px; }
+.fv2-camera-off span { color: #aaa1b7; font-size: 13px; }
+
+.fv2-topbar {
+  position: absolute;
+  z-index: 5;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.fv2-identity,
+.fv2-stats,
+.fv2-end,
+.fv2-control,
+.fv2-f-button,
+.fv2-f-menu button,
+.fv2-chat-profile {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fv2-identity {
+  min-width: 0;
+  max-width: min(56vw, 330px);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px 7px 7px;
+  border: 1px solid rgba(151, 70, 255, .34);
+  border-radius: 22px;
+  background: rgba(7, 4, 13, .92);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(133, 45, 255, .24);
+  pointer-events: auto;
+}
+
+.fv2-avatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #8d32ff;
+  border-radius: 50%;
+  background: #1a0d2a;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  box-shadow: 0 0 14px rgba(151, 64, 255, .46);
+}
+
+.fv2-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.fv2-identity-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  text-align: left;
+}
+
+.fv2-name-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fv2-name-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.fv2-verified {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #8428ff;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.fv2-live-badge {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #7b18f7;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.fv2-identity-copy small {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7adbf;
+  font-size: 11px;
+}
+
+.fv2-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.fv2-stats {
+  height: 43px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid rgba(157, 87, 255, .35);
+  border-radius: 22px;
+  background: rgba(7, 4, 13, .94);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(96, 36, 167, .16);
+}
+
+.fv2-famtaps,
+.fv2-viewers {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fv2-famtaps b {
+  color: #b24cff;
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1;
+}
+
+.fv2-viewers svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+}
+
+.fv2-stat-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,.24);
+}
+
+.fv2-end {
+  height: 43px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 22px;
+  background: #ff294d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 0 16px rgba(255, 41, 77, .24);
+}
+
+.fv2-end:disabled { opacity: .55; }
+
+.fv2-chat {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  bottom: calc(env(safe-area-inset-bottom) + 91px);
+  width: min(72vw, 380px);
+  max-height: 34vh;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.fv2-chat::-webkit-scrollbar { display: none; }
+
+.fv2-chat-line {
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid rgba(141, 50, 255, .3);
+  border-radius: 18px;
+  background: rgba(8, 5, 12, .9);
+  box-shadow: 0 0 14px rgba(92, 33, 148, .12);
+}
+
+.fv2-chat-line.is-gift { border-color: rgba(186, 78, 255, .72); }
+
+.fv2-chat-profile {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.fv2-chat-profile:not(:disabled) { cursor: pointer; }
+.fv2-chat-profile:disabled { opacity: 1; }
+
+.fv2-chat-avatar {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #21102e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.fv2-chat-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.fv2-chat-copy strong { font-size: 12px; }
+.fv2-chat-copy span { color: #eee8f4; font-size: 13px; line-height: 1.2; }
+
+.fv2-composer {
+  position: absolute;
+  z-index: 7;
+  left: 14px;
+  right: 14px;
+  bottom: calc(env(safe-area-inset-bottom) + 13px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px 46px 46px 58px;
+  align-items: center;
+  gap: 8px;
+}
+
+.fv2-comment-entry {
+  height: 48px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 15px;
+  border: 1px solid rgba(145, 62, 255, .5);
+  border-radius: 24px;
+  background: rgba(6, 4, 10, .94);
+  box-shadow: 0 0 14px rgba(127, 41, 211, .12);
+}
+
+.fv2-comment-entry input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+}
+
+.fv2-comment-entry input::placeholder { color: #a69faf; }
+.fv2-smile { color: #ddd4e6; font-size: 22px; }
+
+.fv2-control,
+.fv2-f-button {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(152, 69, 255, .5);
+  border-radius: 50%;
+  background: rgba(7, 4, 12, .96);
+  color: #fff;
+}
+
+.fv2-control {
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+}
+
+.fv2-rose svg {
+  width: 27px;
+  height: 27px;
+  fill: #a52cff;
+  stroke: #d48cff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fv2-share { font-size: 22px; transform: rotate(-18deg); }
+
+.fv2-f-button {
+  width: 58px;
+  height: 58px;
+  justify-self: end;
+  border-width: 2px;
+  border-color: #b649ff;
+  background: #7d20e8;
+  font-size: 27px;
+  font-style: italic;
+  font-weight: 950;
+  box-shadow: 0 0 20px rgba(157, 61, 255, .55);
+}
+
+.fv2-f-button.is-open { background: #50109d; }
+
+.fv2-f-menu {
+  position: absolute;
+  z-index: 8;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 82px);
+  width: 190px;
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(157, 75, 255, .6);
+  border-radius: 18px;
+  background: #0b0710;
+  box-shadow: 0 0 22px rgba(113, 31, 184, .3);
+}
+
+.fv2-f-menu button {
+  min-height: 42px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: #17101f;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 750;
+  text-align: left;
+  padding: 0 12px;
+}
+
+@media (max-width: 390px) {
+  .fv2-topbar { left: 10px; right: 10px; gap: 7px; }
+  .fv2-identity { max-width: 52vw; padding-right: 8px; }
+  .fv2-avatar { width: 38px; height: 38px; flex-basis: 38px; }
+  .fv2-name-row strong { font-size: 12px; }
+  .fv2-live-badge { padding: 4px 6px; font-size: 9px; }
+  .fv2-stats { height: 39px; padding: 0 9px; gap: 7px; }
+  .fv2-end { height: 39px; padding: 0 14px; }
+  .fv2-composer { left: 10px; right: 10px; grid-template-columns: minmax(0, 1fr) 42px 42px 42px 54px; gap: 6px; }
+  .fv2-control { width: 42px; height: 42px; }
+  .fv2-f-button { width: 54px; height: 54px; }
+}

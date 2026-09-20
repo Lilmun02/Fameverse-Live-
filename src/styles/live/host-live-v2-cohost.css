@@ -1,0 +1,66 @@
+/* Host Live V2 co-host layout only.
+ * The approved single-host UI does not move. When one co-host is active,
+ * the host and guest cameras become two equal square tiles side by side.
+ * Ending co-host removes .has-cohost and the host camera returns to the
+ * normal full-canvas V2 stage automatically.
+ */
+
+.fv2-host-live.has-cohost {
+  --fv2-cohost-top: max(102px, calc(env(safe-area-inset-top) + 88px));
+  --fv2-cohost-size: min(50vw, 44dvh, 420px);
+}
+
+.fv2-host-live.has-cohost .fv2-stage > .fv2-video.is-active,
+.fv2-host-live.has-cohost .fv2-camera-off {
+  position: absolute !important;
+  top: var(--fv2-cohost-top) !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  width: var(--fv2-cohost-size) !important;
+  height: var(--fv2-cohost-size) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+}
+
+.fv2-host-live.has-cohost .fv-cohost-video-tile {
+  position: absolute !important;
+  top: var(--fv2-cohost-top) !important;
+  bottom: auto !important;
+  left: var(--fv2-cohost-size) !important;
+  right: auto !important;
+  width: var(--fv2-cohost-size) !important;
+  height: var(--fv2-cohost-size) !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+  border-left: 1px solid rgba(221, 176, 255, .18);
+  background: #08030d;
+  z-index: 2;
+}
+
+.fv2-host-live.has-cohost .fv-cohost-video-tile video {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  background: #08030d;
+}
+
+/* Keep the co-host label crisp. No frosted/cloudy treatment in Live V2. */
+.fv2-host-live.has-cohost .fv-cohost-video-tile > span {
+  background: rgba(12, 5, 18, .92) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 360px) {
+  .fv2-host-live.has-cohost {
+    --fv2-cohost-top: max(96px, calc(env(safe-area-inset-top) + 82px));
+  }
+}
