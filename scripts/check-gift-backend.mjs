@@ -16,6 +16,7 @@ const giftTray = read('src/components/gifts/LiveGiftTray.jsx')
 const giftConfig = read('src/config/gifts.js')
 const pwa = read('src/utils/pwa.js')
 const migration = read('supabase/migrations/20260906_add_authoritative_beta_wallet.sql')
+const premiumGiftMigration = read('supabase/migrations/20260920_enable_ember_dragon_and_celestial_phoenix_gifts.sql')
 
 assert.match(migration, /create table if not exists public\.beta_coin_wallets/, 'Gift coins must live in a server-side wallet table.')
 assert.match(migration, /create table if not exists public\.beta_coin_ledger/, 'Every wallet mutation must have a persistent server ledger.')
@@ -29,6 +30,10 @@ assert.match(migration, /revoke all privileges on table public\.beta_coin_wallet
 assert.match(migration, /revoke all privileges on table public\.gifter_stats from anon, authenticated/, 'Clients must not directly mutate authoritative gifter totals.')
 assert.match(migration, /grant execute on function public\.record_beta_gift/, 'Authenticated gift sends must use the controlled server RPC.')
 assert.match(migration, /grant execute on function public\.refill_beta_wallet/, 'Beta refill must use the controlled server RPC.')
+
+assert.match(premiumGiftMigration, /when 'ember-dragon' then 1000/, 'Authoritative gift RPC must accept Ember Dragon at 1,000 coins.')
+assert.match(premiumGiftMigration, /when 'celestial-phoenix' then 1000/, 'Authoritative gift RPC must accept Celestial Phoenix at 1,000 coins.')
+assert.match(premiumGiftMigration, /p_gift_id in \('ember-dragon', 'celestial-phoenix'\) and p_quantity <> 1/, 'Premium cinematic gifts must remain one paid gift per send at the backend boundary.')
 
 assert.match(walletService, /from\('beta_coin_wallets'\)/, 'Client wallet display must load the authenticated server balance.')
 assert.match(walletService, /rpc\('refill_beta_wallet'/, 'Beta refill must be requested from Supabase instead of changing browser state.')
@@ -61,4 +66,4 @@ assert.match(app, /coins:\s*wallet\.balance/, 'Gift UI must display the Supabase
 assert.match(app, /setWalletBalance:\s*wallet\.applyBalance/, 'Server gift confirmations must update the shared wallet state.')
 assert.match(app, /addTestCoins:\s*wallet\.refill/, 'Beta refill control must be wired to the server wallet RPC.')
 
-console.log('[gift-backend-law] Supabase wallet, atomic debit, buffered premium media, static tray poster, categorized tray, close-after-success sends, and separate custom quantity flow are locked')
+console.log('[gift-backend-law] Supabase wallet, premium 1K gift IDs, atomic debit, buffered premium media, static tray poster, categorized tray, close-after-success sends, and separate custom quantity flow are locked')
