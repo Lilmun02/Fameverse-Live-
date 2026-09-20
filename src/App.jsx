@@ -23,6 +23,7 @@ import { useLiveSessionSummary } from './hooks/useLiveSessionSummary.js'
 import { useLiveSetup } from './hooks/useLiveSetup.js'
 import { useLiveTapTotals } from './hooks/useLiveTapTotals.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
+import { isPrivilegedIdentityRole } from './services/accountRoles.js'
 
 const SPLASH_MINIMUM_MS = 1800
 
@@ -93,6 +94,7 @@ export default function App() {
     ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(account.profile.created_at))
     : 'Beta 2026'
   const activeActivityRoomId = live.isLive ? presence.room?.id : viewingRoom?.id
+  const canRefillTestCoins = isPrivilegedIdentityRole(account.profile?.account_role)
   const wallet = useGiftWallet({ userId: actorId, setToast })
   const gifter = useGifterLevel({ userId: actorId, roomId: activeActivityRoomId })
 
@@ -309,6 +311,7 @@ export default function App() {
           coins={gifts.coins}
           sendGift={gifts.sendGift}
           addTestCoins={gifts.addTestCoins}
+          canRefillTestCoins={canRefillTestCoins}
           currentUserId={actorId}
           currentDisplayName={displayName}
           currentAvatarUrl={account.profile?.avatar_url || null}
@@ -374,6 +377,8 @@ export default function App() {
                 coins={gifts.coins}
                 sendGift={gifts.sendGift}
                 addTestCoins={gifts.addTestCoins}
+                canRefillTestCoins={canRefillTestCoins}
+          canRefillTestCoins={canRefillTestCoins}
                 cohostTrayOpen={cohostTrayOpen}
                 cohost={cohostHost}
                 currentUserId={actorId}
