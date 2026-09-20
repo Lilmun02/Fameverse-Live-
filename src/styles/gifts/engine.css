@@ -8,7 +8,11 @@
   background:
     radial-gradient(circle at 50% 42%, rgba(148, 57, 231, .34), transparent 34rem),
     linear-gradient(180deg, #160820, #07030b 62%, #020104);
-  animation: fv-gift-shell 6.4s ease both;
+  opacity: 0;
+}
+
+.fv-gift-engine.is-playing {
+  animation: fv-gift-shell var(--fv-gift-duration, 6400ms) ease both;
 }
 
 .fv-gift-engine::before {
@@ -65,7 +69,10 @@
   color: #fff;
   opacity: 0;
   transform: translateY(10px);
-  animation: fv-meta-in 6.4s ease both;
+}
+
+.fv-gift-engine.is-playing .fv-gift-meta {
+  animation: fv-meta-in var(--fv-gift-duration, 6400ms) ease both;
 }
 
 .fv-gift-meta-icon {
@@ -120,8 +127,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fv-gift-engine,
-  .fv-gift-meta {
+  .fv-gift-engine.is-playing,
+  .fv-gift-engine.is-playing .fv-gift-meta {
     animation-timing-function: linear;
   }
 }
