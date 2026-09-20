@@ -9,10 +9,14 @@ function retryUrl(url, attempt) {
   return `${url}${joiner}fv_retry=${attempt}`
 }
 
+function isVideoSource(url = '') {
+  return /\.mp4(?:$|\?)/i.test(url)
+}
+
 export function primeGiftPosters(giftList = []) {
   if (typeof Image === 'undefined') return
   for (const gift of giftList) {
-    if (!gift?.poster || posterPreloadCache.has(gift.poster)) continue
+    if (!gift?.poster || isVideoSource(gift.poster) || posterPreloadCache.has(gift.poster)) continue
     const image = new Image()
     image.decoding = 'async'
     image.src = gift.poster
@@ -38,6 +42,38 @@ export default function GiftVisual({ gift, className = '' }) {
   }
 
   const src = retryUrl(gift.poster, posterAttempt)
+
+  if (isVideoSource(gift.poster)) {
+    return (
+      <span className={`fv-gift-poster-shell ${className} ${posterReady ? 'is-ready' : ''}`} aria-hidden="true">
+        <video
+          src={src}
+          muted
+          playsInline
+          preload="metadata"
+          draggable="false"
+          onLoadedData={(event) => {
+            const target = event.currentTarget
+            const thumbnailTime = Math.max(0, Number(gift?.thumbnailTime || 0))
+            if (thumbnailTime > 0 && Number.isFinite(target.duration) && target.duration > thumbnailTime) {
+              try { target.currentTime = thumbnailTime } catch {}
+            } else {
+              setPosterReady(true)
+            }
+          }}
+          onSeeked={() => setPosterReady(true)}
+          onError={() => {
+            setPosterReady(false)
+            if (posterAttempt >= MAX_POSTER_RETRIES) return
+            if (retryTimer.current) clearTimeout(retryTimer.current)
+            retryTimer.current = setTimeout(() => {
+              setPosterAttempt((attempt) => Math.min(MAX_POSTER_RETRIES, attempt + 1))
+            }, 180)
+          }}
+        />
+      </span>
+    )
+  }
 
   return (
     <span className={`fv-gift-poster-shell ${className} ${posterReady ? 'is-ready' : ''}`} aria-hidden="true">
