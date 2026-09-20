@@ -23,6 +23,6 @@ export async function loadBetaWalletBalance(userId) {
     .maybeSingle()
 
   if (error) throw error
-  if (!data) return refillBetaWallet(10000)
+  if (!data) return 0
   return normalizeBalance(data.balance)
 }
