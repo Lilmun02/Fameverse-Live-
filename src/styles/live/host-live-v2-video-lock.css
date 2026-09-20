@@ -1,0 +1,53 @@
+/*
+ * Host Live V2 video-stage compositor lock.
+ *
+ * Physical iPhone recordings proved camera flips can leave the unmirrored
+ * WebKit <video> slot at its intrinsic rectangle while the mirrored slot stays
+ * full-canvas. Both slots therefore use the same composited transform path,
+ * remain full-canvas at all times, and switch visibility with opacity only.
+ *
+ * UI geometry is intentionally out of scope here.
+ */
+.fv2-host-live .fv2-stage {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+  background: #020104;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video.is-active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video.is-mirrored {
+  -webkit-transform: translateZ(0) scaleX(-1) !important;
+  transform: translateZ(0) scaleX(-1) !important;
+}

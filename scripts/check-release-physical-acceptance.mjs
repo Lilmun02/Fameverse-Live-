@@ -11,6 +11,13 @@ const criticalFiles = [
   'src/components/live/CohostVideoTile.jsx',
   'src/components/live/ViewerLiveScreen.jsx',
   'src/components/live/LiveScreen.jsx',
+  'src/components/live/HostLiveV2.jsx',
+  'src/hooks/useLiveMedia.js',
+  'src/styles/live/host-live-v2.css',
+  'src/styles/live/host-live-v2-cohost.css',
+  'src/styles/live/host-live-v2-video-lock.css',
+  'src/features/live/host-live-v2-resume.js',
+  'src/services/app/pwaUpdate.js',
   'src/styles/live/cohost.css',
 ]
 

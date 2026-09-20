@@ -4,7 +4,7 @@ import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
 import HomeScreen from './components/home/HomeScreen.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
-import LiveScreen from './components/live/LiveScreen.jsx'
+import HostLiveV2 from './components/live/HostLiveV2.jsx'
 import ViewerLiveScreen from './components/live/ViewerLiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
@@ -77,14 +77,8 @@ export default function App() {
     setToast,
   })
   const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
-  const liveDiscovery = useLiveDiscovery({
-    userId: actorId,
-    enabled: Boolean(account.session),
-  })
-  const creatorDiscovery = useCreatorDiscovery({
-    userId: actorId,
-    enabled: Boolean(account.session),
-  })
+  const liveDiscovery = useLiveDiscovery({ userId: actorId, enabled: Boolean(account.session) })
+  const creatorDiscovery = useCreatorDiscovery({ userId: actorId, enabled: Boolean(account.session) })
   const followNetwork = useFollowNetwork({ userId: actorId, setToast })
   const displayName = account.profile?.display_name || account.session?.user?.email?.split('@')[0] || 'Fameverse User'
   const username = account.profile?.username ? `@${account.profile.username}` : '@newuser'
@@ -223,7 +217,7 @@ export default function App() {
   }
 
   const shareRoom = async (roomOverride = null) => {
-    const room = roomOverride || presence.room
+    const room = roomOverride || presence.room || viewingRoom
     const roomTitle = room?.title || liveSetup.active?.title || 'Fameverse Live Beta'
     const creatorName = roomOverride?.host?.displayName || roomOverride?.host?.username || displayName
     const shareData = {
@@ -266,31 +260,17 @@ export default function App() {
   if (!account.authReady || !splashMinimumElapsed) {
     return (
       <div className="boot-splash" aria-label="Opening Fameverse">
-        <div>
-          <div className="boot-mark">F</div>
-          <strong>FAMEVERSE <span>LIVE</span></strong>
-          <small>Opening your Fameverse…</small>
-        </div>
+        <div><div className="boot-mark">F</div><strong>FAMEVERSE <span>LIVE</span></strong><small>Opening your Fameverse…</small></div>
       </div>
     )
   }
 
   if (!account.session) {
-    return (
-      <AuthScreen
-        authMode={account.authMode}
-        setAuthMode={account.setAuthMode}
-        authForm={account.authForm}
-        setAuthForm={account.setAuthForm}
-        authMessage={account.authMessage}
-        setAuthMessage={account.setAuthMessage}
-        submitAuth={account.submitAuth}
-      />
-    )
+    return <AuthScreen authMode={account.authMode} setAuthMode={account.setAuthMode} authForm={account.authForm} setAuthForm={account.setAuthForm} authMessage={account.authMessage} setAuthMessage={account.setAuthMessage} submitAuth={account.submitAuth} />
   }
 
   return (
-    <div className={`app-shell ${tab === 'live' && live.isLive ? 'live-app-shell' : ''}`}>
+    <div className="app-shell">
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
 
@@ -317,31 +297,12 @@ export default function App() {
       ) : (
         <>
           <main>
-            {tab === 'home' && (
-              <HomeScreen
-                displayName={displayName}
-                username={username}
-                initial={initial}
-                followNetwork={followNetwork}
-                setTab={setTab}
-                standalone={pwa.standalone}
-                installPwa={pwa.installPwa}
-              />
-            )}
+            {tab === 'home' && <HomeScreen displayName={displayName} username={username} initial={initial} followNetwork={followNetwork} setTab={setTab} standalone={pwa.standalone} installPwa={pwa.installPwa} />}
 
-            {tab === 'discover' && (
-              <DiscoverScreen
-                setTab={setTab}
-                liveDiscovery={liveDiscovery}
-                creatorDiscovery={creatorDiscovery}
-                followNetwork={followNetwork}
-                currentProfile={account.profile}
-                onOpenLiveRoom={setViewingRoom}
-              />
-            )}
+            {tab === 'discover' && <DiscoverScreen setTab={setTab} liveDiscovery={liveDiscovery} creatorDiscovery={creatorDiscovery} followNetwork={followNetwork} currentProfile={account.profile} onOpenLiveRoom={setViewingRoom} />}
 
             {tab === 'live' && (
-              <LiveScreen
+              <HostLiveV2
                 isLive={live.isLive}
                 mediaStream={live.mediaStream}
                 cameraOff={live.cameraOff}
@@ -352,18 +313,16 @@ export default function App() {
                 displayName={displayName}
                 username={username}
                 initial={initial}
+                avatarUrl={account.profile?.avatar_url || null}
                 viewerCount={viewerCount}
                 tapCount={tapTotals.rawTaps}
                 isStartingLive={live.isStartingLive}
                 startLive={startLive}
                 liveSetup={liveSetup}
                 sessionSummary={sessionSummary}
-                premiumRepeat={gifts.premiumRepeat}
                 setGiftTrayOpen={gifts.setGiftTrayOpen}
-                setCohostTrayOpen={setCohostTrayOpen}
                 micMuted={live.micMuted}
                 toggleMic={live.toggleMic}
-                cameraOff={live.cameraOff}
                 toggleCamera={live.toggleCamera}
                 flipCamera={live.flipCamera}
                 shareRoom={shareRoom}
@@ -376,8 +335,8 @@ export default function App() {
                 sendGift={gifts.sendGift}
                 addTestCoins={gifts.addTestCoins}
                 cohostTrayOpen={cohostTrayOpen}
+                setCohostTrayOpen={setCohostTrayOpen}
                 cohost={cohostHost}
-                presenceState={presence.state}
                 currentUserId={actorId}
                 followNetwork={followNetwork}
               />
@@ -399,7 +358,6 @@ export default function App() {
                 username={username}
                 initial={initial}
                 joinedLabel={joinedLabel}
-                shareRoom={shareRoom}
                 profileDraft={account.profileDraft}
                 setProfileDraft={account.setProfileDraft}
                 saveProfile={account.saveProfile}
@@ -410,7 +368,6 @@ export default function App() {
               />
             )}
           </main>
-
           <BottomNav tab={tab} setTab={setTab} isLive={live.isLive} />
         </>
       )}
