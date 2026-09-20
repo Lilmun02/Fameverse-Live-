@@ -40,7 +40,7 @@ import './styles/live/live-layout-v1-refinement.css'
 import './styles/live/live-contract.css'
 import './styles/live/cohost.css'
 import './styles/live/host-live-v2.css'
-import './styles/live/host-live-v2-video-lock.css'
+import './styles/live/host-live-v2-cohost.css'
 
 const params = new URLSearchParams(window.location.search)
 const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App
