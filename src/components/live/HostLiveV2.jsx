@@ -159,16 +159,25 @@ export default function HostLiveV2({
         <div className="fv2-chat" ref={chatRef} aria-label="Live comments">
           {liveMessages.map((item) => {
             const level = Math.max(1, Number(item.gifterLevel || 1))
+            const canOpenProfile = Boolean(item.userId)
             return (
               <div className={`fv2-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
-                <span className="fv2-chat-avatar">{initialFor(item.user)}</span>
-                <span className="fv2-chat-copy">
-                  <span className="fam-chat-identity">
-                    <strong>{item.user}</strong>
-                    <span className="fam-gifter-level" aria-label={`Gift level ${level}`}>Lv. {level}</span>
+                <button
+                  type="button"
+                  className="fv2-chat-profile"
+                  disabled={!canOpenProfile}
+                  onClick={() => canOpenProfile && profileSheet.open(item.userId)}
+                  aria-label={canOpenProfile ? `Open ${item.user} profile` : undefined}
+                >
+                  <span className="fv2-chat-avatar">{initialFor(item.user)}</span>
+                  <span className="fv2-chat-copy">
+                    <span className="fam-chat-identity">
+                      <strong>{item.user}</strong>
+                      <span className="fam-gifter-level" aria-label={`Gift level ${level}`}>Lv. {level}</span>
+                    </span>
+                    <span>{item.kind === 'gift' ? `sent ${Math.max(1, Number(item.quantity) || 1)} gift${Number(item.quantity) === 1 ? '' : 's'}` : item.text}</span>
                   </span>
-                  <span>{item.kind === 'gift' ? `sent ${Math.max(1, Number(item.quantity) || 1)} gift${Number(item.quantity) === 1 ? '' : 's'}` : item.text}</span>
-                </span>
+                </button>
               </div>
             )
           })}
