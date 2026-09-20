@@ -24,8 +24,8 @@ assert.ok(giftConfig.includes("poster: '/gifts/welcome-to-fameverse-poster.webp'
 assert.ok(isWebp(readBytes(welcomePath)), 'Welcome to Fameverse poster must remain a valid WEBP asset.')
 
 const customPosters = [
-  ['Ember Dragon', '/gifts/ember-dragon-poster.svg', 'public/gifts/ember-dragon-poster.svg', /EMBER DRAGON/, /black dragon|red eyes|ember/i],
-  ['Celestial Phoenix', '/gifts/celestial-phoenix-poster.svg', 'public/gifts/celestial-phoenix-poster.svg', /CELESTIAL PHOENIX/, /phoenix|gold|purple|fire/i],
+  ['Ember Dragon', '/gifts/ember-dragon-poster.svg', 'public/gifts/ember-dragon-poster.svg', /Ember Dragon/i, /black dragon|red eyes|ember/i],
+  ['Celestial Phoenix', '/gifts/celestial-phoenix-poster.svg', 'public/gifts/celestial-phoenix-poster.svg', /Celestial Phoenix/i, /phoenix|gold|purple|fire/i],
 ]
 
 for (const [label, publicPath, filePath, identityPattern, artPattern] of customPosters) {
@@ -36,6 +36,7 @@ for (const [label, publicPath, filePath, identityPattern, artPattern] of customP
   assert.match(svg, /<svg[\s>]/i, `${label} poster must be an SVG image.`)
   assert.match(svg, identityPattern, `${label} poster must identify the actual gift.`)
   assert.match(svg, artPattern, `${label} poster must retain its approved visual identity instead of an emoji placeholder.`)
+  assert.match(svg, /data:image\/jpeg;base64,/i, `${label} poster must embed the approved real gift-frame image, not substitute drawn artwork.`)
 }
 
 assert.match(giftTray, /<GiftVisual gift=\{gift\}/, 'Gift cards must render through the canonical GiftVisual component.')
@@ -43,4 +44,4 @@ assert.match(giftTray, /<GiftVisual gift=\{selectedGift\}/, 'Selected gift must 
 assert.doesNotMatch(giftTray, /<video|seekGiftThumbnail|onSeeked=/, 'Tray thumbnails must stay static and Safari-safe.')
 assert.doesNotMatch(giftVisual, /<video|currentTime\s*=/, 'GiftVisual must never seek cinematic videos for tray artwork.')
 
-console.log('Premium gift poster guard passed: Welcome, Ember Dragon, and Celestial Phoenix use custom static tray artwork with no emoji fallback.')
+console.log('Premium gift poster guard passed: Welcome uses its static poster, and Ember Dragon/Celestial Phoenix use the approved real gift-frame images with no emoji fallback.')
