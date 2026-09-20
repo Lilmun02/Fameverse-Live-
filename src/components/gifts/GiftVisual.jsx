@@ -25,6 +25,9 @@ export default function GiftVisual({ gift, className = '' }) {
   const [posterAttempt, setPosterAttempt] = useState(0)
   const retryTimer = useRef(null)
   const imageRef = useRef(null)
+  const poster = gift?.poster || ''
+  const src = poster ? retryUrl(poster, posterAttempt) : ''
+  const fallbackGlyph = gift?.activityEmoji || gift?.emoji || 'F'
 
   useEffect(() => {
     setPosterReady(false)
@@ -32,19 +35,17 @@ export default function GiftVisual({ gift, className = '' }) {
     return () => {
       if (retryTimer.current) clearTimeout(retryTimer.current)
     }
-  }, [gift?.poster])
-
-  if (!gift?.poster) {
-    return <span className={className} aria-hidden="true">{gift?.emoji || gift?.activityEmoji || '✦'}</span>
-  }
-
-  const src = retryUrl(gift.poster, posterAttempt)
-  const fallbackGlyph = gift?.activityEmoji || gift?.emoji || 'F'
+  }, [poster])
 
   useEffect(() => {
+    if (!poster) return
     const image = imageRef.current
     if (image?.complete && image.naturalWidth > 0) setPosterReady(true)
-  }, [src])
+  }, [poster, src])
+
+  if (!poster) {
+    return <span className={className} aria-hidden="true">{fallbackGlyph}</span>
+  }
 
   return (
     <span className={`fv-gift-poster-shell ${className} ${posterReady ? 'is-ready' : ''}`} aria-hidden="true">
