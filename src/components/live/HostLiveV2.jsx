@@ -71,7 +71,7 @@ export default function HostLiveV2({
   giftTrayOpen,
   coins,
   sendGift,
-  addTestCoins,
+  addTestCoins, canRefillTestCoins = false,
   cohostTrayOpen,
   setCohostTrayOpen,
   cohost,
@@ -220,7 +220,7 @@ export default function HostLiveV2({
         onDecline={cohost?.declineRequest}
         onEndCohost={cohost?.endCohost}
       />
-      <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
+      <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} canRefillTestCoins={canRefillTestCoins} />
     </section>
   )
 }
