@@ -61,7 +61,8 @@
 .fv2-end,
 .fv2-control,
 .fv2-f-button,
-.fv2-f-menu button {
+.fv2-f-menu button,
+.fv2-chat-profile {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -249,6 +250,23 @@
 }
 
 .fv2-chat-line.is-gift { border-color: rgba(186, 78, 255, .72); }
+
+.fv2-chat-profile {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.fv2-chat-profile:not(:disabled) { cursor: pointer; }
+.fv2-chat-profile:disabled { opacity: 1; }
 
 .fv2-chat-avatar {
   width: 31px;
