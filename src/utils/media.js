@@ -7,7 +7,8 @@ export function seekGiftThumbnail(event, seconds = 0) {
 export function videoConstraints(facingMode = 'user') {
   return {
     facingMode: { ideal: facingMode },
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
+    width: { ideal: 720 },
+    height: { ideal: 1280 },
+    aspectRatio: { ideal: 9 / 16 },
   }
 }
