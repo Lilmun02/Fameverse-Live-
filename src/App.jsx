@@ -4,24 +4,16 @@ import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
 import HomeScreen from './components/home/HomeScreen.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
-import LiveScreen from './components/live/LiveScreen.jsx'
 import ViewerLiveScreen from './components/live/ViewerLiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
 import { useAccount } from './hooks/useAccount.js'
-import { useCohostHost } from './hooks/useCohostHost.js'
 import { useCreatorDiscovery } from './hooks/useCreatorDiscovery.js'
 import { useFollowNetwork } from './hooks/useFollowNetwork.js'
 import { useGiftSystem } from './hooks/useGiftSystem.js'
 import { useGiftWallet } from './hooks/useGiftWallet.js'
 import { useGifterLevel } from './hooks/useGifterLevel.js'
 import { useLiveActivity } from './hooks/useLiveActivity.js'
-import { useLiveBroadcast } from './hooks/useLiveBroadcast.js'
 import { useLiveDiscovery } from './hooks/useLiveDiscovery.js'
-import { useLiveMedia } from './hooks/useLiveMedia.js'
-import { useLivePresence } from './hooks/useLivePresence.js'
-import { useLiveSessionSummary } from './hooks/useLiveSessionSummary.js'
-import { useLiveSetup } from './hooks/useLiveSetup.js'
-import { useLiveTapTotals } from './hooks/useLiveTapTotals.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
 const SPLASH_MINIMUM_MS = 1800
@@ -46,37 +38,13 @@ export default function App() {
   const [creatorTab, setCreatorTab] = useState('clips')
   const [chat, setChat] = useState([])
   const [commentText, setCommentText] = useState('')
-  const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
   const [viewingRoom, setViewingRoom] = useState(null)
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
   const deepLinkHandledRef = useRef(false)
   const activityRef = useRef(null)
 
-  const live = useLiveMedia(setToast)
-  const liveSetup = useLiveSetup(setToast)
-  const sessionSummary = useLiveSessionSummary()
-  const account = useAccount({
-    setToast,
-    onBeforeSignOut: () => {
-      live.stopMedia()
-      live.setIsLive(false)
-    },
-  })
+  const account = useAccount({ setToast })
   const actorId = account.session?.user?.id || null
-  const presence = useLivePresence({ userId: actorId })
-  const broadcast = useLiveBroadcast({
-    roomId: presence.room?.id,
-    stream: live.mediaStream,
-    enabled: live.isLive && Boolean(presence.room?.id),
-  })
-  const cohostHost = useCohostHost({
-    roomId: presence.room?.id,
-    enabled: live.isLive && Boolean(presence.room?.id),
-    viewerRoster: broadcast.viewerRoster,
-    stream: live.mediaStream,
-    setToast,
-  })
-  const tapTotals = useLiveTapTotals({ roomId: presence.room?.id })
   const liveDiscovery = useLiveDiscovery({
     userId: actorId,
     enabled: Boolean(account.session),
@@ -92,12 +60,12 @@ export default function App() {
   const joinedLabel = account.profile?.created_at
     ? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(account.profile.created_at))
     : 'Beta 2026'
-  const activeActivityRoomId = live.isLive ? presence.room?.id : viewingRoom?.id
+  const activeActivityRoomId = viewingRoom?.id || null
   const wallet = useGiftWallet({ userId: actorId, setToast })
   const gifter = useGifterLevel({ userId: actorId, roomId: activeActivityRoomId })
 
   const gifts = useGiftSystem({
-    isLive: live.isLive || Boolean(viewingRoom),
+    isLive: Boolean(viewingRoom),
     displayName,
     actorId,
     gifterLevel: gifter.level,
@@ -109,7 +77,6 @@ export default function App() {
     setToast,
     setChat,
     onGiftAccepted: (giftEvent) => {
-      if (live.isLive) sessionSummary.recordGift(giftEvent)
       activityRef.current?.sendGift?.(giftEvent)
     },
   })
@@ -125,7 +92,6 @@ export default function App() {
   activityRef.current = activity
 
   const pwa = usePwaInstall(setToast)
-  const viewerCount = broadcast.viewerCount
   const liveMessages = chat
 
   useEffect(() => {
@@ -161,9 +127,7 @@ export default function App() {
 
   useEffect(() => {
     gifts.setGiftTrayOpen(false)
-    setCohostTrayOpen(false)
     if (tab !== 'discover') setViewingRoom(null)
-    if (tab === 'live' && !live.isLive) sessionSummary.dismissSummary()
     if (tab !== 'profile') {
       setProfileMode('view')
       setPolicyPage(null)
@@ -177,40 +141,6 @@ export default function App() {
     gifts.setGiftTrayOpen(false)
   }, [activeActivityRoomId])
 
-  const startLive = async () => {
-    const wasLive = live.isLive
-    const roomTitle = liveSetup.active?.title || liveSetup.draft.title.trim() || 'Live session'
-    const result = await live.startLive()
-
-    if (wasLive) {
-      cohostHost.endCohost()
-      const presenceEnded = await presence.endPresence()
-      sessionSummary.finishSession({ title: roomTitle, viewerCount })
-      gifts.stopGiftPlayback()
-      gifts.setGiftTrayOpen(false)
-      setCohostTrayOpen(false)
-      setChat([])
-      setCommentText('')
-      liveSetup.reset()
-      setToast(presenceEnded ? 'Live ended' : 'Live ended locally · room presence will expire')
-      return result
-    }
-
-    if (!result) return false
-
-    const presenceStarted = await presence.startPresence(roomTitle)
-    if (!presenceStarted) {
-      live.stopMedia()
-      live.setIsLive(false)
-      setToast('Could not publish Live room · try again')
-      return false
-    }
-
-    sessionSummary.beginSession({ title: roomTitle })
-    setToast("You're Live on Fameverse")
-    return true
-  }
-
   const submitComment = (event) => {
     event.preventDefault()
     const text = commentText.trim()
@@ -223,9 +153,9 @@ export default function App() {
   }
 
   const shareRoom = async (roomOverride = null) => {
-    const room = roomOverride || presence.room
-    const roomTitle = room?.title || liveSetup.active?.title || 'Fameverse Live Beta'
-    const creatorName = roomOverride?.host?.displayName || roomOverride?.host?.username || displayName
+    const room = roomOverride || viewingRoom
+    const roomTitle = room?.title || 'Fameverse Live Beta'
+    const creatorName = room?.host?.displayName || room?.host?.username || displayName
     const shareData = {
       title: roomTitle,
       text: `${creatorName} is live on Fameverse: ${roomTitle}`,
@@ -250,11 +180,7 @@ export default function App() {
   }
 
   const signOut = async () => {
-    cohostHost.endCohost()
     gifts.stopGiftPlayback()
-    await presence.endPresence()
-    liveSetup.reset()
-    sessionSummary.clear()
     setViewingRoom(null)
     await account.signOut()
     setTab('home')
@@ -290,7 +216,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${tab === 'live' && live.isLive ? 'live-app-shell' : ''}`}>
+    <div className="app-shell">
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
 
@@ -340,49 +266,6 @@ export default function App() {
               />
             )}
 
-            {tab === 'live' && (
-              <LiveScreen
-                isLive={live.isLive}
-                mediaStream={live.mediaStream}
-                cameraOff={live.cameraOff}
-                activeVideoSlot={live.activeVideoSlot}
-                videoSlotFacing={live.videoSlotFacing}
-                videoPrimaryRef={live.videoPrimaryRef}
-                videoSecondaryRef={live.videoSecondaryRef}
-                displayName={displayName}
-                username={username}
-                initial={initial}
-                viewerCount={viewerCount}
-                tapCount={tapTotals.rawTaps}
-                isStartingLive={live.isStartingLive}
-                startLive={startLive}
-                liveSetup={liveSetup}
-                sessionSummary={sessionSummary}
-                premiumRepeat={gifts.premiumRepeat}
-                setGiftTrayOpen={gifts.setGiftTrayOpen}
-                setCohostTrayOpen={setCohostTrayOpen}
-                micMuted={live.micMuted}
-                toggleMic={live.toggleMic}
-                cameraOff={live.cameraOff}
-                toggleCamera={live.toggleCamera}
-                flipCamera={live.flipCamera}
-                shareRoom={shareRoom}
-                liveMessages={liveMessages}
-                commentText={commentText}
-                setCommentText={setCommentText}
-                submitComment={submitComment}
-                giftTrayOpen={gifts.giftTrayOpen}
-                coins={gifts.coins}
-                sendGift={gifts.sendGift}
-                addTestCoins={gifts.addTestCoins}
-                cohostTrayOpen={cohostTrayOpen}
-                cohost={cohostHost}
-                presenceState={presence.state}
-                currentUserId={actorId}
-                followNetwork={followNetwork}
-              />
-            )}
-
             {tab === 'profile' && (
               <ProfileScreen
                 profileMode={profileMode}
@@ -399,7 +282,6 @@ export default function App() {
                 username={username}
                 initial={initial}
                 joinedLabel={joinedLabel}
-                shareRoom={shareRoom}
                 profileDraft={account.profileDraft}
                 setProfileDraft={account.setProfileDraft}
                 saveProfile={account.saveProfile}
@@ -411,7 +293,7 @@ export default function App() {
             )}
           </main>
 
-          <BottomNav tab={tab} setTab={setTab} isLive={live.isLive} />
+          <BottomNav tab={tab} setTab={setTab} />
         </>
       )}
     </div>
