@@ -157,15 +157,21 @@ export default function HostLiveV2({
 
       {liveMessages.length > 0 && (
         <div className="fv2-chat" ref={chatRef} aria-label="Live comments">
-          {liveMessages.map((item) => (
-            <div className={`fv2-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
-              <span className="fv2-chat-avatar">{initialFor(item.user)}</span>
-              <span className="fv2-chat-copy">
-                <strong>{item.user}</strong>
-                <span>{item.kind === 'gift' ? `sent ${Math.max(1, Number(item.quantity) || 1)} gift${Number(item.quantity) === 1 ? '' : 's'}` : item.text}</span>
-              </span>
-            </div>
-          ))}
+          {liveMessages.map((item) => {
+            const level = Math.max(1, Number(item.gifterLevel || 1))
+            return (
+              <div className={`fv2-chat-line ${item.kind === 'gift' ? 'is-gift' : ''}`} key={item.id}>
+                <span className="fv2-chat-avatar">{initialFor(item.user)}</span>
+                <span className="fv2-chat-copy">
+                  <span className="fam-chat-identity">
+                    <strong>{item.user}</strong>
+                    <span className="fam-gifter-level" aria-label={`Gift level ${level}`}>Lv. {level}</span>
+                  </span>
+                  <span>{item.kind === 'gift' ? `sent ${Math.max(1, Number(item.quantity) || 1)} gift${Number(item.quantity) === 1 ? '' : 's'}` : item.text}</span>
+                </span>
+              </div>
+            )
+          })}
         </div>
       )}
 
