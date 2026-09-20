@@ -125,6 +125,7 @@ function buildVideoScene(config, meta) {
   const root = document.createElement('div')
   root.className = 'fv-gift-engine fv-video-gift'
   root.dataset.giftId = config.id
+  root.style.setProperty('--fv-gift-duration', `${config.duration}ms`)
   root.setAttribute('role', 'status')
   root.setAttribute('aria-live', 'polite')
 
@@ -188,14 +189,22 @@ function startGiftScene(config, meta) {
     playNextQueuedGift()
   }
 
+  let playbackStarted = false
+  const markPlaybackStarted = () => {
+    if (playbackStarted || !activeGift || activeGift.video !== scene.video) return
+    playbackStarted = true
+    scene.root.classList.add('is-playing')
+    clearTimeout(activeGift.timer)
+    activeGift.timer = window.setTimeout(finish, config.duration + 1200)
+  }
+
   scene.video.onended = finish
-  scene.video.onplaying = () => scene.root.classList.add('is-playing')
-  activeGift.timer = window.setTimeout(finish, config.duration + 1200)
+  scene.video.onplaying = markPlaybackStarted
 
   const start = scene.video.play()
-  start?.catch?.(() => {
+  start?.then?.(markPlaybackStarted).catch?.(() => {
     scene.video.muted = true
-    scene.video.play().catch(finish)
+    scene.video.play().then(markPlaybackStarted).catch(finish)
   })
   return true
 }
