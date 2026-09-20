@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './features/feedback/beta-feedback.js'
 import './features/gifts/renderer/gift-engine.js'
+import './features/live/host-live-v2-resume.js'
 import { registerFameversePwaUpdates } from './services/app/pwaUpdate.js'
 import App from './App.jsx'
 import GifterBadgeGallery from './components/profile/GifterBadgeGallery.jsx'
@@ -39,6 +40,9 @@ import './styles/profile/gifter-gallery-mobile-lock.css'
 import './styles/live/live-layout-v1-refinement.css'
 import './styles/live/live-contract.css'
 import './styles/live/cohost.css'
+import './styles/live/host-live-v2.css'
+import './styles/live/host-live-v2-cohost.css'
+import './styles/live/host-live-v2-video-lock.css'
 
 const params = new URLSearchParams(window.location.search)
 const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App
