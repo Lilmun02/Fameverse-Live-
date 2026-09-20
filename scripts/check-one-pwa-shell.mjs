@@ -14,7 +14,7 @@ const updater = read('src/services/app/pwaUpdate.js')
 const vercel = read('vercel.json')
 const main = read('src/main.jsx')
 const app = read('src/App.jsx')
-const liveScreen = read('src/components/live/LiveScreen.jsx')
+const liveScreen = read('src/components/live/HostLiveV2.jsx')
 const liveLayout = read('src/styles/live/live-layout-v1-refinement.css')
 const liveContract = read('src/styles/live/live-contract.css')
 const nonLiveLegacy = read('src/styles/legacy/nonlive-preserved.css')
@@ -64,8 +64,11 @@ for (const forbiddenSelector of [
 
 // Exactly one host Live component tree. ViewerLiveScreen is a viewer experience,
 // not an iOS/Android fork of the host shell.
-assert.equal(count(app, "import LiveScreen from './components/live/LiveScreen.jsx'"), 1, 'App must import exactly one host LiveScreen.')
-assert.equal(count(app, '<LiveScreen'), 1, 'App must render exactly one host LiveScreen path.')
+assert.equal(count(app, "import HostLiveV2 from './components/live/HostLiveV2.jsx'"), 1, 'App must import exactly one approved HostLiveV2.')
+assert.equal(count(app, '<HostLiveV2'), 1, 'App must render exactly one HostLiveV2 path.')
+assert.equal(count(app, '<LiveScreen'), 0, 'The retired host shell must not render beside HostLiveV2.')
+assert.equal(count(main, './styles/live/host-live-v2.css'), 1, 'The approved host stylesheet must load exactly once.')
+assert.ok(updater.includes('.fv2-host-live'), 'PWA updates must defer while Host Live V2 is active.')
 
 for (const forbidden of ['userAgent', 'navigator.standalone', 'isiOS', 'iOSWebKit', 'visualViewport', '--fv-visible-viewport-height']) {
   assert.ok(!liveScreen.includes(forbidden), `LiveScreen must not contain platform-specific shell token: ${forbidden}`)
@@ -74,7 +77,7 @@ for (const forbiddenRecovery of ['visibilitychange', 'pageshow', "addEventListen
   assert.ok(!liveScreen.includes(forbiddenRecovery), `LiveScreen must not own destructive foreground recovery: ${forbiddenRecovery}`)
 }
 assert.ok(!liveScreen.includes('fam-live-vignette'), 'Canonical host Live shell must not render a legacy vignette layer.')
-assert.ok(liveScreen.includes('Canonical Live shell law'), 'Live runtime must document the shared-shell ownership contract.')
+assert.ok(liveScreen.includes('fv2-host-live'), 'The approved shared V2 host shell must remain the active presentation.')
 
 assert.ok(liveLayout.includes('object-fit: cover !important;'), 'Canonical Live layout must preserve full-canvas cover geometry.')
 assert.ok(liveLayout.includes('One PWA Build Law'), 'Canonical Live layout must document shared geometry.')
