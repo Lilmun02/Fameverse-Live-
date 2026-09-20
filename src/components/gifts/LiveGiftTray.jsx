@@ -17,6 +17,7 @@ export default function LiveGiftTray({
   coins,
   sendGift,
   addTestCoins,
+  canRefillTestCoins = false,
 }) {
   const [category, setCategory] = useState('all')
   const [selectedGiftId, setSelectedGiftId] = useState(gifts[0]?.id || null)
@@ -121,10 +122,12 @@ export default function LiveGiftTray({
           </button>
         </div>
 
-        <div className="fv-gift-beta-row">
-          <small>Beta tester balance</small>
-          <button type="button" onClick={() => void addTestCoins(10000)}>+10K</button>
-        </div>
+        {canRefillTestCoins && (
+          <div className="fv-gift-beta-row">
+            <small>Owner/admin test balance</small>
+            <button type="button" onClick={() => void addTestCoins(10000)}>+10K</button>
+          </div>
+        )}
 
         {customOpen && !selectedGift.singleSendOnly && (
           <div className="fv-gift-custom-backdrop" onClick={() => setCustomOpen(false)}>
