@@ -111,9 +111,11 @@ export default function LiveGiftTray({
               <strong>{selectedGift.label}</strong>
             </div>
           </div>
-          <button type="button" className="fv-gift-custom-open" onClick={() => setCustomOpen(true)}>
-            Custom
-          </button>
+          {!selectedGift.singleSendOnly && (
+            <button type="button" className="fv-gift-custom-open" onClick={() => setCustomOpen(true)}>
+              Custom
+            </button>
+          )}
           <button type="button" className="fv-gift-send-primary" onClick={() => void sendOne()}>
             Send · 🪙 {selectedGift.cost.toLocaleString()}
           </button>
@@ -124,7 +126,7 @@ export default function LiveGiftTray({
           <button type="button" onClick={() => void addTestCoins(10000)}>+10K</button>
         </div>
 
-        {customOpen && (
+        {customOpen && !selectedGift.singleSendOnly && (
           <div className="fv-gift-custom-backdrop" onClick={() => setCustomOpen(false)}>
             <section className="fv-gift-custom-sheet" onClick={(event) => event.stopPropagation()} aria-label={`Custom amount for ${selectedGift.label}`}>
               <div className="sheet-handle" />
