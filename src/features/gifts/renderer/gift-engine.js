@@ -24,7 +24,7 @@ let giftQueue = []
 const preparedGiftVideos = new Map()
 
 function isLiveActive() {
-  return Boolean(document.querySelector('.mobile-live-shell.is-live, .fv-viewer-live'))
+  return Boolean(document.querySelector('.mobile-live-shell.is-live, .fv2-host-live, .fv-viewer-live'))
 }
 
 function findGiftConfig(giftKey) {
