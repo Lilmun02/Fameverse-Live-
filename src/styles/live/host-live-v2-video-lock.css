@@ -1,0 +1,46 @@
+/*
+ * Host Live V2 video-stage compositor lock.
+ *
+ * Physical iPhone recording proved camera flips can leave one WebKit <video>
+ * slot at its intrinsic rectangle. Both slots therefore remain full-canvas
+ * layers at all times and visibility switches with opacity only.
+ *
+ * UI geometry is intentionally out of scope here.
+ */
+.fv2-host-live .fv2-stage {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+  background: #020104;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video.is-active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.fv2-host-live .fv2-stage > .fv2-video.is-mirrored {
+  transform: scaleX(-1) !important;
+}
