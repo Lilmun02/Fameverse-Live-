@@ -34,9 +34,9 @@ This law exists to catch bug cousins while the responsible system is already und
 
 ## Live statistics
 
-- Total tracked: **10**
+- Total tracked: **11**
 - Open: **1**
-- Fix candidates: **2**
+- Fix candidates: **3**
 - Locked: **6**
 - Reopened right now: **0**
 - Legacy recheck: **1**
@@ -56,6 +56,7 @@ This law exists to catch bug cousins while the responsible system is already und
 | FVB-008 | LOCKED | Medium | Gift tray / mobile layout | Selected gift / Custom / Send footer could look cramped and become partially clipped at the bottom of the tray on iPhone browser chrome. | 2026-09-07 | `d0fb59428b5430f67bce773554022d6cc9e60895` | Tray is a shrink-safe flex column, gift grid shrinks/scrolls first, action footer reserves space, and safe-area bottom breathing room is enforced. | PASS — iPhone tray footer remained visible and uncramped. | 0 |
 | FVB-009 | FIX_CANDIDATE | Medium | Co-host / mobile layout | Preview-approved Live Layout V1 refinement introduced a 5px rendered gap between the two co-host squares, violating the existing ≤2px side-by-side geometry lock. | 2026-09-07 | pending follow-up SHA | `tests/e2e/cohost-layout.spec.js` requires equal 1:1 panes and ≤2px horizontal separation for host and viewer layouts. | Automated browser recheck pending; physical co-host geometry still required. | 0 |
 | FVB-010 | FIX_CANDIDATE | Critical | Co-host / audio | Co-host Live can produce an audible whistle/feedback path during the handoff from the normal host relay to the direct co-host return. | 2026-09-20 | `fcbbc014040e0b14f4258802f8c59bb9cda4bcfd` | `check-cohost-physical-contract.mjs` requires complete direct A/V readiness, mutually-exclusive relay/direct host audio, acoustic echo controls, and muted local self-preview. | PENDING — two-device physical co-host test must confirm no whistle, echo, doubled host audio, scratch/chop, or audio loss through join/leave/rejoin. | 0 |
+| FVB-011 | FIX_CANDIDATE | High | Host Live V2 / profile interaction | Tapping a user identity in the Host Live V2 comment/gift feed did nothing even though the activity payload already carried the sender user ID. | 2026-09-20 | `9e105ae13b6cf4543720f22dcf476e67ad477bda` | `check-live-v2-profile.mjs` requires activity user IDs to survive, the V2 chat identity to call `profileSheet.open(item.userId)`, and the tappable control to preserve the approved transparent chat styling. | PENDING — physical iPhone/native test must tap multiple commenter/gifter identities and confirm the correct in-Live profile opens and closes without moving/breaking the Live layout. | 0 |
 
 ## FVB-002 current trace
 
@@ -126,6 +127,20 @@ The candidate waits until the direct host return has both a live video track and
 
 **LOCK**  
 `check-cohost-physical-contract.mjs` now guards complete A/V readiness and mutually-exclusive host audio. FVB-010 remains `FIX_CANDIDATE` until physical two-device QA passes repeated join/leave/rejoin with no whistle, echo, doubled audio, scratch/chop, or missing host audio.
+
+## FVB-011 trace
+
+**VERIFY**  
+The owner reported that tapping a user's identity inside Host Live V2 did nothing.
+
+**TRACE**  
+`useLiveActivity` already preserved `userId` for comments and gift activity. Host Live V2 then rendered the avatar/name as plain spans with no click handler, while the older shared Live chat path had an identity opener. The V2 replacement therefore visually showed an identity but failed the no-dead-UI rule.
+
+**SPRAY**  
+Host Live V2 now wraps the existing avatar/name/message presentation in a transparent button only when a real sender `userId` exists and calls `profileSheet.open(item.userId)`. The existing in-Live profile sheet remains the destination. The button reset preserves the same V2 chat geometry/colors instead of introducing a new design.
+
+**LOCK**  
+`check-live-v2-profile.mjs` is part of `check:laws`. Static/lint/unit/build passed at candidate `bad1929c474669428b7f129789c56951e1285495`; the engineering gate remains intentionally red only at the physical acceptance lock. FVB-011 remains `FIX_CANDIDATE` until a real device confirms the correct profile opens from multiple live identities.
 
 ## Reporting rule
 
