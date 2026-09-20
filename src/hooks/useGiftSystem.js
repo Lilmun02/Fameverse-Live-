@@ -102,7 +102,7 @@ export function useGiftSystem({
 
   const receiveGift = useCallback((gift, quantity = 1, sender = 'Fameverse viewer') => {
     if (!gift) return false
-    const normalizedQuantity = Math.max(1, Number(quantity) || 1)
+    const normalizedQuantity = gift.singleSendOnly ? 1 : Math.max(1, Number(quantity) || 1)
     if (Boolean(gift.rendererId)) playPremiumGift(gift, normalizedQuantity, sender)
     else showGift(gift, normalizedQuantity, sender)
     return true
@@ -203,6 +203,10 @@ export function useGiftSystem({
     const normalizedQuantity = Number(quantity)
     if (!Number.isSafeInteger(normalizedQuantity) || normalizedQuantity < 1) {
       setToast('Enter a whole gift amount of 1 or more')
+      return Promise.resolve(false)
+    }
+    if (gift?.singleSendOnly && normalizedQuantity !== 1) {
+      setToast(`${gift.label} sends one at a time`)
       return Promise.resolve(false)
     }
     if (normalizedQuantity > MAX_BETA_GIFT_QUANTITY) {
