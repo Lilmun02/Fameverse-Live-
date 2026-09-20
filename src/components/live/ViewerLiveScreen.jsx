@@ -22,7 +22,7 @@ function formatStat(value) {
 
 function stopLiveTap(event) { event.stopPropagation() }
 
-export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRoom, liveMessages, commentText, setCommentText, submitComment, giftTrayOpen, setGiftTrayOpen, coins, sendGift, addTestCoins, currentUserId, currentDisplayName, currentAvatarUrl, setToast }) {
+export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRoom, liveMessages, commentText, setCommentText, submitComment, giftTrayOpen, setGiftTrayOpen, coins, sendGift, addTestCoins, canRefillTestCoins = false, currentUserId, currentDisplayName, currentAvatarUrl, setToast }) {
   const videoRef = useRef(null)
   const particleIdRef = useRef(0)
   const particleLayerRef = useRef(null)
@@ -172,7 +172,7 @@ export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRo
       <CohostInvitePrompt invite={cohost.incomingInvite} hostName={hostName} onAccept={cohost.acceptInvite} onDecline={cohost.declineInvite} />
       <LiveViewerSheet open={viewerSheetOpen} onClose={() => setViewerSheetOpen(false)} roomId={room?.id || null} viewers={relay.viewerRoster} onOpenIdentity={openViewerProfile} />
       <LiveProfileSheet sheet={profileSheet} currentUserId={currentUserId} followNetwork={followNetwork} />
-      <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} />
+      <LiveGiftTray open={giftTrayOpen} onClose={() => setGiftTrayOpen(false)} coins={coins} sendGift={sendGift} addTestCoins={addTestCoins} canRefillTestCoins={canRefillTestCoins} />
     </section>
   )
 }
