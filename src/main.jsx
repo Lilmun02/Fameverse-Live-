@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import './features/feedback/beta-feedback.js'
 import './features/gifts/renderer/gift-engine.js'
 import './features/live/host-live-v2-resume.js'
-import { registerFameversePwaUpdates } from './services/app/pwaUpdate.js'
+import { prepareFameverseBeforeMount } from './services/app/pwaUpdate.js'
 import App from './App.jsx'
 import GifterBadgeGallery from './components/profile/GifterBadgeGallery.jsx'
 import './styles/base/global.css'
@@ -34,7 +34,6 @@ import './styles/live/viewer-live-effects.css'
 import './styles/profile/fam1-v2.css'
 import './styles/profile/gifter-badges.css'
 import './styles/profile/algorithm-diagnostics.css'
-import './styles/base/pwa-update.css'
 import './styles/live/profile-sheet.css'
 import './styles/profile/gifter-gallery-mobile-lock.css'
 import './styles/live/live-layout-v1-refinement.css'
@@ -44,13 +43,18 @@ import './styles/live/host-live-v2.css'
 import './styles/live/host-live-v2-cohost.css'
 import './styles/live/host-live-v2-video-lock.css'
 
-const params = new URLSearchParams(window.location.search)
-const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App
+async function bootFameverse() {
+  const canMount = await prepareFameverseBeforeMount()
+  if (!canMount) return
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <RootComponent />
-  </React.StrictMode>
-)
+  const params = new URLSearchParams(window.location.search)
+  const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App
 
-registerFameversePwaUpdates()
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <RootComponent />
+    </React.StrictMode>
+  )
+}
+
+void bootFameverse()
