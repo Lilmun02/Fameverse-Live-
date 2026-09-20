@@ -1,11 +1,14 @@
 import '../../../styles/gifts/engine.css'
 import {
+  CELESTIAL_PHOENIX_VIDEO,
+  EMBER_DRAGON_VIDEO,
+  GROK_WELCOME_VIDEO,
+} from '../../../config/gifts.js'
+import {
   primeGiftAudio,
   startGiftAudioSession,
   stopGiftAudioSession,
 } from './gift-audio.js'
-
-const GROK_WELCOME_VIDEO = 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4'
 
 const giftRegistry = Object.freeze({
   welcomeToFameverse: {
@@ -15,6 +18,24 @@ const giftRegistry = Object.freeze({
     duration: 6400,
     cost: 100,
     video: GROK_WELCOME_VIDEO,
+    effect: 'video-cinematic',
+  },
+  emberDragon: {
+    id: 'ember-dragon',
+    label: 'Ember Dragon',
+    tier: 'premium',
+    duration: 8500,
+    cost: 1000,
+    video: EMBER_DRAGON_VIDEO,
+    effect: 'video-cinematic',
+  },
+  celestialPhoenix: {
+    id: 'celestial-phoenix',
+    label: 'Celestial Phoenix',
+    tier: 'premium',
+    duration: 8000,
+    cost: 1000,
+    video: CELESTIAL_PHOENIX_VIDEO,
     effect: 'video-cinematic',
   },
 })
