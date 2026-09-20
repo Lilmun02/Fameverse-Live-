@@ -44,7 +44,16 @@ export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRo
   const ended = relay.state === 'ended' || capture.lastResult?.reasons?.includes('inactive_live_session')
   const cohostStream = cohost.localStream || cohost.remoteStream
   const isSelfCohost = Boolean(cohost.localStream)
-  const hostPlaybackStream = isSelfCohost && cohost.directHostStream ? cohost.directHostStream : relay.remoteStream
+  const directHasVideo = Boolean(
+    cohost.directHostStream?.getVideoTracks?.().some((track) => track.readyState === 'live'),
+  )
+  const directHasAudio = Boolean(
+    cohost.directHostStream?.getAudioTracks?.().some((track) => track.readyState === 'live'),
+  )
+  const directReady = directHasVideo && directHasAudio
+  const hostPlaybackStream = isSelfCohost && cohost.directHostStream && directReady
+    ? cohost.directHostStream
+    : relay.remoteStream
   const isFollowing = useMemo(() => Boolean(followNetwork?.following?.some((profile) => profile.id === room?.host_user_id)), [followNetwork?.following, room?.host_user_id])
 
   useEffect(() => {
@@ -58,6 +67,14 @@ export default function ViewerLiveScreen({ room, onClose, followNetwork, shareRo
   useEffect(() => {
     if (!cohost.localStream) setCohostCameraOn(true)
   }, [cohost.localStream])
+
+  useEffect(() => {
+    const relayAudio = relay.remoteStream?.getAudioTracks?.() || []
+    const directAudio = cohost.directHostStream?.getAudioTracks?.() || []
+    const useDirect = isSelfCohost && directReady
+    relayAudio.forEach((track) => { track.enabled = !useDirect })
+    directAudio.forEach((track) => { track.enabled = useDirect })
+  }, [cohost.directHostStream, directReady, isSelfCohost, relay.remoteStream])
 
   useEffect(() => () => {
     particleTimersRef.current.forEach((timer) => window.clearTimeout(timer))
