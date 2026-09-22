@@ -37,13 +37,21 @@ jobs:
           flutter pub get
           dart format lib test tool
 
-      - name: Commit native live wiring
+      - name: Keep workflow files connector-owned
+        run: |
+          git restore codemagic.yaml .github/workflows/native-preflight.yml
+
+      - name: Commit native live source wiring
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add codemagic.yaml .github/workflows/native-preflight.yml native/flutter_v1
+          git add \
+            native/flutter_v1/lib/features/shell/fameverse_shell.dart \
+            native/flutter_v1/lib/features/live/native_camera_screen.dart \
+            native/flutter_v1/test/app_smoke_test.dart \
+            native/flutter_v1/tool/check_native_contract.dart
           if git diff --cached --quiet; then
-            echo 'Native live wiring already applied.'
+            echo 'Native live source wiring already applied.'
             exit 0
           fi
           git commit -m 'feat: wire native host-to-viewer live broadcast'
