@@ -71,7 +71,8 @@ void main() {
     );
     require(
       releaseSection.contains('--type IOS_APP_STORE') ||
-          releaseSection.contains('distribution_type: app_store'),
+          releaseSection.contains('distribution_type: app_store') ||
+          releaseSection.contains('fameverse_app_store'),
       'TestFlight workflow must use App Store distribution signing.',
     );
     require(
@@ -83,11 +84,28 @@ void main() {
       releaseSection.contains('flutter build ipa --release'),
       'TestFlight workflow must build a signed release IPA.',
     );
+
+    final usesIntegrationPublishing =
+        releaseSection.contains('app_store_connect:') &&
+        releaseSection.contains('auth: integration');
+    final usesEnvironmentPublishing =
+        releaseSection.contains('app_store_connect:') &&
+        releaseSection.contains('api_key: \$APP_STORE_CONNECT_PRIVATE_KEY') &&
+        releaseSection.contains('key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER') &&
+        releaseSection.contains('issuer_id: \$APP_STORE_CONNECT_ISSUER_ID') &&
+        releaseSection.contains('- appstore_credentials');
+
     require(
-      releaseSection.contains('app_store_connect:') &&
-          releaseSection.contains('auth: integration'),
-      'TestFlight publishing must use the authorized App Store Connect integration.',
+      usesIntegrationPublishing || usesEnvironmentPublishing,
+      'TestFlight publishing must use authorized App Store Connect credentials.',
     );
+
+    if (releaseSection.contains('fameverse_app_store')) {
+      require(
+        releaseSection.contains('Fameverse Distribution'),
+        'Explicit Fameverse provisioning profile must be paired with the stored distribution certificate.',
+      );
+    }
   }
 
   require(
