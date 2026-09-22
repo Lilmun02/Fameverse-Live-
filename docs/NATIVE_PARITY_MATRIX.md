@@ -6,19 +6,19 @@ Status values: NOT_STARTED, IN_PROGRESS, FIX_CANDIDATE, PHYSICAL_PASS, LOCKED, B
 
 | Area | Native status | Automated gate | Physical QA | Notes |
 | --- | --- | --- | --- | --- |
-| Native project bootstrap | IN_PROGRESS | pending | n/a | Flutter/Codemagic foundation only; not product UI |
+| Native project bootstrap | PHYSICAL_PASS | passed | Build 13 installed | TestFlight/signing/publishing pipeline proved on a real iPhone; product parity is tracked separately below |
 | Splash / startup | NOT_STARTED | required | required | Preserve backend update/release semantics where still relevant to native |
-| Authentication | NOT_STARTED | required | required | Reuse authoritative Supabase auth contract |
-| Home | NOT_STARTED | required | required | Redesign discussion/approval required before implementation |
-| Discover | NOT_STARTED | required | required | Redesign discussion/approval required before implementation |
-| Profile | NOT_STARTED | required | required | Redesign discussion/approval required before implementation |
-| Viewer Live | NOT_STARTED | required | required | Device-sensitive |
-| Host Live | NOT_STARTED | required | required | Device-sensitive |
-| Front camera | NOT_STARTED | required | required | Native camera implementation, not Safari/WebKit |
-| Rear camera | NOT_STARTED | required | required | Native camera implementation, not Safari/WebKit |
-| Camera flip | NOT_STARTED | required | required | Must survive repeated front/back flips without geometry collapse |
-| Camera off/on recovery | NOT_STARTED | required | required | Must recover without stale/blank/boxed preview |
-| Microphone mute/unmute | NOT_STARTED | required | required | Device-sensitive |
+| Authentication | IN_PROGRESS | preflight pending | required | Native Supabase sign-in/sign-up is wired to the authoritative Fameverse project; not physically accepted yet |
+| Home | IN_PROGRESS | preflight pending | required | Ports the current production community/follow contract; no unapproved Home redesign |
+| Discover | IN_PROGRESS | preflight pending | required | Uses real profiles, follows, active live rooms, and tap totals; native viewer playback remains gated |
+| Profile | IN_PROGRESS | preflight pending | required | Loads/saves real display name, username, and bio; avatar upload parity still pending |
+| Viewer Live | NOT_STARTED | required | required | Real active rooms can be discovered, but native media playback is intentionally not faked |
+| Host Live | IN_PROGRESS | preflight pending | required | Native camera preview slice only; broadcast transport/comments/gifts/cohost remain gated |
+| Front camera | IN_PROGRESS | preflight pending | required | Uses Flutter camera plugin / iPhone camera stack, not Safari/WebKit |
+| Rear camera | IN_PROGRESS | preflight pending | required | Uses Flutter camera plugin / iPhone camera stack, not Safari/WebKit |
+| Camera flip | IN_PROGRESS | preflight pending | required | Native front/back swap is wired; must survive repeated physical flips before FIX_CANDIDATE/LOCKED |
+| Camera off/on recovery | IN_PROGRESS | preflight pending | required | Native controller teardown/restart is wired; physical QA required |
+| Microphone mute/unmute | NOT_STARTED | required | required | Device-sensitive; camera slice currently runs with audio disabled |
 | Comments | NOT_STARTED | required | required | Existing backend contract should be reused |
 | FameTaps | NOT_STARTED | required | required | Preserve authoritative tap rules |
 | Gift tray | NOT_STARTED | required | required | Custom gift artwork must match approved assets, no placeholder substitution |
@@ -34,7 +34,7 @@ Status values: NOT_STARTED, IN_PROGRESS, FIX_CANDIDATE, PHYSICAL_PASS, LOCKED, B
 | Real payouts | NOT_STARTED | required | required | Requires payment provider + audit/anti-abuse contract |
 | Push notifications | NOT_STARTED | required | required | Later native feature |
 | Deep links | NOT_STARTED | required | required | Later native feature |
-| App Store/TestFlight signing | NOT_STARTED | signing gate | TestFlight install | Requires Apple account authorization/credentials |
+| App Store/TestFlight signing | PHYSICAL_PASS | passed | Build 13 installed | Direct manual signing + App Store Connect publishing succeeded; do not alter working secret/signing path without evidence |
 | Google Play signing | NOT_STARTED | signing gate | Play internal test | Configure after Android release path is approved |
 
 ## Migration rule
