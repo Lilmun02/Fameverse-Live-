@@ -1,0 +1,58 @@
+name: Fameverse Native Formatter
+
+on:
+  push:
+    branches:
+      - native/flutter-v1
+    paths:
+      - 'native/flutter_v1/**'
+      - '.github/workflows/native-format.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fameverse-native-format-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format-native:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: native/flutter-v1
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Format native Dart
+        run: dart format lib test tool
+
+      - name: Commit formatter output when needed
+        working-directory: .
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- native/flutter_v1/lib native/flutter_v1/test native/flutter_v1/tool; then
+            echo 'Native Dart is already formatted.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add native/flutter_v1/lib native/flutter_v1/test native/flutter_v1/tool
+          git commit -m 'style: format native Flutter product slice'
+          git push origin HEAD:native/flutter-v1
