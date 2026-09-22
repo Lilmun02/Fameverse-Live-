@@ -3,13 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/fameverse_backend.dart';
+import '../data/fameverse_live_backend.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/shell/fameverse_shell.dart';
 
 class FameverseApp extends StatefulWidget {
-  const FameverseApp({required this.backend, super.key});
+  const FameverseApp({
+    required this.backend,
+    required this.liveBackend,
+    super.key,
+  });
 
   final FameverseBackend backend;
+  final FameverseLiveBackend liveBackend;
 
   static const productShellKey = Key('fameverse-native-product-shell');
 
@@ -83,6 +89,7 @@ class _FameverseAppState extends State<FameverseApp> {
             : FameverseShell(
                 key: ValueKey(_identity!.id),
                 backend: widget.backend,
+                liveBackend: widget.liveBackend,
                 identity: _identity!,
               ),
       ),
