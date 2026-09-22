@@ -83,6 +83,13 @@ jobs:
           rm -rf ios
           cp -R /tmp/fameverse_flutter_ios/ios ./ios
 
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist
+
       - name: Resolve Flutter packages
         run: flutter pub get
 
