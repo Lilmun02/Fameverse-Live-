@@ -363,7 +363,7 @@ class _HomeScreenState extends State<_HomeScreen> {
                   const SizedBox(height: 4),
                   const Text(
                     'Your circle',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w850),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 16),
                   if (widget.loading && _groupProfiles.isEmpty)
@@ -538,7 +538,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
                         'Streaming now',
                         style: TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.w850,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ],
@@ -579,7 +579,7 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
             const SizedBox(height: 4),
             const Text(
               'Recommended creators',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w850),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 14),
             if (_visibleCreators.isEmpty)

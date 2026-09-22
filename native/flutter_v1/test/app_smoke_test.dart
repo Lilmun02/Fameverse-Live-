@@ -15,7 +15,7 @@ void main() {
   testWidgets('signed-in native product exposes primary navigation', (
     tester,
   ) async {
-    final identity = const FvIdentity(id: 'user-1', email: 'owner@example.com');
+    const identity = FvIdentity(id: 'user-1', email: 'owner@example.com');
     await tester.pumpWidget(
       FameverseApp(backend: _FakeBackend(identity: identity)),
     );
