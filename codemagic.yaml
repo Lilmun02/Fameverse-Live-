@@ -90,9 +90,7 @@ workflows:
     environment:
       groups:
         - appstore_credentials
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.fameverse.live
+        - manual_signing
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -155,10 +153,25 @@ workflows:
           set -euo pipefail
           find . -name "Podfile" -execdir pod install \;
 
-      - name: Apply stored Fameverse signing profile
+      - name: Install Fameverse signing assets directly
         script: |
           set -euo pipefail
-          xcode-project use-profiles --project ios/Runner.xcodeproj
+          keychain initialize
+
+          PROFILES_HOME="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_HOME"
+          PROFILE_PATH="$PROFILES_HOME/fameverse_app_store.mobileprovision"
+          printf '%s' "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH"
+
+          CERT_PATH="/tmp/fameverse_distribution.p12"
+          printf '%s' "$CM_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+          keychain add-certificates \
+            --certificate "$CERT_PATH" \
+            --certificate-password "$CM_CERTIFICATE_PASSWORD"
+
+          xcode-project use-profiles \
+            --project ios/Runner.xcodeproj \
+            --profile "$PROFILE_PATH"
 
       - name: Build signed Fameverse IPA
         script: |
@@ -180,5 +193,6 @@ workflows:
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
 # TestFlight publishing is isolated to the signed native-testflight workflow.
-# TestFlight signing resolves the uploaded App Store certificate/profile by locked bundle ID and distribution type.
+# TestFlight signing bypasses Codemagic Code Signing Identities resolution entirely.
+# The password-protected .p12 and .mobileprovision are supplied as encrypted base64 app variables.
 # App Store Connect upload uses the appstore_credentials environment-variable group.
