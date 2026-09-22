@@ -1,126 +1,183 @@
-import 'package:camera/camera.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:livekit_client/livekit_client.dart';
+
+import '../../data/fameverse_backend.dart';
+import '../../data/fameverse_live_backend.dart';
+import 'livekit_live_screen.dart';
 
 class NativeCameraScreen extends StatefulWidget {
-  const NativeCameraScreen({super.key});
+  const NativeCameraScreen({
+    required this.liveBackend,
+    required this.identity,
+    required this.profile,
+    required this.onLiveEnded,
+    super.key,
+  });
+
+  final FameverseLiveBackend liveBackend;
+  final FvIdentity identity;
+  final FvProfile profile;
+  final Future<void> Function() onLiveEnded;
 
   @override
   State<NativeCameraScreen> createState() => _NativeCameraScreenState();
 }
 
 class _NativeCameraScreenState extends State<NativeCameraScreen> {
-  CameraController? _controller;
-  List<CameraDescription> _cameras = const [];
-  CameraLensDirection _lensDirection = CameraLensDirection.front;
+  final TextEditingController _title = TextEditingController();
+  LocalVideoTrack? _previewTrack;
+  CameraPosition _cameraPosition = CameraPosition.front;
   bool _busy = false;
+  bool _liveBusy = false;
   String? _error;
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _title.dispose();
+    final track = _previewTrack;
+    _previewTrack = null;
+    if (track != null) unawaited(track.dispose());
     super.dispose();
   }
 
-  Future<void> _startCamera([CameraLensDirection? lens]) async {
-    if (_busy) return;
+  Future<void> _startPreview() async {
+    if (_busy || _previewTrack != null) return;
     setState(() {
       _busy = true;
       _error = null;
     });
-
     try {
-      final cameras = _cameras.isEmpty ? await availableCameras() : _cameras;
-      if (cameras.isEmpty) {
-        throw CameraException(
-          'no-camera',
-          'No camera is available on this device.',
-        );
-      }
-      final targetDirection = lens ?? _lensDirection;
-      final target = cameras.firstWhere(
-        (camera) => camera.lensDirection == targetDirection,
-        orElse: () => cameras.first,
+      final track = await LocalVideoTrack.createCameraTrack(
+        CameraCaptureOptions(
+          cameraPosition: _cameraPosition,
+          params: VideoParametersPresets.h720_169,
+        ),
       );
-      final next = CameraController(
-        target,
-        ResolutionPreset.high,
-        enableAudio: false,
-      );
-      await next.initialize();
       if (!mounted) {
-        await next.dispose();
+        await track.dispose();
         return;
       }
-      final previous = _controller;
-      setState(() {
-        _cameras = cameras;
-        _controller = next;
-        _lensDirection = target.lensDirection;
-      });
-      await previous?.dispose();
-    } on CameraException catch (error) {
+      setState(() => _previewTrack = track);
+    } catch (error) {
       if (mounted) {
         setState(() {
-          _error = switch (error.code) {
-            'CameraAccessDenied' =>
-              'Camera permission is off. Allow camera access in iPhone Settings.',
-            _ => error.description ?? 'Could not start the camera.',
-          };
+          _error = _cameraError(error);
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _error = 'Could not start the camera.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _flipCamera() async {
-    if (_controller == null || _busy || _cameras.length < 2) return;
-    final nextDirection = _lensDirection == CameraLensDirection.front
-        ? CameraLensDirection.back
-        : CameraLensDirection.front;
-    await _startCamera(nextDirection);
-  }
-
-  Future<void> _stopCamera() async {
+  Future<void> _stopPreview() async {
     if (_busy) return;
-    final current = _controller;
-    if (current == null) return;
+    final track = _previewTrack;
+    if (track == null) return;
     setState(() {
-      _controller = null;
+      _previewTrack = null;
       _error = null;
     });
-    await current.dispose();
+    await track.dispose();
   }
 
-  Widget _cameraPreview(CameraController controller) {
-    final previewSize = controller.value.previewSize;
-    if (previewSize == null) return const SizedBox.expand();
-    return ClipRect(
-      child: SizedBox.expand(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: previewSize.height,
-            height: previewSize.width,
-            child: CameraPreview(controller),
+  Future<void> _flipCamera() async {
+    final track = _previewTrack;
+    if (track == null || _busy) return;
+    final next = _cameraPosition == CameraPosition.front
+        ? CameraPosition.back
+        : CameraPosition.front;
+    setState(() => _busy = true);
+    try {
+      await track.restartTrack(
+        CameraCaptureOptions(
+          cameraPosition: next,
+          params: VideoParametersPresets.h720_169,
+        ),
+      );
+      if (mounted) setState(() => _cameraPosition = next);
+    } catch (error) {
+      if (mounted) setState(() => _error = _cameraError(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _goLive() async {
+    if (_liveBusy) return;
+    if (_previewTrack == null) {
+      await _startPreview();
+      if (_previewTrack == null) return;
+    }
+
+    setState(() {
+      _liveBusy = true;
+      _error = null;
+    });
+
+    FvLiveRoom? room;
+    try {
+      await _stopPreview();
+      room = await widget.liveBackend.startLiveRoom(
+        identity: widget.identity,
+        profile: widget.profile,
+        title: _title.text,
+      );
+      final credentials = await widget.liveBackend.issueLiveCredentials(
+        roomId: room.id,
+        role: 'host',
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (context) => NativeHostLiveScreen(
+            liveBackend: widget.liveBackend,
+            identity: widget.identity,
+            room: room!,
+            credentials: credentials,
+            initialCameraPosition: _cameraPosition,
           ),
         ),
-      ),
-    );
+      );
+      if (!mounted) return;
+      await widget.onLiveEnded();
+    } catch (error) {
+      if (room != null) {
+        try {
+          await widget.liveBackend.endLiveRoom(
+            roomId: room.id,
+            hostUserId: widget.identity.id,
+          );
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      final text = error.toString();
+      setState(() {
+        _error = text.contains('livekit-not-configured')
+            ? 'Live media is wired, but the LiveKit server credentials still need to be connected before testers can broadcast.'
+            : 'Could not start your live right now. Please try again.';
+      });
+    } finally {
+      if (mounted) setState(() => _liveBusy = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = _controller;
+    final track = _previewTrack;
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (controller != null && controller.value.isInitialized)
-            _cameraPreview(controller)
+          if (track != null)
+            VideoTrackRenderer(
+              track,
+              fit: VideoViewFit.cover,
+              mirrorMode: VideoViewMirrorMode.auto,
+            )
           else
             const _CameraIdleBackground(),
           DecoratedBox(
@@ -131,9 +188,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                 colors: [
                   Colors.black.withValues(alpha: .58),
                   Colors.transparent,
-                  Colors.black.withValues(alpha: .82),
+                  Colors.black.withValues(alpha: .86),
                 ],
-                stops: const [0, .45, 1],
+                stops: const [0, .42, 1],
               ),
             ),
           ),
@@ -155,7 +212,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: const Text(
-                          'LIVE SETUP',
+                          'GO LIVE',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
@@ -164,27 +221,42 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                         ),
                       ),
                       const Spacer(),
-                      if (controller != null)
+                      if (track != null)
                         IconButton.filledTonal(
                           key: const Key('camera-off'),
-                          onPressed: _busy ? null : _stopCamera,
+                          onPressed: _busy || _liveBusy ? null : _stopPreview,
                           icon: const Icon(Icons.videocam_off_rounded),
                           tooltip: 'Camera off',
                         ),
                     ],
                   ),
                   const Spacer(),
-                  const Text(
-                    'Native camera',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+                  Text(
+                    track == null ? 'Set up your live' : 'Ready to go live',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'This preview uses the iPhone camera stack, not the PWA video compositor.',
+                    'Native Fameverse camera + microphone. Viewers join the same realtime broadcast room.',
                     style: TextStyle(color: Color(0xFFE0D8E8), height: 1.35),
                   ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    key: const Key('native-live-title'),
+                    controller: _title,
+                    maxLength: 120,
+                    decoration: InputDecoration(
+                      hintText: 'What are you live about?',
+                      filled: true,
+                      fillColor: Colors.black.withValues(alpha: .48),
+                      counterText: '',
+                    ),
+                  ),
                   if (_error != null) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -198,16 +270,16 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
                         child: FilledButton.icon(
                           key: const Key('camera-primary'),
-                          onPressed: _busy
+                          onPressed: _busy || _liveBusy
                               ? null
-                              : controller == null
-                              ? _startCamera
+                              : track == null
+                              ? _startPreview
                               : _flipCamera,
                           icon: _busy
                               ? const SizedBox(
@@ -218,12 +290,12 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                                   ),
                                 )
                               : Icon(
-                                  controller == null
+                                  track == null
                                       ? Icons.videocam_rounded
                                       : Icons.cameraswitch_rounded,
                                 ),
                           label: Text(
-                            controller == null ? 'Start camera' : 'Flip camera',
+                            track == null ? 'Start camera' : 'Flip camera',
                           ),
                           style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(52),
@@ -233,12 +305,20 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Broadcast transport stays off until native viewer/host media parity is wired, so this build cannot create fake live rooms.',
-                    style: TextStyle(
-                      color: Color(0xFFAFA3B9),
-                      fontSize: 12,
-                      height: 1.35,
+                  FilledButton.icon(
+                    key: const Key('native-go-live'),
+                    onPressed: _busy || _liveBusy ? null : _goLive,
+                    icon: _liveBusy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.wifi_tethering_rounded),
+                    label: Text(_liveBusy ? 'Starting live…' : 'Go Live'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF315F),
+                      minimumSize: const Size.fromHeight(54),
                     ),
                   ),
                 ],
@@ -273,4 +353,12 @@ class _CameraIdleBackground extends StatelessWidget {
       ),
     );
   }
+}
+
+String _cameraError(Object error) {
+  final text = error.toString().toLowerCase();
+  if (text.contains('permission') || text.contains('denied')) {
+    return 'Camera permission is off. Allow camera access in iPhone Settings.';
+  }
+  return 'Could not start the camera.';
 }
