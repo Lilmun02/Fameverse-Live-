@@ -1,43 +1,90 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class FameverseApp extends StatelessWidget {
-  const FameverseApp({super.key});
+import '../data/fameverse_backend.dart';
+import '../features/auth/auth_screen.dart';
+import '../features/shell/fameverse_shell.dart';
 
-  static const nativeProbeKey = Key('fameverse-native-probe');
+class FameverseApp extends StatefulWidget {
+  const FameverseApp({required this.backend, super.key});
+
+  final FameverseBackend backend;
+
+  static const productShellKey = Key('fameverse-native-product-shell');
+
+  @override
+  State<FameverseApp> createState() => _FameverseAppState();
+}
+
+class _FameverseAppState extends State<FameverseApp> {
+  StreamSubscription<FvIdentity?>? _subscription;
+  FvIdentity? _identity;
+
+  @override
+  void initState() {
+    super.initState();
+    _identity = widget.backend.currentIdentity;
+    _subscription = widget.backend.authChanges.listen((identity) {
+      if (mounted) setState(() => _identity = identity);
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF9D55FF),
+      brightness: Brightness.dark,
+      surface: const Color(0xFF100B15),
+    );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Fameverse Live',
       theme: ThemeData(
+        colorScheme: scheme,
         brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0C0810),
         useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'FAMEVERSE LIVE',
-                  key: nativeProbeKey,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Native pipeline probe',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: const Color(0xFF120D17),
+          indicatorColor: const Color(0xFF39234F),
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            return TextStyle(
+              fontSize: 11,
+              fontWeight: states.contains(WidgetState.selected)
+                  ? FontWeight.w800
+                  : FontWeight.w600,
+              color: states.contains(WidgetState.selected)
+                  ? Colors.white
+                  : const Color(0xFFA79DAF),
+            );
+          }),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF17121E),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
           ),
         ),
+      ),
+      home: KeyedSubtree(
+        key: FameverseApp.productShellKey,
+        child: _identity == null
+            ? AuthScreen(backend: widget.backend)
+            : FameverseShell(
+                key: ValueKey(_identity!.id),
+                backend: widget.backend,
+                identity: _identity!,
+              ),
       ),
     );
   }
