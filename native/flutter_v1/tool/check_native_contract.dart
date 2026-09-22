@@ -65,47 +65,38 @@ void main() {
       'Bootstrap workflow must remain non-publishing.',
     );
     require(
-      releaseSection.contains('BUNDLE_ID: "com.fameverse.live"') ||
-          releaseSection.contains('bundle_identifier: com.fameverse.live'),
+      releaseSection.contains('BUNDLE_ID: "com.fameverse.live"'),
       'TestFlight workflow must use the locked Fameverse bundle identifier.',
-    );
-    require(
-      releaseSection.contains('--type IOS_APP_STORE') ||
-          releaseSection.contains('distribution_type: app_store') ||
-          releaseSection.contains('fameverse_app_store'),
-      'TestFlight workflow must use App Store distribution signing.',
-    );
-    require(
-      releaseSection.contains('app-store-connect fetch-signing-files') ||
-          releaseSection.contains('ios_signing:'),
-      'TestFlight workflow must obtain iOS signing files through an approved Codemagic path.',
     );
     require(
       releaseSection.contains('flutter build ipa --release'),
       'TestFlight workflow must build a signed release IPA.',
     );
 
-    final usesIntegrationPublishing =
-        releaseSection.contains('app_store_connect:') &&
-        releaseSection.contains('auth: integration');
     final usesEnvironmentPublishing =
         releaseSection.contains('app_store_connect:') &&
         releaseSection.contains('api_key: \$APP_STORE_CONNECT_PRIVATE_KEY') &&
         releaseSection.contains('key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER') &&
         releaseSection.contains('issuer_id: \$APP_STORE_CONNECT_ISSUER_ID') &&
         releaseSection.contains('- appstore_credentials');
-
     require(
-      usesIntegrationPublishing || usesEnvironmentPublishing,
-      'TestFlight publishing must use authorized App Store Connect credentials.',
+      usesEnvironmentPublishing,
+      'TestFlight publishing must use authorized App Store Connect environment credentials.',
     );
 
-    if (releaseSection.contains('fameverse_app_store')) {
-      require(
-        releaseSection.contains('Fameverse Distribution'),
-        'Explicit Fameverse provisioning profile must be paired with the stored distribution certificate.',
-      );
-    }
+    final usesDirectManualSigning =
+        releaseSection.contains('- manual_signing') &&
+        releaseSection.contains('\$CM_CERTIFICATE') &&
+        releaseSection.contains('\$CM_CERTIFICATE_PASSWORD') &&
+        releaseSection.contains('\$CM_PROVISIONING_PROFILE') &&
+        releaseSection.contains('base64 --decode') &&
+        releaseSection.contains('keychain add-certificates') &&
+        releaseSection.contains('xcode-project use-profiles') &&
+        !releaseSection.contains('ios_signing:');
+    require(
+      usesDirectManualSigning,
+      'TestFlight must bypass Codemagic signing-identity resolution and install manual signing assets directly.',
+    );
   }
 
   require(
@@ -119,7 +110,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, parity, CI, signing separation, and probe contracts passed',
+      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, and probe contracts passed',
     );
   }
 }
