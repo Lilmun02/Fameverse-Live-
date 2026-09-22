@@ -103,6 +103,24 @@ workflows:
         - ~/.pub-cache
 
     scripts:
+      - name: Verify required TestFlight secrets are present
+        script: |
+          set -euo pipefail
+          for name in \
+            APP_STORE_CONNECT_PRIVATE_KEY \
+            APP_STORE_CONNECT_KEY_IDENTIFIER \
+            APP_STORE_CONNECT_ISSUER_ID \
+            CM_CERTIFICATE \
+            CM_CERTIFICATE_PASSWORD \
+            CM_PROVISIONING_PROFILE
+          do
+            if [ -z "$(eval "printf '%s' \"\${$name:-}\"")" ]; then
+              echo "Missing required environment variable: $name"
+              exit 1
+            fi
+          done
+          echo "All required TestFlight secrets are present."
+
       - name: Bootstrap ephemeral Fameverse iOS shell
         script: |
           set -euo pipefail
@@ -116,17 +134,21 @@ workflows:
           rm -rf ios
           cp -R /tmp/fameverse_flutter_ios/ios ./ios
 
-      - name: Verify locked Fameverse bundle identifier
-        script: |
-          set -euo pipefail
-          DETECTED_BUNDLE_ID="$(xcode-project detect-bundle-id)"
-          echo "Detected bundle identifier: ${DETECTED_BUNDLE_ID}"
-          test "${DETECTED_BUNDLE_ID}" = "$BUNDLE_ID"
-
       - name: Resolve Flutter packages
         script: |
           set -euo pipefail
           flutter pub get
+
+      - name: Verify locked Fameverse bundle identifier
+        script: |
+          set -euo pipefail
+          PROJECT_FILE="ios/Runner.xcodeproj/project.pbxproj"
+          test -f "$PROJECT_FILE"
+          if ! grep -Fq "PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;" "$PROJECT_FILE"; then
+            echo "Locked bundle identifier $BUNDLE_ID was not found in $PROJECT_FILE"
+            exit 1
+          fi
+          echo "Verified bundle identifier: $BUNDLE_ID"
 
       - name: Enforce Fameverse native foundation law
         script: |
@@ -162,9 +184,14 @@ workflows:
           mkdir -p "$PROFILES_HOME"
           PROFILE_PATH="$PROFILES_HOME/fameverse_app_store.mobileprovision"
           printf '%s' "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" >/dev/null
 
           CERT_PATH="/tmp/fameverse_distribution.p12"
           printf '%s' "$CM_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+          openssl pkcs12 \
+            -in "$CERT_PATH" \
+            -passin pass:"$CM_CERTIFICATE_PASSWORD" \
+            -noout
           keychain add-certificates \
             --certificate "$CERT_PATH" \
             --certificate-password "$CM_CERTIFICATE_PASSWORD"
@@ -195,4 +222,5 @@ workflows:
 # TestFlight publishing is isolated to the signed native-testflight workflow.
 # TestFlight signing bypasses Codemagic Code Signing Identities resolution entirely.
 # The password-protected .p12 and .mobileprovision are supplied as encrypted base64 app variables.
+# Bundle ID verification is static so it never triggers Xcode dependency resolution before pub get.
 # App Store Connect upload uses the appstore_credentials environment-variable group.
