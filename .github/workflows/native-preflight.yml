@@ -90,6 +90,13 @@ jobs:
             -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
             ios/Runner/Info.plist
 
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSMicrophoneUsageDescription Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist
+
       - name: Resolve Flutter packages
         run: flutter pub get
 
