@@ -94,24 +94,13 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.fameverse.live
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
+        BUNDLE_ID: "com.fameverse.live"
 
     cache:
       cache_paths:
         - ~/.pub-cache
-
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'native/flutter-v1'
-          include: true
-          source: true
-      cancel_previous_builds: true
 
     scripts:
       - name: Bootstrap ephemeral Fameverse iOS shell
@@ -132,7 +121,7 @@ workflows:
           set -euo pipefail
           DETECTED_BUNDLE_ID="$(xcode-project detect-bundle-id)"
           echo "Detected bundle identifier: ${DETECTED_BUNDLE_ID}"
-          test "${DETECTED_BUNDLE_ID}" = "com.fameverse.live"
+          test "${DETECTED_BUNDLE_ID}" = "$BUNDLE_ID"
 
       - name: Resolve Flutter packages
         script: |
@@ -164,10 +153,20 @@ workflows:
           set -euo pipefail
           find . -name "Podfile" -execdir pod install \;
 
-      - name: Apply App Store signing profile
+      - name: Fetch signing files directly from Apple
         script: |
           set -euo pipefail
+          keychain initialize
+          CERT_KEY_FILE="/tmp/fameverse_distribution_private_key"
+          openssl genrsa -out "$CERT_KEY_FILE" 2048
+          export CERTIFICATE_PRIVATE_KEY="$(cat "$CERT_KEY_FILE")"
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
           xcode-project use-profiles --project ios/Runner.xcodeproj
+          rm -f "$CERT_KEY_FILE"
+          unset CERTIFICATE_PRIVATE_KEY
 
       - name: Build signed Fameverse IPA
         script: |
@@ -187,4 +186,4 @@ workflows:
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
 # TestFlight publishing is isolated to the signed native-testflight workflow.
-# Signing secrets stay in Codemagic/Apple and are never committed to this repository.
+# This TestFlight path bypasses Code Signing Identities lookup and fetches signing files directly from Apple.
