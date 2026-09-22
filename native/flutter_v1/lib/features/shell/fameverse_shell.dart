@@ -49,7 +49,9 @@ class _FameverseShellState extends State<FameverseShell> {
     }
     try {
       final profile = await widget.backend.loadProfile(widget.identity.id);
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       final creators = await widget.backend.listRecommendedCreators(
         excludeUserId: widget.identity.id,
       );
@@ -83,7 +85,9 @@ class _FameverseShellState extends State<FameverseShell> {
         targetId: targetId,
         following: !currentlyFollowing,
       );
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) setState(() => _network = network);
     } catch (_) {
       if (mounted) _showMessage('Could not update that connection.');
@@ -115,8 +119,8 @@ class _FameverseShellState extends State<FameverseShell> {
         text.contains('23505')
             ? 'That username is already taken'
             : text.contains('at least 3')
-                ? 'Username must be at least 3 characters'
-                : 'Could not save profile',
+            ? 'Username must be at least 3 characters'
+            : 'Could not save profile',
       );
     }
   }
@@ -133,14 +137,16 @@ class _FameverseShellState extends State<FameverseShell> {
       widget.backend
           .listActiveLiveRooms(excludeUserId: widget.identity.id)
           .then((rooms) {
-        if (mounted) setState(() => _rooms = rooms);
-      }).catchError((_) {});
+            if (mounted) setState(() => _rooms = rooms);
+          })
+          .catchError((_) {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final profile = _profile ??
+    final profile =
+        _profile ??
         FvProfile(
           id: widget.identity.id,
           displayName: 'Fameverse User',
@@ -188,10 +194,8 @@ class _FameverseShellState extends State<FameverseShell> {
           context: context,
           isScrollControlled: true,
           showDragHandle: true,
-          builder: (context) => _EditProfileSheet(
-            profile: profile,
-            onSave: _saveProfile,
-          ),
+          builder: (context) =>
+              _EditProfileSheet(profile: profile, onSave: _saveProfile),
         ),
         onSignOut: widget.backend.signOut,
       ),
@@ -260,10 +264,10 @@ class _HomeScreenState extends State<_HomeScreen> {
   String _query = '';
 
   List<FvProfile> get _groupProfiles => switch (_group) {
-        'following' => widget.network.following,
-        'followers' => widget.network.followers,
-        _ => widget.network.friends,
-      };
+    'following' => widget.network.following,
+    'followers' => widget.network.followers,
+    _ => widget.network.friends,
+  };
 
   List<FvProfile> get _visibleProfiles {
     final needle = _query.trim().toLowerCase();
@@ -374,8 +378,8 @@ class _HomeScreenState extends State<_HomeScreen> {
                       title: _query.isNotEmpty
                           ? 'No matches'
                           : _group == 'friends'
-                              ? 'Your circle is empty for now'
-                              : 'No $_group yet',
+                          ? 'Your circle is empty for now'
+                          : 'No $_group yet',
                       body: _query.isNotEmpty
                           ? 'Try another name or username.'
                           : 'When you connect with real people, they will show up here.',
@@ -448,18 +452,18 @@ class _DiscoverScreenState extends State<_DiscoverScreen> {
   }
 
   List<FvLiveRoom> get _visibleRooms => widget.rooms.where((room) {
-        return _filterAllows(room.hostUserId) &&
-            _matches([room.title, room.host.displayName, room.host.username]);
-      }).toList();
+    return _filterAllows(room.hostUserId) &&
+        _matches([room.title, room.host.displayName, room.host.username]);
+  }).toList();
 
   List<FvCreator> get _visibleCreators => widget.creators.where((creator) {
-        return _filterAllows(creator.profile.id) &&
-            _matches([
-              creator.profile.displayName,
-              creator.profile.username,
-              creator.profile.bio,
-            ]);
-      }).toList();
+    return _filterAllows(creator.profile.id) &&
+        _matches([
+          creator.profile.displayName,
+          creator.profile.username,
+          creator.profile.bio,
+        ]);
+  }).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -717,7 +721,8 @@ class _EditProfileSheet extends StatefulWidget {
     required String displayName,
     required String username,
     required String bio,
-  }) onSave;
+  })
+  onSave;
 
   @override
   State<_EditProfileSheet> createState() => _EditProfileSheetState();
@@ -1024,7 +1029,9 @@ class _SegmentedCommunityTabs extends StatelessWidget {
                 duration: const Duration(milliseconds: 160),
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFF39234F) : Colors.transparent,
+                  color: selected
+                      ? const Color(0xFF39234F)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -1033,7 +1040,9 @@ class _SegmentedCommunityTabs extends StatelessWidget {
                       item.$2,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1153,10 +1162,7 @@ class _StatCard extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFFAFA4B8),
-                fontSize: 11,
-              ),
+              style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 11),
             ),
           ],
         ),
@@ -1196,10 +1202,7 @@ class _EmptyCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             body,
-            style: const TextStyle(
-              color: Color(0xFFAFA4B8),
-              height: 1.35,
-            ),
+            style: const TextStyle(color: Color(0xFFAFA4B8), height: 1.35),
           ),
         ],
       ),

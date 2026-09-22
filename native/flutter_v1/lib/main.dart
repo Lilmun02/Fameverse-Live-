@@ -15,8 +15,6 @@ Future<void> main() async {
     publishableKey: _supabasePublishableKey,
   );
   runApp(
-    FameverseApp(
-      backend: SupabaseFameverseBackend(Supabase.instance.client),
-    ),
+    FameverseApp(backend: SupabaseFameverseBackend(Supabase.instance.client)),
   );
 }

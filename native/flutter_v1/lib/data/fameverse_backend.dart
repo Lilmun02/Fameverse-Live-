@@ -24,9 +24,12 @@ class FvProfile {
   final String? avatarUrl;
   final DateTime? createdAt;
 
-  String get handle => username == null || username!.isEmpty ? '@newuser' : '@$username';
+  String get handle =>
+      username == null || username!.isEmpty ? '@newuser' : '@$username';
   String get initial {
-    final source = displayName.trim().isNotEmpty ? displayName.trim() : (username ?? 'F');
+    final source = displayName.trim().isNotEmpty
+        ? displayName.trim()
+        : (username ?? 'F');
     return source.substring(0, 1).toUpperCase();
   }
 }
@@ -103,7 +106,9 @@ abstract class FameverseBackend {
     required String bio,
   });
   Future<FvFollowNetwork> loadFollowNetwork(String userId);
-  Future<List<FvCreator>> listRecommendedCreators({required String excludeUserId});
+  Future<List<FvCreator>> listRecommendedCreators({
+    required String excludeUserId,
+  });
   Future<List<FvLiveRoom>> listActiveLiveRooms({required String excludeUserId});
   Future<void> setFollowing({
     required String userId,
@@ -126,11 +131,13 @@ class SupabaseFameverseBackend implements FameverseBackend {
   }
 
   @override
-  FvIdentity? get currentIdentity => _identityFromUser(_client.auth.currentUser);
+  FvIdentity? get currentIdentity =>
+      _identityFromUser(_client.auth.currentUser);
 
   @override
-  Stream<FvIdentity?> get authChanges => _client.auth.onAuthStateChange
-      .map((state) => _identityFromUser(state.session?.user));
+  Stream<FvIdentity?> get authChanges => _client.auth.onAuthStateChange.map(
+    (state) => _identityFromUser(state.session?.user),
+  );
 
   @override
   Future<void> signIn({required String email, required String password}) async {
@@ -150,8 +157,9 @@ class SupabaseFameverseBackend implements FameverseBackend {
       email: email.trim(),
       password: password,
       data: {
-        'display_name':
-            displayName.trim().isEmpty ? 'Fameverse User' : displayName.trim(),
+        'display_name': displayName.trim().isEmpty
+            ? 'Fameverse User'
+            : displayName.trim(),
       },
     );
     return FvAuthResult(
@@ -219,13 +227,16 @@ class SupabaseFameverseBackend implements FameverseBackend {
           'display_name': displayName.trim().isEmpty
               ? 'Fameverse User'
               : displayName.trim().substring(
-                    0,
-                    displayName.trim().length > 40
-                        ? 40
-                        : displayName.trim().length,
-                  ),
+                  0,
+                  displayName.trim().length > 40
+                      ? 40
+                      : displayName.trim().length,
+                ),
           'username': cleanUsername.isEmpty ? null : cleanUsername,
-          'bio': bio.trim().substring(0, bio.trim().length > 160 ? 160 : bio.trim().length),
+          'bio': bio.trim().substring(
+            0,
+            bio.trim().length > 160 ? 160 : bio.trim().length,
+          ),
         })
         .eq('id', userId)
         .select(_profileFields)
@@ -265,8 +276,14 @@ class SupabaseFameverseBackend implements FameverseBackend {
     final byId = {for (final profile in profiles) profile.id: profile};
 
     return FvFollowNetwork(
-      followers: followerIds.map((id) => byId[id]).whereType<FvProfile>().toList(),
-      following: followingIds.map((id) => byId[id]).whereType<FvProfile>().toList(),
+      followers: followerIds
+          .map((id) => byId[id])
+          .whereType<FvProfile>()
+          .toList(),
+      following: followingIds
+          .map((id) => byId[id])
+          .whereType<FvProfile>()
+          .toList(),
       followerIds: followerIds,
       followingIds: followingIds,
     );
@@ -309,23 +326,28 @@ class SupabaseFameverseBackend implements FameverseBackend {
       followerCounts[id] = (followerCounts[id] ?? 0) + 1;
     }
 
-    final creators = (profileRows as List)
-        .map((row) => _profileFromMap(Map<String, dynamic>.from(row as Map)))
-        .where((profile) => profile.id != excludeUserId)
-        .map(
-          (profile) => FvCreator(
-            profile: profile,
-            followerCount: followerCounts[profile.id] ?? 0,
-          ),
-        )
-        .toList()
-      ..sort((a, b) {
-        final count = b.followerCount.compareTo(a.followerCount);
-        if (count != 0) return count;
-        final aDate = a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bDate.compareTo(aDate);
-      });
+    final creators =
+        (profileRows as List)
+            .map(
+              (row) => _profileFromMap(Map<String, dynamic>.from(row as Map)),
+            )
+            .where((profile) => profile.id != excludeUserId)
+            .map(
+              (profile) => FvCreator(
+                profile: profile,
+                followerCount: followerCounts[profile.id] ?? 0,
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            final count = b.followerCount.compareTo(a.followerCount);
+            if (count != 0) return count;
+            final aDate =
+                a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bDate =
+                b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return bDate.compareTo(aDate);
+          });
 
     return creators.take(12).toList();
   }
@@ -334,7 +356,10 @@ class SupabaseFameverseBackend implements FameverseBackend {
   Future<List<FvLiveRoom>> listActiveLiveRooms({
     required String excludeUserId,
   }) async {
-    final cutoff = DateTime.now().subtract(const Duration(seconds: 45)).toUtc().toIso8601String();
+    final cutoff = DateTime.now()
+        .subtract(const Duration(seconds: 45))
+        .toUtc()
+        .toIso8601String();
     final roomRows = await _client
         .from('live_rooms')
         .select('id, host_user_id, title, heartbeat_at, started_at')
@@ -359,12 +384,14 @@ class SupabaseFameverseBackend implements FameverseBackend {
     final tapsByRoom = <String, int>{};
     for (final raw in tapRows as List) {
       final map = raw as Map;
-      tapsByRoom[map['room_id'] as String] = (map['raw_taps'] as num?)?.toInt() ?? 0;
+      tapsByRoom[map['room_id'] as String] =
+          (map['raw_taps'] as num?)?.toInt() ?? 0;
     }
 
     return visible.map((room) {
       final hostUserId = room['host_user_id'] as String;
-      final host = hostById[hostUserId] ??
+      final host =
+          hostById[hostUserId] ??
           FvProfile(
             id: hostUserId,
             displayName: 'Fameverse creator',

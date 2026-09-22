@@ -31,7 +31,10 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     try {
       final cameras = _cameras.isEmpty ? await availableCameras() : _cameras;
       if (cameras.isEmpty) {
-        throw CameraException('no-camera', 'No camera is available on this device.');
+        throw CameraException(
+          'no-camera',
+          'No camera is available on this device.',
+        );
       }
       final targetDirection = lens ?? _lensDirection;
       final target = cameras.firstWhere(
@@ -173,18 +176,12 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                   const Spacer(),
                   const Text(
                     'Native camera',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 6),
                   const Text(
                     'This preview uses the iPhone camera stack, not the PWA video compositor.',
-                    style: TextStyle(
-                      color: Color(0xFFE0D8E8),
-                      height: 1.35,
-                    ),
+                    style: TextStyle(color: Color(0xFFE0D8E8), height: 1.35),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
@@ -210,13 +207,15 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                           onPressed: _busy
                               ? null
                               : controller == null
-                                  ? _startCamera
-                                  : _flipCamera,
+                              ? _startCamera
+                              : _flipCamera,
                           icon: _busy
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : Icon(
                                   controller == null
