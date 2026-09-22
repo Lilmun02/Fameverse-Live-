@@ -95,8 +95,10 @@ workflows:
       xcode: latest
       cocoapods: default
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.fameverse.live
+        provisioning_profiles:
+          - fameverse_app_store
+        certificates:
+          - "Fameverse Distribution"
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
 
