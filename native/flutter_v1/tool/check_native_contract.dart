@@ -49,10 +49,40 @@ void main() {
     codemagic.contains('flutter build ios --debug --no-codesign'),
     'Codemagic must prove iOS builds before signing is enabled.',
   );
-  require(
-    !codemagic.contains('\n    publishing:'),
-    'Bootstrap workflow must not publish before signing/release approval.',
-  );
+
+  final testflightWorkflow = codemagic.indexOf('  native-testflight:');
+  if (testflightWorkflow == -1) {
+    require(
+      !codemagic.contains('\n    publishing:'),
+      'Bootstrap-only configuration must not publish before a dedicated signed release workflow exists.',
+    );
+  } else {
+    final bootstrapSection = codemagic.substring(0, testflightWorkflow);
+    final releaseSection = codemagic.substring(testflightWorkflow);
+
+    require(
+      !bootstrapSection.contains('\n    publishing:'),
+      'Bootstrap workflow must remain non-publishing.',
+    );
+    require(
+      releaseSection.contains('bundle_identifier: com.fameverse.live'),
+      'TestFlight workflow must use the locked Fameverse bundle identifier.',
+    );
+    require(
+      releaseSection.contains('distribution_type: app_store'),
+      'TestFlight workflow must use App Store distribution signing.',
+    );
+    require(
+      releaseSection.contains('flutter build ipa --release'),
+      'TestFlight workflow must build a signed release IPA.',
+    );
+    require(
+      releaseSection.contains('app_store_connect:') &&
+          releaseSection.contains('auth: integration'),
+      'TestFlight publishing must use the authorized App Store Connect integration.',
+    );
+  }
+
   require(
     app.contains('Native pipeline probe'),
     'Bootstrap UI must remain clearly identified as a probe, not approved product UI.',
@@ -64,7 +94,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, parity, CI, and probe contracts passed',
+      '[native-foundation-law] constitution, parity, CI, signing separation, and probe contracts passed',
     );
   }
 }
