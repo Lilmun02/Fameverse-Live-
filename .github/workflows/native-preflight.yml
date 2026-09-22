@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  preflight:
+  quality-preflight:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -53,3 +53,48 @@ jobs:
 
       - name: Unit and widget tests
         run: flutter test
+
+  ios-preflight:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Bootstrap ephemeral Fameverse iOS shell
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_ios
+          flutter create \
+            --platforms=ios \
+            --org com.fameverse \
+            --project-name live \
+            --no-pub \
+            /tmp/fameverse_flutter_ios
+          rm -rf ios
+          cp -R /tmp/fameverse_flutter_ios/ios ./ios
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Verify locked Fameverse bundle identifier
+        run: |
+          set -euo pipefail
+          PROJECT_FILE="ios/Runner.xcodeproj/project.pbxproj"
+          test -f "$PROJECT_FILE"
+          grep -Fq "PRODUCT_BUNDLE_IDENTIFIER = com.fameverse.live;" "$PROJECT_FILE"
+
+      - name: Install CocoaPods dependencies
+        run: find . -name "Podfile" -execdir pod install \;
+
+      - name: Build unsigned release iOS app
+        run: flutter build ios --release --no-codesign
