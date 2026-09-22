@@ -87,10 +87,14 @@ workflows:
     max_build_duration: 60
     working_directory: native/flutter_v1
 
-    integrations:
-      app_store_connect: "Codemagic Fameverse"
-
     environment:
+      groups:
+        - appstore_credentials
+      ios_signing:
+        provisioning_profiles:
+          - fameverse_app_store
+        certificates:
+          - Fameverse Distribution
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -153,20 +157,10 @@ workflows:
           set -euo pipefail
           find . -name "Podfile" -execdir pod install \;
 
-      - name: Fetch signing files directly from Apple
+      - name: Apply stored Fameverse signing profile
         script: |
           set -euo pipefail
-          keychain initialize
-          CERT_KEY_FILE="/tmp/fameverse_distribution_private_key"
-          openssl genrsa -out "$CERT_KEY_FILE" 2048
-          export CERTIFICATE_PRIVATE_KEY="$(cat "$CERT_KEY_FILE")"
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
           xcode-project use-profiles --project ios/Runner.xcodeproj
-          rm -f "$CERT_KEY_FILE"
-          unset CERTIFICATE_PRIVATE_KEY
 
       - name: Build signed Fameverse IPA
         script: |
@@ -182,8 +176,11 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
 # TestFlight publishing is isolated to the signed native-testflight workflow.
-# This TestFlight path bypasses Code Signing Identities lookup and fetches signing files directly from Apple.
+# TestFlight signing uses the exact uploaded Fameverse certificate/profile references.
+# App Store Connect upload uses the appstore_credentials environment-variable group.
