@@ -1,0 +1,53 @@
+name: Fameverse Native One-Off Repair
+
+on:
+  push:
+    branches:
+      - native/flutter-v1
+    paths:
+      - '.github/workflows/native-oneoff-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-analyzer-findings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: native/flutter-v1
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Apply exact analyzer repairs
+        run: |
+          set -euo pipefail
+          sed -i 's/FontWeight\.w850/FontWeight.w800/g' lib/features/shell/fameverse_shell.dart
+          sed -i "s/final identity = const FvIdentity/const identity = FvIdentity/" test/app_smoke_test.dart
+          dart format lib test tool
+
+      - name: Commit exact repairs
+        working-directory: .
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add native/flutter_v1/lib/features/shell/fameverse_shell.dart native/flutter_v1/test/app_smoke_test.dart
+          if git diff --cached --quiet; then
+            echo 'Analyzer findings are already repaired.'
+            exit 0
+          fi
+          git commit -m 'fix: clear native analyzer findings'
+          git push origin HEAD:native/flutter-v1
