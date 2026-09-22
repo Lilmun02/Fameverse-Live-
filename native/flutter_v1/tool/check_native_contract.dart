@@ -15,6 +15,9 @@ void main() {
   final gates = read('../../docs/NATIVE_RELEASE_GATES.md');
   final codemagic = read('../../codemagic.yaml');
   final app = read('lib/app/fameverse_app.dart');
+  final backend = read('lib/data/fameverse_backend.dart');
+  final camera = read('lib/features/live/native_camera_screen.dart');
+  final shell = read('lib/features/shell/fameverse_shell.dart');
   final test = read('test/app_smoke_test.dart');
 
   require(
@@ -73,12 +76,18 @@ void main() {
       'TestFlight workflow must build a signed release IPA.',
     );
 
-    final usesEnvironmentPublishing = releaseSection
-            .contains('app_store_connect:') &&
-        releaseSection.contains('api_key: \$APP_STORE_CONNECT_PRIVATE_KEY') &&
-        releaseSection.contains('key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER') &&
-        releaseSection.contains('issuer_id: \$APP_STORE_CONNECT_ISSUER_ID') &&
-        releaseSection.contains('- appstore_credentials');
+    final usesEnvironmentPublishing =
+        releaseSection.contains('app_store_connect:') &&
+            releaseSection.contains(
+              'api_key: \$APP_STORE_CONNECT_PRIVATE_KEY',
+            ) &&
+            releaseSection.contains(
+              'key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER',
+            ) &&
+            releaseSection.contains(
+              'issuer_id: \$APP_STORE_CONNECT_ISSUER_ID',
+            ) &&
+            releaseSection.contains('- appstore_credentials');
 
     require(
       usesEnvironmentPublishing,
@@ -102,17 +111,37 @@ void main() {
   }
 
   require(
-    app.contains('Native pipeline probe'),
-    'Bootstrap UI must remain clearly identified as a probe, not approved product UI.',
+    app.contains('productShellKey') &&
+        !app.contains('Native pipeline probe') &&
+        shell.contains('fameverse-bottom-nav'),
+    'Native TestFlight app must boot the Fameverse product shell, not the pipeline probe.',
   );
   require(
-    test.contains('native pipeline probe boots'),
-    'Bootstrap app must have a widget smoke test.',
+    backend.contains('SupabaseFameverseBackend') &&
+        backend.contains("from('profiles')") &&
+        backend.contains("from('follows')") &&
+        backend.contains("from('live_rooms')"),
+    'Native product shell must reuse authoritative Supabase identity/community/live contracts.',
+  );
+  require(
+    camera.contains('CameraPreview') &&
+        camera.contains('availableCameras') &&
+        camera.contains('Flip camera'),
+    'Native Live migration must use the device camera plugin and preserve a real flip control.',
+  );
+  require(
+    !shell.contains('WebView') && !shell.contains('webview'),
+    'Native product migration must not hide the PWA inside a WebView.',
+  );
+  require(
+    test.contains('signed-out native product opens account entry') &&
+        test.contains('signed-in native product exposes primary navigation'),
+    'Native product shell must have account-entry and signed-in navigation widget gates.',
   );
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, and probe contracts passed',
+      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, product shell, Supabase, and native camera contracts passed',
     );
   }
 }
