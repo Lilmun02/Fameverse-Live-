@@ -79,6 +79,7 @@ void main() {
         releaseSection.contains('key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER') &&
         releaseSection.contains('issuer_id: \$APP_STORE_CONNECT_ISSUER_ID') &&
         releaseSection.contains('- appstore_credentials');
+
     require(
       usesEnvironmentPublishing,
       'TestFlight publishing must use authorized App Store Connect environment credentials.',
@@ -93,6 +94,7 @@ void main() {
         releaseSection.contains('keychain add-certificates') &&
         releaseSection.contains('xcode-project use-profiles') &&
         !releaseSection.contains('ios_signing:');
+
     require(
       usesDirectManualSigning,
       'TestFlight must bypass Codemagic signing-identity resolution and install manual signing assets directly.',
