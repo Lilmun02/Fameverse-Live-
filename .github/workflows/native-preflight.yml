@@ -103,5 +103,18 @@ jobs:
       - name: Install CocoaPods dependencies
         run: find . -name "Podfile" -execdir pod install \;
 
-      - name: Build unsigned release iOS app
-        run: flutter build ios --release --no-codesign
+      - name: Generate unsigned Flutter iOS release configuration
+        run: flutter build ios --release --config-only --no-codesign
+
+      - name: Compile unsigned iOS release
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
