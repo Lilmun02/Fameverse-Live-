@@ -73,8 +73,8 @@ void main() {
       'TestFlight workflow must build a signed release IPA.',
     );
 
-    final usesEnvironmentPublishing =
-        releaseSection.contains('app_store_connect:') &&
+    final usesEnvironmentPublishing = releaseSection
+            .contains('app_store_connect:') &&
         releaseSection.contains('api_key: \$APP_STORE_CONNECT_PRIVATE_KEY') &&
         releaseSection.contains('key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER') &&
         releaseSection.contains('issuer_id: \$APP_STORE_CONNECT_ISSUER_ID') &&
@@ -87,13 +87,13 @@ void main() {
 
     final usesDirectManualSigning =
         releaseSection.contains('- manual_signing') &&
-        releaseSection.contains('\$CM_CERTIFICATE') &&
-        releaseSection.contains('\$CM_CERTIFICATE_PASSWORD') &&
-        releaseSection.contains('\$CM_PROVISIONING_PROFILE') &&
-        releaseSection.contains('base64 --decode') &&
-        releaseSection.contains('keychain add-certificates') &&
-        releaseSection.contains('xcode-project use-profiles') &&
-        !releaseSection.contains('ios_signing:');
+            releaseSection.contains('\$CM_CERTIFICATE') &&
+            releaseSection.contains('\$CM_CERTIFICATE_PASSWORD') &&
+            releaseSection.contains('\$CM_PROVISIONING_PROFILE') &&
+            releaseSection.contains('base64 --decode') &&
+            releaseSection.contains('keychain add-certificates') &&
+            releaseSection.contains('xcode-project use-profiles') &&
+            !releaseSection.contains('ios_signing:');
 
     require(
       usesDirectManualSigning,
