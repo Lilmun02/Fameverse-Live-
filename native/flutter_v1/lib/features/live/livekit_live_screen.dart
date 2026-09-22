@@ -30,7 +30,13 @@ class NativeHostLiveScreen extends StatefulWidget {
 }
 
 class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
-  final Room _mediaRoom = Room();
+  final Room _mediaRoom = Room(
+    roomOptions: const RoomOptions(
+      adaptiveStream: true,
+      dynacast: true,
+      defaultCameraCaptureOptions: _fameverseCameraOptions,
+    ),
+  );
   Timer? _heartbeat;
   bool _connecting = true;
   bool _ending = false;
@@ -56,17 +62,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       await _mediaRoom.connect(
         widget.credentials.serverUrl,
         widget.credentials.participantToken,
-        roomOptions: const RoomOptions(
-          adaptiveStream: true,
-          dynacast: true,
-          defaultCameraCaptureOptions: _fameverseCameraOptions,
-        ),
       );
-      await _mediaRoom.localParticipant.setCameraEnabled(
+      final localParticipant = _mediaRoom.localParticipant;
+      if (localParticipant == null) {
+        throw StateError('livekit-local-participant-missing');
+      }
+      await localParticipant.setCameraEnabled(
         true,
         cameraCaptureOptions: _fameverseCameraOptions,
       );
-      await _mediaRoom.localParticipant.setMicrophoneEnabled(true);
+      await localParticipant.setMicrophoneEnabled(true);
       _heartbeat = Timer.periodic(const Duration(seconds: 15), (_) {
         unawaited(
           widget.liveBackend.heartbeatLiveRoom(
@@ -87,8 +92,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   LocalVideoTrack? get _localVideoTrack {
-    for (final publication
-        in _mediaRoom.localParticipant.videoTrackPublications) {
+    final localParticipant = _mediaRoom.localParticipant;
+    if (localParticipant == null) return null;
+    for (final publication in localParticipant.videoTrackPublications) {
       final track = publication.track;
       if (track != null) return track;
     }
@@ -119,7 +125,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (_connecting || _ending) return;
     final next = !_micEnabled;
     try {
-      await _mediaRoom.localParticipant.setMicrophoneEnabled(next);
+      final localParticipant = _mediaRoom.localParticipant;
+      if (localParticipant == null) return;
+      await localParticipant.setMicrophoneEnabled(next);
       if (mounted) setState(() => _micEnabled = next);
     } catch (error) {
       if (mounted) _showMessage('Microphone change failed.');
@@ -130,7 +138,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (_connecting || _ending) return;
     final next = !_cameraEnabled;
     try {
-      await _mediaRoom.localParticipant.setCameraEnabled(
+      final localParticipant = _mediaRoom.localParticipant;
+      if (localParticipant == null) return;
+      await localParticipant.setCameraEnabled(
         next,
         cameraCaptureOptions: CameraCaptureOptions(
           cameraPosition: _cameraPosition,
@@ -362,7 +372,9 @@ class NativeViewerLiveScreen extends StatefulWidget {
 }
 
 class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
-  final Room _mediaRoom = Room();
+  final Room _mediaRoom = Room(
+    roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
+  );
   bool _connecting = true;
   String? _error;
 
@@ -386,7 +398,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       await _mediaRoom.connect(
         credentials.serverUrl,
         credentials.participantToken,
-        roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
       );
       if (mounted) setState(() => _connecting = false);
     } catch (error) {
