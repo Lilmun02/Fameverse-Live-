@@ -65,12 +65,19 @@ void main() {
       'Bootstrap workflow must remain non-publishing.',
     );
     require(
-      releaseSection.contains('bundle_identifier: com.fameverse.live'),
+      releaseSection.contains('BUNDLE_ID: "com.fameverse.live"') ||
+          releaseSection.contains('bundle_identifier: com.fameverse.live'),
       'TestFlight workflow must use the locked Fameverse bundle identifier.',
     );
     require(
-      releaseSection.contains('distribution_type: app_store'),
+      releaseSection.contains('--type IOS_APP_STORE') ||
+          releaseSection.contains('distribution_type: app_store'),
       'TestFlight workflow must use App Store distribution signing.',
+    );
+    require(
+      releaseSection.contains('app-store-connect fetch-signing-files') ||
+          releaseSection.contains('ios_signing:'),
+      'TestFlight workflow must obtain iOS signing files through an approved Codemagic path.',
     );
     require(
       releaseSection.contains('flutter build ipa --release'),
