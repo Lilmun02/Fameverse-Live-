@@ -358,8 +358,7 @@ class NativeViewerLiveScreen extends StatefulWidget {
   final FvLiveRoom room;
 
   @override
-  State<NativeViewerLiveScreen> createState() =>
-      _NativeViewerLiveScreenState();
+  State<NativeViewerLiveScreen> createState() => _NativeViewerLiveScreenState();
 }
 
 class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
@@ -619,11 +618,7 @@ class _LiveBackground extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(
-          icon,
-          size: 74,
-          color: Colors.white.withValues(alpha: .2),
-        ),
+        child: Icon(icon, size: 74, color: Colors.white.withValues(alpha: .2)),
       ),
     );
   }
