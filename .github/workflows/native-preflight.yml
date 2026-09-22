@@ -1,0 +1,55 @@
+name: Fameverse Native Preflight
+
+on:
+  push:
+    branches:
+      - native/flutter-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fameverse-native-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Validate Codemagic YAML parses
+        working-directory: .
+        run: ruby -e "require 'yaml'; YAML.load_file('codemagic.yaml'); puts 'codemagic.yaml parses'"
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Enforce Fameverse native foundation law
+        run: dart run tool/check_native_contract.dart
+
+      - name: Verify Dart formatting
+        run: |
+          dart format lib test tool
+          if ! git diff --exit-code -- lib test tool; then
+            echo "Dart formatting changed tracked files. Commit the formatted output before Codemagic."
+            exit 1
+          fi
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        run: flutter test
