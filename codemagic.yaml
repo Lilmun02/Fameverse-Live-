@@ -91,10 +91,8 @@ workflows:
       groups:
         - appstore_credentials
       ios_signing:
-        provisioning_profiles:
-          - fameverse_app_store
-        certificates:
-          - Fameverse Distribution
+        distribution_type: app_store
+        bundle_identifier: com.fameverse.live
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -182,5 +180,5 @@ workflows:
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
 # TestFlight publishing is isolated to the signed native-testflight workflow.
-# TestFlight signing uses the exact uploaded Fameverse certificate/profile references.
+# TestFlight signing resolves the uploaded App Store certificate/profile by locked bundle ID and distribution type.
 # App Store Connect upload uses the appstore_credentials environment-variable group.
