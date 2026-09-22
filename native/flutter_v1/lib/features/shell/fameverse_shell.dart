@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
+import '../../data/fameverse_live_backend.dart';
+import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
 
 class FameverseShell extends StatefulWidget {
   const FameverseShell({
     required this.backend,
+    required this.liveBackend,
     required this.identity,
     super.key,
   });
 
   final FameverseBackend backend;
+  final FameverseLiveBackend liveBackend;
   final FvIdentity identity;
 
   @override
@@ -178,14 +182,22 @@ class _FameverseShellState extends State<FameverseShell> {
         followBusy: _followBusy,
         onOpenProfile: () => _setTab(3),
         onRoomSelected: (room) {
-          showModalBottomSheet<void>(
-            context: context,
-            showDragHandle: true,
-            builder: (context) => _ViewerMigrationSheet(room: room),
+          Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (context) => NativeViewerLiveScreen(
+                liveBackend: widget.liveBackend,
+                room: room,
+              ),
+            ),
           );
         },
       ),
-      const NativeCameraScreen(),
+      NativeCameraScreen(
+        liveBackend: widget.liveBackend,
+        identity: widget.identity,
+        profile: profile,
+        onLiveEnded: _refreshAll,
+      ),
       _ProfileScreen(
         profile: profile,
         identity: widget.identity,
@@ -810,43 +822,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ViewerMigrationSheet extends StatelessWidget {
-  const _ViewerMigrationSheet({required this.room});
-
-  final FvLiveRoom room;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 34),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _Eyebrow('LIVE NOW'),
-          const SizedBox(height: 8),
-          Text(
-            room.title,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 6),
-          Text('${room.host.displayName} · ${room.host.handle}'),
-          const SizedBox(height: 18),
-          const Text(
-            'This room is real and active. Native viewer video transport is still gated until it matches the existing Fameverse Live contract, so this build will not fake playback.',
-            style: TextStyle(color: Color(0xFFB6AABE), height: 1.4),
-          ),
-          const SizedBox(height: 18),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
-          ),
-        ],
       ),
     );
   }

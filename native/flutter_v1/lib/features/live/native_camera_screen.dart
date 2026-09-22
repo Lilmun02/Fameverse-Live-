@@ -137,7 +137,6 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
             identity: widget.identity,
             room: room!,
             credentials: credentials,
-            initialCameraPosition: _cameraPosition,
           ),
         ),
       );

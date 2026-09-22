@@ -1,11 +1,14 @@
 import 'package:fameverse_live/app/fameverse_app.dart';
 import 'package:fameverse_live/data/fameverse_backend.dart';
+import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('signed-out native product opens account entry', (tester) async {
-    await tester.pumpWidget(FameverseApp(backend: _FakeBackend()));
+    await tester.pumpWidget(
+      FameverseApp(backend: _FakeBackend(), liveBackend: _FakeLiveBackend()),
+    );
 
     expect(find.byKey(FameverseApp.productShellKey), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
@@ -17,7 +20,10 @@ void main() {
   ) async {
     const identity = FvIdentity(id: 'user-1', email: 'owner@example.com');
     await tester.pumpWidget(
-      FameverseApp(backend: _FakeBackend(identity: identity)),
+      FameverseApp(
+        backend: _FakeBackend(identity: identity),
+        liveBackend: _FakeLiveBackend(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -122,5 +128,46 @@ class _FakeBackend implements FameverseBackend {
     required String displayName,
   }) async {
     return const FvAuthResult(signedIn: false, message: 'Account created.');
+  }
+}
+
+class _FakeLiveBackend implements FameverseLiveBackend {
+  @override
+  Future<FvLiveRoom> startLiveRoom({
+    required FvIdentity identity,
+    required FvProfile profile,
+    required String title,
+  }) async {
+    return FvLiveRoom(
+      id: 'room-1',
+      hostUserId: identity.id,
+      title: title.isEmpty ? 'Live on Fameverse' : title,
+      fameTaps: 0,
+      host: profile,
+    );
+  }
+
+  @override
+  Future<void> heartbeatLiveRoom({
+    required String roomId,
+    required String hostUserId,
+  }) async {}
+
+  @override
+  Future<void> endLiveRoom({
+    required String roomId,
+    required String hostUserId,
+  }) async {}
+
+  @override
+  Future<FvLiveCredentials> issueLiveCredentials({
+    required String roomId,
+    required String role,
+  }) async {
+    return const FvLiveCredentials(
+      serverUrl: 'wss://example.invalid',
+      participantToken: 'test-token',
+      roomName: 'fv_room-1',
+    );
   }
 }

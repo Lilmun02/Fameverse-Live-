@@ -16,7 +16,9 @@ void main() {
   final codemagic = read('../../codemagic.yaml');
   final app = read('lib/app/fameverse_app.dart');
   final backend = read('lib/data/fameverse_backend.dart');
+  final liveBackend = read('lib/data/fameverse_live_backend.dart');
   final camera = read('lib/features/live/native_camera_screen.dart');
+  final liveMedia = read('lib/features/live/livekit_live_screen.dart');
   final shell = read('lib/features/shell/fameverse_shell.dart');
   final test = read('test/app_smoke_test.dart');
 
@@ -118,10 +120,14 @@ void main() {
     'Native product shell must reuse authoritative Supabase identity/community/live contracts.',
   );
   require(
-    camera.contains('CameraPreview') &&
-        camera.contains('availableCameras') &&
-        camera.contains('Flip camera'),
-    'Native Live migration must use the device camera plugin and preserve a real flip control.',
+    camera.contains('LocalVideoTrack.createCameraTrack') &&
+        camera.contains('Flip camera') &&
+        camera.contains('native-go-live') &&
+        liveMedia.contains('setMicrophoneEnabled') &&
+        liveMedia.contains('NativeViewerLiveScreen') &&
+        liveBackend.contains("'livekit-token'") &&
+        liveBackend.contains("from('live_rooms')"),
+    'Native Live migration must use native LiveKit camera/mic transport with real host and viewer room wiring.',
   );
   require(
     !shell.contains('WebView') && !shell.contains('webview'),
@@ -135,7 +141,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, product shell, Supabase, and native camera contracts passed',
+      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, product shell, Supabase, native LiveKit host/viewer, and camera contracts passed',
     );
   }
 }
