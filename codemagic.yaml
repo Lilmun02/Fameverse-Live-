@@ -41,6 +41,19 @@ workflows:
           cp -R /tmp/fameverse_flutter_platforms/ios ./ios
           cp -R /tmp/fameverse_flutter_platforms/android ./android
 
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist
+
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i.bak 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i.bak 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle
+          fi
+
       - name: Resolve Flutter packages
         script: |
           set -euo pipefail
@@ -134,6 +147,13 @@ workflows:
           rm -rf ios
           cp -R /tmp/fameverse_flutter_ios/ios ./ios
 
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist
+
       - name: Resolve Flutter packages
         script: |
           set -euo pipefail
@@ -224,3 +244,4 @@ workflows:
 # The password-protected .p12 and .mobileprovision are supplied as encrypted base64 app variables.
 # Bundle ID verification is static so it never triggers Xcode dependency resolution before pub get.
 # App Store Connect upload uses the appstore_credentials environment-variable group.
+# Ephemeral iOS shells receive the native camera usage description before plugin build/signing.
