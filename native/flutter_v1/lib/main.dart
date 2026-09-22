@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/fameverse_app.dart';
 import 'data/fameverse_backend.dart';
+import 'data/fameverse_live_backend.dart';
 
 const _supabaseUrl = 'https://lwasmvzsagowgmiqssph.supabase.co';
 const _supabasePublishableKey =
@@ -14,7 +15,11 @@ Future<void> main() async {
     url: _supabaseUrl,
     publishableKey: _supabasePublishableKey,
   );
+  final client = Supabase.instance.client;
   runApp(
-    FameverseApp(backend: SupabaseFameverseBackend(Supabase.instance.client)),
+    FameverseApp(
+      backend: SupabaseFameverseBackend(client),
+      liveBackend: SupabaseFameverseLiveBackend(client),
+    ),
   );
 }
