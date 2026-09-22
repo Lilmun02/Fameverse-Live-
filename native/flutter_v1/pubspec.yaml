@@ -1,15 +1,17 @@
 name: fameverse_live
-description: Fameverse native client bootstrap. Product features migrate only through approved parity gates.
+description: Fameverse native client migration with Supabase identity and native camera parity.
 publish_to: none
 version: 0.1.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.9.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  camera: ^0.12.1
   cupertino_icons: ^1.0.8
+  supabase_flutter: ^2.17.2
 
 dev_dependencies:
   flutter_test:
