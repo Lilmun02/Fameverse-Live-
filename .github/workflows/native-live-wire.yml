@@ -1,4 +1,4 @@
-name: Fameverse Native Live Wiring
+name: Fameverse Native Live Repair
 
 on:
   push:
@@ -12,9 +12,12 @@ permissions:
   contents: write
 
 jobs:
-  wire-native-live:
+  repair-native-live:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: native/flutter_v1
     steps:
       - name: Checkout native branch
         uses: actions/checkout@v4
@@ -22,8 +25,9 @@ jobs:
           ref: native/flutter-v1
           fetch-depth: 0
 
-      - name: Apply exact native live wiring
-        run: python3 scripts/native_live_wire.py
+      - name: Apply exact LiveKit analyzer repair
+        working-directory: .
+        run: python3 scripts/fix_livekit_analyzer.py
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -32,27 +36,25 @@ jobs:
           cache: true
 
       - name: Resolve and format native code
-        working-directory: native/flutter_v1
         run: |
           flutter pub get
           dart format lib test tool
 
-      - name: Keep workflow files connector-owned
+      - name: Validate repaired native live slice
         run: |
-          git restore codemagic.yaml .github/workflows/native-preflight.yml
+          dart run tool/check_native_contract.dart
+          flutter analyze
+          flutter test
 
-      - name: Commit native live source wiring
+      - name: Commit repaired native live source
+        working-directory: .
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            native/flutter_v1/lib/features/shell/fameverse_shell.dart \
-            native/flutter_v1/lib/features/live/native_camera_screen.dart \
-            native/flutter_v1/test/app_smoke_test.dart \
-            native/flutter_v1/tool/check_native_contract.dart
+          git add native/flutter_v1/lib/features/live/livekit_live_screen.dart
           if git diff --cached --quiet; then
-            echo 'Native live source wiring already applied.'
+            echo 'LiveKit analyzer repair already applied.'
             exit 0
           fi
-          git commit -m 'feat: wire native host-to-viewer live broadcast'
+          git commit -m 'fix: clear native LiveKit analyzer findings'
           git push origin HEAD:native/flutter-v1
