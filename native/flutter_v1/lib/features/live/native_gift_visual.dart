@@ -7,11 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../../data/fameverse_live_backend.dart';
 
 class NativeGiftTrayVisual extends StatefulWidget {
-  const NativeGiftTrayVisual({
-    required this.gift,
-    this.size = 54,
-    super.key,
-  });
+  const NativeGiftTrayVisual({required this.gift, this.size = 54, super.key});
 
   final FvGiftDefinition gift;
   final double size;
@@ -91,9 +87,7 @@ class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
         dimension: widget.size,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: const CustomPaint(
-            painter: _PocketCometPosterPainter(),
-          ),
+          child: const CustomPaint(painter: _PocketCometPosterPainter()),
         ),
       );
     }
@@ -178,11 +172,12 @@ class _PocketCometPosterPainter extends CustomPainter {
       comet,
       size.width * .17,
       Paint()
-        ..shader = const RadialGradient(
-          colors: [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
-        ).createShader(
-          Rect.fromCircle(center: comet, radius: size.width * .20),
-        ),
+        ..shader =
+            const RadialGradient(
+              colors: [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
+            ).createShader(
+              Rect.fromCircle(center: comet, radius: size.width * .20),
+            ),
     );
 
     final starPaint = Paint()..color = Colors.white.withValues(alpha: .75);
