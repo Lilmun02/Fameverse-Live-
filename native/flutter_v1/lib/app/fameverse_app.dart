@@ -111,17 +111,17 @@ class _FameverseSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       key: FameverseApp.splashKey,
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(
             center: Alignment(0, -.2),
             radius: 1.1,
             colors: [Color(0xFF351151), Color(0xFF130A1B), Color(0xFF09070B)],
           ),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
