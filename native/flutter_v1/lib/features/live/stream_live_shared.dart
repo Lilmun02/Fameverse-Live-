@@ -29,11 +29,11 @@ class FvLiveGradient extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: .58),
+            Colors.black.withValues(alpha: .52),
             Colors.transparent,
-            Colors.black.withValues(alpha: .9),
+            Colors.black.withValues(alpha: .86),
           ],
-          stops: const [0, .4, 1],
+          stops: const [0, .38, 1],
         ),
       ),
     );
@@ -46,7 +46,7 @@ class FvLiveBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFFF315F),
         borderRadius: BorderRadius.circular(999),
@@ -54,9 +54,9 @@ class FvLiveBadge extends StatelessWidget {
       child: const Text(
         'LIVE',
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 9,
           fontWeight: FontWeight.w900,
-          letterSpacing: .8,
+          letterSpacing: .7,
         ),
       ),
     );
@@ -86,23 +86,23 @@ class FvLiveBackground extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: _cameraOff ? 52 : 46,
-              color: Colors.white.withValues(alpha: _cameraOff ? .34 : .22),
+              size: _cameraOff ? 48 : 42,
+              color: Colors.white.withValues(alpha: _cameraOff ? .32 : .2),
             ),
             if (_cameraOff) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               const Text(
                 'Camera off',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 3),
               const Text(
                 'Your microphone can stay on.',
-                style: TextStyle(color: Color(0xFFBEB4C5), fontSize: 12),
+                style: TextStyle(color: Color(0xFFBEB4C5), fontSize: 11),
               ),
             ],
           ],
@@ -123,25 +123,25 @@ class FvLiveStatusCard extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+        constraints: const BoxConstraints(maxWidth: 235),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: .5),
+          color: Colors.black.withValues(alpha: .46),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: Colors.white10),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: const Color(0xFFEADDFC)),
-            const SizedBox(width: 7),
+            Icon(icon, size: 14, color: const Color(0xFFEADDFC)),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -176,10 +176,10 @@ class FvRoundLiveButton extends StatelessWidget {
           key: keyValue,
           onPressed: onPressed,
           icon: Icon(icon),
-          style: IconButton.styleFrom(minimumSize: const Size(50, 50)),
+          style: IconButton.styleFrom(minimumSize: const Size(46, 46)),
         ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 11)),
+        const SizedBox(height: 3),
+        Text(label, style: const TextStyle(fontSize: 10)),
       ],
     );
   }
@@ -192,8 +192,8 @@ class FvLiveChatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = messages.length > 7
-        ? messages.sublist(messages.length - 7)
+    final visible = messages.length > 6
+        ? messages.sublist(messages.length - 6)
         : messages;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,16 +204,16 @@ class FvLiveChatList extends StatelessWidget {
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.only(bottom: 4),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: .38),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.black.withValues(alpha: .34),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 12, height: 1.25),
+                style: const TextStyle(fontSize: 11, height: 1.22),
                 children: [
                   TextSpan(
                     text: '$user ',
