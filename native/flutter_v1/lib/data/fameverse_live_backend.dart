@@ -62,7 +62,6 @@ const fvGiftCatalog = <FvGiftDefinition>[
     videoUrl:
         'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/6ef5d526-e0d8-42ca-a382-28d53d3fe2aa.mp4',
     cinematic: true,
-    singleSendOnly: true,
   ),
   FvGiftDefinition(
     id: 'celestial-phoenix',
@@ -73,7 +72,6 @@ const fvGiftCatalog = <FvGiftDefinition>[
     videoUrl:
         'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/e4da59e7-2d55-4ee2-b546-cae61cf56de3.mp4',
     cinematic: true,
-    singleSendOnly: true,
   ),
   FvGiftDefinition(
     id: 'pocket-comet',
@@ -82,7 +80,6 @@ const fvGiftCatalog = <FvGiftDefinition>[
     category: 'fameverse',
     activityEmoji: '☄️',
     cinematic: true,
-    singleSendOnly: true,
   ),
   FvGiftDefinition(
     id: 'rose',
