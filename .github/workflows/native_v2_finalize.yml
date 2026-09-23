@@ -1,0 +1,133 @@
+name: Finalize Native V2 Render Layer
+
+on:
+  push:
+    branches:
+      - native/flutter-v1
+    paths:
+      - .github/workflows/native_v2_finalize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: native/flutter-v1
+          fetch-depth: 0
+
+      - name: Apply locked V2 render and gift-law patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('native/flutter_v1/lib/features/live')
+          host_path = root / 'stream_host_live_screen.dart'
+          viewer_path = root / 'stream_viewer_live_screen.dart'
+
+          host = host_path.read_text()
+          if "import 'native_live_stage.dart';" not in host:
+              host = host.replace(
+                  "import 'native_live_components.dart';\n",
+                  "import 'native_live_components.dart';\nimport 'native_live_stage.dart';\n",
+                  1,
+              )
+          host = host.replace(
+              "final quantity = gift.singleSendOnly ? 1 : rawQuantity.clamp(1, 100000);",
+              "final quantity = rawQuantity.clamp(1, 100000);",
+          )
+          host_build = host.index("  @override\n  Widget build(BuildContext context)")
+          host_stage = host.index(
+              "            if (call != null)\n              PartialCallStateBuilder<CallParticipantState?>(",
+              host_build,
+          )
+          host_safe = host.index("            SafeArea(", host_stage)
+          host_replacement = """            if (call != null)
+              NativeHostV2Stage(
+                call: call,
+                cameraEnabled: _cameraEnabled,
+                activeCohostUserId: _activeCohostUserId,
+              )
+            else
+              const FvLiveBackground(icon: Icons.videocam_off_rounded),
+            const FvLiveGradient(),
+"""
+          host = host[:host_stage] + host_replacement + host[host_safe:]
+          host_path.write_text(host)
+
+          viewer = viewer_path.read_text()
+          if "import 'native_live_stage.dart';" not in viewer:
+              viewer = viewer.replace(
+                  "import 'native_live_components.dart';\n",
+                  "import 'native_live_components.dart';\nimport 'native_live_stage.dart';\n",
+                  1,
+              )
+          viewer = viewer.replace(
+              """    final quantity = gift.singleSendOnly
+        ? 1
+        : ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(1, 100000);""",
+              """    final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
+      1,
+      100000,
+    );""",
+          )
+          viewer = viewer.replace(
+              """    if (gift.singleSendOnly && quantity != 1) {
+      _showMessage('${gift.label} sends one at a time.');
+      return false;
+    }
+""",
+              "",
+          )
+          viewer_build = viewer.index("  @override\n  Widget build(BuildContext context)")
+          viewer_stage = viewer.index(
+              "              if (call != null)\n                PartialCallStateBuilder<List<CallParticipantState>>(",
+              viewer_build,
+          )
+          viewer_safe = viewer.index("              SafeArea(", viewer_stage)
+          viewer_replacement = """              if (call != null)
+                NativeViewerV2Stage(
+                  call: call,
+                  hostUserId: widget.room.hostUserId,
+                  activeCohostUserId: _activeCohostUserId,
+                )
+              else
+                const FvLiveBackground(),
+              const FvLiveGradient(),
+"""
+          viewer = viewer[:viewer_stage] + viewer_replacement + viewer[viewer_safe:]
+
+          gift_button = """                          IconButton.filledTonal(
+                            onPressed: _walletReady ? _showGiftTray : null,
+                            icon: const Icon(Icons.card_giftcard_rounded),
+                            tooltip: 'Gifts',
+                          ),
+"""
+          share_button = """                          IconButton.filledTonal(
+                            onPressed: _shareLive,
+                            icon: const Icon(Icons.ios_share_rounded),
+                            tooltip: 'Share',
+                          ),
+"""
+          if share_button not in viewer:
+              viewer = viewer.replace(gift_button, gift_button + share_button, 1)
+
+          viewer_path.write_text(viewer)
+          PY
+
+      - name: Commit V2 source patch
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "V2 source already finalized."
+            exit 0
+          fi
+          git config user.name "Fameverse V2 Finalizer"
+          git config user.email "actions@users.noreply.github.com"
+          git add native/flutter_v1/lib/features/live/stream_host_live_screen.dart native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart
+          git commit -m "feat: finish native V2 live stage and gift laws"
+          git push origin HEAD:native/flutter-v1
