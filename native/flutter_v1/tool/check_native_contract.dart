@@ -133,8 +133,8 @@ void main() {
     pubspec.contains('stream_video_flutter: 1.6.0') &&
         !pubspec.contains('livekit_client') &&
         camera.contains('CameraController') &&
-        camera.contains('Flip camera') &&
         camera.contains('native-go-live') &&
+        hostLive.contains('flipCamera()') &&
         liveMedia.contains('StreamVideo(') &&
         liveMedia.contains('StreamCallType.liveStream()') &&
         liveMedia.contains('setMicrophoneEnabled') &&
@@ -143,7 +143,7 @@ void main() {
         liveBackend.contains("from('live_rooms')") &&
         !liveBackend.contains("'livekit-token'") &&
         !liveMedia.contains('package:livekit_client'),
-    'Native Live migration must use approved Stream Video transport with Supabase-authoritative rooms.',
+    'Native Live migration must use approved Stream Video transport with Supabase-authoritative rooms and an active host camera flip.',
   );
   require(
     !shell.contains('WebView') && !shell.contains('webview'),
