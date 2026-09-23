@@ -29,15 +29,17 @@ class NativeHostLiveScreen extends StatefulWidget {
 
 class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final TextEditingController _comment = TextEditingController();
-  final List<FvLiveChatMessage> _chat = [];
-  final List<Map<String, dynamic>> _cohostRequests = [];
-  final List<FvGiftPlayback> _giftQueue = [];
+  final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
+  final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
+  final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
+
   Call? _call;
   FvLiveActivitySession? _activity;
   Timer? _heartbeat;
   Timer? _tapRefresh;
   Timer? _giftTimer;
   FvGiftPlayback? _giftPlayback;
+
   bool _connecting = true;
   bool _ending = false;
   bool _ended = false;
@@ -65,7 +67,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         user: User.regular(
           userId: widget.credentials.userId,
           name: widget.room.host.displayName,
-          image: widget.room.host.avatarUrl,
         ),
         userToken: widget.credentials.userToken,
         options: StreamVideoOptions(autoConnect: false),
@@ -74,6 +75,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         await client.connect(registerPushDevice: false),
         'Could not connect to Stream Video',
       );
+
       final call = client.makeCall(
         callType: StreamCallType.liveStream(),
         id: widget.credentials.callId,
@@ -81,7 +83,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       _call = call;
       fvRequireSuccess(
         await call.getOrCreate(
-          members: [
+          members: <MemberRequest>[
             MemberRequest(userId: widget.credentials.userId, role: 'host'),
           ],
         ),
@@ -104,8 +106,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         roomId: widget.room.id,
         onComment: _receiveComment,
         onGift: _receiveGift,
-        onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
+        onCohost: (Map<String, dynamic> payload) {
+          unawaited(_handleCohostEvent(payload));
+        },
       );
+
       final stats = await widget.liveBackend.loadGifterStats(widget.identity.id);
       final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
       _gifterLevel = stats.level;
@@ -143,8 +148,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   void _receiveComment(Map<String, dynamic> payload) {
-    final text = (payload['text'] as String?)?.trim() ?? '';
-    if (text.isEmpty || !mounted) return;
+    final raw = (payload['text'] as String?)?.trim() ?? '';
+    if (!mounted || raw.isEmpty) return;
+    final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     setState(() {
       _chat.add(
         FvLiveChatMessage(
@@ -152,7 +158,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           user: (payload['user'] as String?) ?? 'Fameverse viewer',
           userId: payload['userId'] as String?,
           gifterLevel: (payload['gifterLevel'] as num?)?.toInt() ?? 1,
-          text: text.length > 160 ? text.substring(0, 160) : text,
+          text: text,
         ),
       );
     });
@@ -160,10 +166,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
-    if (gift == null || !mounted) return;
-    final quantity = gift.singleSendOnly
-        ? 1
-        : ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(1, 100000);
+    if (!mounted || gift == null) return;
+    final rawQuantity = (payload['quantity'] as num?)?.toInt() ?? 1;
+    final quantity = gift.singleSendOnly ? 1 : rawQuantity.clamp(1, 100000);
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
@@ -209,9 +214,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _postComment() async {
     final activity = _activity;
-    final text = _comment.text.trim();
-    if (activity == null || text.isEmpty) return;
-    final clean = text.length > 160 ? text.substring(0, 160) : text;
+    final raw = _comment.text.trim();
+    if (activity == null || raw.isEmpty) return;
+    final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     final id = 'comment-${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
       _chat.add(
@@ -220,18 +225,18 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           user: widget.room.host.displayName,
           userId: widget.identity.id,
           gifterLevel: _gifterLevel,
-          text: clean,
+          text: text,
         ),
       );
       _comment.clear();
     });
     try {
-      await activity.send('comment', {
+      await activity.send('comment', <String, dynamic>{
         'id': id,
         'user': widget.room.host.displayName,
         'userId': widget.identity.id,
         'gifterLevel': _gifterLevel,
-        'text': clean,
+        'text': text,
       });
     } catch (_) {
       if (mounted) _showMessage('Comment could not send.');
@@ -243,8 +248,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (call == null || _connecting || _ending || !_cameraEnabled) return;
     try {
       fvRequireSuccess(await call.flipCamera(), 'Camera flip failed');
-    } catch (error) {
-      if (mounted) _showMessage(fvFriendlyError(error));
+    } catch (_) {
+      if (mounted) _showMessage('Camera flip failed.');
     }
   }
 
@@ -289,41 +294,52 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         if (!mounted) return;
         setState(() {
           _cohostRequests.removeWhere(
-            (item) => (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
+            (Map<String, dynamic> item) =>
+                (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
           );
-          _cohostRequests.insert(0, {
+          _cohostRequests.insert(0, <String, dynamic>{
             ...payload,
             'viewerId': viewerId,
             'displayName': payload['displayName'] ?? 'Fameverse viewer',
           });
           if (_cohostRequests.length > 12) _cohostRequests.removeLast();
         });
+        break;
       case 'cohost-invite-accepted':
         if (_pendingInviteUserId != viewerId) return;
         await _grantCohost(viewerId);
+        break;
       case 'cohost-invite-declined':
       case 'cohost-invite-cancelled':
         if (_pendingInviteUserId == viewerId && mounted) {
           setState(() => _pendingInviteUserId = null);
         }
+        break;
       case 'cohost-source-left':
-        if (_activeCohostUserId == viewerId) await _endCohost(notify: true);
+        if (_activeCohostUserId == viewerId) {
+          await _endCohost(notify: true);
+        }
+        break;
       case 'cohost-ended':
         if (_activeCohostUserId == viewerId && mounted) {
           setState(() => _activeCohostUserId = null);
         }
+        break;
+      default:
+        break;
     }
   }
 
   Future<void> _inviteCohost(CallParticipantState participant) async {
-    if (_activity == null ||
+    final activity = _activity;
+    if (activity == null ||
         _activeCohostUserId != null ||
         _pendingInviteUserId != null ||
         participant.isLocal) {
       return;
     }
     setState(() => _pendingInviteUserId = participant.userId);
-    await _activity!.send('cohost-invite', {
+    await activity.send('cohost-invite', <String, dynamic>{
       'inviteId': 'invite-${DateTime.now().microsecondsSinceEpoch}',
       'viewerId': participant.userId,
       'userId': participant.userId,
@@ -338,7 +354,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (mounted) {
       setState(() {
         _cohostRequests.removeWhere(
-          (item) => (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
+          (Map<String, dynamic> item) =>
+              (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
         );
       });
     }
@@ -347,16 +364,26 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _declineCohostRequest(Map<String, dynamic> request) async {
     final viewerId = (request['viewerId'] ?? request['userId'])?.toString();
-    if (viewerId == null || _activity == null) return;
-    setState(() {
-      _cohostRequests.removeWhere(
-        (item) => (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
-      );
+    final activity = _activity;
+    if (viewerId == null || activity == null) return;
+    if (mounted) {
+      setState(() {
+        _cohostRequests.removeWhere(
+          (Map<String, dynamic> item) =>
+              (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
+        );
+      });
+    }
+    await activity.send('cohost-decline', <String, dynamic>{
+      'viewerId': viewerId,
+      'userId': viewerId,
     });
-    await _activity!.send('cohost-decline', {'viewerId': viewerId, 'userId': viewerId});
   }
 
-  Future<void> _grantCohost(String viewerId, {bool acceptedRequest = false}) async {
+  Future<void> _grantCohost(
+    String viewerId, {
+    bool acceptedRequest = false,
+  }) async {
     final call = _call;
     final activity = _activity;
     if (call == null || activity == null) return;
@@ -364,17 +391,20 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       fvRequireSuccess(
         await call.grantPermissions(
           userId: viewerId,
-          permissions: const [CallPermission.sendAudio, CallPermission.sendVideo],
+          permissions: const <CallPermission>[
+            CallPermission.sendAudio,
+            CallPermission.sendVideo,
+          ],
         ),
         'Could not grant co-host media permissions',
       );
       if (acceptedRequest) {
-        await activity.send('cohost-accept', {
+        await activity.send('cohost-accept', <String, dynamic>{
           'viewerId': viewerId,
           'userId': viewerId,
         });
       }
-      await activity.send('cohost-active', {
+      await activity.send('cohost-active', <String, dynamic>{
         'viewerId': viewerId,
         'userId': viewerId,
       });
@@ -391,20 +421,25 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _endCohost({bool notify = true}) async {
     final userId = _activeCohostUserId;
-    final call = _call;
-    final activity = _activity;
     if (userId == null) return;
+    final call = _call;
     if (call != null) {
       try {
         await call.revokePermissions(
           userId: userId,
-          permissions: const [CallPermission.sendAudio, CallPermission.sendVideo],
+          permissions: const <CallPermission>[
+            CallPermission.sendAudio,
+            CallPermission.sendVideo,
+          ],
         );
       } catch (_) {}
     }
-    if (notify && activity != null) {
+    if (notify) {
       try {
-        await activity.send('cohost-ended', {'viewerId': userId, 'userId': userId});
+        await _activity?.send('cohost-ended', <String, dynamic>{
+          'viewerId': userId,
+          'userId': userId,
+        });
       } catch (_) {}
     }
     if (mounted) setState(() => _activeCohostUserId = null);
@@ -414,11 +449,18 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final userId = _pendingInviteUserId;
     final activity = _activity;
     if (userId == null || activity == null) return;
-    await activity.send('cohost-invite-cancelled', {
+    await activity.send('cohost-invite-cancelled', <String, dynamic>{
       'viewerId': userId,
       'userId': userId,
     });
     if (mounted) setState(() => _pendingInviteUserId = null);
+  }
+
+  Future<void> _shareLive() async {
+    final payload =
+        'Fameverse Live · ${widget.room.host.displayName} · ${widget.room.title}\nRoom: ${widget.room.id}';
+    await Clipboard.setData(ClipboardData(text: payload));
+    if (mounted) _showMessage('Live room details copied.');
   }
 
   Future<void> _markRoomEnded() async {
@@ -475,13 +517,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (mounted) Navigator.of(context).pop(true);
   }
 
-  Future<void> _shareLive() async {
-    final payload =
-        'Fameverse Live · ${widget.room.host.displayName} · ${widget.room.title}\nRoom: ${widget.room.id}';
-    await Clipboard.setData(ClipboardData(text: payload));
-    if (mounted) _showMessage('Live room details copied.');
-  }
-
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -492,12 +527,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
+      builder: (BuildContext context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(22),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
+            children: <Widget>[
               NativeProfileAvatar(profile: widget.room.host, radius: 42),
               const SizedBox(height: 12),
               Text(
@@ -505,7 +540,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
               ),
               Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
+              if (widget.room.host.bio.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(widget.room.host.bio, textAlign: TextAlign.center),
               ],
@@ -523,14 +558,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
+      builder: (BuildContext context) => SafeArea(
         child: SizedBox(
           height: MediaQuery.sizeOf(context).height * .62,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <Widget>[
                 const Text(
                   'Viewers',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
@@ -539,8 +574,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 Expanded(
                   child: PartialCallStateBuilder<List<CallParticipantState>>(
                     call: call,
-                    selector: (state) => state.callParticipants,
-                    builder: (context, participants) {
+                    selector: (CallState state) => state.callParticipants,
+                    builder: (
+                      BuildContext context,
+                      List<CallParticipantState> participants,
+                    ) {
                       final viewers = participants.where((p) => !p.isLocal).toList();
                       if (viewers.isEmpty) {
                         return const Center(child: Text('No viewers yet.'));
@@ -548,35 +586,41 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                       return ListView.separated(
                         itemCount: viewers.length,
                         separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
+                        itemBuilder: (BuildContext context, int index) {
                           final participant = viewers[index];
                           final isActive = participant.userId == _activeCohostUserId;
                           return ListTile(
                             leading: CircleAvatar(
-                              foregroundImage: participant.image != null && participant.image!.isNotEmpty
-                                  ? NetworkImage(participant.image!)
-                                  : null,
-                              child: Text(participant.name.isEmpty ? 'F' : participant.name[0].toUpperCase()),
+                              child: Text(
+                                participant.name.isEmpty
+                                    ? 'F'
+                                    : participant.name.substring(0, 1).toUpperCase(),
+                              ),
                             ),
-                            title: Text(participant.name.isEmpty ? 'Fameverse viewer' : participant.name),
+                            title: Text(
+                              participant.name.isEmpty
+                                  ? 'Fameverse viewer'
+                                  : participant.name,
+                            ),
                             subtitle: Text(isActive ? 'Co-hosting now' : 'Viewer'),
                             trailing: isActive
                                 ? TextButton(
-                                    onPressed: () async {
+                                    onPressed: () {
                                       Navigator.of(context).pop();
-                                      await _endCohost();
+                                      unawaited(_endCohost());
                                     },
                                     child: const Text('End'),
                                   )
-                                : _activeCohostUserId == null && _pendingInviteUserId == null
-                                ? TextButton(
-                                    onPressed: () async {
-                                      Navigator.of(context).pop();
-                                      await _inviteCohost(participant);
-                                    },
-                                    child: const Text('Invite'),
-                                  )
-                                : null,
+                                : _activeCohostUserId == null &&
+                                        _pendingInviteUserId == null
+                                    ? TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          unawaited(_inviteCohost(participant));
+                                        },
+                                        child: const Text('Invite'),
+                                      )
+                                    : null,
                           );
                         },
                       );
@@ -598,14 +642,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
+      builder: (BuildContext context) => SafeArea(
         child: SizedBox(
           height: MediaQuery.sizeOf(context).height * .68,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <Widget>[
                 const Text(
                   'Co-host',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
@@ -616,9 +660,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Co-host is live'),
                     trailing: FilledButton.tonal(
-                      onPressed: () async {
+                      onPressed: () {
                         Navigator.of(context).pop();
-                        await _endCohost();
+                        unawaited(_endCohost());
                       },
                       child: const Text('End co-host'),
                     ),
@@ -628,33 +672,35 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Invite pending'),
                     trailing: TextButton(
-                      onPressed: () async {
+                      onPressed: () {
                         Navigator.of(context).pop();
-                        await _cancelInvite();
+                        unawaited(_cancelInvite());
                       },
                       child: const Text('Cancel'),
                     ),
                   ),
-                if (_cohostRequests.isNotEmpty) ...[
+                if (_cohostRequests.isNotEmpty) ...<Widget>[
                   const Text('Requests', style: TextStyle(fontWeight: FontWeight.w900)),
                   ..._cohostRequests.map(
-                    (request) => ListTile(
+                    (Map<String, dynamic> request) => ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text((request['displayName'] as String?) ?? 'Fameverse viewer'),
+                      title: Text(
+                        (request['displayName'] as String?) ?? 'Fameverse viewer',
+                      ),
                       subtitle: const Text('Wants to co-host'),
                       trailing: Wrap(
-                        children: [
+                        children: <Widget>[
                           IconButton(
-                            onPressed: () async {
+                            onPressed: () {
                               Navigator.of(context).pop();
-                              await _declineCohostRequest(request);
+                              unawaited(_declineCohostRequest(request));
                             },
                             icon: const Icon(Icons.close),
                           ),
                           IconButton.filled(
-                            onPressed: () async {
+                            onPressed: () {
                               Navigator.of(context).pop();
-                              await _acceptCohostRequest(request);
+                              unawaited(_acceptCohostRequest(request));
                             },
                             icon: const Icon(Icons.check),
                           ),
@@ -669,22 +715,32 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 Expanded(
                   child: PartialCallStateBuilder<List<CallParticipantState>>(
                     call: call,
-                    selector: (state) => state.callParticipants,
-                    builder: (context, participants) {
+                    selector: (CallState state) => state.callParticipants,
+                    builder: (
+                      BuildContext context,
+                      List<CallParticipantState> participants,
+                    ) {
                       final viewers = participants.where((p) => !p.isLocal).toList();
-                      if (viewers.isEmpty) return const Center(child: Text('No viewers to invite yet.'));
+                      if (viewers.isEmpty) {
+                        return const Center(child: Text('No viewers to invite yet.'));
+                      }
                       return ListView.builder(
                         itemCount: viewers.length,
-                        itemBuilder: (context, index) {
+                        itemBuilder: (BuildContext context, int index) {
                           final participant = viewers[index];
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(participant.name.isEmpty ? 'Fameverse viewer' : participant.name),
+                            title: Text(
+                              participant.name.isEmpty
+                                  ? 'Fameverse viewer'
+                                  : participant.name,
+                            ),
                             trailing: TextButton(
-                              onPressed: _activeCohostUserId == null && _pendingInviteUserId == null
-                                  ? () async {
+                              onPressed: _activeCohostUserId == null &&
+                                      _pendingInviteUserId == null
+                                  ? () {
                                       Navigator.of(context).pop();
-                                      await _inviteCohost(participant);
+                                      unawaited(_inviteCohost(participant));
                                     }
                                   : null,
                               child: const Text('Invite'),
@@ -707,17 +763,20 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
+      builder: (BuildContext context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Live controls', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            children: <Widget>[
+              const Text(
+                'Live controls',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              ),
               const SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
+                children: <Widget>[
                   FvRoundLiveButton(
                     keyValue: const Key('native-live-flip'),
                     icon: Icons.cameraswitch_rounded,
@@ -740,7 +799,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                   ),
                   FvRoundLiveButton(
                     keyValue: const Key('native-live-camera'),
-                    icon: _cameraEnabled ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+                    icon: _cameraEnabled
+                        ? Icons.videocam_rounded
+                        : Icons.videocam_off_rounded,
                     label: _cameraEnabled ? 'Camera' : 'Camera on',
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -780,19 +841,22 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final call = _call;
     return PopScope(
       canPop: _ended,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (bool didPop, bool? result) {
         if (!didPop && !_ending) unawaited(_endLive());
       },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
-          children: [
+          children: <Widget>[
             if (call != null)
               PartialCallStateBuilder<CallParticipantState?>(
                 call: call,
-                selector: (state) => state.localParticipant,
-                builder: (context, participant) {
+                selector: (CallState state) => state.localParticipant,
+                builder: (
+                  BuildContext context,
+                  CallParticipantState? participant,
+                ) {
                   if (participant == null || !_cameraEnabled) {
                     return const FvLiveBackground(icon: Icons.videocam_off_rounded);
                   }
@@ -821,8 +885,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     decoration: const BoxDecoration(color: Color(0xFF17101F)),
                     child: PartialCallStateBuilder<List<CallParticipantState>>(
                       call: call,
-                      selector: (state) => state.callParticipants,
-                      builder: (context, participants) {
+                      selector: (CallState state) => state.callParticipants,
+                      builder: (
+                        BuildContext context,
+                        List<CallParticipantState> participants,
+                      ) {
                         CallParticipantState? cohost;
                         for (final participant in participants) {
                           if (participant.userId == _activeCohostUserId) {
@@ -831,7 +898,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           }
                         }
                         if (cohost == null || !cohost.isVideoEnabled) {
-                          return const Center(child: Icon(Icons.person_rounded, size: 42));
+                          return const Center(
+                            child: Icon(Icons.person_rounded, size: 42),
+                          );
                         }
                         return StreamCallParticipant(
                           call: call,
@@ -851,26 +920,31 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                  children: <Widget>[
                     Row(
-                      children: [
+                      children: <Widget>[
                         GestureDetector(
                           onTap: _showProfileSheet,
-                          child: NativeProfileAvatar(profile: widget.room.host, radius: 18),
+                          child: NativeProfileAvatar(
+                            profile: widget.room.host,
+                            radius: 18,
+                          ),
                         ),
                         const SizedBox(width: 9),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                            children: <Widget>[
                               Row(
-                                children: [
+                                children: <Widget>[
                                   Flexible(
                                     child: Text(
                                       widget.room.host.displayName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w900),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -881,7 +955,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                 widget.room.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Color(0xFFD1C7D7), fontSize: 11),
+                                style: const TextStyle(
+                                  color: Color(0xFFD1C7D7),
+                                  fontSize: 11,
+                                ),
                               ),
                             ],
                           ),
@@ -891,25 +968,31 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                             onTap: _showViewerSheet,
                             child: PartialCallStateBuilder<int>(
                               call: call,
-                              selector: (state) => state.callParticipants.length,
-                              builder: (context, count) => _StatChip(
+                              selector: (CallState state) =>
+                                  state.callParticipants.length,
+                              builder: (BuildContext context, int count) => _StatChip(
                                 icon: Icons.visibility_rounded,
                                 text: '${count > 0 ? count - 1 : 0}',
                               ),
                             ),
                           ),
                         const SizedBox(width: 6),
-                        _StatChip(icon: Icons.local_fire_department_rounded, text: '$_fameTaps'),
+                        _StatChip(
+                          icon: Icons.local_fire_department_rounded,
+                          text: '$_fameTaps',
+                        ),
                         const SizedBox(width: 8),
                         FilledButton(
                           key: const Key('native-end-live'),
                           onPressed: _ending ? null : _endLive,
-                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD5284D)),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFD5284D),
+                          ),
                           child: Text(_ending ? 'Ending…' : 'End'),
                         ),
                       ],
                     ),
-                    if (_connecting || _error != null) ...[
+                    if (_connecting || _error != null) ...<Widget>[
                       const SizedBox(height: 10),
                       if (_connecting)
                         const FvLiveStatusCard(
@@ -917,18 +1000,27 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           text: 'Connecting your broadcast…',
                         ),
                       if (_error != null)
-                        FvLiveStatusCard(icon: Icons.error_outline_rounded, text: _error!),
+                        FvLiveStatusCard(
+                          icon: Icons.error_outline_rounded,
+                          text: _error!,
+                        ),
                     ],
                     const Spacer(),
                     if (widget.room.goal.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: .44),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text('Goal · ${widget.room.goal}', style: const TextStyle(fontSize: 11)),
+                        child: Text(
+                          'Goal · ${widget.room.goal}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
                       ),
                     SizedBox(
                       height: 185,
@@ -939,7 +1031,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     ),
                     const SizedBox(height: 8),
                     Row(
-                      children: [
+                      children: <Widget>[
                         Expanded(
                           child: TextField(
                             controller: _comment,
@@ -968,7 +1060,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           onPressed: _showFMenu,
                           icon: const Text(
                             'F',
-                            style: TextStyle(fontWeight: FontWeight.w900, fontStyle: FontStyle.italic),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                           tooltip: 'Live controls',
                         ),
@@ -980,7 +1075,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
             ),
             if (_giftPlayback != null)
               NativeGiftOverlay(
-                key: ValueKey('host-gift-$_giftSerial'),
+                key: ValueKey<String>('host-gift-$_giftSerial'),
                 playback: _giftPlayback!,
               ),
           ],
@@ -1006,10 +1101,13 @@ class _StatChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <Widget>[
           Icon(icon, size: 13),
           const SizedBox(width: 3),
-          Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );
