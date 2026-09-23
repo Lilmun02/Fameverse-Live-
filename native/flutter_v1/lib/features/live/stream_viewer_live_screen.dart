@@ -78,12 +78,13 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       final network = await widget.backend.loadFollowNetwork(
         widget.identity.id,
       );
-      if (mounted)
+      if (mounted) {
         setState(
           () => _following = network.followingIds.contains(
             widget.room.hostUserId,
           ),
         );
+      }
     } catch (_) {}
   }
 
@@ -349,8 +350,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       final balance = await widget.liveBackend.refillBetaWallet();
       if (mounted) setState(() => _walletBalance = balance);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         _showMessage('Test-coin refill is limited to owner/admin accounts.');
+      }
     }
   }
 
@@ -408,8 +410,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           _tapQueue.removeAt(0);
           if (mounted) {
             setState(() {
-              if (result.totalRawTaps > _fameTaps)
+              if (result.totalRawTaps > _fameTaps) {
                 _fameTaps = result.totalRawTaps;
+              }
             });
           }
           if (result.classification == 'rejected') {
@@ -446,8 +449,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final activity = _activity;
     if (activity == null ||
         _selfCohostState != null ||
-        _activeCohostUserId != null)
+        _activeCohostUserId != null) {
       return;
+    }
     setState(() => _selfCohostState = 'requested');
     await activity.send('cohost-request', {
       'viewerId': widget.identity.id,
@@ -472,8 +476,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (_activeCohostUserId == viewerId && mounted) {
         setState(() => _activeCohostUserId = null);
       }
-      if (viewerId == widget.identity.id)
+      if (viewerId == widget.identity.id) {
         await _deactivateSelfCohost(notify: false);
+      }
       return;
     }
     if (viewerId != widget.identity.id) return;
@@ -599,8 +604,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         });
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         _showMessage('Co-host camera or microphone could not start.');
+      }
     }
   }
 
@@ -625,8 +631,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     if (mounted) {
       setState(() {
         _selfCohostState = null;
-        if (_activeCohostUserId == widget.identity.id)
+        if (_activeCohostUserId == widget.identity.id) {
           _activeCohostUserId = null;
+        }
       });
     }
   }
@@ -736,8 +743,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                     call: call,
                     selector: (state) => state.callParticipants,
                     builder: (context, participants) {
-                      if (participants.isEmpty)
+                      if (participants.isEmpty) {
                         return const Center(child: Text('No viewers yet.'));
+                      }
                       return ListView.separated(
                         itemCount: participants.length,
                         separatorBuilder: (_, __) => const Divider(height: 1),
