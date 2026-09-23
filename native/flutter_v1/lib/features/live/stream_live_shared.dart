@@ -140,7 +140,10 @@ class FvLiveStatusCard extends StatelessWidget {
                 text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
