@@ -25,7 +25,6 @@ class NativeHostLiveScreen extends StatefulWidget {
 }
 
 class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
-  StreamVideo? _client;
   Call? _call;
   Timer? _heartbeat;
   bool _connecting = true;
@@ -53,7 +52,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         userToken: widget.credentials.userToken,
         options: StreamVideoOptions(autoConnect: false),
       );
-      _client = client;
 
       _requireSuccess(
         await client.connect(registerPushDevice: false),
@@ -168,7 +166,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         await call.leave();
       } catch (_) {}
     }
-    _client = null;
     try {
       await StreamVideo.reset(disconnect: true);
     } catch (_) {}
@@ -385,7 +382,6 @@ class NativeViewerLiveScreen extends StatefulWidget {
 }
 
 class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
-  StreamVideo? _client;
   Call? _call;
   bool _connecting = true;
   String? _error;
@@ -412,7 +408,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         userToken: credentials.userToken,
         options: StreamVideoOptions(autoConnect: false),
       );
-      _client = client;
       _requireSuccess(
         await client.connect(registerPushDevice: false),
         'Could not connect to Stream Video',
@@ -450,7 +445,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         await call.leave();
       } catch (_) {}
     }
-    _client = null;
     try {
       await StreamVideo.reset(disconnect: true);
     } catch (_) {}
