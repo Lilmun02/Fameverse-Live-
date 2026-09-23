@@ -76,6 +76,15 @@ const fvGiftCatalog = <FvGiftDefinition>[
     singleSendOnly: true,
   ),
   FvGiftDefinition(
+    id: 'pocket-comet',
+    label: 'Pocket Comet',
+    cost: 1000,
+    category: 'fameverse',
+    activityEmoji: '☄️',
+    cinematic: true,
+    singleSendOnly: true,
+  ),
+  FvGiftDefinition(
     id: 'rose',
     label: 'Rose',
     cost: 1,
