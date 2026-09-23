@@ -668,11 +668,7 @@ class _LiveBackground extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(
-          icon,
-          size: 76,
-          color: Colors.white.withValues(alpha: .18),
-        ),
+        child: Icon(icon, size: 76, color: Colors.white.withValues(alpha: .18)),
       ),
     );
   }

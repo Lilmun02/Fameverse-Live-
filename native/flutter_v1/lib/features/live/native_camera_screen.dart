@@ -244,7 +244,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    controller == null ? 'Set up your live' : 'Ready to go live',
+                    controller == null
+                        ? 'Set up your live'
+                        : 'Ready to go live',
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
