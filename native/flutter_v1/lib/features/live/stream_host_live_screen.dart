@@ -299,8 +299,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
     switch (event) {
       case 'cohost-request':
-        if (_activeCohostUserId != null || _pendingInviteUserId == viewerId)
+        if (_activeCohostUserId != null || _pendingInviteUserId == viewerId) {
           return;
+        }
         if (!mounted) return;
         setState(() {
           _cohostRequests.removeWhere(
