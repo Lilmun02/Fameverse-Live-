@@ -18,6 +18,7 @@ class FameverseApp extends StatefulWidget {
   final FameverseLiveBackend liveBackend;
 
   static const productShellKey = Key('fameverse-native-product-shell');
+  static const splashKey = Key('fameverse-native-splash');
 
   @override
   State<FameverseApp> createState() => _FameverseAppState();
@@ -25,7 +26,9 @@ class FameverseApp extends StatefulWidget {
 
 class _FameverseAppState extends State<FameverseApp> {
   StreamSubscription<FvIdentity?>? _subscription;
+  Timer? _splashTimer;
   FvIdentity? _identity;
+  bool _splashComplete = false;
 
   @override
   void initState() {
@@ -34,10 +37,14 @@ class _FameverseAppState extends State<FameverseApp> {
     _subscription = widget.backend.authChanges.listen((identity) {
       if (mounted) setState(() => _identity = identity);
     });
+    _splashTimer = Timer(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _splashComplete = true);
+    });
   }
 
   @override
   void dispose() {
+    _splashTimer?.cancel();
     _subscription?.cancel();
     super.dispose();
   }
@@ -84,7 +91,9 @@ class _FameverseAppState extends State<FameverseApp> {
       ),
       home: KeyedSubtree(
         key: FameverseApp.productShellKey,
-        child: _identity == null
+        child: !_splashComplete
+            ? const _FameverseSplash()
+            : _identity == null
             ? AuthScreen(backend: widget.backend)
             : FameverseShell(
                 key: ValueKey(_identity!.id),
@@ -92,6 +101,57 @@ class _FameverseAppState extends State<FameverseApp> {
                 liveBackend: widget.liveBackend,
                 identity: _identity!,
               ),
+      ),
+    );
+  }
+}
+
+class _FameverseSplash extends StatelessWidget {
+  const _FameverseSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: FameverseApp.splashKey,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -.2),
+            radius: 1.1,
+            colors: [Color(0xFF351151), Color(0xFF130A1B), Color(0xFF09070B)],
+          ),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'F',
+                style: TextStyle(
+                  fontSize: 64,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: -6,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'FAMEVERSE',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 4,
+                ),
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
