@@ -4,14 +4,16 @@ import 'fameverse_backend.dart';
 
 class FvLiveCredentials {
   const FvLiveCredentials({
-    required this.serverUrl,
-    required this.participantToken,
-    required this.roomName,
+    required this.apiKey,
+    required this.userToken,
+    required this.userId,
+    required this.callId,
   });
 
-  final String serverUrl;
-  final String participantToken;
-  final String roomName;
+  final String apiKey;
+  final String userToken;
+  final String userId;
+  final String callId;
 }
 
 abstract class FameverseLiveBackend {
@@ -129,28 +131,32 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }) async {
     try {
       final response = await _client.functions.invoke(
-        'livekit-token',
+        'stream-token',
         body: {'room_id': roomId, 'role': role},
       );
       final raw = response.data;
-      if (raw is! Map) throw Exception('invalid-livekit-token-response');
+      if (raw is! Map) throw Exception('invalid-stream-token-response');
       final data = Map<String, dynamic>.from(raw);
-      final serverUrl = (data['server_url'] as String?)?.trim() ?? '';
-      final participantToken =
-          (data['participant_token'] as String?)?.trim() ?? '';
-      final roomName = (data['room_name'] as String?)?.trim() ?? '';
-      if (serverUrl.isEmpty || participantToken.isEmpty || roomName.isEmpty) {
-        throw Exception('invalid-livekit-token-response');
+      final apiKey = (data['api_key'] as String?)?.trim() ?? '';
+      final userToken = (data['user_token'] as String?)?.trim() ?? '';
+      final userId = (data['user_id'] as String?)?.trim() ?? '';
+      final callId = (data['call_id'] as String?)?.trim() ?? '';
+      if (apiKey.isEmpty ||
+          userToken.isEmpty ||
+          userId.isEmpty ||
+          callId.isEmpty) {
+        throw Exception('invalid-stream-token-response');
       }
       return FvLiveCredentials(
-        serverUrl: serverUrl,
-        participantToken: participantToken,
-        roomName: roomName,
+        apiKey: apiKey,
+        userToken: userToken,
+        userId: userId,
+        callId: callId,
       );
     } on FunctionException catch (error) {
       final details = error.details;
-      if (details is Map && details['error'] == 'livekit-not-configured') {
-        throw Exception('livekit-not-configured');
+      if (details is Map && details['error'] == 'stream-not-configured') {
+        throw Exception('stream-not-configured');
       }
       rethrow;
     }

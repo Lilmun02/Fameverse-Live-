@@ -9,16 +9,16 @@ Status values: NOT_STARTED, IN_PROGRESS, FIX_CANDIDATE, PHYSICAL_PASS, LOCKED, B
 | Native project bootstrap | PHYSICAL_PASS | passed | Build 13 installed | TestFlight/signing/publishing pipeline proved on a real iPhone; product parity is tracked separately below |
 | Splash / startup | NOT_STARTED | required | required | Preserve backend update/release semantics where still relevant to native |
 | Authentication | FIX_CANDIDATE | passed | required | Native Supabase sign-in/sign-up is wired to the authoritative Fameverse project; physical account QA still required |
-| Home | FIX_CANDIDATE | passed | required | Ports the current production community/follow contract; no unapproved Home redesign |
-| Discover | IN_PROGRESS | source gate passed; full iOS preflight pending | required | Uses real profiles, follows, active live rooms, and tap totals; live room taps now open the native viewer transport |
-| Profile | FIX_CANDIDATE | passed | required | Loads/saves real display name, username, and bio; avatar upload parity still pending |
-| Viewer Live | IN_PROGRESS | source gate passed; full iOS preflight pending | 2-device required | LiveKit viewer room + remote video/audio subscription is wired; LiveKit Cloud credentials are still required before physical QA |
-| Host Live | IN_PROGRESS | source gate passed; full iOS preflight pending | 2-device required | Creates authoritative Supabase live_rooms, requests host media token, publishes native camera/mic through LiveKit, heartbeats, and ends the room cleanly; LiveKit Cloud credentials are still required before physical QA |
-| Front camera | IN_PROGRESS | source gate passed; full iOS preflight pending | required | Uses native LiveKit/WebRTC capture on iPhone, not Safari/WebKit |
-| Rear camera | IN_PROGRESS | source gate passed; full iOS preflight pending | required | Uses native LiveKit/WebRTC capture on iPhone, not Safari/WebKit |
-| Camera flip | IN_PROGRESS | source gate passed; full iOS preflight pending | required | Native front/back track restart is wired; repeated physical flips required before FIX_CANDIDATE/LOCKED |
-| Camera off/on recovery | IN_PROGRESS | source gate passed; full iOS preflight pending | required | Native publish enable/disable is wired; physical QA required |
-| Microphone mute/unmute | IN_PROGRESS | source gate passed; full iOS preflight pending | required | Native LiveKit microphone publishing and mute/unmute are wired; physical audio QA required |
+| Home | FIX_CANDIDATE | passed | required | Ports the current production community/follow contract; redesign requires explicit approval |
+| Discover | IN_PROGRESS | Stream source gate pending | required | Uses real profiles, follows, active live rooms, and tap totals; active room taps open the native Stream viewer transport |
+| Profile | FIX_CANDIDATE | passed | required | Loads/saves real display name, username, and bio; avatar upload parity and approved redesign still pending |
+| Viewer Live | IN_PROGRESS | Stream source gate pending | 2-device required | Stream Video viewer joins the authoritative Fameverse room with camera/mic disabled; server credentials required before physical QA |
+| Host Live | IN_PROGRESS | Stream source gate pending | 2-device required | Supabase creates authoritative live_rooms; Stream Video handles host camera/mic/WebRTC transport; server credentials required before physical QA |
+| Front camera | IN_PROGRESS | Stream source gate pending | required | Pre-live preview uses Flutter camera; live capture uses Stream Video/WebRTC, not Safari/WebKit |
+| Rear camera | IN_PROGRESS | Stream source gate pending | required | Pre-live preview uses Flutter camera; live capture uses Stream Video/WebRTC, not Safari/WebKit |
+| Camera flip | IN_PROGRESS | Stream source gate pending | required | Pre-live and in-live front/back camera switching are wired; repeated physical flips required before FIX_CANDIDATE/LOCKED |
+| Camera off/on recovery | IN_PROGRESS | Stream source gate pending | required | Stream camera publish enable/disable is wired; physical QA required |
+| Microphone mute/unmute | IN_PROGRESS | Stream source gate pending | required | Stream microphone publish/mute is wired; physical audio QA required |
 | Comments | NOT_STARTED | required | required | Existing backend contract should be reused |
 | FameTaps | NOT_STARTED | required | required | Preserve authoritative tap rules |
 | Gift tray | NOT_STARTED | required | required | Custom gift artwork must match approved assets, no placeholder substitution |
@@ -37,17 +37,19 @@ Status values: NOT_STARTED, IN_PROGRESS, FIX_CANDIDATE, PHYSICAL_PASS, LOCKED, B
 | App Store/TestFlight signing | PHYSICAL_PASS | passed | Build 13 installed | Direct manual signing + App Store Connect publishing succeeded; do not alter working secret/signing path without evidence |
 | Google Play signing | NOT_STARTED | signing gate | Play internal test | Configure after Android release path is approved |
 
-## Native Live transport checkpoint
+## Approved native media provider
 
-Native host-to-viewer media is now implemented in source on `native/flutter-v1`: Supabase remains authoritative for live-room presence and LiveKit is the native camera/microphone transport. The authenticated Supabase Edge Function `livekit-token` issues host/viewer-scoped media tokens and refuses host publishing privileges to non-host users.
+Stream Video is the locked native realtime media provider. Supabase remains authoritative for Fameverse identity, live-room presence, social state, gifts, wallets, moderation, battles, earnings, and other product data. See `NATIVE_MEDIA_PROVIDER_LOCK.md`.
 
-The isolated Native Live repair gate passed engineering contract validation, Dart formatting, `flutter analyze`, and Flutter tests before pushing commit `92ee438dec4e002ad657a905fa2c63c01923ed92`. A fresh normal Native Preflight is required on the final branch head before moving these rows to FIX_CANDIDATE.
+The Flutter client requests an authenticated short-lived Stream user token from the Supabase Edge Function `stream-token`. Stream API secrets must remain server-side and must never be committed to the Flutter app or GitHub.
 
-Runtime media remains blocked until the Fameverse LiveKit deployment supplies `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET` to the Supabase Edge Function environment. Do not publish a tester TestFlight build until that dependency is configured and the full native preflight is green.
+The legacy `livekit-token` Edge Function is retired and returns HTTP 410. LiveKit is not an approved Fameverse native media path.
 
-## Previous automated evidence
+## Stream runtime dependency
 
-Native preflight run 35696192075 passed both jobs on the earlier product slice: YAML parsing, package resolution, engineering law, Dart formatting, static analysis, widget tests, bundle identifier verification, CocoaPods, unsigned Flutter iOS configuration, and unsigned Xcode Release compilation.
+Source wiring expects `STREAM_API_KEY` and `STREAM_API_SECRET` in the Fameverse Supabase Edge Function environment. Until those two Stream credentials are configured, `stream-token` intentionally returns `stream-not-configured` and physical broadcast QA is blocked.
+
+Do not publish a new tester TestFlight build until the Stream source gate is green and the Stream server credentials are configured. The already-proven Build 13 signing/publishing path must remain unchanged.
 
 ## Migration rule
 A row may move to LOCKED only when its required automated and physical columns are satisfied for the exact native build. Do not inherit LOCKED status from the PWA automatically.

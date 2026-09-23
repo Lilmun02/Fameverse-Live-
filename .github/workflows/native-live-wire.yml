@@ -1,18 +1,21 @@
-name: Fameverse Native Live Repair
+name: Fameverse Native Stream Gate
 
 on:
   push:
     branches:
       - native/flutter-v1
     paths:
+      - 'native/flutter_v1/**'
+      - 'docs/NATIVE_PARITY_MATRIX.md'
+      - 'docs/NATIVE_MEDIA_PROVIDER_LOCK.md'
       - '.github/workflows/native-live-wire.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  repair-native-live:
+  validate-native-stream:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -21,13 +24,6 @@ jobs:
     steps:
       - name: Checkout native branch
         uses: actions/checkout@v4
-        with:
-          ref: native/flutter-v1
-          fetch-depth: 0
-
-      - name: Apply exact LiveKit analyzer repair
-        working-directory: .
-        run: python3 scripts/fix_livekit_analyzer.py
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -35,26 +31,17 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Resolve and format native code
-        run: |
-          flutter pub get
-          dart format lib test tool
+      - name: Resolve Flutter packages
+        run: flutter pub get
 
-      - name: Validate repaired native live slice
-        run: |
-          dart run tool/check_native_contract.dart
-          flutter analyze
-          flutter test
+      - name: Enforce Fameverse native architecture law
+        run: dart run tool/check_native_contract.dart
 
-      - name: Commit repaired native live source
-        working-directory: .
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add native/flutter_v1/lib/features/live/livekit_live_screen.dart
-          if git diff --cached --quiet; then
-            echo 'LiveKit analyzer repair already applied.'
-            exit 0
-          fi
-          git commit -m 'fix: clear native LiveKit analyzer findings'
-          git push origin HEAD:native/flutter-v1
+      - name: Enforce Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        run: flutter test

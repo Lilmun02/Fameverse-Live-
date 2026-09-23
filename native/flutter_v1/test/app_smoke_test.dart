@@ -165,9 +165,10 @@ class _FakeLiveBackend implements FameverseLiveBackend {
     required String role,
   }) async {
     return const FvLiveCredentials(
-      serverUrl: 'wss://example.invalid',
-      participantToken: 'test-token',
-      roomName: 'fv_room-1',
+      apiKey: 'test-key',
+      userToken: 'test-token',
+      userId: 'user-1',
+      callId: 'fv_room-1',
     );
   }
 }

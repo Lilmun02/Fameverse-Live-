@@ -12,14 +12,16 @@ String read(String path) => File(path).readAsStringSync();
 void main() {
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
+  final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
   final gates = read('../../docs/NATIVE_RELEASE_GATES.md');
   final codemagic = read('../../codemagic.yaml');
   final app = read('lib/app/fameverse_app.dart');
   final backend = read('lib/data/fameverse_backend.dart');
   final liveBackend = read('lib/data/fameverse_live_backend.dart');
   final camera = read('lib/features/live/native_camera_screen.dart');
-  final liveMedia = read('lib/features/live/livekit_live_screen.dart');
+  final liveMedia = read('lib/features/live/stream_live_screen.dart');
   final shell = read('lib/features/shell/fameverse_shell.dart');
+  final pubspec = read('pubspec.yaml');
   final test = read('test/app_smoke_test.dart');
 
   require(
@@ -33,6 +35,11 @@ void main() {
   require(
     parity.contains('Camera flip') && parity.contains('Premium cinematics'),
     'Parity matrix must track device-sensitive Live and gift migration.',
+  );
+  require(
+    providerLock.contains('Stream Video') &&
+        providerLock.contains('explicit product-owner approval'),
+    'Native media provider lock must preserve the approved Stream architecture.',
   );
   require(
     gates.contains('FIX_CANDIDATE -> LOCKED'),
@@ -120,14 +127,20 @@ void main() {
     'Native product shell must reuse authoritative Supabase identity/community/live contracts.',
   );
   require(
-    camera.contains('LocalVideoTrack.createCameraTrack') &&
+    pubspec.contains('stream_video_flutter: 1.6.0') &&
+        !pubspec.contains('livekit_client') &&
+        camera.contains('CameraController') &&
         camera.contains('Flip camera') &&
         camera.contains('native-go-live') &&
+        liveMedia.contains('StreamVideo(') &&
+        liveMedia.contains('StreamCallType.liveStream()') &&
         liveMedia.contains('setMicrophoneEnabled') &&
         liveMedia.contains('NativeViewerLiveScreen') &&
-        liveBackend.contains("'livekit-token'") &&
-        liveBackend.contains("from('live_rooms')"),
-    'Native Live migration must use native LiveKit camera/mic transport with real host and viewer room wiring.',
+        liveBackend.contains("'stream-token'") &&
+        liveBackend.contains("from('live_rooms')") &&
+        !liveBackend.contains("'livekit-token'") &&
+        !liveMedia.contains('package:livekit_client'),
+    'Native Live migration must use approved Stream Video transport with Supabase-authoritative rooms.',
   );
   require(
     !shell.contains('WebView') && !shell.contains('webview'),
@@ -141,7 +154,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, product shell, Supabase, native LiveKit host/viewer, and camera contracts passed',
+      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, product shell, Supabase, Stream Video host/viewer, and camera contracts passed',
     );
   }
 }
