@@ -55,7 +55,9 @@ class _FameverseShellState extends State<FameverseShell> {
     }
     try {
       final profile = await widget.backend.loadProfile(widget.identity.id);
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       final creators = await widget.backend.listRecommendedCreators(
         excludeUserId: widget.identity.id,
       );
@@ -89,7 +91,9 @@ class _FameverseShellState extends State<FameverseShell> {
         targetId: targetId,
         following: !currentlyFollowing,
       );
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) setState(() => _network = network);
     } catch (_) {
       if (mounted) _showMessage('Could not update that connection.');
@@ -815,7 +819,8 @@ class _EditProfileSheet extends StatefulWidget {
     required String displayName,
     required String username,
     required String bio,
-  }) onSave;
+  })
+  onSave;
 
   @override
   State<_EditProfileSheet> createState() => _EditProfileSheetState();
@@ -911,13 +916,17 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 class _SettingsSheet extends StatelessWidget {
   const _SettingsSheet();
 
-  static const _terms = '''Fameverse Beta Terms of Use\n\nFameverse is currently a beta service. Features may change while we test and improve the product. You must use Fameverse lawfully and may not abuse, disrupt, exploit, automate attacks against, or attempt to bypass safety and moderation systems.\n\nBeta test coins and beta gifts are test-only. They are not money, cannot be purchased for real money in this beta, and are not eligible for cash-out or payout. Real purchases, creator earnings, and payout terms will be presented separately before those features are activated.\n\nYou remain responsible for content you create, stream, upload, or send. Fameverse may remove content or restrict accounts when needed to enforce these terms, protect users, or comply with law.''';
+  static const _terms =
+      '''Fameverse Beta Terms of Use\n\nFameverse is currently a beta service. Features may change while we test and improve the product. You must use Fameverse lawfully and may not abuse, disrupt, exploit, automate attacks against, or attempt to bypass safety and moderation systems.\n\nBeta test coins and beta gifts are test-only. They are not money, cannot be purchased for real money in this beta, and are not eligible for cash-out or payout. Real purchases, creator earnings, and payout terms will be presented separately before those features are activated.\n\nYou remain responsible for content you create, stream, upload, or send. Fameverse may remove content or restrict accounts when needed to enforce these terms, protect users, or comply with law.''';
 
-  static const _privacy = '''Fameverse Beta Privacy Notice\n\nFameverse uses account information, profile information, social connections, live-room activity, comments, gifts, FameTaps, moderation signals, and technical information needed to operate and secure the beta.\n\nProfile information you choose to publish can be visible to other Fameverse users. Live activity is shared with participants as required for the experience. Authentication and authoritative app data are handled through Fameverse backend services.\n\nAs the beta expands, this notice will be updated before new real-money, payout, or materially different data uses are activated.''';
+  static const _privacy =
+      '''Fameverse Beta Privacy Notice\n\nFameverse uses account information, profile information, social connections, live-room activity, comments, gifts, FameTaps, moderation signals, and technical information needed to operate and secure the beta.\n\nProfile information you choose to publish can be visible to other Fameverse users. Live activity is shared with participants as required for the experience. Authentication and authoritative app data are handled through Fameverse backend services.\n\nAs the beta expands, this notice will be updated before new real-money, payout, or materially different data uses are activated.''';
 
-  static const _community = '''Fameverse Community Standards\n\nFameverse is for real people to create, watch, gift, and belong. Do not use Fameverse for credible threats, targeted harassment, hateful abuse, sexual exploitation, scams, impersonation intended to defraud, illegal content, spam, platform manipulation, or attempts to compromise another user's account or device.\n\nCreators are responsible for moderating their live spaces with the tools provided. Fameverse may remove content, end a live, restrict features, or suspend accounts when necessary to protect the community and enforce these standards.''';
+  static const _community =
+      '''Fameverse Community Standards\n\nFameverse is for real people to create, watch, gift, and belong. Do not use Fameverse for credible threats, targeted harassment, hateful abuse, sexual exploitation, scams, impersonation intended to defraud, illegal content, spam, platform manipulation, or attempts to compromise another user's account or device.\n\nCreators are responsible for moderating their live spaces with the tools provided. Fameverse may remove content, end a live, restrict features, or suspend accounts when necessary to protect the community and enforce these standards.''';
 
-  static const _creator = '''Fameverse Creator Beta Terms\n\nCreators are responsible for their live content, titles, goals, interactions, and moderation choices. Do not misrepresent beta gifts or test coins as real-money earnings. During this beta, gift balances and creator gift activity are testing data only and do not create a payout entitlement.\n\nCreators must not encourage fraud, artificial engagement, coordinated abuse, or manipulation of gifts, FameTaps, rankings, or safety systems. Additional purchase, high-value gifting, earnings, and payout terms will be added and presented before real-money creator monetization is enabled.''';
+  static const _creator =
+      '''Fameverse Creator Beta Terms\n\nCreators are responsible for their live content, titles, goals, interactions, and moderation choices. Do not misrepresent beta gifts or test coins as real-money earnings. During this beta, gift balances and creator gift activity are testing data only and do not create a payout entitlement.\n\nCreators must not encourage fraud, artificial engagement, coordinated abuse, or manipulation of gifts, FameTaps, rankings, or safety systems. Additional purchase, high-value gifting, earnings, and payout terms will be added and presented before real-money creator monetization is enabled.''';
 
   void _open(BuildContext context, String title, String body) {
     Navigator.of(context).push<void>(
@@ -1010,9 +1019,7 @@ class _LegalDocumentScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          children: [
-            Text(body, style: const TextStyle(height: 1.55)),
-          ],
+          children: [Text(body, style: const TextStyle(height: 1.55))],
         ),
       ),
     );
@@ -1196,7 +1203,9 @@ class _SegmentedCommunityTabs extends StatelessWidget {
                 duration: const Duration(milliseconds: 160),
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFF39234F) : Colors.transparent,
+                  color: selected
+                      ? const Color(0xFF39234F)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -1205,7 +1214,9 @@ class _SegmentedCommunityTabs extends StatelessWidget {
                       item.$2,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),

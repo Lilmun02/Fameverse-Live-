@@ -274,7 +274,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             initialValue: '$quantity',
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Quantity'),
+                            decoration: const InputDecoration(
+                              labelText: 'Quantity',
+                            ),
                             onChanged: (value) {
                               final parsed = int.tryParse(value);
                               if (parsed != null) setQuantity(parsed);
@@ -362,7 +364,10 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     ),
                     Text(
                       'Send a Gift',
-                      style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
@@ -378,7 +383,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                 ButtonSegment(value: 'fameverse', label: Text('Fameverse')),
               ],
               selected: {_category},
-              onSelectionChanged: (value) => setState(() => _category = value.first),
+              onSelectionChanged: (value) =>
+                  setState(() => _category = value.first),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -413,7 +419,10 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(gift.symbol, style: const TextStyle(fontSize: 28)),
+                          Text(
+                            gift.symbol,
+                            style: const TextStyle(fontSize: 28),
+                          ),
                           const SizedBox(height: 5),
                           Text(
                             gift.label,
@@ -455,7 +464,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   ),
                 FilledButton(
                   onPressed: _sending ? null : () => _send(1),
-                  child: Text(_sending ? 'Sending…' : 'Send · 🪙 ${_selected.cost}'),
+                  child: Text(
+                    _sending ? 'Sending…' : 'Send · 🪙 ${_selected.cost}',
+                  ),
                 ),
               ],
             ),
@@ -482,7 +493,11 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
 }
 
 class NativeProfileAvatar extends StatelessWidget {
-  const NativeProfileAvatar({required this.profile, this.radius = 18, super.key});
+  const NativeProfileAvatar({
+    required this.profile,
+    this.radius = 18,
+    super.key,
+  });
 
   final FvProfile profile;
   final double radius;
@@ -492,7 +507,9 @@ class NativeProfileAvatar extends StatelessWidget {
     final avatar = profile.avatarUrl;
     return CircleAvatar(
       radius: radius,
-      foregroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null,
+      foregroundImage: avatar != null && avatar.isNotEmpty
+          ? NetworkImage(avatar)
+          : null,
       child: Text(profile.initial),
     );
   }

@@ -144,7 +144,8 @@ class SupabaseFameverseBackend implements FameverseBackend {
   }
 
   @override
-  FvIdentity? get currentIdentity => _identityFromUser(_client.auth.currentUser);
+  FvIdentity? get currentIdentity =>
+      _identityFromUser(_client.auth.currentUser);
 
   @override
   Stream<FvIdentity?> get authChanges => _client.auth.onAuthStateChange.map(
@@ -255,7 +256,10 @@ class SupabaseFameverseBackend implements FameverseBackend {
             cleanDisplayName.length > 40 ? 40 : cleanDisplayName.length,
           ),
           'username': cleanUsername.isEmpty ? null : cleanUsername,
-          'bio': cleanBio.substring(0, cleanBio.length > 160 ? 160 : cleanBio.length),
+          'bio': cleanBio.substring(
+            0,
+            cleanBio.length > 160 ? 160 : cleanBio.length,
+          ),
         })
         .eq('id', userId)
         .select(_profileFields)
@@ -332,8 +336,14 @@ class SupabaseFameverseBackend implements FameverseBackend {
     final byId = {for (final profile in profiles) profile.id: profile};
 
     return FvFollowNetwork(
-      followers: followerIds.map((id) => byId[id]).whereType<FvProfile>().toList(),
-      following: followingIds.map((id) => byId[id]).whereType<FvProfile>().toList(),
+      followers: followerIds
+          .map((id) => byId[id])
+          .whereType<FvProfile>()
+          .toList(),
+      following: followingIds
+          .map((id) => byId[id])
+          .whereType<FvProfile>()
+          .toList(),
       followerIds: followerIds,
       followingIds: followingIds,
     );
@@ -381,23 +391,28 @@ class SupabaseFameverseBackend implements FameverseBackend {
       followerCounts[id] = (followerCounts[id] ?? 0) + 1;
     }
 
-    final creators = (profileRows as List)
-        .map((row) => _profileFromMap(Map<String, dynamic>.from(row as Map)))
-        .where((profile) => profile.id != excludeUserId)
-        .map(
-          (profile) => FvCreator(
-            profile: profile,
-            followerCount: followerCounts[profile.id] ?? 0,
-          ),
-        )
-        .toList()
-      ..sort((a, b) {
-        final count = b.followerCount.compareTo(a.followerCount);
-        if (count != 0) return count;
-        final aDate = a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bDate = b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bDate.compareTo(aDate);
-      });
+    final creators =
+        (profileRows as List)
+            .map(
+              (row) => _profileFromMap(Map<String, dynamic>.from(row as Map)),
+            )
+            .where((profile) => profile.id != excludeUserId)
+            .map(
+              (profile) => FvCreator(
+                profile: profile,
+                followerCount: followerCounts[profile.id] ?? 0,
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            final count = b.followerCount.compareTo(a.followerCount);
+            if (count != 0) return count;
+            final aDate =
+                a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final bDate =
+                b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return bDate.compareTo(aDate);
+          });
 
     return creators.take(12).toList();
   }
@@ -436,12 +451,14 @@ class SupabaseFameverseBackend implements FameverseBackend {
     final tapsByRoom = <String, int>{};
     for (final raw in tapRows as List) {
       final map = raw as Map;
-      tapsByRoom[map['room_id'] as String] = (map['raw_taps'] as num?)?.toInt() ?? 0;
+      tapsByRoom[map['room_id'] as String] =
+          (map['raw_taps'] as num?)?.toInt() ?? 0;
     }
 
     return visible.map((room) {
       final hostUserId = room['host_user_id'] as String;
-      final host = hostById[hostUserId] ??
+      final host =
+          hostById[hostUserId] ??
           FvProfile(
             id: hostUserId,
             displayName: 'Fameverse creator',

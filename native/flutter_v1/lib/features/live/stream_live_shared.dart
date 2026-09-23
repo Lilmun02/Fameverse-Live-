@@ -151,7 +151,9 @@ class FvLiveChatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = messages.length > 7 ? messages.sublist(messages.length - 7) : messages;
+    final visible = messages.length > 7
+        ? messages.sublist(messages.length - 7)
+        : messages;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,

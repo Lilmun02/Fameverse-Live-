@@ -55,9 +55,7 @@ class _NativePocketCometGiftState extends State<NativePocketCometGift>
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
-                        shadows: [
-                          Shadow(blurRadius: 12, color: Colors.black),
-                        ],
+                        shadows: [Shadow(blurRadius: 12, color: Colors.black)],
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -169,9 +167,7 @@ class _PocketCometPainter extends CustomPainter {
     final cometGlow = Paint()
       ..shader = RadialGradient(
         colors: const [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
-      ).createShader(
-        Rect.fromCircle(center: comet, radius: size.width * .08),
-      );
+      ).createShader(Rect.fromCircle(center: comet, radius: size.width * .08));
     canvas.drawCircle(comet, size.width * .08, cometGlow);
 
     final burstStart = 2.85 / 4.5;

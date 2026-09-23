@@ -137,11 +137,7 @@ class FvGifterStats {
   final int giftCount;
   final int level;
 
-  static const empty = FvGifterStats(
-    totalCoinsSent: 0,
-    giftCount: 0,
-    level: 1,
-  );
+  static const empty = FvGifterStats(totalCoinsSent: 0, giftCount: 0, level: 1);
 }
 
 class FvGiftSendResult {
@@ -458,7 +454,10 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
       final userToken = (data['user_token'] as String?)?.trim() ?? '';
       final userId = (data['user_id'] as String?)?.trim() ?? '';
       final callId = (data['call_id'] as String?)?.trim() ?? '';
-      if (apiKey.isEmpty || userToken.isEmpty || userId.isEmpty || callId.isEmpty) {
+      if (apiKey.isEmpty ||
+          userToken.isEmpty ||
+          userId.isEmpty ||
+          callId.isEmpty) {
         throw Exception('invalid-stream-token-response');
       }
       return FvLiveCredentials(
@@ -500,7 +499,9 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }) async {
     await _client.from('creator_live_drafts').upsert({
       'user_id': userId,
-      'title': _cleanTitle(draft.title) == 'Live on Fameverse' && draft.title.trim().isEmpty
+      'title':
+          _cleanTitle(draft.title) == 'Live on Fameverse' &&
+              draft.title.trim().isEmpty
           ? ''
           : _cleanTitle(draft.title),
       'goal': _cleanGoal(draft.goal),
@@ -521,7 +522,10 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
 
   @override
   Future<int> refillBetaWallet() async {
-    final data = await _client.rpc('refill_beta_wallet', params: {'p_amount': 10000});
+    final data = await _client.rpc(
+      'refill_beta_wallet',
+      params: {'p_amount': 10000},
+    );
     return (data as num?)?.toInt() ?? 0;
   }
 
@@ -634,8 +638,13 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }
 
   @override
-  Future<List<FvCreatorLiveSummary>> loadCreatorLiveHistory({int limit = 20}) async {
-    final data = await _client.rpc('get_creator_live_history', params: {'p_limit': limit});
+  Future<List<FvCreatorLiveSummary>> loadCreatorLiveHistory({
+    int limit = 20,
+  }) async {
+    final data = await _client.rpc(
+      'get_creator_live_history',
+      params: {'p_limit': limit},
+    );
     return (data as List? ?? const []).map((raw) {
       final row = Map<String, dynamic>.from(raw as Map);
       return FvCreatorLiveSummary(
@@ -653,15 +662,21 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }
 
   @override
-  Future<List<FvCreatorGiftActivity>> loadCreatorGiftActivity({int limit = 50}) async {
-    final data = await _client.rpc('get_creator_gift_activity', params: {'p_limit': limit});
+  Future<List<FvCreatorGiftActivity>> loadCreatorGiftActivity({
+    int limit = 50,
+  }) async {
+    final data = await _client.rpc(
+      'get_creator_gift_activity',
+      params: {'p_limit': limit},
+    );
     return (data as List? ?? const []).map((raw) {
       final row = Map<String, dynamic>.from(raw as Map);
       return FvCreatorGiftActivity(
         id: row['gift_event_id'] as String,
         roomId: row['room_id'] as String,
         senderUserId: row['sender_user_id'] as String,
-        senderDisplayName: (row['sender_display_name'] as String?) ?? 'Fameverse viewer',
+        senderDisplayName:
+            (row['sender_display_name'] as String?) ?? 'Fameverse viewer',
         giftId: row['gift_id'] as String,
         quantity: (row['quantity'] as num?)?.toInt() ?? 1,
         coinsSpent: (row['coins_spent'] as num?)?.toInt() ?? 0,
@@ -677,10 +692,7 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }) async {
     final data = await _client.rpc(
       'set_creator_moderator',
-      params: {
-        'p_moderator_user_id': moderatorUserId,
-        'p_enabled': enabled,
-      },
+      params: {'p_moderator_user_id': moderatorUserId, 'p_enabled': enabled},
     );
     final row = _firstRpcRow(data);
     return row['is_moderator'] == true;

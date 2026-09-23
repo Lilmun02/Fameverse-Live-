@@ -153,7 +153,8 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         if (text.contains('stream-not-configured')) {
           _error = 'Stream Video server credentials are not configured.';
         } else if (text.contains('permission') || text.contains('denied')) {
-          _error = 'Camera permission is off. Allow camera access in iPhone Settings.';
+          _error =
+              'Camera permission is off. Allow camera access in iPhone Settings.';
         } else if (text.contains('no-camera')) {
           _error = 'No camera was found on this device.';
         } else {
@@ -192,7 +193,10 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                 const SizedBox(height: 6),
                 Text(
                   live.title,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -201,13 +205,18 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                     const SizedBox(width: 10),
                     _SummaryStat(label: 'Gifts', value: '${live.giftCount}'),
                     const SizedBox(width: 10),
-                    _SummaryStat(label: 'Test coins', value: '${live.giftCoins}'),
+                    _SummaryStat(
+                      label: 'Test coins',
+                      value: '${live.giftCoins}',
+                    ),
                   ],
                 ),
                 const SizedBox(height: 18),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
                   child: const Text('Done'),
                 ),
               ],
@@ -267,7 +276,10 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                             ],
                           ),
                         ),
-                        NativeProfileAvatar(profile: widget.profile, radius: 28),
+                        NativeProfileAvatar(
+                          profile: widget.profile,
+                          radius: 28,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -279,14 +291,19 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                       ),
                       child: Row(
                         children: [
-                          NativeProfileAvatar(profile: widget.profile, radius: 20),
+                          NativeProfileAvatar(
+                            profile: widget.profile,
+                            radius: 20,
+                          ),
                           const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 widget.profile.displayName,
-                                style: const TextStyle(fontWeight: FontWeight.w900),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                               Text(
                                 widget.profile.handle,
@@ -325,7 +342,10 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                       children: [
                         const Text(
                           'Wishlist gifts',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                         const Spacer(),
                         Text(
@@ -371,15 +391,21 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                             ),
                             child: Row(
                               children: [
-                                Text(gift.symbol, style: const TextStyle(fontSize: 26)),
+                                Text(
+                                  gift.symbol,
+                                  style: const TextStyle(fontSize: 26),
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         gift.label,
-                                        style: const TextStyle(fontWeight: FontWeight.w800),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
                                       Text(
                                         '${gift.cost} coin${gift.cost == 1 ? '' : 's'}',
@@ -391,7 +417,11 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                                     ],
                                   ),
                                 ),
-                                Icon(selected ? Icons.check_circle : Icons.add_circle_outline),
+                                Icon(
+                                  selected
+                                      ? Icons.check_circle
+                                      : Icons.add_circle_outline,
+                                ),
                               ],
                             ),
                           ),
@@ -460,9 +490,15 @@ class _SummaryStat extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(color: Color(0xFFA99EB0), fontSize: 10)),
+            Text(
+              label,
+              style: const TextStyle(color: Color(0xFFA99EB0), fontSize: 10),
+            ),
           ],
         ),
       ),

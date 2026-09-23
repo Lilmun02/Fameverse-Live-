@@ -111,7 +111,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         },
       );
 
-      final stats = await widget.liveBackend.loadGifterStats(widget.identity.id);
+      final stats = await widget.liveBackend.loadGifterStats(
+        widget.identity.id,
+      );
       final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
       _gifterLevel = stats.level;
       _fameTaps = taps;
@@ -135,7 +137,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (!mounted) return;
       setState(() {
         _connecting = false;
-        _error = 'Could not start the live broadcast. ${fvFriendlyError(error)}';
+        _error =
+            'Could not start the live broadcast. ${fvFriendlyError(error)}';
       });
     }
   }
@@ -154,7 +157,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     setState(() {
       _chat.add(
         FvLiveChatMessage(
-          id: payload['id']?.toString() ?? '${DateTime.now().microsecondsSinceEpoch}',
+          id:
+              payload['id']?.toString() ??
+              '${DateTime.now().microsecondsSinceEpoch}',
           user: (payload['user'] as String?) ?? 'Fameverse viewer',
           userId: payload['userId'] as String?,
           gifterLevel: (payload['gifterLevel'] as num?)?.toInt() ?? 1,
@@ -174,7 +179,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     setState(() {
       _chat.add(
         FvLiveChatMessage(
-          id: payload['id']?.toString() ?? '${DateTime.now().microsecondsSinceEpoch}',
+          id:
+              payload['id']?.toString() ??
+              '${DateTime.now().microsecondsSinceEpoch}',
           user: sender,
           userId: payload['senderId'] as String?,
           gifterLevel: level,
@@ -185,7 +192,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     });
-    _enqueueGift(FvGiftPlayback(gift: gift, quantity: quantity, sender: sender));
+    _enqueueGift(
+      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+    );
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -290,7 +299,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
     switch (event) {
       case 'cohost-request':
-        if (_activeCohostUserId != null || _pendingInviteUserId == viewerId) return;
+        if (_activeCohostUserId != null || _pendingInviteUserId == viewerId)
+          return;
         if (!mounted) return;
         setState(() {
           _cohostRequests.removeWhere(
@@ -537,7 +547,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               const SizedBox(height: 12),
               Text(
                 widget.room.host.displayName,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               Text(widget.room.host.handle),
               if (widget.room.host.bio.isNotEmpty) ...<Widget>[
@@ -575,44 +588,53 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                   child: PartialCallStateBuilder<List<CallParticipantState>>(
                     call: call,
                     selector: (CallState state) => state.callParticipants,
-                    builder: (
-                      BuildContext context,
-                      List<CallParticipantState> participants,
-                    ) {
-                      final viewers = participants.where((p) => !p.isLocal).toList();
-                      if (viewers.isEmpty) {
-                        return const Center(child: Text('No viewers yet.'));
-                      }
-                      return ListView.separated(
-                        itemCount: viewers.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (BuildContext context, int index) {
-                          final participant = viewers[index];
-                          final isActive = participant.userId == _activeCohostUserId;
-                          return ListTile(
-                            leading: CircleAvatar(
-                              child: Text(
-                                participant.name.isEmpty
-                                    ? 'F'
-                                    : participant.name.substring(0, 1).toUpperCase(),
-                              ),
-                            ),
-                            title: Text(
-                              participant.name.isEmpty
-                                  ? 'Fameverse viewer'
-                                  : participant.name,
-                            ),
-                            subtitle: Text(isActive ? 'Co-hosting now' : 'Viewer'),
-                            trailing: isActive
-                                ? TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      unawaited(_endCohost());
-                                    },
-                                    child: const Text('End'),
-                                  )
-                                : _activeCohostUserId == null &&
-                                        _pendingInviteUserId == null
+                    builder:
+                        (
+                          BuildContext context,
+                          List<CallParticipantState> participants,
+                        ) {
+                          final viewers = participants
+                              .where((p) => !p.isLocal)
+                              .toList();
+                          if (viewers.isEmpty) {
+                            return const Center(child: Text('No viewers yet.'));
+                          }
+                          return ListView.separated(
+                            itemCount: viewers.length,
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 1),
+                            itemBuilder: (BuildContext context, int index) {
+                              final participant = viewers[index];
+                              final isActive =
+                                  participant.userId == _activeCohostUserId;
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  child: Text(
+                                    participant.name.isEmpty
+                                        ? 'F'
+                                        : participant.name
+                                              .substring(0, 1)
+                                              .toUpperCase(),
+                                  ),
+                                ),
+                                title: Text(
+                                  participant.name.isEmpty
+                                      ? 'Fameverse viewer'
+                                      : participant.name,
+                                ),
+                                subtitle: Text(
+                                  isActive ? 'Co-hosting now' : 'Viewer',
+                                ),
+                                trailing: isActive
+                                    ? TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          unawaited(_endCohost());
+                                        },
+                                        child: const Text('End'),
+                                      )
+                                    : _activeCohostUserId == null &&
+                                          _pendingInviteUserId == null
                                     ? TextButton(
                                         onPressed: () {
                                           Navigator.of(context).pop();
@@ -621,10 +643,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                         child: const Text('Invite'),
                                       )
                                     : null,
+                              );
+                            },
                           );
                         },
-                      );
-                    },
                   ),
                 ),
               ],
@@ -680,12 +702,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     ),
                   ),
                 if (_cohostRequests.isNotEmpty) ...<Widget>[
-                  const Text('Requests', style: TextStyle(fontWeight: FontWeight.w900)),
+                  const Text(
+                    'Requests',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
                   ..._cohostRequests.map(
                     (Map<String, dynamic> request) => ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
-                        (request['displayName'] as String?) ?? 'Fameverse viewer',
+                        (request['displayName'] as String?) ??
+                            'Fameverse viewer',
                       ),
                       subtitle: const Text('Wants to co-host'),
                       trailing: Wrap(
@@ -710,45 +736,54 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                   ),
                   const Divider(),
                 ],
-                const Text('Invite a viewer', style: TextStyle(fontWeight: FontWeight.w900)),
+                const Text(
+                  'Invite a viewer',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 8),
                 Expanded(
                   child: PartialCallStateBuilder<List<CallParticipantState>>(
                     call: call,
                     selector: (CallState state) => state.callParticipants,
-                    builder: (
-                      BuildContext context,
-                      List<CallParticipantState> participants,
-                    ) {
-                      final viewers = participants.where((p) => !p.isLocal).toList();
-                      if (viewers.isEmpty) {
-                        return const Center(child: Text('No viewers to invite yet.'));
-                      }
-                      return ListView.builder(
-                        itemCount: viewers.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final participant = viewers[index];
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              participant.name.isEmpty
-                                  ? 'Fameverse viewer'
-                                  : participant.name,
-                            ),
-                            trailing: TextButton(
-                              onPressed: _activeCohostUserId == null &&
-                                      _pendingInviteUserId == null
-                                  ? () {
-                                      Navigator.of(context).pop();
-                                      unawaited(_inviteCohost(participant));
-                                    }
-                                  : null,
-                              child: const Text('Invite'),
-                            ),
+                    builder:
+                        (
+                          BuildContext context,
+                          List<CallParticipantState> participants,
+                        ) {
+                          final viewers = participants
+                              .where((p) => !p.isLocal)
+                              .toList();
+                          if (viewers.isEmpty) {
+                            return const Center(
+                              child: Text('No viewers to invite yet.'),
+                            );
+                          }
+                          return ListView.builder(
+                            itemCount: viewers.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final participant = viewers[index];
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  participant.name.isEmpty
+                                      ? 'Fameverse viewer'
+                                      : participant.name,
+                                ),
+                                trailing: TextButton(
+                                  onPressed:
+                                      _activeCohostUserId == null &&
+                                          _pendingInviteUserId == null
+                                      ? () {
+                                          Navigator.of(context).pop();
+                                          unawaited(_inviteCohost(participant));
+                                        }
+                                      : null,
+                                  child: const Text('Invite'),
+                                ),
+                              );
+                            },
                           );
                         },
-                      );
-                    },
                   ),
                 ),
               ],
@@ -790,7 +825,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                   ),
                   FvRoundLiveButton(
                     keyValue: const Key('native-live-mic'),
-                    icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
+                    icon: _micEnabled
+                        ? Icons.mic_rounded
+                        : Icons.mic_off_rounded,
                     label: _micEnabled ? 'Mute' : 'Unmute',
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -853,22 +890,22 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               PartialCallStateBuilder<CallParticipantState?>(
                 call: call,
                 selector: (CallState state) => state.localParticipant,
-                builder: (
-                  BuildContext context,
-                  CallParticipantState? participant,
-                ) {
-                  if (participant == null || !_cameraEnabled) {
-                    return const FvLiveBackground(icon: Icons.videocam_off_rounded);
-                  }
-                  return StreamCallParticipant(
-                    call: call,
-                    participant: participant,
-                    videoFit: VideoFit.cover,
-                    showConnectionQualityIndicator: false,
-                    showParticipantLabel: false,
-                    showSpeakerBorder: false,
-                  );
-                },
+                builder:
+                    (BuildContext context, CallParticipantState? participant) {
+                      if (participant == null || !_cameraEnabled) {
+                        return const FvLiveBackground(
+                          icon: Icons.videocam_off_rounded,
+                        );
+                      }
+                      return StreamCallParticipant(
+                        call: call,
+                        participant: participant,
+                        videoFit: VideoFit.cover,
+                        showConnectionQualityIndicator: false,
+                        showParticipantLabel: false,
+                        showSpeakerBorder: false,
+                      );
+                    },
               )
             else
               const FvLiveBackground(icon: Icons.videocam_off_rounded),
@@ -886,31 +923,32 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     child: PartialCallStateBuilder<List<CallParticipantState>>(
                       call: call,
                       selector: (CallState state) => state.callParticipants,
-                      builder: (
-                        BuildContext context,
-                        List<CallParticipantState> participants,
-                      ) {
-                        CallParticipantState? cohost;
-                        for (final participant in participants) {
-                          if (participant.userId == _activeCohostUserId) {
-                            cohost = participant;
-                            break;
-                          }
-                        }
-                        if (cohost == null || !cohost.isVideoEnabled) {
-                          return const Center(
-                            child: Icon(Icons.person_rounded, size: 42),
-                          );
-                        }
-                        return StreamCallParticipant(
-                          call: call,
-                          participant: cohost,
-                          videoFit: VideoFit.cover,
-                          showConnectionQualityIndicator: false,
-                          showParticipantLabel: true,
-                          showSpeakerBorder: false,
-                        );
-                      },
+                      builder:
+                          (
+                            BuildContext context,
+                            List<CallParticipantState> participants,
+                          ) {
+                            CallParticipantState? cohost;
+                            for (final participant in participants) {
+                              if (participant.userId == _activeCohostUserId) {
+                                cohost = participant;
+                                break;
+                              }
+                            }
+                            if (cohost == null || !cohost.isVideoEnabled) {
+                              return const Center(
+                                child: Icon(Icons.person_rounded, size: 42),
+                              );
+                            }
+                            return StreamCallParticipant(
+                              call: call,
+                              participant: cohost,
+                              videoFit: VideoFit.cover,
+                              showConnectionQualityIndicator: false,
+                              showParticipantLabel: true,
+                              showSpeakerBorder: false,
+                            );
+                          },
                     ),
                   ),
                 ),
@@ -970,10 +1008,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                               call: call,
                               selector: (CallState state) =>
                                   state.callParticipants.length,
-                              builder: (BuildContext context, int count) => _StatChip(
-                                icon: Icons.visibility_rounded,
-                                text: '${count > 0 ? count - 1 : 0}',
-                              ),
+                              builder: (BuildContext context, int count) =>
+                                  _StatChip(
+                                    icon: Icons.visibility_rounded,
+                                    text: '${count > 0 ? count - 1 : 0}',
+                                  ),
                             ),
                           ),
                         const SizedBox(width: 6),
