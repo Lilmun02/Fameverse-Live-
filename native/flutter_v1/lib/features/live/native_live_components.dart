@@ -28,17 +28,74 @@ class FvLiveChatMessage {
   final int quantity;
 }
 
+class _GiftComboState {
+  const _GiftComboState({
+    required this.giftId,
+    required this.at,
+    required this.count,
+  });
+
+  final String giftId;
+  final DateTime at;
+  final int count;
+}
+
+final Map<String, _GiftComboState> _giftComboBySender =
+    <String, _GiftComboState>{};
+
+int _nextGiftCombo({
+  required String sender,
+  required String giftId,
+  required DateTime acceptedAt,
+}) {
+  const window = Duration(milliseconds: 2200);
+  final key = sender.trim().toLowerCase();
+  final previous = _giftComboBySender[key];
+  final sameCombo = previous != null &&
+      previous.giftId == giftId &&
+      acceptedAt.difference(previous.at).abs() <= window;
+  final nextCount = sameCombo ? (previous.count + 1).clamp(1, 10) : 1;
+  _giftComboBySender[key] = _GiftComboState(
+    giftId: giftId,
+    at: acceptedAt,
+    count: nextCount,
+  );
+  return nextCount;
+}
+
 class FvGiftPlayback {
-  const FvGiftPlayback({
+  factory FvGiftPlayback({
+    required FvGiftDefinition gift,
+    required int quantity,
+    required String sender,
+    DateTime? acceptedAt,
+  }) {
+    final at = acceptedAt ?? DateTime.now();
+    return FvGiftPlayback._(
+      gift: gift,
+      quantity: quantity,
+      sender: sender,
+      acceptedAt: at,
+      comboCount: _nextGiftCombo(
+        sender: sender,
+        giftId: gift.id,
+        acceptedAt: at,
+      ),
+    );
+  }
+
+  const FvGiftPlayback._({
     required this.gift,
     required this.quantity,
     required this.sender,
-    this.comboCount = 1,
+    required this.acceptedAt,
+    required this.comboCount,
   });
 
   final FvGiftDefinition gift;
   final int quantity;
   final String sender;
+  final DateTime acceptedAt;
   final int comboCount;
 }
 
