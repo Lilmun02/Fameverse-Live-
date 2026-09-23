@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
 class NativeHostLiveScreen extends StatefulWidget {
@@ -173,7 +174,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
     final rawQuantity = (payload['quantity'] as num?)?.toInt() ?? 1;
-    final quantity = gift.singleSendOnly ? 1 : rawQuantity.clamp(1, 100000);
+    final quantity = rawQuantity.clamp(1, 100000);
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
@@ -888,72 +889,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           fit: StackFit.expand,
           children: <Widget>[
             if (call != null)
-              PartialCallStateBuilder<CallParticipantState?>(
+              NativeHostV2Stage(
                 call: call,
-                selector: (CallState state) => state.localParticipant,
-                builder:
-                    (BuildContext context, CallParticipantState? participant) {
-                      if (participant == null || !_cameraEnabled) {
-                        return const FvLiveBackground(
-                          icon: Icons.videocam_off_rounded,
-                        );
-                      }
-                      return StreamCallParticipant(
-                        call: call,
-                        participant: participant,
-                        videoFit: VideoFit.cover,
-                        showConnectionQualityIndicator: false,
-                        showParticipantLabel: false,
-                        showSpeakerBorder: false,
-                      );
-                    },
+                cameraEnabled: _cameraEnabled,
+                activeCohostUserId: _activeCohostUserId,
               )
             else
               const FvLiveBackground(icon: Icons.videocam_off_rounded),
             const FvLiveGradient(),
-            if (call != null && _activeCohostUserId != null)
-              Positioned(
-                top: 105,
-                right: 12,
-                width: 132,
-                height: 190,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: DecoratedBox(
-                    decoration: const BoxDecoration(color: Color(0xFF17101F)),
-                    child: PartialCallStateBuilder<List<CallParticipantState>>(
-                      call: call,
-                      selector: (CallState state) => state.callParticipants,
-                      builder:
-                          (
-                            BuildContext context,
-                            List<CallParticipantState> participants,
-                          ) {
-                            CallParticipantState? cohost;
-                            for (final participant in participants) {
-                              if (participant.userId == _activeCohostUserId) {
-                                cohost = participant;
-                                break;
-                              }
-                            }
-                            if (cohost == null || !cohost.isVideoEnabled) {
-                              return const Center(
-                                child: Icon(Icons.person_rounded, size: 42),
-                              );
-                            }
-                            return StreamCallParticipant(
-                              call: call,
-                              participant: cohost,
-                              videoFit: VideoFit.cover,
-                              showConnectionQualityIndicator: false,
-                              showParticipantLabel: true,
-                              showSpeakerBorder: false,
-                            );
-                          },
-                    ),
-                  ),
-                ),
-              ),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),

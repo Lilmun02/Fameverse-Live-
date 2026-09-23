@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
 class NativeViewerLiveScreen extends StatefulWidget {
@@ -177,9 +178,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (gift == null || !mounted) return;
-    final quantity = gift.singleSendOnly
-        ? 1
-        : ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(1, 100000);
+    final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
+      1,
+      100000,
+    );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
@@ -270,10 +272,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
     if (quantity < 1 || quantity > 100000) {
       _showMessage('Gift amount must be between 1 and 100,000.');
-      return false;
-    }
-    if (gift.singleSendOnly && quantity != 1) {
-      _showMessage('${gift.label} sends one at a time.');
       return false;
     }
     final total = gift.cost * quantity;
@@ -952,75 +950,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
             fit: StackFit.expand,
             children: [
               if (call != null)
-                PartialCallStateBuilder<List<CallParticipantState>>(
+                NativeViewerV2Stage(
                   call: call,
-                  selector: (state) => state.callParticipants,
-                  builder: (context, participants) {
-                    CallParticipantState? host;
-                    for (final participant in participants) {
-                      if (participant.userId == widget.room.hostUserId) {
-                        host = participant;
-                        break;
-                      }
-                    }
-                    if (host == null || !host.isVideoEnabled) {
-                      return const FvLiveBackground(
-                        icon: Icons.wifi_tethering_rounded,
-                      );
-                    }
-                    return StreamCallParticipant(
-                      call: call,
-                      participant: host,
-                      videoFit: VideoFit.cover,
-                      showConnectionQualityIndicator: false,
-                      showParticipantLabel: false,
-                      showSpeakerBorder: false,
-                    );
-                  },
+                  hostUserId: widget.room.hostUserId,
+                  activeCohostUserId: _activeCohostUserId,
                 )
               else
                 const FvLiveBackground(),
               const FvLiveGradient(),
-              if (call != null && _activeCohostUserId != null)
-                Positioned(
-                  top: 106,
-                  right: 12,
-                  width: 132,
-                  height: 190,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(color: Color(0xFF17101F)),
-                      child:
-                          PartialCallStateBuilder<List<CallParticipantState>>(
-                            call: call,
-                            selector: (state) => state.callParticipants,
-                            builder: (context, participants) {
-                              CallParticipantState? cohost;
-                              for (final participant in participants) {
-                                if (participant.userId == _activeCohostUserId) {
-                                  cohost = participant;
-                                  break;
-                                }
-                              }
-                              if (cohost == null || !cohost.isVideoEnabled) {
-                                return const Center(
-                                  child: Icon(Icons.person_rounded, size: 42),
-                                );
-                              }
-                              return StreamCallParticipant(
-                                call: call,
-                                participant: cohost,
-                                videoFit: VideoFit.cover,
-                                showConnectionQualityIndicator: false,
-                                showParticipantLabel: true,
-                                showSpeakerBorder: false,
-                              );
-                            },
-                          ),
-                    ),
-                  ),
-                ),
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
@@ -1185,6 +1122,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             onPressed: _walletReady ? _showGiftTray : null,
                             icon: const Icon(Icons.card_giftcard_rounded),
                             tooltip: 'Gifts',
+                          ),
+                          IconButton.filledTonal(
+                            onPressed: _shareLive,
+                            icon: const Icon(Icons.ios_share_rounded),
+                            tooltip: 'Share',
                           ),
                           IconButton.filled(
                             onPressed: _showFMenu,
