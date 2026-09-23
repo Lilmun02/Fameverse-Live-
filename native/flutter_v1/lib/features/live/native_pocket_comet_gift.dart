@@ -157,20 +157,20 @@ class _PocketCometPainter extends CustomPainter {
       comet.dy - math.sin(angle) * size.height * .08,
     );
     final tail = Paint()
-      ..shader = LinearGradient(
-        colors: const [Color(0xFF3DE0FF), Color(0xFF8B6CFF)],
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF3DE0FF), Color(0xFF8B6CFF)],
       ).createShader(Rect.fromPoints(tailEnd, comet))
       ..strokeCap = StrokeCap.round
       ..strokeWidth = size.width * .035;
     canvas.drawLine(tailEnd, comet, tail);
 
     final cometGlow = Paint()
-      ..shader = RadialGradient(
-        colors: const [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
+      ..shader = const RadialGradient(
+        colors: [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
       ).createShader(Rect.fromCircle(center: comet, radius: size.width * .08));
     canvas.drawCircle(comet, size.width * .08, cometGlow);
 
-    final burstStart = 2.85 / 4.5;
+    const burstStart = 2.85 / 4.5;
     if (progress >= burstStart) {
       final burstProgress = ((progress - burstStart) / .24).clamp(0.0, 1.0);
       final burstCenter = Offset(center.dx, center.dy + size.height * .06);
