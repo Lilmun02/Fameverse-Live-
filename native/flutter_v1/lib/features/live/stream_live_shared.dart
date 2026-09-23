@@ -29,11 +29,11 @@ class FvLiveGradient extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: .66),
+            Colors.black.withValues(alpha: .58),
             Colors.transparent,
             Colors.black.withValues(alpha: .9),
           ],
-          stops: const [0, .42, 1],
+          stops: const [0, .4, 1],
         ),
       ),
     );
@@ -68,18 +68,45 @@ class FvLiveBackground extends StatelessWidget {
 
   final IconData icon;
 
+  bool get _cameraOff => icon == Icons.videocam_off_rounded;
+
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: RadialGradient(
-          center: Alignment(.6, -.4),
-          radius: 1.2,
-          colors: [Color(0xFF351453), Color(0xFF100914), Colors.black],
+          center: Alignment(.55, -.35),
+          radius: 1.15,
+          colors: [Color(0xFF2A103F), Color(0xFF100914), Colors.black],
         ),
       ),
       child: Center(
-        child: Icon(icon, size: 76, color: Colors.white.withValues(alpha: .18)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: _cameraOff ? 52 : 46,
+              color: Colors.white.withValues(alpha: _cameraOff ? .34 : .22),
+            ),
+            if (_cameraOff) ...[
+              const SizedBox(height: 14),
+              const Text(
+                'Camera off',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              const Text(
+                'Your microphone can stay on.',
+                style: TextStyle(color: Color(0xFFBEB4C5), fontSize: 12),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -93,20 +120,31 @@ class FvLiveStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: .64),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 9),
-          Expanded(child: Text(text)),
-        ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: .5),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: const Color(0xFFEADDFC)),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
