@@ -367,7 +367,8 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         gift.label,
@@ -482,10 +483,7 @@ class _NativeLiveSummaryScreen extends StatelessWidget {
             const SizedBox(height: 5),
             Text(
               live.title,
-              style: const TextStyle(
-                color: Color(0xFFC4B9CC),
-                fontSize: 15,
-              ),
+              style: const TextStyle(color: Color(0xFFC4B9CC), fontSize: 15),
             ),
             const SizedBox(height: 28),
             GridView.count(
