@@ -5,6 +5,8 @@ import 'package:video_player/video_player.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'native_gift_visual.dart';
+import 'native_pocket_comet_gift.dart';
 
 class FvLiveChatMessage {
   const FvLiveChatMessage({
@@ -62,7 +64,8 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   void didUpdateWidget(covariant NativeGiftOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl) {
+    if (oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
+        oldWidget.playback.gift.id != widget.playback.gift.id) {
       unawaited(_syncVideo());
     }
   }
@@ -109,6 +112,32 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   Widget build(BuildContext context) {
     final playback = widget.playback;
+
+    if (playback.gift.id == 'pocket-comet') {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          NativePocketCometGift(sender: playback.sender),
+          if (playback.quantity > 1)
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 92,
+              child: Text(
+                '×${playback.quantity}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFFFE7A2),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  shadows: [Shadow(blurRadius: 10, color: Colors.black)],
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
     final controller = _controller;
     if (playback.gift.cinematic &&
         controller != null &&
@@ -222,7 +251,6 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
   }
 
   Future<void> _customAmount() async {
-    if (_selected.singleSendOnly) return;
     var quantity = 1;
     final accepted = await showModalBottomSheet<int>(
       context: context,
@@ -254,13 +282,22 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      '${_selected.symbol} ${_selected.label}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        NativeGiftTrayVisual(gift: _selected, size: 50),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            _selected.label,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 18),
                     Row(
@@ -419,10 +456,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            gift.symbol,
-                            style: const TextStyle(fontSize: 28),
-                          ),
+                          NativeGiftTrayVisual(gift: gift, size: 44),
                           const SizedBox(height: 5),
                           Text(
                             gift.label,
@@ -450,18 +484,19 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
             ),
             Row(
               children: [
+                NativeGiftTrayVisual(gift: _selected, size: 38),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${_selected.symbol} ${_selected.label}',
+                    _selected.label,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ),
-                if (!_selected.singleSendOnly)
-                  TextButton(
-                    onPressed: _sending ? null : _customAmount,
-                    child: const Text('Custom'),
-                  ),
+                TextButton(
+                  onPressed: _sending ? null : _customAmount,
+                  child: const Text('Custom'),
+                ),
                 FilledButton(
                   onPressed: _sending ? null : () => _send(1),
                   child: Text(
