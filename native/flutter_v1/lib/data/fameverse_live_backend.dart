@@ -26,7 +26,6 @@ class FvGiftDefinition {
     this.activityEmoji,
     this.videoUrl,
     this.cinematic = false,
-    this.singleSendOnly = false,
   });
 
   final String id;
@@ -37,7 +36,6 @@ class FvGiftDefinition {
   final String? activityEmoji;
   final String? videoUrl;
   final bool cinematic;
-  final bool singleSendOnly;
 
   String get symbol => activityEmoji ?? emoji ?? '✦';
 }
