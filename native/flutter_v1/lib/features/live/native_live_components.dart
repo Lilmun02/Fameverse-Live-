@@ -33,11 +33,13 @@ class FvGiftPlayback {
     required this.gift,
     required this.quantity,
     required this.sender,
+    this.comboCount = 1,
   });
 
   final FvGiftDefinition gift;
   final int quantity;
   final String sender;
+  final int comboCount;
 }
 
 class NativeGiftOverlay extends StatefulWidget {
@@ -110,6 +112,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   Widget build(BuildContext context) {
     final playback = widget.playback;
     final controller = _controller;
+    final combo = playback.comboCount.clamp(1, 10);
     if (playback.gift.cinematic &&
         controller != null &&
         controller.value.isInitialized) {
@@ -117,7 +120,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Container(color: Colors.black.withValues(alpha: .28)),
+            Container(color: Colors.black.withValues(alpha: .24)),
             Center(
               child: AspectRatio(
                 aspectRatio: controller.value.aspectRatio == 0
@@ -129,14 +132,39 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
             Positioned(
               left: 20,
               right: 20,
-              bottom: 110,
-              child: Text(
-                '${playback.sender} sent ${playback.gift.label}${playback.quantity > 1 ? ' ×${playback.quantity}' : ''}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+              bottom: 118,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: .86, end: 1),
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) => Transform.scale(
+                  scale: scale,
+                  child: child,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${playback.sender} sent ${playback.gift.label}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        shadows: [Shadow(blurRadius: 10, color: Colors.black)],
+                      ),
+                    ),
+                    if (combo > 1)
+                      Text(
+                        '×$combo COMBO',
+                        style: const TextStyle(
+                          color: Color(0xFFF4D4FF),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          fontStyle: FontStyle.italic,
+                          shadows: [Shadow(blurRadius: 12, color: Colors.black)],
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -146,33 +174,105 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     }
 
     return IgnorePointer(
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          decoration: BoxDecoration(
-            color: const Color(0xDD1C1227),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0x669D55FF)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(playback.gift.symbol, style: const TextStyle(fontSize: 54)),
-              const SizedBox(height: 8),
-              Text(
-                '${playback.sender} sent ${playback.gift.label}',
-                style: const TextStyle(fontWeight: FontWeight.w900),
+      child: SafeArea(
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12, right: 74, bottom: 205),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: .68, end: 1),
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, child) => Transform.scale(
+                alignment: Alignment.bottomLeft,
+                scale: scale,
+                child: child,
               ),
-              if (playback.quantity > 1)
-                Text(
-                  '×${playback.quantity}',
-                  style: const TextStyle(
-                    color: Color(0xFFCEB9FF),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 330),
+                padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xE8231532), Color(0xD94A2464)],
                   ),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0x889D55FF)),
+                  boxShadow: const [
+                    BoxShadow(
+                      blurRadius: 22,
+                      spreadRadius: 1,
+                      color: Color(0x552D0B45),
+                    ),
+                  ],
                 ),
-            ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 78,
+                      height: 78,
+                      child: Center(
+                        child: Text(
+                          playback.gift.symbol,
+                          style: const TextStyle(fontSize: 64, height: 1),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            playback.sender,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFF5EFFF),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            'sent ${playback.gift.label}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          if (playback.quantity > 1)
+                            Text(
+                              '${playback.quantity} gifts in this send',
+                              style: const TextStyle(
+                                color: Color(0xFFD6C9DE),
+                                fontSize: 11,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '×$combo',
+                      style: TextStyle(
+                        color: combo > 1
+                            ? const Color(0xFFFFD86B)
+                            : const Color(0xFFF5EFFF),
+                        fontSize: combo > 1 ? 31 : 24,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: FontStyle.italic,
+                        shadows: const [
+                          Shadow(blurRadius: 10, color: Colors.black54),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
