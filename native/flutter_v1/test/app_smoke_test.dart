@@ -9,6 +9,7 @@ void main() {
     await tester.pumpWidget(
       FameverseApp(backend: _FakeBackend(), liveBackend: _FakeLiveBackend()),
     );
+    await tester.pump(const Duration(milliseconds: 1900));
 
     expect(find.byKey(FameverseApp.productShellKey), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
@@ -129,6 +130,9 @@ class _FakeBackend implements FameverseBackend {
   }) async {
     return const FvAuthResult(signedIn: false, message: 'Account created.');
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeLiveBackend implements FameverseLiveBackend {
@@ -137,11 +141,15 @@ class _FakeLiveBackend implements FameverseLiveBackend {
     required FvIdentity identity,
     required FvProfile profile,
     required String title,
+    String goal = '',
+    List<String> wishlistGiftIds = const [],
   }) async {
     return FvLiveRoom(
       id: 'room-1',
       hostUserId: identity.id,
       title: title.isEmpty ? 'Live on Fameverse' : title,
+      goal: goal,
+      wishlistGiftIds: wishlistGiftIds,
       fameTaps: 0,
       host: profile,
     );
@@ -171,4 +179,7 @@ class _FakeLiveBackend implements FameverseLiveBackend {
       callId: 'fv_room-1',
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
