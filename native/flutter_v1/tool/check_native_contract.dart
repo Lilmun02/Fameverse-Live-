@@ -19,7 +19,10 @@ void main() {
   final backend = read('lib/data/fameverse_backend.dart');
   final liveBackend = read('lib/data/fameverse_live_backend.dart');
   final camera = read('lib/features/live/native_camera_screen.dart');
-  final liveMedia = read('lib/features/live/stream_live_screen.dart');
+  final liveExports = read('lib/features/live/stream_live_screen.dart');
+  final hostLive = read('lib/features/live/stream_host_live_screen.dart');
+  final viewerLive = read('lib/features/live/stream_viewer_live_screen.dart');
+  final liveMedia = '$liveExports\n$hostLive\n$viewerLive';
   final shell = read('lib/features/shell/fameverse_shell.dart');
   final pubspec = read('pubspec.yaml');
   final test = read('test/app_smoke_test.dart');
