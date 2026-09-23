@@ -54,7 +54,9 @@ class NativeHostV2Stage extends StatelessWidget {
                 call: call,
                 participant: cohost,
                 videoEnabled: cohost?.isVideoEnabled ?? false,
-                label: cohost?.name.isNotEmpty == true ? cohost!.name : 'Co-host',
+                label: cohost?.name.isNotEmpty == true
+                    ? cohost!.name
+                    : 'Co-host',
               ),
             ),
           ],
@@ -113,7 +115,9 @@ class NativeViewerV2Stage extends StatelessWidget {
                 call: call,
                 participant: cohost,
                 videoEnabled: cohost?.isVideoEnabled ?? false,
-                label: cohost?.name.isNotEmpty == true ? cohost!.name : 'Co-host',
+                label: cohost?.name.isNotEmpty == true
+                    ? cohost!.name
+                    : 'Co-host',
               ),
             ),
           ],
@@ -146,9 +150,7 @@ class _V2ParticipantSurface extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           FvLiveBackground(
-            icon: cameraOff
-                ? Icons.videocam_off_rounded
-                : Icons.person_rounded,
+            icon: cameraOff ? Icons.videocam_off_rounded : Icons.person_rounded,
           ),
           if (label != null) _V2StageLabel(text: label!),
         ],
