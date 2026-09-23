@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'native_live_components.dart';
 import 'stream_live_screen.dart';
 
 class NativeCameraScreen extends StatefulWidget {
@@ -27,105 +28,71 @@ class NativeCameraScreen extends StatefulWidget {
 
 class _NativeCameraScreenState extends State<NativeCameraScreen> {
   final TextEditingController _title = TextEditingController();
-  CameraController? _controller;
-  CameraLensDirection _lensDirection = CameraLensDirection.front;
-  bool _busy = false;
+  final TextEditingController _goal = TextEditingController();
+  final Set<String> _wishlist = <String>{};
+  CameraController? _permissionProbe;
+  bool _loadingDraft = true;
   bool _liveBusy = false;
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_loadDraft());
+  }
+
+  @override
   void dispose() {
     _title.dispose();
-    final controller = _controller;
-    _controller = null;
+    _goal.dispose();
+    final controller = _permissionProbe;
+    _permissionProbe = null;
     if (controller != null) unawaited(controller.dispose());
     super.dispose();
   }
 
-  Future<void> _openCamera(CameraLensDirection direction) async {
+  Future<void> _loadDraft() async {
+    try {
+      final draft = await widget.liveBackend.loadLiveDraft(widget.identity.id);
+      if (!mounted) return;
+      _title.text = draft.title;
+      _goal.text = draft.goal;
+      _wishlist
+        ..clear()
+        ..addAll(draft.wishlistGiftIds);
+    } catch (_) {
+      // Draft recovery never blocks Live setup.
+    } finally {
+      if (mounted) setState(() => _loadingDraft = false);
+    }
+  }
+
+  Future<void> _verifyCameraAccess() async {
     final cameras = await availableCameras();
     if (cameras.isEmpty) throw StateError('no-camera-available');
-
     CameraDescription selected = cameras.first;
     for (final camera in cameras) {
-      if (camera.lensDirection == direction) {
+      if (camera.lensDirection == CameraLensDirection.front) {
         selected = camera;
         break;
       }
     }
-
     final controller = CameraController(
       selected,
       ResolutionPreset.high,
       enableAudio: false,
     );
+    _permissionProbe = controller;
     await controller.initialize();
-
-    if (!mounted) {
-      await controller.dispose();
-      return;
-    }
-
-    final old = _controller;
-    setState(() {
-      _controller = controller;
-      _lensDirection = selected.lensDirection;
-    });
-    if (old != null) await old.dispose();
-  }
-
-  Future<void> _startPreview() async {
-    if (_busy || _controller != null) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await _openCamera(_lensDirection);
-    } catch (error) {
-      if (mounted) setState(() => _error = _cameraError(error));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _stopPreview() async {
-    if (_busy) return;
-    final controller = _controller;
-    if (controller == null) return;
-    setState(() {
-      _controller = null;
-      _error = null;
-    });
+    _permissionProbe = null;
     await controller.dispose();
-  }
-
-  Future<void> _flipCamera() async {
-    if (_busy || _controller == null) return;
-    final next = _lensDirection == CameraLensDirection.front
-        ? CameraLensDirection.back
-        : CameraLensDirection.front;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      final old = _controller;
-      _controller = null;
-      if (old != null) await old.dispose();
-      await _openCamera(next);
-    } catch (error) {
-      if (mounted) setState(() => _error = _cameraError(error));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
   }
 
   Future<void> _goLive() async {
     if (_liveBusy) return;
-    if (_controller == null) {
-      await _startPreview();
-      if (_controller == null) return;
+    if (_title.text.trim().isEmpty) {
+      setState(() => _error = 'Add a live title before you go live.');
+      return;
     }
 
     setState(() {
@@ -135,18 +102,29 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
 
     FvLiveRoom? room;
     try {
-      await _stopPreview();
+      final draft = FvLiveDraft(
+        title: _title.text,
+        goal: _goal.text,
+        wishlistGiftIds: _wishlist.toList(),
+      );
+      await widget.liveBackend.saveLiveDraft(
+        userId: widget.identity.id,
+        draft: draft,
+      );
+      await _verifyCameraAccess();
       room = await widget.liveBackend.startLiveRoom(
         identity: widget.identity,
         profile: widget.profile,
         title: _title.text,
+        goal: _goal.text,
+        wishlistGiftIds: _wishlist.toList(),
       );
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: room.id,
         role: 'host',
       );
       if (!mounted) return;
-      await Navigator.of(context).push<bool>(
+      final ended = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           fullscreenDialog: true,
           builder: (context) => NativeHostLiveScreen(
@@ -159,6 +137,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       );
       if (!mounted) return;
       await widget.onLiveEnded();
+      if (ended == true && mounted) await _showLastLiveSummary();
     } catch (error) {
       if (room != null) {
         try {
@@ -169,225 +148,324 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         } catch (_) {}
       }
       if (!mounted) return;
-      final text = error.toString();
+      final text = error.toString().toLowerCase();
       setState(() {
-        _error = text.contains('stream-not-configured')
-            ? 'Stream Video is wired, but the Stream server credentials still need to be connected before testers can broadcast.'
-            : 'Could not start your live right now. Please try again.';
+        if (text.contains('stream-not-configured')) {
+          _error = 'Stream Video server credentials are not configured.';
+        } else if (text.contains('permission') || text.contains('denied')) {
+          _error = 'Camera permission is off. Allow camera access in iPhone Settings.';
+        } else if (text.contains('no-camera')) {
+          _error = 'No camera was found on this device.';
+        } else {
+          _error = 'Could not start your live right now. Please try again.';
+        }
       });
     } finally {
       if (mounted) setState(() => _liveBusy = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final controller = _controller;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (controller != null && controller.value.isInitialized)
-            _CameraPreviewCover(controller: controller)
-          else
-            const _CameraIdleBackground(),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: .58),
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: .86),
-                ],
-                stops: const [0, .42, 1],
-              ),
+  Future<void> _showLastLiveSummary() async {
+    try {
+      final history = await widget.liveBackend.loadCreatorLiveHistory(limit: 1);
+      if (!mounted || history.isEmpty) return;
+      final live = history.first;
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: const Color(0xFF17101F),
+        builder: (context) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'LIVE ENDED',
+                  style: TextStyle(
+                    color: Color(0xFFFF4D77),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  live.title,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    _SummaryStat(label: 'FameTaps', value: '${live.rawTaps}'),
+                    const SizedBox(width: 10),
+                    _SummaryStat(label: 'Gifts', value: '${live.giftCount}'),
+                    const SizedBox(width: 10),
+                    _SummaryStat(label: 'Test coins', value: '${live.giftCoins}'),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                  child: const Text('Done'),
+                ),
+              ],
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6D2CFF),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'GO LIVE',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: .8,
+        ),
+      );
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF23102E), Color(0xFF0D0911)],
+          ),
+        ),
+        child: SafeArea(
+          child: _loadingDraft
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: Color(0xFFFF315F),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.4,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Set up your live',
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                'Give people a reason to join before the room opens.',
+                                style: TextStyle(color: Color(0xFFBFB3C8)),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      const Spacer(),
-                      if (controller != null)
-                        IconButton.filledTonal(
-                          key: const Key('camera-off'),
-                          onPressed: _busy || _liveBusy ? null : _stopPreview,
-                          icon: const Icon(Icons.videocam_off_rounded),
-                          tooltip: 'Camera off',
-                        ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Text(
-                    controller == null
-                        ? 'Set up your live'
-                        : 'Ready to go live',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
+                        NativeProfileAvatar(profile: widget.profile, radius: 28),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Fameverse native camera preview. Stream Video carries the broadcast after you go live.',
-                    style: TextStyle(color: Color(0xFFE0D8E8), height: 1.35),
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    key: const Key('native-live-title'),
-                    controller: _title,
-                    maxLength: 120,
-                    decoration: InputDecoration(
-                      hintText: 'What are you live about?',
-                      filled: true,
-                      fillColor: Colors.black.withValues(alpha: .48),
-                      counterText: '',
-                    ),
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 24),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2D1827),
-                        borderRadius: BorderRadius.circular(14),
+                        color: const Color(0xFF17101F),
+                        borderRadius: BorderRadius.circular(18),
                       ),
-                      child: Text(
-                        _error!,
-                        key: const Key('camera-error'),
-                        style: const TextStyle(color: Color(0xFFFFCFDF)),
+                      child: Row(
+                        children: [
+                          NativeProfileAvatar(profile: widget.profile, radius: 20),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.profile.displayName,
+                                style: const TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                              Text(
+                                widget.profile.handle,
+                                style: const TextStyle(
+                                  color: Color(0xFFAEA2B8),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      key: const Key('native-live-title'),
+                      controller: _title,
+                      maxLength: 80,
+                      decoration: const InputDecoration(
+                        labelText: 'Live title · Required',
+                        hintText: 'What is this live about?',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      key: const Key('native-live-goal'),
+                      controller: _goal,
+                      maxLength: 60,
+                      decoration: const InputDecoration(
+                        labelText: 'Live goal · Optional',
+                        hintText: 'Example: 1,000 likes or 20 gifts',
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        const Text(
+                          'Wishlist gifts',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Optional · ${_wishlist.length} selected',
+                          style: const TextStyle(
+                            color: Color(0xFFBBA9C6),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pick only gifts that actually exist in Fameverse.',
+                      style: TextStyle(color: Color(0xFF958A9E), fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    ...fvGiftCatalog.map((gift) {
+                      final selected = _wishlist.contains(gift.id);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => setState(() {
+                            if (selected) {
+                              _wishlist.remove(gift.id);
+                            } else {
+                              _wishlist.add(gift.id);
+                            }
+                          }),
+                          child: Container(
+                            padding: const EdgeInsets.all(13),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? const Color(0xFF322047)
+                                  : const Color(0xFF17101F),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: selected
+                                    ? const Color(0xFF9D55FF)
+                                    : Colors.white10,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(gift.symbol, style: const TextStyle(fontSize: 26)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        gift.label,
+                                        style: const TextStyle(fontWeight: FontWeight.w800),
+                                      ),
+                                      Text(
+                                        '${gift.cost} coin${gift.cost == 1 ? '' : 's'}',
+                                        style: const TextStyle(
+                                          color: Color(0xFFACA1B4),
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(selected ? Icons.check_circle : Icons.add_circle_outline),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D1827),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          _error!,
+                          key: const Key('camera-error'),
+                          style: const TextStyle(color: Color(0xFFFFCFDF)),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Camera and microphone permission is requested only after you tap Go Live.',
+                      style: TextStyle(color: Color(0xFF9D92A6), fontSize: 11),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      key: const Key('native-go-live'),
+                      onPressed: _liveBusy ? null : _goLive,
+                      icon: _liveBusy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.wifi_tethering_rounded),
+                      label: Text(_liveBusy ? 'Starting…' : 'Go Live'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF315F),
+                        minimumSize: const Size.fromHeight(54),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 14),
-                  FilledButton.icon(
-                    key: const Key('camera-primary'),
-                    onPressed: _busy || _liveBusy
-                        ? null
-                        : controller == null
-                        ? _startPreview
-                        : _flipCamera,
-                    icon: _busy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Icon(
-                            controller == null
-                                ? Icons.videocam_rounded
-                                : Icons.cameraswitch_rounded,
-                          ),
-                    label: Text(
-                      controller == null ? 'Start camera' : 'Flip camera',
-                    ),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  FilledButton.icon(
-                    key: const Key('native-go-live'),
-                    onPressed: _busy || _liveBusy ? null : _goLive,
-                    icon: _liveBusy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.wifi_tethering_rounded),
-                    label: Text(_liveBusy ? 'Starting live…' : 'Go Live'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF315F),
-                      minimumSize: const Size.fromHeight(54),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+                ),
+        ),
       ),
     );
   }
 }
 
-class _CameraPreviewCover extends StatelessWidget {
-  const _CameraPreviewCover({required this.controller});
+class _SummaryStat extends StatelessWidget {
+  const _SummaryStat({required this.label, required this.value});
 
-  final CameraController controller;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    final size = controller.value.previewSize;
-    if (size == null) return CameraPreview(controller);
-    return SizedBox.expand(
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: size.height,
-          height: size.width,
-          child: CameraPreview(controller),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF21172A),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(color: Color(0xFFA99EB0), fontSize: 10)),
+          ],
         ),
       ),
     );
   }
-}
-
-class _CameraIdleBackground extends StatelessWidget {
-  const _CameraIdleBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(.65, -.45),
-          radius: 1.2,
-          colors: [Color(0xFF4A1B70), Color(0xFF120A19), Colors.black],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.videocam_rounded,
-          size: 74,
-          color: Colors.white.withValues(alpha: .2),
-        ),
-      ),
-    );
-  }
-}
-
-String _cameraError(Object error) {
-  final text = error.toString().toLowerCase();
-  if (text.contains('permission') || text.contains('denied')) {
-    return 'Camera permission is off. Allow camera access in iPhone Settings.';
-  }
-  if (text.contains('no-camera')) return 'No camera was found on this device.';
-  return 'Could not start the camera.';
 }
