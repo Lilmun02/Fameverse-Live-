@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FvIdentity {
@@ -71,6 +73,8 @@ class FvLiveRoom {
     required this.title,
     required this.fameTaps,
     required this.host,
+    this.goal = '',
+    this.wishlistGiftIds = const [],
   });
 
   final String id;
@@ -78,6 +82,8 @@ class FvLiveRoom {
   final String title;
   final int fameTaps;
   final FvProfile host;
+  final String goal;
+  final List<String> wishlistGiftIds;
 }
 
 class FvAuthResult {
@@ -99,11 +105,18 @@ abstract class FameverseBackend {
   });
   Future<void> signOut();
   Future<FvProfile?> loadProfile(String userId);
+  Future<String?> loadAccountRole(String userId);
   Future<FvProfile> saveProfile({
     required String userId,
     required String displayName,
     required String username,
     required String bio,
+  });
+  Future<FvProfile> uploadProfileAvatar({
+    required String userId,
+    required Uint8List bytes,
+    required String extension,
+    required String contentType,
   });
   Future<FvFollowNetwork> loadFollowNetwork(String userId);
   Future<List<FvCreator>> listRecommendedCreators({
@@ -131,8 +144,7 @@ class SupabaseFameverseBackend implements FameverseBackend {
   }
 
   @override
-  FvIdentity? get currentIdentity =>
-      _identityFromUser(_client.auth.currentUser);
+  FvIdentity? get currentIdentity => _identityFromUser(_client.auth.currentUser);
 
   @override
   Stream<FvIdentity?> get authChanges => _client.auth.onAuthStateChange.map(
@@ -199,6 +211,16 @@ class SupabaseFameverseBackend implements FameverseBackend {
     return _profileFromMap(row);
   }
 
+  @override
+  Future<String?> loadAccountRole(String userId) async {
+    final row = await _client
+        .from('account_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+    return (row?['role'] as String?)?.trim().toLowerCase();
+  }
+
   String _cleanUsername(String value) {
     final cleaned = value
         .trim()
@@ -221,23 +243,57 @@ class SupabaseFameverseBackend implements FameverseBackend {
       throw Exception('Username must be at least 3 characters');
     }
 
+    final cleanDisplayName = displayName.trim().isEmpty
+        ? 'Fameverse User'
+        : displayName.trim();
+    final cleanBio = bio.trim();
     final row = await _client
         .from('profiles')
         .update({
-          'display_name': displayName.trim().isEmpty
-              ? 'Fameverse User'
-              : displayName.trim().substring(
-                  0,
-                  displayName.trim().length > 40
-                      ? 40
-                      : displayName.trim().length,
-                ),
-          'username': cleanUsername.isEmpty ? null : cleanUsername,
-          'bio': bio.trim().substring(
+          'display_name': cleanDisplayName.substring(
             0,
-            bio.trim().length > 160 ? 160 : bio.trim().length,
+            cleanDisplayName.length > 40 ? 40 : cleanDisplayName.length,
           ),
+          'username': cleanUsername.isEmpty ? null : cleanUsername,
+          'bio': cleanBio.substring(0, cleanBio.length > 160 ? 160 : cleanBio.length),
         })
+        .eq('id', userId)
+        .select(_profileFields)
+        .single();
+    return _profileFromMap(row);
+  }
+
+  @override
+  Future<FvProfile> uploadProfileAvatar({
+    required String userId,
+    required Uint8List bytes,
+    required String extension,
+    required String contentType,
+  }) async {
+    if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+      throw Exception('Avatar must be 5 MB or smaller');
+    }
+    const allowedContentTypes = {'image/jpeg', 'image/png', 'image/webp'};
+    if (!allowedContentTypes.contains(contentType)) {
+      throw Exception('Avatar must be JPG, PNG, or WEBP');
+    }
+    final normalizedExtension = switch (extension.toLowerCase()) {
+      'png' => 'png',
+      'webp' => 'webp',
+      _ => 'jpg',
+    };
+    final path = '$userId/avatar.$normalizedExtension';
+    final bucket = _client.storage.from('profile-avatars');
+    await bucket.uploadBinary(
+      path,
+      bytes,
+      fileOptions: FileOptions(contentType: contentType, upsert: true),
+    );
+    final publicUrl = bucket.getPublicUrl(path);
+    final cacheBusted = '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+    final row = await _client
+        .from('profiles')
+        .update({'avatar_url': cacheBusted})
         .eq('id', userId)
         .select(_profileFields)
         .single();
@@ -276,14 +332,8 @@ class SupabaseFameverseBackend implements FameverseBackend {
     final byId = {for (final profile in profiles) profile.id: profile};
 
     return FvFollowNetwork(
-      followers: followerIds
-          .map((id) => byId[id])
-          .whereType<FvProfile>()
-          .toList(),
-      following: followingIds
-          .map((id) => byId[id])
-          .whereType<FvProfile>()
-          .toList(),
+      followers: followerIds.map((id) => byId[id]).whereType<FvProfile>().toList(),
+      following: followingIds.map((id) => byId[id]).whereType<FvProfile>().toList(),
       followerIds: followerIds,
       followingIds: followingIds,
     );
@@ -295,11 +345,16 @@ class SupabaseFameverseBackend implements FameverseBackend {
     required String targetId,
     required bool following,
   }) async {
+    if (userId == targetId) return;
     if (following) {
-      await _client.from('follows').insert({
-        'follower_id': userId,
-        'following_id': targetId,
-      });
+      try {
+        await _client.from('follows').insert({
+          'follower_id': userId,
+          'following_id': targetId,
+        });
+      } on PostgrestException catch (error) {
+        if (error.code != '23505') rethrow;
+      }
       return;
     }
     await _client
@@ -326,28 +381,23 @@ class SupabaseFameverseBackend implements FameverseBackend {
       followerCounts[id] = (followerCounts[id] ?? 0) + 1;
     }
 
-    final creators =
-        (profileRows as List)
-            .map(
-              (row) => _profileFromMap(Map<String, dynamic>.from(row as Map)),
-            )
-            .where((profile) => profile.id != excludeUserId)
-            .map(
-              (profile) => FvCreator(
-                profile: profile,
-                followerCount: followerCounts[profile.id] ?? 0,
-              ),
-            )
-            .toList()
-          ..sort((a, b) {
-            final count = b.followerCount.compareTo(a.followerCount);
-            if (count != 0) return count;
-            final aDate =
-                a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            final bDate =
-                b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            return bDate.compareTo(aDate);
-          });
+    final creators = (profileRows as List)
+        .map((row) => _profileFromMap(Map<String, dynamic>.from(row as Map)))
+        .where((profile) => profile.id != excludeUserId)
+        .map(
+          (profile) => FvCreator(
+            profile: profile,
+            followerCount: followerCounts[profile.id] ?? 0,
+          ),
+        )
+        .toList()
+      ..sort((a, b) {
+        final count = b.followerCount.compareTo(a.followerCount);
+        if (count != 0) return count;
+        final aDate = a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
 
     return creators.take(12).toList();
   }
@@ -362,7 +412,9 @@ class SupabaseFameverseBackend implements FameverseBackend {
         .toIso8601String();
     final roomRows = await _client
         .from('live_rooms')
-        .select('id, host_user_id, title, heartbeat_at, started_at')
+        .select(
+          'id, host_user_id, title, goal, wishlist_gift_ids, heartbeat_at, started_at',
+        )
         .eq('status', 'live')
         .gte('heartbeat_at', cutoff)
         .order('started_at', ascending: false);
@@ -384,14 +436,12 @@ class SupabaseFameverseBackend implements FameverseBackend {
     final tapsByRoom = <String, int>{};
     for (final raw in tapRows as List) {
       final map = raw as Map;
-      tapsByRoom[map['room_id'] as String] =
-          (map['raw_taps'] as num?)?.toInt() ?? 0;
+      tapsByRoom[map['room_id'] as String] = (map['raw_taps'] as num?)?.toInt() ?? 0;
     }
 
     return visible.map((room) {
       final hostUserId = room['host_user_id'] as String;
-      final host =
-          hostById[hostUserId] ??
+      final host = hostById[hostUserId] ??
           FvProfile(
             id: hostUserId,
             displayName: 'Fameverse creator',
@@ -400,12 +450,17 @@ class SupabaseFameverseBackend implements FameverseBackend {
             avatarUrl: null,
             createdAt: null,
           );
+      final rawWishlist = room['wishlist_gift_ids'];
       return FvLiveRoom(
         id: room['id'] as String,
         hostUserId: hostUserId,
         title: ((room['title'] as String?)?.trim().isNotEmpty ?? false)
             ? room['title'] as String
             : 'Live on Fameverse',
+        goal: (room['goal'] as String?) ?? '',
+        wishlistGiftIds: rawWishlist is List
+            ? rawWishlist.map((item) => item.toString()).toList()
+            : const [],
         fameTaps: tapsByRoom[room['id'] as String] ?? 0,
         host: host,
       );
