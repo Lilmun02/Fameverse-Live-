@@ -6,6 +6,7 @@ on:
       - native/flutter-v1
     paths:
       - .github/workflows/native_v2_finalize.yml
+      - tools/finalize_native_v2.py
 
 permissions:
   contents: write
@@ -28,6 +29,6 @@ jobs:
           fi
           git config user.name "Fameverse V2 Finalizer"
           git config user.email "actions@users.noreply.github.com"
-          git add native/flutter_v1/lib/features/live/stream_host_live_screen.dart native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart
-          git commit -m "feat: finish native V2 live stage and gift laws"
+          git add native/flutter_v1/lib/features/live/stream_host_live_screen.dart native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart native/flutter_v1/lib/data/fameverse_live_backend.dart src/config/gifts.js src/components/gifts/LiveGiftTray.jsx
+          git commit -m "fix: enforce custom send across Fameverse gifts"
           git push origin HEAD:native/flutter-v1
