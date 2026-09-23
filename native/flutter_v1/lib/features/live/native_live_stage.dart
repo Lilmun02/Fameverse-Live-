@@ -3,6 +3,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import 'stream_live_shared.dart';
 
+// V2 stage contract: solo is full-canvas; active co-hosting is two equal tiles.
 class NativeHostV2Stage extends StatelessWidget {
   const NativeHostV2Stage({
     required this.call,
