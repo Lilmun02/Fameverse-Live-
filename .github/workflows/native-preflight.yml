@@ -97,6 +97,8 @@ jobs:
             -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
             ios/Runner/Info.plist
 
+          bash tool/apply_ios_branding.sh
+
       - name: Resolve Flutter packages
         run: flutter pub get
 
@@ -106,6 +108,9 @@ jobs:
           PROJECT_FILE="ios/Runner.xcodeproj/project.pbxproj"
           test -f "$PROJECT_FILE"
           grep -Fq "PRODUCT_BUNDLE_IDENTIFIER = com.fameverse.live;" "$PROJECT_FILE"
+
+      - name: Enforce Fameverse iOS branding law
+        run: bash tool/verify_ios_branding.sh
 
       - name: Install CocoaPods dependencies
         run: find . -name "Podfile" -execdir pod install \;
