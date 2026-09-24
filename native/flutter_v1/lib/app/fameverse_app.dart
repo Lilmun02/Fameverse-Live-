@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
 import '../features/auth/auth_screen.dart';
-import '../features/shell/fameverse_shell.dart';
+import '../features/shell/fameverse_shell_build16.dart';
 
 class FameverseApp extends StatefulWidget {
   const FameverseApp({
@@ -59,7 +59,7 @@ class _FameverseAppState extends State<FameverseApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Fameverse Live',
+      title: 'Fameverse',
       theme: ThemeData(
         colorScheme: scheme,
         brightness: Brightness.dark,
@@ -95,7 +95,7 @@ class _FameverseAppState extends State<FameverseApp> {
             ? const _FameverseSplash()
             : _identity == null
             ? AuthScreen(backend: widget.backend)
-            : FameverseShell(
+            : FameverseBuild16Shell(
                 key: ValueKey(_identity!.id),
                 backend: widget.backend,
                 liveBackend: widget.liveBackend,
