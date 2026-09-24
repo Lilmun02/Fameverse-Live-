@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/fameverse_backend.dart';
 
@@ -132,6 +134,8 @@ class NativeProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   _CreatorStudioCard(onTap: onCreatorStudio),
+                  const SizedBox(height: 12),
+                  const _OwnerRechargeCard(),
                   const SizedBox(height: 28),
                   const _SectionLabel('ACCOUNT'),
                   const SizedBox(height: 10),
@@ -450,6 +454,141 @@ class _CreatorStudioCard extends StatelessWidget {
               ),
             ),
             const Icon(Icons.chevron_right_rounded, color: Color(0xFFC7B9CF)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnerRechargeCard extends StatefulWidget {
+  const _OwnerRechargeCard();
+
+  @override
+  State<_OwnerRechargeCard> createState() => _OwnerRechargeCardState();
+}
+
+class _OwnerRechargeCardState extends State<_OwnerRechargeCard> {
+  bool _loading = true;
+  bool _owner = false;
+  bool _opening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+      final row = await Supabase.instance.client
+          .from('account_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+      if (!mounted) return;
+      setState(() => _owner = (row?['role'] as String?)?.toLowerCase() == 'owner');
+    } catch (_) {
+      // Hidden on any role lookup failure; recharge never opens speculatively.
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _openRecharge() async {
+    if (_opening) return;
+    setState(() => _opening = true);
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'recharge-session',
+        body: const {},
+      );
+      final raw = response.data;
+      if (raw is! Map || raw['url'] == null) {
+        throw Exception('recharge-session-missing');
+      }
+      final uri = Uri.tryParse(raw['url'].toString());
+      if (uri == null || !uri.isScheme('https')) {
+        throw Exception('recharge-url-invalid');
+      }
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened) throw Exception('recharge-open-failed');
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Recharge could not open. Check the payment setup and try again.'),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || !_owner) return const SizedBox.shrink();
+    return InkWell(
+      key: const Key('owner-qa-recharge'),
+      onTap: _opening ? null : _openRecharge,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: const Color(0xFF17111E),
+          border: Border.all(color: const Color(0xFF4B365B)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2D2236),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(Icons.monetization_on_outlined),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'OWNER QA',
+                    style: TextStyle(
+                      color: Color(0xFFB784FF),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _opening ? 'Opening Recharge…' : 'Recharge Fame Coins',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'External PayPal checkout · first-purchase QA',
+                    style: TextStyle(color: Color(0xFFB5A9BE), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            if (_opening)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              const Icon(Icons.open_in_new_rounded, color: Color(0xFFC7B9CF)),
           ],
         ),
       ),
