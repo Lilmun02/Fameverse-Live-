@@ -245,9 +245,7 @@ class SupabaseFameverseCreatorBackend {
     return response?.toString() ?? status;
   }
 
-  Future<List<FvPayoutModerationItem>> listPayoutQueue({
-    int limit = 50,
-  }) async {
+  Future<List<FvPayoutModerationItem>> listPayoutQueue({int limit = 50}) async {
     final response = await _client.rpc(
       'get_creator_payout_moderation_queue',
       params: {'p_limit': limit},
