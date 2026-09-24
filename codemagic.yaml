@@ -57,6 +57,7 @@ workflows:
             ios/Runner/Info.plist
 
           bash tool/apply_ios_branding.sh
+          bash tool/apply_android_branding.sh
 
           if [ -f android/app/build.gradle.kts ]; then
             sed -i.bak 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
@@ -78,6 +79,11 @@ workflows:
         script: |
           set -euo pipefail
           bash tool/verify_ios_branding.sh
+
+      - name: Enforce Fameverse Android branding law
+        script: |
+          set -euo pipefail
+          bash tool/verify_android_branding.sh
 
       - name: Enforce Dart formatting
         script: |
@@ -275,4 +281,5 @@ workflows:
 # Bundle ID verification is static so it never triggers Xcode dependency resolution before pub get.
 # App Store Connect upload uses the appstore_credentials environment-variable group.
 # Ephemeral iOS shells receive camera/microphone permissions, then the canonical Fameverse name and crown AppIcon before build/signing.
-# The branding law fails the build if generated iOS output falls back to Flutter placeholder identity.
+# Ephemeral Android shells receive the canonical Fameverse name and crown launcher icon before build.
+# Branding laws fail the build if generated native output falls back to Flutter placeholder identity.
