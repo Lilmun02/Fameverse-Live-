@@ -428,7 +428,9 @@ class _OwnerPayoutSandboxQaScreenState
   Future<void> _savePayPal() async {
     final email = _email.text.trim();
     if (!email.contains('@')) {
-      setState(() => _status = 'Enter the PayPal sandbox recipient email first.');
+      setState(
+        () => _status = 'Enter the PayPal sandbox recipient email first.',
+      );
       return;
     }
     await _run('Save PayPal sandbox recipient', () async {
@@ -500,10 +502,7 @@ class _OwnerPayoutSandboxQaScreenState
     await _run('Send PayPal sandbox payout', () async {
       final response = await _client.functions.invoke(
         'process-creator-payout',
-        body: {
-          'payout_id': payoutId,
-          'expected_environment': 'sandbox',
-        },
+        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
       );
       final data = response.data;
       if (data is Map && data['error'] != null) {
@@ -521,10 +520,7 @@ class _OwnerPayoutSandboxQaScreenState
     await _run('Sync PayPal sandbox status', () async {
       final response = await _client.functions.invoke(
         'sync-creator-payout',
-        body: {
-          'payout_id': payoutId,
-          'expected_environment': 'sandbox',
-        },
+        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
       );
       final data = response.data;
       if (data is Map && data['error'] != null) {
@@ -617,10 +613,7 @@ class _OwnerPayoutSandboxQaScreenState
                       child: Icon(Icons.terminal_rounded, size: 20),
                     ),
                   Expanded(
-                    child: Text(
-                      _status,
-                      style: const TextStyle(height: 1.4),
-                    ),
+                    child: Text(_status, style: const TextStyle(height: 1.4)),
                   ),
                 ],
               ),
@@ -628,7 +621,11 @@ class _OwnerPayoutSandboxQaScreenState
             const SizedBox(height: 14),
             const Text(
               'QA credits are synthetic creator earnings and do not define the future gift-to-cash conversion. Public payout verification will be stricter than this owner-only sandbox shortcut.',
-              style: TextStyle(color: Color(0xFF9F93A8), fontSize: 12, height: 1.45),
+              style: TextStyle(
+                color: Color(0xFF9F93A8),
+                fontSize: 12,
+                height: 1.45,
+              ),
             ),
           ],
         ),
