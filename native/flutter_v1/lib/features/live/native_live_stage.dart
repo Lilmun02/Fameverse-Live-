@@ -52,48 +52,52 @@ class NativeHostV2Stage extends StatelessWidget {
       child: PartialCallStateBuilder<List<CallParticipantState>>(
         call: call,
         selector: (CallState state) => state.callParticipants,
-        builder: (BuildContext context, List<CallParticipantState> participants) {
-          CallParticipantState? host;
-          CallParticipantState? cohost;
-          for (final participant in participants) {
-            if (participant.isLocal) host = participant;
-            if (participant.userId == activeCohostUserId) cohost = participant;
-          }
+        builder:
+            (BuildContext context, List<CallParticipantState> participants) {
+              CallParticipantState? host;
+              CallParticipantState? cohost;
+              for (final participant in participants) {
+                if (participant.isLocal) host = participant;
+                if (participant.userId == activeCohostUserId)
+                  cohost = participant;
+              }
 
-          if (activeCohostUserId == null) {
-            return _V2ParticipantSurface(
-              call: call,
-              participant: host,
-              videoEnabled: cameraEnabled && (host?.isVideoEnabled ?? false),
-              cameraOff: true,
-            );
-          }
-
-          return Column(
-            children: [
-              Expanded(
-                child: _V2ParticipantSurface(
+              if (activeCohostUserId == null) {
+                return _V2ParticipantSurface(
                   call: call,
                   participant: host,
-                  videoEnabled: cameraEnabled && (host?.isVideoEnabled ?? false),
+                  videoEnabled:
+                      cameraEnabled && (host?.isVideoEnabled ?? false),
                   cameraOff: true,
-                  label: 'You',
-                ),
-              ),
-              const SizedBox(height: 2),
-              Expanded(
-                child: _V2ParticipantSurface(
-                  call: call,
-                  participant: cohost,
-                  videoEnabled: cohost?.isVideoEnabled ?? false,
-                  label: cohost?.name.isNotEmpty == true
-                      ? cohost!.name
-                      : 'Co-host',
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              }
+
+              return Column(
+                children: [
+                  Expanded(
+                    child: _V2ParticipantSurface(
+                      call: call,
+                      participant: host,
+                      videoEnabled:
+                          cameraEnabled && (host?.isVideoEnabled ?? false),
+                      cameraOff: true,
+                      label: 'You',
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Expanded(
+                    child: _V2ParticipantSurface(
+                      call: call,
+                      participant: cohost,
+                      videoEnabled: cohost?.isVideoEnabled ?? false,
+                      label: cohost?.name.isNotEmpty == true
+                          ? cohost!.name
+                          : 'Co-host',
+                    ),
+                  ),
+                ],
+              );
+            },
       ),
     );
   }
@@ -117,46 +121,50 @@ class NativeViewerV2Stage extends StatelessWidget {
       child: PartialCallStateBuilder<List<CallParticipantState>>(
         call: call,
         selector: (CallState state) => state.callParticipants,
-        builder: (BuildContext context, List<CallParticipantState> participants) {
-          CallParticipantState? host;
-          CallParticipantState? cohost;
-          for (final participant in participants) {
-            if (participant.userId == hostUserId) host = participant;
-            if (participant.userId == activeCohostUserId) cohost = participant;
-          }
+        builder:
+            (BuildContext context, List<CallParticipantState> participants) {
+              CallParticipantState? host;
+              CallParticipantState? cohost;
+              for (final participant in participants) {
+                if (participant.userId == hostUserId) host = participant;
+                if (participant.userId == activeCohostUserId)
+                  cohost = participant;
+              }
 
-          if (activeCohostUserId == null) {
-            return _V2ParticipantSurface(
-              call: call,
-              participant: host,
-              videoEnabled: host?.isVideoEnabled ?? false,
-            );
-          }
-
-          return Column(
-            children: [
-              Expanded(
-                child: _V2ParticipantSurface(
+              if (activeCohostUserId == null) {
+                return _V2ParticipantSurface(
                   call: call,
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
-                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
-                ),
-              ),
-              const SizedBox(height: 2),
-              Expanded(
-                child: _V2ParticipantSurface(
-                  call: call,
-                  participant: cohost,
-                  videoEnabled: cohost?.isVideoEnabled ?? false,
-                  label: cohost?.name.isNotEmpty == true
-                      ? cohost!.name
-                      : 'Co-host',
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              }
+
+              return Column(
+                children: [
+                  Expanded(
+                    child: _V2ParticipantSurface(
+                      call: call,
+                      participant: host,
+                      videoEnabled: host?.isVideoEnabled ?? false,
+                      label: host?.name.isNotEmpty == true
+                          ? host!.name
+                          : 'Host',
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Expanded(
+                    child: _V2ParticipantSurface(
+                      call: call,
+                      participant: cohost,
+                      videoEnabled: cohost?.isVideoEnabled ?? false,
+                      label: cohost?.name.isNotEmpty == true
+                          ? cohost!.name
+                          : 'Co-host',
+                    ),
+                  ),
+                ],
+              );
+            },
       ),
     );
   }
