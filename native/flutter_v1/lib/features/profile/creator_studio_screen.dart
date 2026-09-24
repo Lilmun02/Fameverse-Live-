@@ -111,14 +111,16 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Minimum payout is $25.00. Every request goes through Fameverse review before money is released.',
+              r'Minimum payout is $25.00. Every request goes through Fameverse review before money is released.',
               style: TextStyle(color: Color(0xFFB5A9BE), height: 1.35),
             ),
             const SizedBox(height: 16),
             TextField(
               key: const Key('creator-payout-amount'),
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Amount (USD)',
                 prefixText: r'$ ',
@@ -163,7 +165,7 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         text.contains('verification')
             ? 'Verification is required before requesting a payout.'
             : text.contains('minimum')
-            ? 'Minimum payout is $25.00.'
+            ? r'Minimum payout is $25.00.'
             : 'Could not submit payout request.',
       );
     } finally {
@@ -331,7 +333,7 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                     icon: Icons.receipt_long_outlined,
                     title: 'No payout requests yet',
                     body:
-                        'When verified creator earnings reach $25, requests and their review status will appear here.',
+                        r'When verified creator earnings reach $25, requests and their review status will appear here.',
                   )
                 else
                   ..._requests.map((item) => _PayoutRequestTile(item: item)),
@@ -398,9 +400,9 @@ class _StudioHero extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Build. Earn. Grow.',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 6),
           Text(
@@ -439,7 +441,9 @@ class _VerificationCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                verified ? Icons.verified_rounded : Icons.verified_user_outlined,
+                verified
+                    ? Icons.verified_rounded
+                    : Icons.verified_user_outlined,
                 color: verified ? const Color(0xFFB784FF) : null,
               ),
               const SizedBox(width: 10),
@@ -515,7 +519,7 @@ class _PayoutCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Minimum payout: $25.00',
+            r'Minimum payout: $25.00',
             style: TextStyle(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
@@ -770,9 +774,7 @@ class _OwnerPayoutQueue extends StatelessWidget {
                           child: const Text('Processing'),
                         ),
                         FilledButton.tonal(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'paid'),
+                          onPressed: busy ? null : () => onReview(item, 'paid'),
                           child: const Text('Paid'),
                         ),
                         TextButton(
@@ -872,14 +874,14 @@ class _StudioInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 5),
                 Text(
                   body,
-                  style: const TextStyle(
-                    color: Color(0xFFB7ACBF),
-                    height: 1.4,
-                  ),
+                  style: const TextStyle(color: Color(0xFFB7ACBF), height: 1.4),
                 ),
               ],
             ),

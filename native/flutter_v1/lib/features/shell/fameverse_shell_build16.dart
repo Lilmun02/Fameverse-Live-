@@ -61,7 +61,9 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
       final results = await Future.wait<dynamic>([
         widget.backend.loadProfile(widget.identity.id),
         widget.backend.loadFollowNetwork(widget.identity.id),
-        widget.backend.listRecommendedCreators(excludeUserId: widget.identity.id),
+        widget.backend.listRecommendedCreators(
+          excludeUserId: widget.identity.id,
+        ),
         widget.backend.listActiveLiveRooms(excludeUserId: widget.identity.id),
       ]);
       if (!mounted) return;
@@ -91,7 +93,9 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
         targetId: targetId,
         following: !following,
       );
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) setState(() => _network = network);
     } catch (_) {
       _message('Could not update that connection.');
@@ -190,10 +194,8 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => _Build16EditProfileSheet(
-        profile: profile,
-        onSave: _saveProfile,
-      ),
+      builder: (context) =>
+          _Build16EditProfileSheet(profile: profile, onSave: _saveProfile),
     );
   }
 
@@ -223,14 +225,16 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = _profile ?? FvProfile(
-      id: widget.identity.id,
-      displayName: 'Fameverse User',
-      username: null,
-      bio: '',
-      avatarUrl: null,
-      createdAt: null,
-    );
+    final profile =
+        _profile ??
+        FvProfile(
+          id: widget.identity.id,
+          displayName: 'Fameverse User',
+          username: null,
+          bio: '',
+          avatarUrl: null,
+          createdAt: null,
+        );
 
     return Scaffold(
       body: IndexedStack(
@@ -698,7 +702,8 @@ class _Build16EditProfileSheet extends StatefulWidget {
     required String displayName,
     required String username,
     required String bio,
-  }) onSave;
+  })
+  onSave;
 
   @override
   State<_Build16EditProfileSheet> createState() =>
@@ -805,7 +810,7 @@ class _Build16SettingsSheet extends StatelessWidget {
       '''Fameverse Community Standards\n\nFameverse is for real people to create, watch, gift, and belong. Do not use Fameverse for credible threats, targeted harassment, hateful abuse, sexual exploitation, scams, impersonation intended to defraud, illegal content, spam, platform manipulation, or attempts to compromise another user's account or device.\n\nCreators are responsible for moderating their live spaces with the tools provided. Fameverse may remove content, end a live, restrict features, suspend accounts, or hold monetization when necessary to protect the community and enforce these standards.''';
 
   static const _creator =
-      '''Fameverse Creator Beta Terms\n\nCreators are responsible for their live content, titles, goals, interactions, and moderation choices. Payout eligibility is separate from Fame Coins and requires cleared creator earnings, creator verification, account good standing, and Fameverse payout review. The minimum payout request is $25.00.\n\nA balance shown as pending or under review is not yet available for payout. Fameverse may hold, reject, reverse, or investigate earnings or payouts where fraud, chargebacks, manipulation, policy violations, or verification problems are identified.\n\nThe creator revenue split and any coin-to-earnings conversion will not be activated until Fameverse publishes those economics.''';
+      '''Fameverse Creator Beta Terms\n\nCreators are responsible for their live content, titles, goals, interactions, and moderation choices. Payout eligibility is separate from Fame Coins and requires cleared creator earnings, creator verification, account good standing, and Fameverse payout review. The minimum payout request is \$25.00.\n\nA balance shown as pending or under review is not yet available for payout. Fameverse may hold, reject, reverse, or investigate earnings or payouts where fraud, chargebacks, manipulation, policy violations, or verification problems are identified.\n\nThe creator revenue split and any coin-to-earnings conversion will not be activated until Fameverse publishes those economics.''';
 
   void _open(BuildContext context, String title, String body) {
     Navigator.of(context).push<void>(

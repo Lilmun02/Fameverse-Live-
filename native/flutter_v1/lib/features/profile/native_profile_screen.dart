@@ -151,7 +151,10 @@ class NativeProfileScreen extends StatelessWidget {
                             color: const Color(0xFF352245),
                             borderRadius: BorderRadius.circular(13),
                           ),
-                          child: const Icon(Icons.mail_outline_rounded, size: 20),
+                          child: const Icon(
+                            Icons.mail_outline_rounded,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -170,7 +173,9 @@ class NativeProfileScreen extends StatelessWidget {
                                 identity.email,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ],
                           ),
@@ -445,10 +450,7 @@ class _CreatorStudioCard extends StatelessWidget {
                   SizedBox(height: 3),
                   Text(
                     'Earnings, payouts & creator tools',
-                    style: TextStyle(
-                      color: Color(0xFFB5A9BE),
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Color(0xFFB5A9BE), fontSize: 12),
                   ),
                 ],
               ),
@@ -489,7 +491,9 @@ class _OwnerRechargeCardState extends State<_OwnerRechargeCard> {
           .eq('user_id', user.id)
           .maybeSingle();
       if (!mounted) return;
-      setState(() => _owner = (row?['role'] as String?)?.toLowerCase() == 'owner');
+      setState(
+        () => _owner = (row?['role'] as String?)?.toLowerCase() == 'owner',
+      );
     } catch (_) {
       // Hidden on any role lookup failure; recharge never opens speculatively.
     } finally {
@@ -521,7 +525,9 @@ class _OwnerRechargeCardState extends State<_OwnerRechargeCard> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Recharge could not open. Check the payment setup and try again.'),
+            content: Text(
+              'Recharge could not open. Check the payment setup and try again.',
+            ),
           ),
         );
     } finally {
@@ -571,7 +577,10 @@ class _OwnerRechargeCardState extends State<_OwnerRechargeCard> {
                   const SizedBox(height: 3),
                   Text(
                     _opening ? 'Opening Recharge…' : 'Recharge Fame Coins',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   const Text(
