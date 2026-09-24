@@ -22,7 +22,9 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const paypalClientId = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
   const paypalClientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET") ?? "";
-  const paypalEnv = (Deno.env.get("PAYPAL_ENV") ?? "sandbox").toLowerCase();
+  const paypalEnv = (
+    Deno.env.get("PAYPAL_ENV") ?? Deno.env.get("PAYPAL_ENVIRONMENT") ?? "sandbox"
+  ).toLowerCase();
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey) return json({ error: "server_configuration_missing" }, 500);
   if (!paypalClientId || !paypalClientSecret) return json({ error: "paypal_credentials_missing" }, 503);
