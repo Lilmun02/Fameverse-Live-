@@ -62,6 +62,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add native/flutter_v1 .github/workflows/build16-dart-repair.yml
+          git add native/flutter_v1
+          git add -u .github/workflows
           git commit -m 'fix: repair and format Build 16 native candidate'
           git push origin HEAD:native/flutter-v1
