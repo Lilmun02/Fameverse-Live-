@@ -1,7 +1,7 @@
 name: fameverse_live
 description: Fameverse native client migration with Supabase authority and Stream Video media.
 publish_to: none
-version: 0.1.0+1
+version: 0.2.0+1
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
