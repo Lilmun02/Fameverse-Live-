@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
@@ -166,6 +167,8 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
             ? 'Verification is required before requesting a payout.'
             : text.contains('minimum')
             ? r'Minimum payout is $25.00.'
+            : text.contains('payout method')
+            ? 'Add a PayPal payout email before requesting a payout.'
             : 'Could not submit payout request.',
       );
     } finally {
@@ -239,6 +242,16 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _openSandboxQa() {
+    Navigator.of(context)
+        .push<void>(
+          MaterialPageRoute(
+            builder: (context) => const _OwnerPayoutSandboxQaScreen(),
+          ),
+        )
+        .then((_) => _refresh());
   }
 
   @override
@@ -339,6 +352,10 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                   ..._requests.map((item) => _PayoutRequestTile(item: item)),
                 if (_isOwner) ...[
                   const SizedBox(height: 32),
+                  const _SectionLabel('OWNER QA'),
+                  const SizedBox(height: 10),
+                  _OwnerSandboxCard(onTap: _openSandboxQa),
+                  const SizedBox(height: 32),
                   const _SectionLabel('OWNER MODERATION'),
                   const SizedBox(height: 6),
                   const Text(
@@ -361,6 +378,305 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnerPayoutSandboxQaScreen extends StatefulWidget {
+  const _OwnerPayoutSandboxQaScreen();
+
+  @override
+  State<_OwnerPayoutSandboxQaScreen> createState() =>
+      _OwnerPayoutSandboxQaScreenState();
+}
+
+class _OwnerPayoutSandboxQaScreenState
+    extends State<_OwnerPayoutSandboxQaScreen> {
+  final _email = TextEditingController();
+  bool _busy = false;
+  String _status = 'Ready for owner-only payout QA.';
+  String? _latestPayoutId;
+
+  SupabaseClient get _client => Supabase.instance.client;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _run(String label, Future<void> Function() action) async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _status = '$label…';
+    });
+    try {
+      await action();
+      if (mounted) setState(() => _status = '$label ✓');
+    } catch (error) {
+      if (!mounted) return;
+      final text = error.toString();
+      setState(() => _status = '$label failed: $text');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _savePayPal() async {
+    final email = _email.text.trim();
+    if (!email.contains('@')) {
+      setState(() => _status = 'Enter the PayPal sandbox recipient email first.');
+      return;
+    }
+    await _run('Save PayPal sandbox recipient', () async {
+      await _client.rpc(
+        'set_creator_payout_method',
+        params: {'p_provider': 'paypal', 'p_recipient_email': email},
+      );
+    });
+  }
+
+  Future<void> _requestAndVerify() async {
+    await _run('Verify owner QA account', () async {
+      await _client.rpc('request_creator_verification');
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('No authenticated Fameverse user.');
+      await _client.rpc(
+        'review_creator_verification',
+        params: {
+          'p_user_id': userId,
+          'p_status': 'verified',
+          'p_public_note': 'Owner sandbox payout QA verification',
+        },
+      );
+    });
+  }
+
+  Future<void> _grantQaEarnings() async {
+    await _run(r'Grant $25 sandbox earnings', () async {
+      await _client.rpc(
+        'grant_owner_payout_test_earnings',
+        params: {'p_amount_cents': 2500},
+      );
+    });
+  }
+
+  Future<void> _createAndApprovePayout() async {
+    await _run(r'Create + approve $25 payout', () async {
+      final response = await _client.rpc(
+        'request_creator_payout',
+        params: {'p_amount_cents': 2500},
+      );
+      if (response is! List || response.isEmpty || response.first is! Map) {
+        throw Exception('Payout request was not created.');
+      }
+      final row = Map<String, dynamic>.from(response.first as Map);
+      final payoutId = row['payout_id']?.toString();
+      if (payoutId == null || payoutId.isEmpty) {
+        throw Exception('Payout ID missing.');
+      }
+      await _client.rpc(
+        'review_creator_payout',
+        params: {
+          'p_payout_id': payoutId,
+          'p_status': 'approved',
+          'p_moderation_note': 'Owner sandbox payout QA approval',
+          'p_external_reference': null,
+        },
+      );
+      _latestPayoutId = payoutId;
+    });
+  }
+
+  Future<void> _sendSandboxPayout() async {
+    final payoutId = _latestPayoutId;
+    if (payoutId == null) {
+      setState(() => _status = r'Create + approve the $25 payout first.');
+      return;
+    }
+    await _run('Send PayPal sandbox payout', () async {
+      final response = await _client.functions.invoke(
+        'process-creator-payout',
+        body: {
+          'payout_id': payoutId,
+          'expected_environment': 'sandbox',
+        },
+      );
+      final data = response.data;
+      if (data is Map && data['error'] != null) {
+        throw Exception(data['error']);
+      }
+    });
+  }
+
+  Future<void> _syncSandboxPayout() async {
+    final payoutId = _latestPayoutId;
+    if (payoutId == null) {
+      setState(() => _status = 'No sandbox payout has been created yet.');
+      return;
+    }
+    await _run('Sync PayPal sandbox status', () async {
+      final response = await _client.functions.invoke(
+        'sync-creator-payout',
+        body: {
+          'payout_id': payoutId,
+          'expected_environment': 'sandbox',
+        },
+      );
+      final data = response.data;
+      if (data is Map && data['error'] != null) {
+        throw Exception(data['error']);
+      }
+      if (data is Map) {
+        final provider = data['provider_status']?.toString() ?? 'unknown';
+        final fameverse = data['fameverse_status']?.toString() ?? 'unknown';
+        if (mounted) {
+          setState(() {
+            _status = 'PayPal: $provider · Fameverse: $fameverse ✓';
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Payout Sandbox QA')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 40),
+          children: [
+            const _StudioInfoCard(
+              icon: Icons.science_outlined,
+              title: 'Sandbox only',
+              body:
+                  'This owner-only console requires PayPal sandbox credentials. Every payout call requires the backend to confirm the configured PayPal environment is sandbox before money is submitted.',
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'PayPal sandbox recipient email',
+                hintText: 'sandbox-personal@example.com',
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonal(
+              onPressed: _busy ? null : _savePayPal,
+              child: const Text('1. Save sandbox PayPal recipient'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonal(
+              onPressed: _busy ? null : _requestAndVerify,
+              child: const Text('2. Verify owner QA account'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonal(
+              onPressed: _busy ? null : _grantQaEarnings,
+              child: const Text(r'3. Add $25 QA earnings'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonal(
+              onPressed: _busy ? null : _createAndApprovePayout,
+              child: const Text(r'4. Create + approve $25 payout'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: _busy ? null : _sendSandboxPayout,
+              child: const Text('5. Send with PayPal Sandbox'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _busy ? null : _syncSandboxPayout,
+              child: const Text('6. Sync payout status'),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: _studioPanel(),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_busy)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 12, top: 2),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: Icon(Icons.terminal_rounded, size: 20),
+                    ),
+                  Expanded(
+                    child: Text(
+                      _status,
+                      style: const TextStyle(height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'QA credits are synthetic creator earnings and do not define the future gift-to-cash conversion. Public payout verification will be stricter than this owner-only sandbox shortcut.',
+              style: TextStyle(color: Color(0xFF9F93A8), fontSize: 12, height: 1.45),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnerSandboxCard extends StatelessWidget {
+  const _OwnerSandboxCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: const Key('open-payout-sandbox-qa'),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Ink(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1427),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF674383)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.science_outlined, color: Color(0xFFC99BFF)),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Payout Sandbox QA',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    r'Test verification → $25 earnings → payout → PayPal Sandbox.',
+                    style: TextStyle(color: Color(0xFFB6AABE), fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded),
+          ],
         ),
       ),
     );
