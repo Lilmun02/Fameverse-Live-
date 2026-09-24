@@ -54,6 +54,58 @@ jobs:
       - name: Unit and widget tests
         run: flutter test
 
+  android-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install SVG rasterizer
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+
+      - name: Bootstrap ephemeral Fameverse Android shell
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_android
+          flutter create \
+            --platforms=android \
+            --org com.fameverse.dev \
+            --project-name fameverse_live \
+            --no-pub \
+            /tmp/fameverse_flutter_android
+          rm -rf android
+          cp -R /tmp/fameverse_flutter_android/android ./android
+
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i.bak 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i.bak 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle
+          fi
+
+          bash tool/apply_android_branding.sh
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Enforce Fameverse Android branding law
+        run: bash tool/verify_android_branding.sh
+
+      - name: Compile Android debug artifact
+        run: flutter build apk --debug
+
   ios-preflight:
     runs-on: macos-latest
     timeout-minutes: 30
