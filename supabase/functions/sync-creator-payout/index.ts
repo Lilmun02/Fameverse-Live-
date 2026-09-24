@@ -47,9 +47,21 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if ((roleRow?.role ?? "").toLowerCase() !== "owner") return json({ error: "owner_required" }, 403);
 
-  const payload = await req.json().catch(() => null) as { payout_id?: string } | null;
+  const payload = await req.json().catch(() => null) as {
+    payout_id?: string;
+    expected_environment?: string;
+  } | null;
   const payoutId = payload?.payout_id?.trim();
   if (!payoutId) return json({ error: "payout_id_required" }, 400);
+
+  const expectedEnvironment = payload?.expected_environment?.trim().toLowerCase();
+  if (expectedEnvironment && expectedEnvironment !== paypalEnv) {
+    return json({
+      error: "paypal_environment_mismatch",
+      expected_environment: expectedEnvironment,
+      configured_environment: paypalEnv,
+    }, 409);
+  }
 
   const { data: payout, error: payoutError } = await admin
     .from("creator_payout_requests")
