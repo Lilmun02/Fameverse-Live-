@@ -42,10 +42,7 @@ class NativeGiftTrayVisual extends StatelessWidget {
             border: Border.all(color: const Color(0x335F37A1)),
           ),
           child: Center(
-            child: Text(
-              gift.symbol,
-              style: TextStyle(fontSize: size * .46),
-            ),
+            child: Text(gift.symbol, style: TextStyle(fontSize: size * .46)),
           ),
         ),
       );
@@ -54,10 +51,7 @@ class NativeGiftTrayVisual extends StatelessWidget {
     return SizedBox.square(
       dimension: size,
       child: Center(
-        child: Text(
-          gift.symbol,
-          style: TextStyle(fontSize: size * .52),
-        ),
+        child: Text(gift.symbol, style: TextStyle(fontSize: size * .52)),
       ),
     );
   }
@@ -109,11 +103,12 @@ class _PocketCometPosterPainter extends CustomPainter {
       comet,
       size.width * .17,
       Paint()
-        ..shader = const RadialGradient(
-          colors: [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
-        ).createShader(
-          Rect.fromCircle(center: comet, radius: size.width * .20),
-        ),
+        ..shader =
+            const RadialGradient(
+              colors: [Color(0xFFFFF6C8), Color(0xFFFFD15A), Color(0x005AA8FF)],
+            ).createShader(
+              Rect.fromCircle(center: comet, radius: size.width * .20),
+            ),
     );
 
     final starPaint = Paint()..color = Colors.white.withValues(alpha: .75);
