@@ -17,6 +17,9 @@ Implemented in this branch so far:
 - Prevented 1-coin classic gifts from using the premium full-screen takeover overlay.
 - Replaced black/empty remote-video gift thumbnails with deterministic Fameverse poster art.
 - Allowed cinematic gift video playback to mix with active Live audio; physical iPhone audio validation is still required.
-- Carried the Build 17 Profile / Creator Studio / payout / recharge repair work into Build 18.
+- Carried the Build 17 Profile / Creator Studio / payout repair work into Build 18.
+- Replaced the protected Vercel recharge page with a native Fameverse owner-QA PayPal sandbox flow. Supabase now stays API-only and returns PayPal's real approval URL; Vercel is not part of recharge.
+- Hard-locked the Codemagic TestFlight candidate to `build18/live-repair` and added a source-identity artifact containing the exact commit used for the IPA.
+- Enabled the native preflight on the Build 18 branch itself and added Build 18 regression checks before static analysis/tests.
 
 Nothing in this file is a physical QA PASS. See `BUILD18_TEST_MATRIX.md`.
