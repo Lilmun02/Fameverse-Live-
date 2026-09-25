@@ -199,10 +199,8 @@ void main() {
       ).readAsString();
 
       expect(screen, contains('class NativeRechargeScreen'));
-      expect(
-        screen,
-        contains('launchUrl(uri, mode: LaunchMode.externalApplication)'),
-      );
+      expect(screen, contains('final launched = await launchUrl('));
+      expect(screen, contains('mode: LaunchMode.externalApplication'));
       expect(screen, contains("'Complete sandbox purchase'"));
       expect(studio, contains('if (_isOwner)'));
       expect(studio, contains('NativeRechargeScreen'));
