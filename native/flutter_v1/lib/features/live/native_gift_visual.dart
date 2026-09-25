@@ -1,90 +1,26 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 
 import '../../data/fameverse_live_backend.dart';
 
-class NativeGiftTrayVisual extends StatefulWidget {
+/// Stable gift-store poster art.
+///
+/// Build 16 tried to use paused frames from the remote cinematic videos as
+/// thumbnails. Several of those frames are black, which produced the empty
+/// black boxes seen during physical QA. The tray now uses deterministic poster
+/// art; the real cinematic still plays after a successful send.
+class NativeGiftTrayVisual extends StatelessWidget {
   const NativeGiftTrayVisual({required this.gift, this.size = 54, super.key});
 
   final FvGiftDefinition gift;
   final double size;
 
   @override
-  State<NativeGiftTrayVisual> createState() => _NativeGiftTrayVisualState();
-}
-
-class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
-  VideoPlayerController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  @override
-  void didUpdateWidget(covariant NativeGiftTrayVisual oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.gift.id != widget.gift.id ||
-        oldWidget.gift.videoUrl != widget.gift.videoUrl) {
-      unawaited(_load());
-    }
-  }
-
-  Duration _thumbnailTime(String giftId) => switch (giftId) {
-    'ember-dragon' => const Duration(milliseconds: 4200),
-    'celestial-phoenix' => const Duration(milliseconds: 7000),
-    'welcome-to-fameverse' => const Duration(milliseconds: 2600),
-    _ => Duration.zero,
-  };
-
-  Future<void> _load() async {
-    final previous = _controller;
-    _controller = null;
-    if (previous != null) await previous.dispose();
-
-    final url = widget.gift.videoUrl;
-    if (url == null || url.isEmpty) {
-      if (mounted) setState(() {});
-      return;
-    }
-
-    final next = VideoPlayerController.networkUrl(Uri.parse(url));
-    try {
-      await next.initialize();
-      await next.setLooping(false);
-      await next.setVolume(0);
-      final target = _thumbnailTime(widget.gift.id);
-      final duration = next.value.duration;
-      final safeTarget = duration > Duration.zero && target >= duration
-          ? duration - const Duration(milliseconds: 120)
-          : target;
-      if (safeTarget > Duration.zero) await next.seekTo(safeTarget);
-      await next.pause();
-      _controller = next;
-      if (mounted) setState(() {});
-    } catch (_) {
-      await next.dispose();
-      if (mounted) setState(() {});
-    }
-  }
-
-  @override
-  void dispose() {
-    final controller = _controller;
-    _controller = null;
-    if (controller != null) unawaited(controller.dispose());
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.gift.id == 'pocket-comet') {
+    if (gift.id == 'pocket-comet') {
       return SizedBox.square(
-        dimension: widget.size,
+        dimension: size,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: const CustomPaint(painter: _PocketCometPosterPainter()),
@@ -92,35 +28,30 @@ class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
       );
     }
 
-    final controller = _controller;
-    if (controller != null && controller.value.isInitialized) {
+    if (gift.cinematic) {
       return SizedBox.square(
-        dimension: widget.size,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: ColoredBox(
-            color: Colors.black,
-            child: FittedBox(
-              fit: BoxFit.cover,
-              clipBehavior: Clip.hardEdge,
-              child: SizedBox(
-                width: controller.value.size.width,
-                height: controller.value.size.height,
-                child: VideoPlayer(controller),
-              ),
+        dimension: size,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF4A2564), Color(0xFF24142F), Color(0xFF17101F)],
             ),
+            border: Border.all(color: const Color(0x335F37A1)),
+          ),
+          child: Center(
+            child: Text(gift.symbol, style: TextStyle(fontSize: size * .46)),
           ),
         ),
       );
     }
 
     return SizedBox.square(
-      dimension: widget.size,
+      dimension: size,
       child: Center(
-        child: Text(
-          widget.gift.symbol,
-          style: TextStyle(fontSize: widget.size * .52),
-        ),
+        child: Text(gift.symbol, style: TextStyle(fontSize: size * .52)),
       ),
     );
   }

@@ -68,6 +68,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         user: User.regular(
           userId: widget.credentials.userId,
           name: widget.room.host.displayName,
+          image: widget.room.host.avatarUrl,
         ),
         userToken: widget.credentials.userToken,
         options: StreamVideoOptions(autoConnect: false),
@@ -878,6 +879,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final call = _call;
+    final cohostActive = _activeCohostUserId != null;
+    final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
+
     return PopScope(
       canPop: _ended,
       onPopInvokedWithResult: (bool didPop, bool? result) {
@@ -920,12 +924,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                               Row(
                                 children: <Widget>[
                                   Flexible(
-                                    child: Text(
-                                      widget.room.host.displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
+                                    child: FittedBox(
+                                      key: const Key('host-live-handle'),
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        widget.room.host.handle,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -936,7 +945,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                               Text(
                                 widget.room.title,
                                 maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                overflow: TextOverflow.fade,
                                 style: const TextStyle(
                                   color: Color(0xFFD1C7D7),
                                   fontSize: 11,
@@ -970,6 +980,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           onPressed: _ending ? null : _endLive,
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFD5284D),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                           ),
                           child: Text(_ending ? 'Ending…' : 'End'),
                         ),
@@ -988,7 +1003,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           text: _error!,
                         ),
                     ],
-                    const Spacer(),
+                    if (cohostActive)
+                      SizedBox(height: cohostCameraHeight + 32)
+                    else
+                      const Spacer(),
                     if (widget.room.goal.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.only(bottom: 8),
@@ -1006,7 +1024,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ),
                       ),
                     SizedBox(
-                      height: 185,
+                      height: cohostActive ? 250 : 220,
                       child: SingleChildScrollView(
                         reverse: true,
                         child: FvLiveChatList(messages: _chat),
@@ -1014,40 +1032,34 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     ),
                     const SizedBox(height: 8),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: <Widget>[
                         Expanded(
-                          child: TextField(
+                          child: FvLiveCommentComposer(
                             controller: _comment,
-                            maxLength: 160,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => unawaited(_postComment()),
-                            decoration: const InputDecoration(
-                              hintText: 'Say something...',
-                              counterText: '',
-                              isDense: true,
-                            ),
+                            hintText: 'Say something...',
                           ),
                         ),
                         const SizedBox(width: 6),
-                        IconButton.filledTonal(
+                        IconButton.filled(
                           onPressed: _postComment,
-                          icon: const Icon(Icons.send_rounded),
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF6F35C5),
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.arrow_upward_rounded),
                           tooltip: 'Send comment',
                         ),
+                        const SizedBox(width: 4),
                         IconButton.filledTonal(
                           onPressed: _shareLive,
                           icon: const Icon(Icons.ios_share_rounded),
                           tooltip: 'Share',
                         ),
-                        IconButton.filled(
+                        const SizedBox(width: 4),
+                        FvFameActionButton(
+                          keyValue: const Key('host-f-menu-button'),
                           onPressed: _showFMenu,
-                          icon: const Text(
-                            'F',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
                           tooltip: 'Live controls',
                         ),
                       ],
