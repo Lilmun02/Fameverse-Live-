@@ -67,10 +67,7 @@ void main() {
         expect(viewer, contains('NativeViewerV2Stage('));
         expect(stage, contains('active co-hosting is two equal tiles'));
         expect(host, contains("ValueKey<String>('host-gift-\$_giftSerial')"));
-        expect(
-          viewer,
-          contains("ValueKey<String>('viewer-gift-\$_giftSerial')"),
-        );
+        expect(viewer, contains("ValueKey('viewer-gift-\$_giftSerial')"));
       },
     );
 
