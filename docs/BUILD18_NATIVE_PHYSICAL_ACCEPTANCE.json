@@ -1,0 +1,38 @@
+{
+  "build": 18,
+  "status": "pending",
+  "tested_commit": null,
+  "fingerprint": null,
+  "owner_iphone": {
+    "status": "pending",
+    "checks": {
+      "solo_live_layout": false,
+      "cohost_square_side_by_side": false,
+      "creator_handle_visible": false,
+      "chat_readable": false,
+      "gift_button_visible": false,
+      "gift_tray_visuals_clean": false,
+      "gift_send_immediate_feedback": false,
+      "test_coin_balance_live_update": false,
+      "classic_one_coin_no_takeover": false,
+      "premium_gift_audio_all_catalog": false,
+      "premium_gift_audio_while_cohosting": false,
+      "fame_tap_count": false,
+      "fame_tap_flame_f_feedback": false,
+      "leave_live": false,
+      "host_end_ejects_viewer_cohost": false
+    }
+  },
+  "external_tester_iphone": {
+    "status": "pending",
+    "checks": {
+      "join_live": false,
+      "gift_button_visible": false,
+      "gift_tray_visuals_clean": false,
+      "chat_readable": false,
+      "gift_send": false,
+      "wallet_activity_consistent": false,
+      "host_end_ejects_viewer": false
+    }
+  }
+}
