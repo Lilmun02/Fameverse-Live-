@@ -131,6 +131,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
+        FAMEVERSE_BUILD_FAMILY: "18"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -138,6 +139,22 @@ workflows:
         - ~/.pub-cache
 
     scripts:
+      - name: Lock candidate to Build 18 source
+        script: |
+          set -euo pipefail
+          EXPECTED_BRANCH="build18/live-repair"
+          if [ "${CM_BRANCH:-}" != "$EXPECTED_BRANCH" ]; then
+            echo "BLOCKED: Build 18 TestFlight candidate must come from $EXPECTED_BRANCH."
+            echo "Codemagic selected branch: ${CM_BRANCH:-<missing>}"
+            exit 1
+          fi
+          if [ -z "${CM_COMMIT:-}" ]; then
+            echo "BLOCKED: Codemagic did not provide CM_COMMIT, so source identity cannot be proven."
+            exit 1
+          fi
+          printf '%s\n' "Build 18" "branch=$CM_BRANCH" "commit=$CM_COMMIT" > build18_source_identity.txt
+          echo "Verified Build 18 source: $CM_BRANCH@$CM_COMMIT"
+
       - name: Verify required TestFlight secrets are present
         script: |
           set -euo pipefail
@@ -261,10 +278,13 @@ workflows:
           set -euo pipefail
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=18" \
+            --dart-define="FAMEVERSE_SOURCE_SHA=${CM_COMMIT}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - build18_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -276,6 +296,8 @@ workflows:
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
 # native-testflight uploads a TEST CANDIDATE to App Store Connect; upload is never a product PASS.
+# Build 18 TestFlight is hard-blocked unless Codemagic is building build18/live-repair and exposes the exact CM_COMMIT.
+# Every candidate publishes build18_source_identity.txt so a tester artifact can be traced to the exact source commit.
 # The candidate must be physically tested before external promotion / release approval.
 # GitHub's Physical iPhone release gate remains red until owner and external tester acceptance are recorded.
 # TestFlight signing bypasses Codemagic Code Signing Identities resolution entirely.
