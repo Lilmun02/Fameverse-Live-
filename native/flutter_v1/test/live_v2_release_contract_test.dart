@@ -1,3 +1,4 @@
+// Release-blocking regression contract for the Build 16 Live V2 candidate.
 import 'dart:io';
 
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
