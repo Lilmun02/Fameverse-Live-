@@ -185,12 +185,6 @@ class FvRoundLiveButton extends StatelessWidget {
   }
 }
 
-/// Shared live-chat presentation for hosts and viewers.
-///
-/// Build 18 physical-QA fix: Build 16 rendered only six 11px messages, which
-/// looked like a tiny debug feed on an iPhone. Keep more recent activity on
-/// screen and use readable mobile text/padding without turning chat into a
-/// full-screen panel.
 class FvLiveChatList extends StatelessWidget {
   const FvLiveChatList({required this.messages, super.key});
 
@@ -198,11 +192,10 @@ class FvLiveChatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = messages.length > 10
-        ? messages.sublist(messages.length - 10)
+    final visible = messages.length > 6
+        ? messages.sublist(messages.length - 6)
         : messages;
     return Column(
-      key: const Key('fv-live-chat-list'),
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: visible.map((dynamic raw) {
@@ -211,18 +204,16 @@ class FvLiveChatList extends StatelessWidget {
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.only(bottom: 4),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 330),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: .40),
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: Colors.white10),
+              color: Colors.black.withValues(alpha: .34),
+              borderRadius: BorderRadius.circular(11),
             ),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, height: 1.28),
+                style: const TextStyle(fontSize: 11, height: 1.22),
                 children: [
                   TextSpan(
                     text: '$user ',
