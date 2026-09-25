@@ -15,13 +15,15 @@ function forbidText(file, content, snippet, message) {
 }
 
 const stagePath = 'native/flutter_v1/lib/features/live/native_live_stage.dart'
+const hostPath = 'native/flutter_v1/lib/features/live/stream_host_live_screen.dart'
 const viewerPath = 'native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart'
 const sharedPath = 'native/flutter_v1/lib/features/live/stream_live_shared.dart'
 const giftPath = 'native/flutter_v1/lib/features/live/native_live_components.dart'
 const visualPath = 'native/flutter_v1/lib/features/live/native_gift_visual.dart'
 
-const [stage, viewer, shared, gift, visual] = await Promise.all([
+const [stage, host, viewer, shared, gift, visual] = await Promise.all([
   load(stagePath),
+  load(hostPath),
   load(viewerPath),
   load(sharedPath),
   load(giftPath),
@@ -30,17 +32,29 @@ const [stage, viewer, shared, gift, visual] = await Promise.all([
 
 requireText(stagePath, stage, 'class _V2CohostStage', 'approved co-host stage contract is missing')
 requireText(stagePath, stage, 'aspectRatio: 1', 'co-host cameras must remain square')
+requireText(stagePath, stage, 'class _V2CameraOffSurface', 'camera-off profile surface is missing')
+requireText(stagePath, stage, 'participant.image?.trim()', 'camera-off must use the participant profile image when available')
 forbidText(stagePath, stage, 'return Column(\n                children: [\n                  Expanded(\n                    child: _V2ParticipantSurface', 'do not restore stacked host/co-host portrait panels')
+
+requireText(hostPath, host, 'image: widget.room.host.avatarUrl', 'host Stream identity must carry the profile photo for camera-off mode')
+requireText(hostPath, host, 'cohostCameraHeight + 32', 'host chat must sit directly below co-host cameras')
+requireText(hostPath, host, 'FvLiveCommentComposer(', 'host must use the multiline Live composer')
+requireText(hostPath, host, 'FvFameActionButton(', 'host must use the purple Fame action control')
 
 requireText(viewerPath, viewer, "Key('viewer-gift-button')", 'tester-visible gift button contract is missing')
 requireText(viewerPath, viewer, 'widget.room.host.handle', 'live header must expose the creator handle')
-requireText(viewerPath, viewer, 'overflow: TextOverflow.fade', 'creator identity must not regress to ellipsis-only display')
 requireText(viewerPath, viewer, 'state.endedAt != null || state.liveEndedAt != null', 'viewer must react when host ends the Stream call')
 requireText(viewerPath, viewer, 'canPop: _leaving', 'leave flow must be able to release PopScope')
 requireText(viewerPath, viewer, 'class _TapBurstParticle', 'visible F/flame tap feedback is missing')
+requireText(viewerPath, viewer, 'cohostCameraHeight + 32', 'viewer chat must sit directly below co-host cameras')
+requireText(viewerPath, viewer, 'FvLiveCommentComposer(', 'viewer must use the multiline Live composer')
+requireText(viewerPath, viewer, 'FvFameActionButton(', 'viewer must use the purple Fame action control')
 forbidText(viewerPath, viewer, "fvGiftById('rose')", 'one-coin Rose shortcut must not crowd the tester action bar')
 
-requireText(sharedPath, shared, 'fontSize: 14', 'physical QA chat readability floor is missing')
+requireText(sharedPath, shared, 'fontSize: 15', 'physical QA chat readability floor is missing')
+requireText(sharedPath, shared, 'maxLines: 3', 'Live composer must wrap to multiple visible lines')
+requireText(sharedPath, shared, 'keyboardType: TextInputType.multiline', 'Live composer must accept multiline typing')
+requireText(sharedPath, shared, 'color: Color(0xFFB96BFF)', 'Fame F mark must remain purple')
 requireText(giftPath, gift, 'playback.gift.cost <= 1', 'one-coin gifts must not use premium takeover overlay')
 requireText(giftPath, gift, 'Future<int> Function() onRefill', 'open gift tray must receive fresh refill balance')
 requireText(giftPath, gift, 'Navigator.of(context).pop();\n    await widget.onSend', 'gift tray must give immediate send feedback')
