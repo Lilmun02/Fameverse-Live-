@@ -198,32 +198,32 @@ class _FameverseStartupGate extends StatelessWidget {
                 switchOutCurve: Curves.easeInCubic,
                 child: switch (phase) {
                   _StartupPhase.brand => const _BrandSplash(
-                      key: ValueKey<String>('brand'),
-                    ),
+                    key: ValueKey<String>('brand'),
+                  ),
                   _StartupPhase.checking => const _StartupProgressScreen(
-                      key: ValueKey<String>('checking'),
-                      icon: Icons.sync_rounded,
-                      title: 'Checking for updates…',
-                      subtitle: 'Connecting to Fameverse services',
-                      progress: .38,
-                    ),
+                    key: ValueKey<String>('checking'),
+                    icon: Icons.sync_rounded,
+                    title: 'Checking for updates…',
+                    subtitle: 'Connecting to Fameverse services',
+                    progress: .38,
+                  ),
                   _StartupPhase.syncing => _StartupProgressScreen(
-                      key: const ValueKey<String>('syncing'),
-                      icon: Icons.cloud_download_rounded,
-                      title: _syncTitle(notice),
-                      subtitle: 'Preparing the latest Fameverse experience',
-                      progress: .72,
-                    ),
+                    key: const ValueKey<String>('syncing'),
+                    icon: Icons.cloud_download_rounded,
+                    title: _syncTitle(notice),
+                    subtitle: 'Preparing the latest Fameverse experience',
+                    progress: .72,
+                  ),
                   _StartupPhase.ready => _StartupReadyScreen(
-                      key: const ValueKey<String>('ready'),
-                      notice: notice,
-                      onContinue: onContinue,
-                    ),
+                    key: const ValueKey<String>('ready'),
+                    notice: notice,
+                    onContinue: onContinue,
+                  ),
                   _StartupPhase.unavailable => _StartupUnavailableScreen(
-                      key: const ValueKey<String>('unavailable'),
-                      onContinue: onContinue,
-                      onRetry: onRetry,
-                    ),
+                    key: const ValueKey<String>('unavailable'),
+                    onContinue: onContinue,
+                    onRetry: onRetry,
+                  ),
                 },
               ),
             ),
@@ -318,10 +318,7 @@ class _BrandSplash extends StatelessWidget {
               ),
             ),
             SizedBox(height: 48),
-            SizedBox(
-              width: 118,
-              child: _StartupProgressBar(progress: .16),
-            ),
+            SizedBox(width: 118, child: _StartupProgressBar(progress: .16)),
             SizedBox(height: 12),
             Text(
               'Starting up…',
@@ -359,10 +356,7 @@ class _FameverseMark extends StatelessWidget {
               ),
             ),
           ),
-          const CustomPaint(
-            size: Size(118, 118),
-            painter: _CrownPainter(),
-          ),
+          const CustomPaint(size: Size(118, 118), painter: _CrownPainter()),
           const Padding(
             padding: EdgeInsets.only(top: 32),
             child: Text(
@@ -439,21 +433,9 @@ class _CrownPainter extends CustomPainter {
     );
 
     final dot = Paint()..color = const Color(0xFFD67BFF);
-    canvas.drawCircle(
-      Offset(size.width * .18, size.height * .37),
-      4.5,
-      dot,
-    );
-    canvas.drawCircle(
-      Offset(size.width * .50, size.height * .21),
-      4.5,
-      dot,
-    );
-    canvas.drawCircle(
-      Offset(size.width * .82, size.height * .37),
-      4.5,
-      dot,
-    );
+    canvas.drawCircle(Offset(size.width * .18, size.height * .37), 4.5, dot);
+    canvas.drawCircle(Offset(size.width * .50, size.height * .21), 4.5, dot);
+    canvas.drawCircle(Offset(size.width * .82, size.height * .37), 4.5, dot);
   }
 
   @override
@@ -515,10 +497,7 @@ class _StartupProgressScreen extends StatelessWidget {
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFAFA3B7),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xFFAFA3B7), fontSize: 13),
               ),
               const SizedBox(height: 30),
               _StartupProgressBar(progress: progress),
@@ -574,7 +553,11 @@ class _StartupProgressBar extends StatelessWidget {
 }
 
 class _StartupReadyScreen extends StatelessWidget {
-  const _StartupReadyScreen({required this.notice, required this.onContinue, super.key});
+  const _StartupReadyScreen({
+    required this.notice,
+    required this.onContinue,
+    super.key,
+  });
 
   final FvStartupUpdateNotice? notice;
   final VoidCallback onContinue;
@@ -733,7 +716,11 @@ class _StartupChangelogCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFF4A2A62)),
         boxShadow: const <BoxShadow>[
-          BoxShadow(color: Color(0x22000000), blurRadius: 22, offset: Offset(0, 12)),
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 22,
+            offset: Offset(0, 12),
+          ),
         ],
       ),
       child: Column(
@@ -748,7 +735,10 @@ class _StartupChangelogCard extends StatelessWidget {
                   children: <Widget>[
                     const Text(
                       'What’s New',
-                      style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     if (versionParts.isNotEmpty) ...<Widget>[
                       const SizedBox(height: 4),
@@ -810,21 +800,21 @@ class _StartupChangelogCard extends StatelessWidget {
     final lower = item.toLowerCase();
     final (icon, color) = switch (lower) {
       final text when text.contains('coin') => (
-          Icons.monetization_on_rounded,
-          const Color(0xFFFFC45C),
-        ),
+        Icons.monetization_on_rounded,
+        const Color(0xFFFFC45C),
+      ),
       final text when text.contains('live') => (
-          Icons.live_tv_rounded,
-          const Color(0xFF62D7FF),
-        ),
+        Icons.live_tv_rounded,
+        const Color(0xFF62D7FF),
+      ),
       final text when text.contains('profile') => (
-          Icons.person_rounded,
-          const Color(0xFFB984FF),
-        ),
+        Icons.person_rounded,
+        const Color(0xFFB984FF),
+      ),
       final text when text.contains('payout') => (
-          Icons.account_balance_wallet_rounded,
-          const Color(0xFF75E5B4),
-        ),
+        Icons.account_balance_wallet_rounded,
+        const Color(0xFF75E5B4),
+      ),
       _ => (Icons.auto_awesome_rounded, const Color(0xFFC17BFF)),
     };
 
