@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
+import 'native_recharge_screen.dart';
 
 /// Creator-facing business surface.
 ///
@@ -27,8 +28,11 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
   bool _loading = true;
   bool _busy = false;
   String? _error;
+  String? _accountRole;
   FvCreatorPayoutSummary _summary = FvCreatorPayoutSummary.empty;
   List<FvCreatorPayoutRequest> _requests = const [];
+
+  bool get _isOwner => _accountRole == 'owner';
 
   @override
   void initState() {
@@ -47,11 +51,13 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
       final results = await Future.wait<dynamic>([
         widget.backend.loadPayoutSummary(),
         widget.backend.listPayoutRequests(),
+        widget.backend.loadRole(widget.identity.id),
       ]);
       if (!mounted) return;
       setState(() {
         _summary = results[0] as FvCreatorPayoutSummary;
         _requests = results[1] as List<FvCreatorPayoutRequest>;
+        _accountRole = results[2] as String?;
         _loading = false;
       });
     } catch (_) {
@@ -68,6 +74,16 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(value)));
+  }
+
+  void _openOwnerRecharge() {
+    if (!_isOwner) return;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => const NativeRechargeScreen(),
+      ),
+    );
   }
 
   Future<void> _openPayoutRequest() async {
@@ -186,6 +202,12 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                   body: _error!,
                 )
               else ...[
+                if (_isOwner) ...[
+                  const _SectionLabel('OWNER QA'),
+                  const SizedBox(height: 10),
+                  _OwnerRechargeCard(onTap: _openOwnerRecharge),
+                  const SizedBox(height: 26),
+                ],
                 const _SectionLabel('EARNINGS'),
                 const SizedBox(height: 10),
                 Row(
@@ -297,6 +319,67 @@ class _StudioHero extends StatelessWidget {
             style: TextStyle(color: Color(0xFFC4B8CC), height: 1.4),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OwnerRechargeCard extends StatelessWidget {
+  const _OwnerRechargeCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const Key('owner-native-paypal-recharge'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(17),
+          decoration: _panelDecoration(),
+          child: const Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Color(0xFF342047),
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(11),
+                  child: Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: Color(0xFFC69BFF),
+                    size: 22,
+                  ),
+                ),
+              ),
+              SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'PayPal sandbox recharge',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Owner QA · native Fameverse checkout · no Vercel page',
+                      style: TextStyle(color: Color(0xFF9F93A8), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Color(0xFFBBAFC4)),
+            ],
+          ),
+        ),
       ),
     );
   }
