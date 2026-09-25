@@ -33,7 +33,10 @@ class _FvLiveWakeLockState extends State<_FvLiveWakeLock> {
   Widget build(BuildContext context) => widget.child;
 }
 
-// V2 stage contract: solo is full-canvas; active co-hosting is two equal tiles.
+// Approved V2 contract:
+// - solo = full-canvas camera
+// - active co-host = two equal square camera boxes side-by-side
+// - never convert co-host into tall stacked rectangles
 class NativeHostV2Stage extends StatelessWidget {
   const NativeHostV2Stage({
     required this.call,
@@ -73,30 +76,23 @@ class NativeHostV2Stage extends StatelessWidget {
                 );
               }
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: host,
-                      videoEnabled:
-                          cameraEnabled && (host?.isVideoEnabled ?? false),
-                      cameraOff: true,
-                      label: 'You',
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: cohost,
-                      videoEnabled: cohost?.isVideoEnabled ?? false,
-                      label: cohost?.name.isNotEmpty == true
-                          ? cohost!.name
-                          : 'Co-host',
-                    ),
-                  ),
-                ],
+              return _V2CohostStage(
+                left: _V2ParticipantSurface(
+                  call: call,
+                  participant: host,
+                  videoEnabled:
+                      cameraEnabled && (host?.isVideoEnabled ?? false),
+                  cameraOff: true,
+                  label: 'Host',
+                ),
+                right: _V2ParticipantSurface(
+                  call: call,
+                  participant: cohost,
+                  videoEnabled: cohost?.isVideoEnabled ?? false,
+                  label: cohost?.name.isNotEmpty == true
+                      ? cohost!.name
+                      : 'Co-host',
+                ),
               );
             },
       ),
@@ -141,33 +137,74 @@ class NativeViewerV2Stage extends StatelessWidget {
                 );
               }
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: host,
-                      videoEnabled: host?.isVideoEnabled ?? false,
-                      label: host?.name.isNotEmpty == true
-                          ? host!.name
-                          : 'Host',
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: cohost,
-                      videoEnabled: cohost?.isVideoEnabled ?? false,
-                      label: cohost?.name.isNotEmpty == true
-                          ? cohost!.name
-                          : 'Co-host',
-                    ),
-                  ),
-                ],
+              return _V2CohostStage(
+                left: _V2ParticipantSurface(
+                  call: call,
+                  participant: host,
+                  videoEnabled: host?.isVideoEnabled ?? false,
+                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
+                ),
+                right: _V2ParticipantSurface(
+                  call: call,
+                  participant: cohost,
+                  videoEnabled: cohost?.isVideoEnabled ?? false,
+                  label: cohost?.name.isNotEmpty == true
+                      ? cohost!.name
+                      : 'Co-host',
+                ),
               );
             },
       ),
+    );
+  }
+}
+
+class _V2CohostStage extends StatelessWidget {
+  const _V2CohostStage({required this.left, required this.right});
+
+  final Widget left;
+  final Widget right;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const FvLiveBackground(),
+        SafeArea(
+          bottom: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 70, 8, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: left,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: right,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -227,11 +264,11 @@ class _V2StageLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: 10,
-      bottom: 10,
+      left: 8,
+      bottom: 8,
       child: IgnorePointer(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 180),
+          constraints: const BoxConstraints(maxWidth: 140),
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: .46),
