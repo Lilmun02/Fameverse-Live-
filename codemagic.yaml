@@ -226,6 +226,12 @@ workflows:
           set -euo pipefail
           flutter test
 
+      - name: Enforce owner and external tester physical acceptance
+        script: |
+          set -euo pipefail
+          cd ../..
+          node scripts/check-native-physical-acceptance.mjs
+
       - name: Install CocoaPods dependencies
         script: |
           set -euo pipefail
@@ -276,6 +282,7 @@ workflows:
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
 # TestFlight publishing is isolated to the signed native-testflight workflow.
+# Build 18 TestFlight publishing is blocked until both owner and external tester physical acceptance are recorded.
 # TestFlight signing bypasses Codemagic Code Signing Identities resolution entirely.
 # The password-protected .p12 and .mobileprovision are supplied as encrypted base64 app variables.
 # Bundle ID verification is static so it never triggers Xcode dependency resolution before pub get.
