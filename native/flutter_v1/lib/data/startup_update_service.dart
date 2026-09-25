@@ -32,9 +32,7 @@ class FvStartupUpdateService {
 
   final SupabaseClient _client;
 
-  Future<FvStartupUpdateNotice?> loadLatest({
-    required String channel,
-  }) async {
+  Future<FvStartupUpdateNotice?> loadLatest({required String channel}) async {
     final rows = await _client
         .from('app_update_notices')
         .select(
