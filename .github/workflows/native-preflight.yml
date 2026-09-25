@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: fameverse-native-preflight-${{ github.ref }}
@@ -49,12 +49,19 @@ jobs:
         working-directory: .
         run: node scripts/check-build18-live-repair.mjs
 
-      - name: Verify Dart formatting
+      - name: Apply and commit deterministic Dart formatting
         run: |
+          set -euo pipefail
           dart format lib test tool
-          if ! git diff --exit-code -- lib test tool; then
-            echo "Dart formatting changed tracked files. Commit the formatted output before Codemagic."
-            exit 1
+          if ! git diff --quiet -- lib test tool; then
+            git config user.name "Fameverse Build 18 QA"
+            git config user.email "actions@users.noreply.github.com"
+            git add lib test tool
+            git commit -m "style(build18): apply deterministic Dart formatting"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "Dart formatter changed source and committed the exact formatted output. A fresh Build 18 run will validate that commit."
+          else
+            echo "Dart formatting already clean."
           fi
 
       - name: Static analysis
