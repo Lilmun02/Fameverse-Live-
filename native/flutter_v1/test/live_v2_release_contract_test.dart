@@ -1,11 +1,11 @@
-// Release-blocking regression contract for the Build 16 Live V2 candidate.
+// Release-blocking regression contract for the Build 18 Live repair candidate.
 import 'dart:io';
 
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Build 16 Live V2 release contract', () {
+  group('Build 18 Live repair contract', () {
     test(
       'gift catalog is unique, priced, and cinematic assets are intentional',
       () {
@@ -51,7 +51,7 @@ void main() {
     );
 
     test(
-      'host and viewer use V2 stage and stale gift overlays are keyed per playback',
+      'host and viewer use approved square cohost stage and keyed gift playback',
       () async {
         final host = await File(
           'lib/features/live/stream_host_live_screen.dart',
@@ -65,7 +65,13 @@ void main() {
 
         expect(host, contains('NativeHostV2Stage('));
         expect(viewer, contains('NativeViewerV2Stage('));
-        expect(stage, contains('active co-hosting is two equal tiles'));
+        expect(stage, contains('class _V2CohostStage'));
+        expect(stage, contains('child: Row('));
+        expect(stage, contains('aspectRatio: 1'));
+        expect(
+          stage,
+          contains('never convert co-host into tall stacked rectangles'),
+        );
         expect(host, contains("ValueKey<String>('host-gift-\$_giftSerial')"));
         expect(viewer, contains("ValueKey('viewer-gift-\$_giftSerial')"));
       },
@@ -117,5 +123,26 @@ void main() {
         );
       },
     );
+
+    test('physical Live repair contracts remain wired', () async {
+      final viewer = await File(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      ).readAsString();
+      final components = await File(
+        'lib/features/live/native_live_components.dart',
+      ).readAsString();
+      final chat = await File(
+        'lib/features/live/stream_live_shared.dart',
+      ).readAsString();
+
+      expect(viewer, contains("Key('viewer-gift-button')"));
+      expect(viewer, contains('widget.room.host.handle'));
+      expect(viewer, contains('state.liveEndedAt != null'));
+      expect(viewer, contains('class _TapBurstParticle'));
+      expect(viewer, isNot(contains("fvGiftById('rose')")));
+      expect(components, contains('Future<int> Function() onRefill'));
+      expect(components, contains('playback.gift.cost <= 1'));
+      expect(chat, contains('fontSize: 14'));
+    });
   });
 }
