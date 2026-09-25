@@ -124,6 +124,21 @@ void main() {
       },
     );
 
+    test('tester screenshot host UI regressions stay fixed', () async {
+      final host = await File(
+        'lib/features/live/stream_host_live_screen.dart',
+      ).readAsString();
+
+      expect(host, contains("Key('host-live-handle')"));
+      expect(host, contains('widget.room.host.handle'));
+      expect(host, contains('fit: BoxFit.scaleDown'));
+      expect(host, isNot(contains('overflow: TextOverflow.ellipsis')));
+      expect(host, contains('foregroundColor: Colors.white'));
+      expect(host, contains("Key('host-f-menu-button')"));
+      expect(host, contains('backgroundColor: const Color(0xFF8E4DFF)'));
+      expect(host, contains('height: 220'));
+    });
+
     test('physical Live repair contracts remain wired', () async {
       final viewer = await File(
         'lib/features/live/stream_viewer_live_screen.dart',
