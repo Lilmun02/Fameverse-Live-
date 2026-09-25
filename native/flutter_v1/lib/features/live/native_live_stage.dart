@@ -58,8 +58,9 @@ class NativeHostV2Stage extends StatelessWidget {
               CallParticipantState? cohost;
               for (final participant in participants) {
                 if (participant.isLocal) host = participant;
-                if (participant.userId == activeCohostUserId)
+                if (participant.userId == activeCohostUserId) {
                   cohost = participant;
+                }
               }
 
               if (activeCohostUserId == null) {
@@ -127,8 +128,9 @@ class NativeViewerV2Stage extends StatelessWidget {
               CallParticipantState? cohost;
               for (final participant in participants) {
                 if (participant.userId == hostUserId) host = participant;
-                if (participant.userId == activeCohostUserId)
+                if (participant.userId == activeCohostUserId) {
                   cohost = participant;
+                }
               }
 
               if (activeCohostUserId == null) {
