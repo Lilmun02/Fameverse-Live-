@@ -82,10 +82,14 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     }
     if (_loadedUrl == url && _controller != null) {
       await _controller!.seekTo(Duration.zero);
+      await _controller!.setVolume(1);
       await _controller!.play();
       return;
     }
-    final next = VideoPlayerController.networkUrl(Uri.parse(url));
+    final next = VideoPlayerController.networkUrl(
+      Uri.parse(url),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     try {
       await next.initialize();
       await next.setLooping(false);
@@ -112,6 +116,13 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   Widget build(BuildContext context) {
     final playback = widget.playback;
+
+    // Build 18: classic one-coin support gifts stay in chat/activity. They do
+    // not take over the camera with the same overlay reserved for premium
+    // animated gifts.
+    if (!playback.gift.cinematic && playback.gift.cost <= 1) {
+      return const SizedBox.shrink();
+    }
 
     if (playback.gift.id == 'pocket-comet') {
       return Stack(
@@ -146,7 +157,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Container(color: Colors.black.withValues(alpha: .28)),
+            Container(color: Colors.black.withValues(alpha: .18)),
             Center(
               child: AspectRatio(
                 aspectRatio: controller.value.aspectRatio == 0
@@ -221,7 +232,7 @@ class NativeGiftTray extends StatefulWidget {
   final int coins;
   final bool canRefill;
   final Future<bool> Function(FvGiftDefinition gift, int quantity) onSend;
-  final Future<void> Function() onRefill;
+  final Future<int> Function() onRefill;
 
   @override
   State<NativeGiftTray> createState() => _NativeGiftTrayState();
@@ -231,6 +242,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
   String _category = 'all';
   String _selectedId = fvGiftCatalog.first.id;
   bool _sending = false;
+  bool _refilling = false;
+  late int _coins;
 
   List<FvGiftDefinition> get _visible => _category == 'all'
       ? fvGiftCatalog
@@ -239,14 +252,40 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
   FvGiftDefinition get _selected =>
       fvGiftById(_selectedId) ?? fvGiftCatalog.first;
 
+  @override
+  void initState() {
+    super.initState();
+    _coins = widget.coins;
+  }
+
+  @override
+  void didUpdateWidget(covariant NativeGiftTray oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.coins != widget.coins && widget.coins != _coins) {
+      _coins = widget.coins;
+    }
+  }
+
   Future<void> _send(int quantity) async {
     if (_sending) return;
+    final gift = _selected;
     setState(() => _sending = true);
+
+    // Physical QA showed waiting on the RPC made Send feel broken. Close the
+    // tray immediately; the parent still validates/records the gift and shows
+    // an error if the backend rejects it.
+    Navigator.of(context).pop();
+    await widget.onSend(gift, quantity);
+  }
+
+  Future<void> _refill() async {
+    if (_refilling) return;
+    setState(() => _refilling = true);
     try {
-      final accepted = await widget.onSend(_selected, quantity);
-      if (accepted && mounted) Navigator.of(context).pop();
+      final balance = await widget.onRefill();
+      if (mounted) setState(() => _coins = balance);
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (mounted) setState(() => _refilling = false);
     }
   }
 
@@ -409,7 +448,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   ],
                 ),
                 const Spacer(),
-                Chip(label: Text('🪙 ${widget.coins}')),
+                Chip(label: Text('🪙 $_coins')),
               ],
             ),
             const SizedBox(height: 8),
@@ -515,8 +554,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                 const Spacer(),
                 if (widget.canRefill)
                   TextButton(
-                    onPressed: _sending ? null : widget.onRefill,
-                    child: const Text('+10K'),
+                    onPressed: _sending || _refilling ? null : _refill,
+                    child: Text(_refilling ? 'Adding…' : '+10K'),
                   ),
               ],
             ),
