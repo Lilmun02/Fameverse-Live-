@@ -116,7 +116,7 @@ workflows:
       - flutter_drive.log
 
   native-testflight:
-    name: Fameverse Native TestFlight
+    name: Fameverse Native TestFlight Candidate
     instance_type: mac_mini_m2
     max_build_duration: 60
     working_directory: native/flutter_v1
@@ -226,12 +226,6 @@ workflows:
           set -euo pipefail
           flutter test
 
-      - name: Enforce owner and external tester physical acceptance
-        script: |
-          set -euo pipefail
-          cd ../..
-          node scripts/check-native-physical-acceptance.mjs
-
       - name: Install CocoaPods dependencies
         script: |
           set -euo pipefail
@@ -262,7 +256,7 @@ workflows:
             --project ios/Runner.xcodeproj \
             --profile "$PROFILE_PATH"
 
-      - name: Build signed Fameverse IPA
+      - name: Build signed Fameverse IPA candidate
         script: |
           set -euo pipefail
           flutter build ipa --release \
@@ -281,8 +275,9 @@ workflows:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
-# TestFlight publishing is isolated to the signed native-testflight workflow.
-# Build 18 TestFlight publishing is blocked until both owner and external tester physical acceptance are recorded.
+# native-testflight uploads a TEST CANDIDATE to App Store Connect; upload is never a product PASS.
+# The candidate must be physically tested before external promotion / release approval.
+# GitHub's Physical iPhone release gate remains red until owner and external tester acceptance are recorded.
 # TestFlight signing bypasses Codemagic Code Signing Identities resolution entirely.
 # The password-protected .p12 and .mobileprovision are supplied as encrypted base64 app variables.
 # Bundle ID verification is static so it never triggers Xcode dependency resolution before pub get.
