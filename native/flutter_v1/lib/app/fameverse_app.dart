@@ -55,9 +55,9 @@ class _FameverseAppState extends State<FameverseApp> {
     setState(() => _startupStatus = 'Checking for Fameverse updates…');
 
     try {
-      final notice = await FvStartupUpdateService(
-        Supabase.instance.client,
-      ).loadLatest(channel: _releaseChannel).timeout(const Duration(seconds: 4));
+      final notice = await FvStartupUpdateService(Supabase.instance.client)
+          .loadLatest(channel: _releaseChannel)
+          .timeout(const Duration(seconds: 4));
 
       if (!mounted) return;
       if (notice == null) {
@@ -256,7 +256,9 @@ class _FameverseSplash extends StatelessWidget {
                           if (busy) ...<Widget>[
                             const SizedBox(height: 14),
                             const ClipRRect(
-                              borderRadius: BorderRadius.all(Radius.circular(99)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(99),
+                              ),
                               child: LinearProgressIndicator(minHeight: 4),
                             ),
                             const SizedBox(height: 9),
@@ -342,10 +344,7 @@ class _StartupChangelogCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               versionParts.join(' · '),
-              style: const TextStyle(
-                color: Color(0xFFBBAFC3),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFFBBAFC3), fontSize: 12),
             ),
           ],
           if (notice.summary.isNotEmpty) ...<Widget>[
