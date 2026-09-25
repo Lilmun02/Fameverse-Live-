@@ -1,90 +1,27 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
 
 import '../../data/fameverse_live_backend.dart';
 
-class NativeGiftTrayVisual extends StatefulWidget {
+/// Stable gift artwork used inside the gift tray.
+///
+/// Build 18 rule: the tray must never use paused cinematic video frames as
+/// thumbnails. Those frames can initialize on black and made the catalog look
+/// broken on a real iPhone. Cinematic video is reserved for the live playback
+/// overlay after a gift is sent; the tray itself always has deterministic,
+/// transparent artwork.
+class NativeGiftTrayVisual extends StatelessWidget {
   const NativeGiftTrayVisual({required this.gift, this.size = 54, super.key});
 
   final FvGiftDefinition gift;
   final double size;
 
   @override
-  State<NativeGiftTrayVisual> createState() => _NativeGiftTrayVisualState();
-}
-
-class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
-  VideoPlayerController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  @override
-  void didUpdateWidget(covariant NativeGiftTrayVisual oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.gift.id != widget.gift.id ||
-        oldWidget.gift.videoUrl != widget.gift.videoUrl) {
-      unawaited(_load());
-    }
-  }
-
-  Duration _thumbnailTime(String giftId) => switch (giftId) {
-    'ember-dragon' => const Duration(milliseconds: 4200),
-    'celestial-phoenix' => const Duration(milliseconds: 7000),
-    'welcome-to-fameverse' => const Duration(milliseconds: 2600),
-    _ => Duration.zero,
-  };
-
-  Future<void> _load() async {
-    final previous = _controller;
-    _controller = null;
-    if (previous != null) await previous.dispose();
-
-    final url = widget.gift.videoUrl;
-    if (url == null || url.isEmpty) {
-      if (mounted) setState(() {});
-      return;
-    }
-
-    final next = VideoPlayerController.networkUrl(Uri.parse(url));
-    try {
-      await next.initialize();
-      await next.setLooping(false);
-      await next.setVolume(0);
-      final target = _thumbnailTime(widget.gift.id);
-      final duration = next.value.duration;
-      final safeTarget = duration > Duration.zero && target >= duration
-          ? duration - const Duration(milliseconds: 120)
-          : target;
-      if (safeTarget > Duration.zero) await next.seekTo(safeTarget);
-      await next.pause();
-      _controller = next;
-      if (mounted) setState(() {});
-    } catch (_) {
-      await next.dispose();
-      if (mounted) setState(() {});
-    }
-  }
-
-  @override
-  void dispose() {
-    final controller = _controller;
-    _controller = null;
-    if (controller != null) unawaited(controller.dispose());
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.gift.id == 'pocket-comet') {
+    if (gift.id == 'pocket-comet') {
       return SizedBox.square(
-        dimension: widget.size,
+        dimension: size,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: const CustomPaint(painter: _PocketCometPosterPainter()),
@@ -92,34 +29,37 @@ class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
       );
     }
 
-    final controller = _controller;
-    if (controller != null && controller.value.isInitialized) {
-      return SizedBox.square(
-        dimension: widget.size,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: ColoredBox(
-            color: Colors.black,
-            child: FittedBox(
-              fit: BoxFit.cover,
-              clipBehavior: Clip.hardEdge,
-              child: SizedBox(
-                width: controller.value.size.width,
-                height: controller.value.size.height,
-                child: VideoPlayer(controller),
-              ),
-            ),
+    return SizedBox.square(
+      dimension: size,
+      child: DecoratedBox(
+        key: ValueKey<String>('gift-tray-art-${gift.id}'),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: RadialGradient(
+            center: const Alignment(.2, -.25),
+            radius: 1.0,
+            colors: [
+              const Color(0xFF8E5BD1).withValues(alpha: .34),
+              const Color(0xFF3A2350).withValues(alpha: .22),
+              Colors.transparent,
+            ],
           ),
         ),
-      );
-    }
-
-    return SizedBox.square(
-      dimension: widget.size,
-      child: Center(
-        child: Text(
-          widget.gift.symbol,
-          style: TextStyle(fontSize: widget.size * .52),
+        child: Center(
+          child: Text(
+            gift.symbol,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: size * .58,
+              height: 1,
+              shadows: const [
+                Shadow(
+                  blurRadius: 12,
+                  color: Color(0x669D55FF),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -138,7 +78,7 @@ class _PocketCometPosterPainter extends CustomPainter {
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF020617), Color(0xFF0B1B3A), Color(0xFF06101F)],
+          colors: [Color(0xFF071126), Color(0xFF10254B), Color(0xFF09162A)],
         ).createShader(rect),
     );
 
