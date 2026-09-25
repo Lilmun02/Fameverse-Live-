@@ -9,7 +9,7 @@ void main() {
     await tester.pumpWidget(
       FameverseApp(backend: _FakeBackend(), liveBackend: _FakeLiveBackend()),
     );
-    await tester.pump(const Duration(milliseconds: 1900));
+    await _continuePastStartupGate(tester);
 
     expect(find.byKey(FameverseApp.productShellKey), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
@@ -26,7 +26,7 @@ void main() {
         liveBackend: _FakeLiveBackend(),
       ),
     );
-    await tester.pumpAndSettle();
+    await _continuePastStartupGate(tester);
 
     expect(find.byKey(const Key('native-product-wordmark')), findsOneWidget);
     expect(find.byKey(const Key('fameverse-bottom-nav')), findsOneWidget);
@@ -39,6 +39,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('discover-title')), findsOneWidget);
   });
+}
+
+Future<void> _continuePastStartupGate(WidgetTester tester) async {
+  for (var attempt = 0; attempt < 14; attempt++) {
+    await tester.pump(const Duration(milliseconds: 500));
+    final continueButton = find.text('Continue to App');
+    if (continueButton.evaluate().isNotEmpty) {
+      await tester.tap(continueButton);
+      await tester.pumpAndSettle();
+      return;
+    }
+  }
+
+  fail('Fameverse startup gate did not become ready within the test window.');
 }
 
 class _FakeBackend implements FameverseBackend {
