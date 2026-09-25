@@ -72,7 +72,7 @@ class NativeHostV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
-                  cameraOff: true,
+                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
                 );
               }
 
@@ -82,7 +82,6 @@ class NativeHostV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
-                  cameraOff: true,
                   label: 'Host',
                 ),
                 right: _V2ParticipantSurface(
@@ -134,6 +133,7 @@ class NativeViewerV2Stage extends StatelessWidget {
                   call: call,
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
+                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
                 );
               }
 
@@ -142,7 +142,7 @@ class NativeViewerV2Stage extends StatelessWidget {
                   call: call,
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
-                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
+                  label: 'Host',
                 ),
                 right: _V2ParticipantSurface(
                   call: call,
@@ -214,29 +214,29 @@ class _V2ParticipantSurface extends StatelessWidget {
     required this.call,
     required this.participant,
     required this.videoEnabled,
-    this.cameraOff = false,
     this.label,
   });
 
   final Call call;
   final CallParticipantState? participant;
   final bool videoEnabled;
-  final bool cameraOff;
   final String? label;
 
   @override
   Widget build(BuildContext context) {
     final participant = this.participant;
-    if (participant == null || !videoEnabled) {
+    if (participant == null) {
       return Stack(
         fit: StackFit.expand,
         children: [
-          FvLiveBackground(
-            icon: cameraOff ? Icons.videocam_off_rounded : Icons.person_rounded,
-          ),
+          const FvLiveBackground(icon: Icons.person_rounded),
           if (label != null) _V2StageLabel(text: label!),
         ],
       );
+    }
+
+    if (!videoEnabled) {
+      return _V2CameraOffSurface(participant: participant, label: label);
     }
 
     return Stack(
@@ -249,6 +249,100 @@ class _V2ParticipantSurface extends StatelessWidget {
           showConnectionQualityIndicator: false,
           showParticipantLabel: false,
           showSpeakerBorder: false,
+        ),
+        if (label != null) _V2StageLabel(text: label!),
+      ],
+    );
+  }
+}
+
+class _V2CameraOffSurface extends StatelessWidget {
+  const _V2CameraOffSurface({required this.participant, this.label});
+
+  final CallParticipantState participant;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = participant.image?.trim();
+    final displayName = participant.name.trim().isEmpty
+        ? 'Fameverse creator'
+        : participant.name.trim();
+    final initial = displayName.characters.first.toUpperCase();
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -.25),
+              radius: 1.1,
+              colors: [Color(0xFF3A1B52), Color(0xFF170D22), Colors.black],
+            ),
+          ),
+        ),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 78,
+                height: 78,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF9B55FF), width: 2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x559B55FF),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  foregroundImage:
+                      image != null && image.isNotEmpty ? NetworkImage(image) : null,
+                  backgroundColor: const Color(0xFF2B1838),
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .42),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.videocam_off_rounded, size: 13),
+                    SizedBox(width: 5),
+                    Text(
+                      'Camera off',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         if (label != null) _V2StageLabel(text: label!),
       ],
