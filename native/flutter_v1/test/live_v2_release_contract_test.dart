@@ -159,27 +159,30 @@ void main() {
       expect(shared, contains('color: Color(0xFFB96BFF)'));
     });
 
-    test('chat and composer match the approved V2 readability contract', () async {
-      final host = await File(
-        'lib/features/live/stream_host_live_screen.dart',
-      ).readAsString();
-      final viewer = await File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsString();
-      final shared = await File(
-        'lib/features/live/stream_live_shared.dart',
-      ).readAsString();
+    test(
+      'chat and composer match the approved V2 readability contract',
+      () async {
+        final host = await File(
+          'lib/features/live/stream_host_live_screen.dart',
+        ).readAsString();
+        final viewer = await File(
+          'lib/features/live/stream_viewer_live_screen.dart',
+        ).readAsString();
+        final shared = await File(
+          'lib/features/live/stream_live_shared.dart',
+        ).readAsString();
 
-      expect(shared, contains('fontSize: 15'));
-      expect(shared, contains("'Lv. \$level'"));
-      expect(shared, contains('maxLines: 3'));
-      expect(shared, contains('keyboardType: TextInputType.multiline'));
-      expect(shared, contains('textInputAction: TextInputAction.newline'));
-      expect(host, contains('cohostCameraHeight + 32'));
-      expect(viewer, contains('cohostCameraHeight + 32'));
-      expect(host, contains('FvLiveCommentComposer('));
-      expect(viewer, contains('FvLiveCommentComposer('));
-    });
+        expect(shared, contains('fontSize: 15'));
+        expect(shared, contains("'Lv. \$level'"));
+        expect(shared, contains('maxLines: 3'));
+        expect(shared, contains('keyboardType: TextInputType.multiline'));
+        expect(shared, contains('textInputAction: TextInputAction.newline'));
+        expect(host, contains('cohostCameraHeight + 32'));
+        expect(viewer, contains('cohostCameraHeight + 32'));
+        expect(host, contains('FvLiveCommentComposer('));
+        expect(viewer, contains('FvLiveCommentComposer('));
+      },
+    );
 
     test('physical Live repair contracts remain wired', () async {
       final viewer = await File(
