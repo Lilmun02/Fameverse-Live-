@@ -920,12 +920,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                               Row(
                                 children: <Widget>[
                                   Flexible(
-                                    child: Text(
-                                      widget.room.host.displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
+                                    child: FittedBox(
+                                      key: const Key('host-live-handle'),
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        widget.room.host.handle,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -936,7 +941,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                               Text(
                                 widget.room.title,
                                 maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                overflow: TextOverflow.fade,
                                 style: const TextStyle(
                                   color: Color(0xFFD1C7D7),
                                   fontSize: 11,
@@ -970,6 +976,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           onPressed: _ending ? null : _endLive,
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFD5284D),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                           ),
                           child: Text(_ending ? 'Ending…' : 'End'),
                         ),
@@ -1006,7 +1017,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ),
                       ),
                     SizedBox(
-                      height: 185,
+                      height: 220,
                       child: SingleChildScrollView(
                         reverse: true,
                         child: FvLiveChatList(messages: _chat),
@@ -1040,7 +1051,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           tooltip: 'Share',
                         ),
                         IconButton.filled(
+                          key: const Key('host-f-menu-button'),
                           onPressed: _showFMenu,
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF8E4DFF),
+                            foregroundColor: Colors.white,
+                          ),
                           icon: const Text(
                             'F',
                             style: TextStyle(
