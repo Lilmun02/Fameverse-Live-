@@ -30,7 +30,8 @@ class NativeProfileScreen extends StatelessWidget {
   final VoidCallback onCreatorStudio;
   final Future<void> Function() onSignOut;
 
-  int get _friendCount => network.followingIds.intersection(network.followerIds).length;
+  int get _friendCount =>
+      network.followingIds.intersection(network.followerIds).length;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +170,10 @@ class _ProfileHero extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFF0C0810),
-                    border: Border.all(color: const Color(0xFFB978FF), width: 2),
+                    border: Border.all(
+                      color: const Color(0xFFB978FF),
+                      width: 2,
+                    ),
                   ),
                   child: ClipOval(child: _ProfileAvatar(profile: profile)),
                 ),
@@ -273,7 +277,9 @@ class _ProfileIdentity extends StatelessWidget {
           bio.isEmpty ? 'Add a bio so people know what you are about.' : bio,
           key: const Key('profile-bio'),
           style: TextStyle(
-            color: bio.isEmpty ? const Color(0xFF8F8497) : const Color(0xFFD8D0DD),
+            color: bio.isEmpty
+                ? const Color(0xFF8F8497)
+                : const Color(0xFFD8D0DD),
             fontSize: 14,
             height: 1.45,
           ),
@@ -305,11 +311,17 @@ class _ConnectionStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Stat(value: followers, label: 'Followers')),
+          Expanded(
+            child: _Stat(value: followers, label: 'Followers'),
+          ),
           const _Divider(),
-          Expanded(child: _Stat(value: following, label: 'Following')),
+          Expanded(
+            child: _Stat(value: following, label: 'Following'),
+          ),
           const _Divider(),
-          Expanded(child: _Stat(value: friends, label: 'Friends')),
+          Expanded(
+            child: _Stat(value: friends, label: 'Friends'),
+          ),
         ],
       ),
     );
@@ -392,7 +404,10 @@ class _CreatorStudioCard extends StatelessWidget {
                   children: [
                     Text(
                       'Creator Studio',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     SizedBox(height: 3),
                     Text(
