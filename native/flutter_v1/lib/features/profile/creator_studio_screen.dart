@@ -96,7 +96,9 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
             TextField(
               key: const Key('creator-payout-amount'),
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Amount (USD)',
                 prefixText: r'$ ',
@@ -351,7 +353,10 @@ class _PayoutEligibilityCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 7),
                 Text(
@@ -497,7 +502,10 @@ class _PayoutRequestTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   _dateLabel(item.requestedAt),
-                  style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFFAFA4B8),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -559,7 +567,10 @@ class _StudioInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 5),
                 Text(
                   body,
