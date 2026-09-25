@@ -1,16 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-// Supabase Edge Functions intentionally rewrite GET text/html responses to
-// text/plain. The checkout UI therefore lives on the verified Vercel preview,
-// while this function remains a JSON payment API and secure redirector.
-const checkoutPageUrl =
-  "https://fameverse-live-inmgfl453-aiw-core.vercel.app/recharge.html";
-
+// Build 18 recharge is a native Fameverse flow. This function is API-only:
+// Supabase validates the owner QA session and talks to PayPal; no HTML checkout
+// page and no Vercel deployment are part of the payment path.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Cache-Control": "no-store",
 };
 
@@ -21,18 +18,6 @@ const jsonHeaders = {
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
-}
-
-function redirectToCheckout(sessionToken: string) {
-  const target = new URL(checkoutPageUrl);
-  target.searchParams.set("session", sessionToken);
-  return new Response(null, {
-    status: 302,
-    headers: {
-      ...corsHeaders,
-      Location: target.toString(),
-    },
-  });
 }
 
 function hex(bytes: Uint8Array) {
@@ -125,6 +110,13 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return json(405, {
+      error: "native-checkout-required",
+      message: "Build 18 recharge is handled in the native Fameverse app.",
+    });
+  }
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const paypalClientId = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
@@ -143,21 +135,6 @@ Deno.serve(async (req: Request) => {
   });
   const requestUrl = new URL(req.url);
   let sessionToken = requestUrl.searchParams.get("session") ?? "";
-
-  if (req.method === "GET") {
-    const session = await sessionContext(admin, sessionToken);
-    if (!session) {
-      return json(401, { error: "invalid-or-expired-recharge-session" });
-    }
-    if (!(await requireOwner(admin, session.user_id))) {
-      return json(403, { error: "recharge-owner-qa-only" });
-    }
-    return redirectToCheckout(sessionToken);
-  }
-
-  if (req.method !== "POST") {
-    return json(405, { error: "method-not-allowed" });
-  }
 
   let body: Record<string, unknown> = {};
   try {
@@ -187,8 +164,8 @@ Deno.serve(async (req: Request) => {
     }
     return json(200, {
       environment: paypalEnvironment,
-      client_id: paypalClientId,
       packs: packs ?? [],
+      checkout: "native",
     });
   }
 
@@ -264,8 +241,15 @@ Deno.serve(async (req: Request) => {
         },
       );
       const paypalOrder = await paypalResponse.json();
+      const approvalLink = Array.isArray(paypalOrder.links)
+        ? paypalOrder.links.find((link: Record<string, unknown>) => {
+            const rel = String(link?.rel ?? "");
+            return rel === "approve" || rel === "payer-action";
+          })
+        : null;
+      const approvalUrl = String(approvalLink?.href ?? "");
 
-      if (!paypalResponse.ok || !paypalOrder.id) {
+      if (!paypalResponse.ok || !paypalOrder.id || !approvalUrl) {
         await admin
           .from("coin_recharge_orders")
           .update({ status: "failed", updated_at: new Date().toISOString() })
@@ -281,7 +265,11 @@ Deno.serve(async (req: Request) => {
         })
         .eq("id", recharge.id);
 
-      return json(201, { order_id: paypalOrder.id });
+      return json(201, {
+        order_id: paypalOrder.id,
+        approval_url: approvalUrl,
+        environment: paypalEnvironment,
+      });
     } catch {
       await admin
         .from("coin_recharge_orders")
