@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - native/flutter-v1
+      - build18/live-repair
   pull_request:
     branches:
       - native/flutter-v1
+      - build18/live-repair
   workflow_dispatch:
 
 permissions:
