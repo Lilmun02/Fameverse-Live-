@@ -184,6 +184,48 @@ void main() {
       },
     );
 
+    test('PayPal sandbox recharge is native and Vercel-free', () async {
+      final screen = await File(
+        'lib/features/profile/native_recharge_screen.dart',
+      ).readAsString();
+      final studio = await File(
+        'lib/features/profile/creator_studio_screen.dart',
+      ).readAsString();
+      final session = await File(
+        '../../supabase/functions/recharge-session/index.ts',
+      ).readAsString();
+      final api = await File(
+        '../../supabase/functions/recharge/index.ts',
+      ).readAsString();
+
+      expect(screen, contains('class NativeRechargeScreen'));
+      expect(
+        screen,
+        contains('launchUrl(uri, mode: LaunchMode.externalApplication)'),
+      );
+      expect(screen, contains("'Complete sandbox purchase'"));
+      expect(studio, contains('if (_isOwner)'));
+      expect(studio, contains('NativeRechargeScreen'));
+      expect(session, contains('checkout: "native"'));
+      expect(session, contains('session: token'));
+      expect(session, isNot(contains('vercel.app')));
+      expect(api, contains('approval_url: approvalUrl'));
+      expect(api, contains('"native-checkout-required"'));
+      expect(api, isNot(contains('vercel.app')));
+      expect(api, isNot(contains('text/html')));
+    });
+
+    test('TestFlight candidate is source-locked to Build 18', () async {
+      final codemagic = await File('../../codemagic.yaml').readAsString();
+
+      expect(codemagic, contains('EXPECTED_BRANCH="build18/live-repair"'));
+      expect(codemagic, contains('build18_source_identity.txt'));
+      expect(
+        codemagic,
+        contains('--dart-define="FAMEVERSE_SOURCE_SHA=\${CM_COMMIT}"'),
+      );
+    });
+
     test('physical Live repair contracts remain wired', () async {
       final viewer = await File(
         'lib/features/live/stream_viewer_live_screen.dart',
