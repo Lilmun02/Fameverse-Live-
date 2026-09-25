@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - native/flutter-v1
+  pull_request:
+    branches:
+      - native/flutter-v1
   workflow_dispatch:
 
 permissions:
@@ -182,3 +185,14 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
+
+  physical-release-gate:
+    name: Physical iPhone release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Block release until owner and external tester pass
+        run: node scripts/check-native-physical-acceptance.mjs
