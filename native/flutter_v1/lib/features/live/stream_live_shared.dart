@@ -192,8 +192,10 @@ class FvLiveChatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = messages.length > 6
-        ? messages.sublist(messages.length - 6)
+    // Build 18: physical iPhone QA showed the previous 11px chat was too small
+    // to read. Keep the overlay compact, but make it genuinely legible.
+    final visible = messages.length > 8
+        ? messages.sublist(messages.length - 8)
         : messages;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,16 +206,16 @@ class FvLiveChatList extends StatelessWidget {
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.only(bottom: 6),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: .34),
-              borderRadius: BorderRadius.circular(11),
+              color: Colors.black.withValues(alpha: .40),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 11, height: 1.22),
+                style: const TextStyle(fontSize: 14, height: 1.28),
                 children: [
                   TextSpan(
                     text: '$user ',
