@@ -55,11 +55,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
     }
     return _invoke(
       'recharge',
-      body: <String, dynamic>{
-        'session': session,
-        'action': action,
-        ...extra,
-      },
+      body: <String, dynamic>{'session': session, 'action': action, ...extra},
     );
   }
 
@@ -82,9 +78,8 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
           ? rows
                 .whereType<Map>()
                 .map(
-                  (row) => _RechargePack.fromMap(
-                    Map<String, dynamic>.from(row),
-                  ),
+                  (row) =>
+                      _RechargePack.fromMap(Map<String, dynamic>.from(row)),
                 )
                 .where((pack) => pack.id.isNotEmpty && pack.priceCents > 0)
                 .toList()
@@ -129,7 +124,10 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
         throw StateError('paypal-approval-url-invalid');
       }
 
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched) throw StateError('paypal-approval-open-failed');
 
       if (!mounted) return;
@@ -353,7 +351,11 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                       FilledButton(
                         key: const Key('complete-paypal-sandbox-purchase'),
                         onPressed: _busy ? null : _capturePurchase,
-                        child: Text(_busy ? 'Checking PayPal…' : 'Complete sandbox purchase'),
+                        child: Text(
+                          _busy
+                              ? 'Checking PayPal…'
+                              : 'Complete sandbox purchase',
+                        ),
                       ),
                     ],
                   ),
