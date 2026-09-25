@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - native/flutter-v1
+  pull_request:
+    branches:
+      - native/flutter-v1
   workflow_dispatch:
 
 permissions:
