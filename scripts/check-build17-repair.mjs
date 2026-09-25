@@ -20,13 +20,15 @@ const studioPath = 'native/flutter_v1/lib/features/profile/creator_studio_screen
 const payoutFixPath = 'supabase/migrations/20260924_fix_creator_payout_status_ambiguity.sql'
 const rechargePagePath = 'recharge.html'
 const rechargeApiPath = 'supabase/functions/recharge/index.ts'
+const vitePath = 'vite.config.js'
 
-const [profile, studio, payoutFix, rechargePage, rechargeApi] = await Promise.all([
+const [profile, studio, payoutFix, rechargePage, rechargeApi, vite] = await Promise.all([
   load(profilePath),
   load(studioPath),
   load(payoutFixPath),
   load(rechargePagePath),
   load(rechargeApiPath),
+  load(vitePath),
 ])
 
 // Profile law: the public Profile tab is social identity first, not owner/admin QA.
@@ -51,10 +53,15 @@ requireText(payoutFixPath, payoutFix, 'verification_request.status', 'verificati
 requireText(payoutFixPath, payoutFix, 'ledger.amount_cents', 'earnings amount must be qualified')
 requireText(payoutFixPath, payoutFix, 'payout.status', 'payout status must be qualified')
 
-// Recharge law: Supabase Edge Functions cannot serve HTML; checkout HTML belongs to Vercel.
+// Recharge law: Supabase Edge Functions are API/redirect only; checkout HTML belongs to Vercel.
 requireText(rechargePagePath, rechargePage, '<title>Fameverse Recharge</title>', 'hosted recharge page is missing')
+requireText(vitePath, vite, "recharge: resolve(import.meta.dirname, 'recharge.html')", 'Vite must include the hosted recharge page')
+requireText(rechargeApiPath, rechargeApi, 'redirectToCheckout', 'Edge recharge GET must redirect to the hosted checkout')
+requireText(rechargeApiPath, rechargeApi, 'action === "config"', 'Edge recharge API must expose checkout configuration as JSON')
 forbidText(rechargePagePath, rechargePage, 'Internal Build 16 purchase QA', 'stale Build 16 label must not return')
 forbidText(rechargeApiPath, rechargeApi, 'Internal Build 16 purchase QA', 'Edge API must not contain stale Build 16 checkout copy')
+forbidText(rechargeApiPath, rechargeApi, '"Content-Type": "text/html', 'Edge recharge must never attempt to serve HTML again')
+forbidText(rechargeApiPath, rechargeApi, '<!doctype html>', 'checkout markup must never move back into the Edge Function')
 
 if (required.length || forbidden.length) {
   console.error('Build 17 regression protection failed:')
