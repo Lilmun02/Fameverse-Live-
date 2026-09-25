@@ -45,6 +45,10 @@ jobs:
       - name: Enforce Fameverse native foundation law
         run: dart run tool/check_native_contract.dart
 
+      - name: Enforce Build 18 regression law
+        working-directory: .
+        run: node scripts/check-build18-live-repair.mjs
+
       - name: Verify Dart formatting
         run: |
           dart format lib test tool
