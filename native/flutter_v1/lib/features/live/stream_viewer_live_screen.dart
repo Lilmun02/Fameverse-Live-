@@ -36,9 +36,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final List<FvGiftPlayback> _giftQueue = [];
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
+  final List<int> _tapBursts = [];
   final Stopwatch _tapClock = Stopwatch();
   Call? _call;
   FvLiveActivitySession? _activity;
+  StreamSubscription<CallState>? _callStateSubscription;
   Timer? _tapFlushTimer;
   Timer? _giftTimer;
   FvGiftPlayback? _giftPlayback;
@@ -124,6 +126,18 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         ),
         'Could not join the livestream',
       );
+
+      _callStateSubscription?.cancel();
+      _callStateSubscription = call.state.valueStream.listen((state) {
+        if (state.endedAt != null || state.liveEndedAt != null) {
+          _exitEndedLive();
+        }
+      });
+      if (call.state.value.endedAt != null ||
+          call.state.value.liveEndedAt != null) {
+        _exitEndedLive();
+        return;
+      }
 
       _activity = widget.liveBackend.openLiveActivity(
         roomId: widget.room.id,
@@ -342,15 +356,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
   }
 
-  Future<void> _refillWallet() async {
-    if (!_canRefill) return;
+  Future<int> _refillWallet() async {
+    if (!_canRefill) return _walletBalance;
     try {
       final balance = await widget.liveBackend.refillBetaWallet();
       if (mounted) setState(() => _walletBalance = balance);
+      return balance;
     } catch (_) {
       if (mounted) {
         _showMessage('Test-coin refill is limited to owner/admin accounts.');
       }
+      return _walletBalance;
     }
   }
 
@@ -373,7 +389,16 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _tapStage() {
     if (_connecting || _leaving) return;
     _tapBuffer.add(_tapClock.elapsedMicroseconds / 1000.0);
-    setState(() => _localTapCount += 1);
+    final serial = _localTapCount + 1;
+    setState(() {
+      _localTapCount = serial;
+      _tapBursts.add(serial);
+      if (_tapBursts.length > 14) _tapBursts.removeAt(0);
+    });
+    Future<void>.delayed(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
+      setState(() => _tapBursts.remove(serial));
+    });
     if (_tapBuffer.length >= 100) _flushTapBuffer();
   }
 
@@ -612,18 +637,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final call = _call;
     if (call != null) {
       try {
-        await call.setCameraEnabled(enabled: false);
+        await call
+            .setCameraEnabled(enabled: false)
+            .timeout(const Duration(milliseconds: 900));
       } catch (_) {}
       try {
-        await call.setMicrophoneEnabled(enabled: false);
+        await call
+            .setMicrophoneEnabled(enabled: false)
+            .timeout(const Duration(milliseconds: 900));
       } catch (_) {}
     }
     if (notify) {
       try {
-        await _activity?.send('cohost-source-left', {
-          'viewerId': widget.identity.id,
-          'userId': widget.identity.id,
-        });
+        await _activity
+            ?.send('cohost-source-left', {
+              'viewerId': widget.identity.id,
+              'userId': widget.identity.id,
+            })
+            .timeout(const Duration(milliseconds: 700));
       } catch (_) {}
     }
     if (mounted) {
@@ -803,7 +834,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 14),
-              if (_selfIsCohost)
+              if (_selfIsCohost) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -846,8 +877,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                       },
                     ),
                   ],
-                )
-              else
+                ),
+                const SizedBox(height: 10),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    unawaited(_shareLive());
+                  },
+                  icon: const Icon(Icons.ios_share_rounded),
+                  label: const Text('Share live'),
+                ),
+              ] else
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -884,19 +924,50 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     );
   }
 
+  void _schedulePop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).maybePop();
+    });
+  }
+
   Future<void> _leave() async {
     if (_leaving) return;
     setState(() => _leaving = true);
     _queueTapBuffer();
-    await _drainTapQueue();
-    if (_selfIsCohost) await _deactivateSelfCohost();
-    await _disposeTransport();
-    if (mounted) Navigator.of(context).pop();
+    unawaited(_drainTapQueue());
+
+    if (_selfIsCohost) {
+      try {
+        await _activity
+            ?.send('cohost-source-left', {
+              'viewerId': widget.identity.id,
+              'userId': widget.identity.id,
+            })
+            .timeout(const Duration(milliseconds: 500));
+      } catch (_) {}
+    }
+
+    // Leaving the UI must never wait on network cleanup. Physical QA showed
+    // the old awaited cleanup could trap a co-host in the live after tapping
+    // Back. The route exits first; transport cleanup continues best-effort.
+    _schedulePop();
+    unawaited(_disposeTransport());
+  }
+
+  void _exitEndedLive() {
+    if (_leaving || !mounted) return;
+    setState(() => _leaving = true);
+    _queueTapBuffer();
+    unawaited(_drainTapQueue());
+    _schedulePop();
+    unawaited(_disposeTransport());
   }
 
   Future<void> _disposeTransport() async {
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    await _callStateSubscription?.cancel();
+    _callStateSubscription = null;
     final activity = _activity;
     _activity = null;
     if (activity != null) {
@@ -927,6 +998,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _comment.dispose();
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    _callStateSubscription?.cancel();
     _queueTapBuffer();
     unawaited(_drainTapQueue());
     unawaited(_disposeTransport());
@@ -937,7 +1009,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   Widget build(BuildContext context) {
     final call = _call;
     return PopScope(
-      canPop: false,
+      canPop: _leaving,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) unawaited(_leave());
       },
@@ -987,9 +1059,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        widget.room.host.displayName,
+                                        widget.room.host.handle,
                                         maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        overflow: TextOverflow.fade,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w900,
                                         ),
@@ -1002,7 +1075,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                                 Text(
                                   widget.room.title,
                                   maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: false,
+                                  overflow: TextOverflow.fade,
                                   style: const TextStyle(
                                     color: Color(0xFFD1C7D7),
                                     fontSize: 11,
@@ -1081,7 +1155,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ),
                         ),
                       SizedBox(
-                        height: 180,
+                        height: 220,
                         child: SingleChildScrollView(
                           reverse: true,
                           child: FvLiveChatList(messages: _chat),
@@ -1097,7 +1171,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                               textInputAction: TextInputAction.send,
                               onSubmitted: (_) => unawaited(_postComment()),
                               decoration: const InputDecoration(
-                                hintText: 'Say something...',
+                                hintText: 'Add a comment...',
                                 counterText: '',
                                 isDense: true,
                               ),
@@ -1109,26 +1183,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: const Icon(Icons.send_rounded),
                             tooltip: 'Send comment',
                           ),
-                          IconButton.filledTonal(
-                            onPressed: _walletReady && !_giftSending
-                                ? () => unawaited(
-                                    _sendGift(fvGiftById('rose')!, 1),
-                                  )
-                                : null,
-                            icon: const Text('🌹'),
-                            tooltip: 'Send Rose',
-                          ),
-                          IconButton.filledTonal(
+                          const SizedBox(width: 4),
+                          IconButton.filled(
+                            key: const Key('viewer-gift-button'),
                             onPressed: _walletReady ? _showGiftTray : null,
                             icon: const Icon(Icons.card_giftcard_rounded),
                             tooltip: 'Gifts',
                           ),
+                          const SizedBox(width: 4),
                           IconButton.filledTonal(
-                            onPressed: _shareLive,
-                            icon: const Icon(Icons.ios_share_rounded),
-                            tooltip: 'Share',
-                          ),
-                          IconButton.filled(
                             onPressed: _showFMenu,
                             icon: const Text(
                               'F',
@@ -1150,25 +1213,53 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   key: ValueKey('viewer-gift-$_giftSerial'),
                   playback: _giftPlayback!,
                 ),
-              Positioned(
-                right: 18,
-                bottom: 92,
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 220),
-                    opacity: _localTapCount == 0 ? 0 : 1,
-                    child: const Text(
-                      'F 🔥',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
+              ..._tapBursts.map(
+                (serial) => Positioned(
+                  right: 16 + (serial % 3) * 16,
+                  bottom: 86,
+                  child: IgnorePointer(
+                    child: _TapBurstParticle(serial: serial),
                   ),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TapBurstParticle extends StatelessWidget {
+  const _TapBurstParticle({required this.serial});
+
+  final int serial;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = serial.isEven ? '🔥' : 'F';
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 850),
+      curve: Curves.easeOut,
+      builder: (context, progress, child) {
+        return Opacity(
+          opacity: (1 - progress).clamp(0, 1),
+          child: Transform.translate(
+            offset: Offset(0, -118 * progress),
+            child: Transform.scale(
+              scale: .82 + (.28 * (1 - progress)),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: Text(
+        symbol,
+        style: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+          shadows: [Shadow(blurRadius: 8, color: Colors.black)],
         ),
       ),
     );
