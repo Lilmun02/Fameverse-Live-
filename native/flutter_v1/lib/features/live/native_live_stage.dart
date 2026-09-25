@@ -302,8 +302,9 @@ class _V2CameraOffSurface extends StatelessWidget {
                   ],
                 ),
                 child: CircleAvatar(
-                  foregroundImage:
-                      image != null && image.isNotEmpty ? NetworkImage(image) : null,
+                  foregroundImage: image != null && image.isNotEmpty
+                      ? NetworkImage(image)
+                      : null,
                   backgroundColor: const Color(0xFF2B1838),
                   child: Text(
                     initial,
@@ -319,7 +320,10 @@ class _V2CameraOffSurface extends StatelessWidget {
                 displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 5),
               Container(
@@ -336,7 +340,10 @@ class _V2CameraOffSurface extends StatelessWidget {
                     SizedBox(width: 5),
                     Text(
                       'Camera off',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),
