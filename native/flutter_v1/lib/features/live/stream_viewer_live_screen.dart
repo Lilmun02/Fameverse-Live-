@@ -947,9 +947,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       } catch (_) {}
     }
 
-    // Leaving the UI must never wait on network cleanup. Physical QA showed
-    // the old awaited cleanup could trap a co-host in the live after tapping
-    // Back. The route exits first; transport cleanup continues best-effort.
     _schedulePop();
     unawaited(_disposeTransport());
   }
@@ -1008,6 +1005,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final call = _call;
+    final cohostActive = _activeCohostUserId != null;
+    final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
+
     return PopScope(
       canPop: _leaving,
       onPopInvokedWithResult: (didPop, result) {
@@ -1058,13 +1058,16 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                                 Row(
                                   children: [
                                     Flexible(
-                                      child: Text(
-                                        widget.room.host.handle,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        overflow: TextOverflow.fade,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w900,
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          widget.room.host.handle,
+                                          maxLines: 1,
+                                          softWrap: false,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1123,7 +1126,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             text: _error!,
                           ),
                       ],
-                      const Spacer(),
+                      if (cohostActive)
+                        SizedBox(height: cohostCameraHeight + 32)
+                      else
+                        const Spacer(),
                       if (widget.room.goal.isNotEmpty)
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -1155,7 +1161,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ),
                         ),
                       SizedBox(
-                        height: 220,
+                        height: cohostActive ? 250 : 220,
                         child: SingleChildScrollView(
                           reverse: true,
                           child: FvLiveChatList(messages: _chat),
@@ -1163,43 +1169,39 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                       ),
                       const SizedBox(height: 8),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: FvLiveCommentComposer(
                               controller: _comment,
-                              maxLength: 160,
-                              textInputAction: TextInputAction.send,
-                              onSubmitted: (_) => unawaited(_postComment()),
-                              decoration: const InputDecoration(
-                                hintText: 'Add a comment...',
-                                counterText: '',
-                                isDense: true,
-                              ),
+                              hintText: 'Say something...',
                             ),
                           ),
                           const SizedBox(width: 5),
-                          IconButton.filledTonal(
+                          IconButton.filled(
                             onPressed: _postComment,
-                            icon: const Icon(Icons.send_rounded),
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF6F35C5),
+                              foregroundColor: Colors.white,
+                            ),
+                            icon: const Icon(Icons.arrow_upward_rounded),
                             tooltip: 'Send comment',
                           ),
                           const SizedBox(width: 4),
                           IconButton.filled(
                             key: const Key('viewer-gift-button'),
                             onPressed: _walletReady ? _showGiftTray : null,
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF211529),
+                              foregroundColor: const Color(0xFFFFC65A),
+                              side: const BorderSide(color: Color(0xFF4B365B)),
+                            ),
                             icon: const Icon(Icons.card_giftcard_rounded),
                             tooltip: 'Gifts',
                           ),
                           const SizedBox(width: 4),
-                          IconButton.filledTonal(
+                          FvFameActionButton(
                             onPressed: _showFMenu,
-                            icon: const Text(
-                              'F',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
                             tooltip: 'Live actions',
                           ),
                         ],
@@ -1256,10 +1258,11 @@ class _TapBurstParticle extends StatelessWidget {
       },
       child: Text(
         symbol,
-        style: const TextStyle(
+        style: TextStyle(
+          color: symbol == 'F' ? const Color(0xFFB96BFF) : null,
           fontSize: 28,
           fontWeight: FontWeight.w900,
-          shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+          shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
         ),
       ),
     );
