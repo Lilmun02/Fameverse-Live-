@@ -10,6 +10,21 @@ void require(bool condition, String message) {
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
+  final stage = Platform.environment['FAMEVERSE_NATIVE_STAGE'] ?? '';
+  final cmBranch = Platform.environment['CM_BRANCH'] ?? '';
+
+  // Release-provenance law: the stale base branch may still be used for
+  // bootstrap/preflight work, but it must never publish another TestFlight
+  // candidate while Build 18 repair is under physical QA. This specifically
+  // prevents Codemagic from silently uploading the old Profile/Live UI again.
+  if (stage == 'testflight') {
+    require(
+      cmBranch == 'build18/live-repair',
+      'BLOCKED: TestFlight candidate is not sourced from build18/live-repair. '
+      'Do not upload stale native/flutter-v1 product code.',
+    );
+  }
+
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
