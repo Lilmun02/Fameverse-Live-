@@ -521,9 +521,15 @@ class _ConnectionStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Stat(value: followers, label: 'Followers')),
-          Expanded(child: _Stat(value: following, label: 'Following')),
-          Expanded(child: _Stat(value: friends, label: 'Friends')),
+          Expanded(
+            child: _Stat(value: followers, label: 'Followers'),
+          ),
+          Expanded(
+            child: _Stat(value: following, label: 'Following'),
+          ),
+          Expanded(
+            child: _Stat(value: friends, label: 'Friends'),
+          ),
         ],
       ),
     );
