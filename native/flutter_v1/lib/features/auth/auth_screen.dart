@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
 
+enum _AuthMode { signIn, signUp }
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({required this.backend, super.key});
 
@@ -16,9 +18,11 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
 
-  bool _signUp = false;
+  _AuthMode _mode = _AuthMode.signIn;
   bool _busy = false;
   String _message = '';
+
+  bool get _signUp => _mode == _AuthMode.signUp;
 
   @override
   void dispose() {
@@ -26,6 +30,14 @@ class _AuthScreenState extends State<AuthScreen> {
     _passwordController.dispose();
     _displayNameController.dispose();
     super.dispose();
+  }
+
+  void _setMode(_AuthMode mode) {
+    if (_busy || _mode == mode) return;
+    setState(() {
+      _mode = mode;
+      _message = '';
+    });
   }
 
   Future<void> _submit() async {
@@ -52,16 +64,39 @@ class _AuthScreenState extends State<AuthScreen> {
           password: password,
           displayName: _displayNameController.text,
         );
-        if (mounted && !result.signedIn) {
-          setState(() => _message = result.message);
+        if (!mounted) return;
+        if (!result.signedIn) {
+          setState(() {
+            _mode = _AuthMode.signIn;
+            _message = result.message.isEmpty
+                ? 'Account created. Sign in to continue.'
+                : result.message;
+          });
         }
       } else {
         await widget.backend.signIn(email: email, password: password);
+        if (!mounted) return;
+        if (widget.backend.currentIdentity == null) {
+          setState(() {
+            _message =
+                'Sign in did not start a session. Check your email and password and try again.';
+          });
+        }
       }
     } catch (error) {
-      if (mounted) {
-        setState(() => _message = _friendlyError(error));
-      }
+      if (!mounted) return;
+      final friendly = _friendlyError(error);
+      final alreadyRegistered = friendly.toLowerCase().contains(
+        'already registered',
+      );
+      setState(() {
+        if (_signUp && alreadyRegistered) {
+          _mode = _AuthMode.signIn;
+          _message = 'That email already has a Fameverse account. Sign in instead.';
+        } else {
+          _message = friendly;
+        }
+      });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -123,7 +158,42 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 56),
+                  const SizedBox(height: 48),
+                  Container(
+                    key: const Key('auth-mode-switch'),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF17121E),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF33253F)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _ModeButton(
+                            keyValue: const Key('auth-mode-sign-in'),
+                            label: 'Sign in',
+                            selected: !_signUp,
+                            onPressed: _busy
+                                ? null
+                                : () => _setMode(_AuthMode.signIn),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: _ModeButton(
+                            keyValue: const Key('auth-mode-sign-up'),
+                            label: 'Create account',
+                            selected: _signUp,
+                            onPressed: _busy
+                                ? null
+                                : () => _setMode(_AuthMode.signUp),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 34),
                   Text(
                     'ACCOUNT',
                     style: TextStyle(
@@ -136,6 +206,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _signUp ? 'Create your Fameverse account' : 'Welcome back',
+                    key: Key(_signUp ? 'auth-sign-up-title' : 'auth-sign-in-title'),
                     style: const TextStyle(
                       fontSize: 34,
                       height: 1.05,
@@ -145,8 +216,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _signUp
-                        ? 'Create an account for the Fameverse native beta.'
-                        : 'Sign in to your Fameverse beta account.',
+                        ? 'Create a new Fameverse account.'
+                        : 'Use your existing Fameverse email and password.',
                     style: const TextStyle(
                       color: Color(0xFFBEB5C8),
                       fontSize: 15,
@@ -155,6 +226,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 34),
                   if (_signUp) ...[
                     _Field(
+                      keyValue: const Key('auth-display-name'),
                       label: 'Display name',
                       hint: 'Your name',
                       controller: _displayNameController,
@@ -163,6 +235,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 16),
                   ],
                   _Field(
+                    keyValue: const Key('auth-email'),
                     label: 'Email',
                     hint: 'you@example.com',
                     controller: _emailController,
@@ -171,6 +244,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 16),
                   _Field(
+                    keyValue: const Key('auth-password'),
                     label: 'Password',
                     hint: '6+ characters',
                     controller: _passwordController,
@@ -207,16 +281,14 @@ class _AuthScreenState extends State<AuthScreen> {
                           )
                         : Text(_signUp ? 'Create account' : 'Sign in'),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   TextButton(
+                    key: const Key('auth-secondary'),
                     onPressed: _busy
                         ? null
-                        : () {
-                            setState(() {
-                              _signUp = !_signUp;
-                              _message = '';
-                            });
-                          },
+                        : () => _setMode(
+                            _signUp ? _AuthMode.signIn : _AuthMode.signUp,
+                          ),
                     child: Text(
                       _signUp
                           ? 'Already have an account? Sign in'
@@ -233,8 +305,38 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
+class _ModeButton extends StatelessWidget {
+  const _ModeButton({
+    required this.keyValue,
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final Key keyValue;
+  final String label;
+  final bool selected;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      key: keyValue,
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        minimumSize: const Size.fromHeight(44),
+        foregroundColor: selected ? Colors.white : const Color(0xFFBEB5C8),
+        backgroundColor: selected ? const Color(0xFF5F2DA8) : Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+    );
+  }
+}
+
 class _Field extends StatelessWidget {
   const _Field({
+    required this.keyValue,
     required this.label,
     required this.hint,
     required this.controller,
@@ -244,6 +346,7 @@ class _Field extends StatelessWidget {
     this.onSubmitted,
   });
 
+  final Key keyValue;
   final String label;
   final String hint;
   final TextEditingController controller;
@@ -267,12 +370,14 @@ class _Field extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextField(
+          key: keyValue,
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
           autocorrect: !obscureText,
+          enableSuggestions: !obscureText,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
