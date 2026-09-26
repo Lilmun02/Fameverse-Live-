@@ -94,7 +94,7 @@ void main() {
       expect(shell, contains("key: const Key('fameverse-bottom-nav')"));
       expect(shell, isNot(contains('class _Build16HomeScreen')));
       expect(shell, isNot(contains('class _Build16DiscoverScreen')));
-      expect(shell, isNot(contains('showModalBottomSheet<void>('));
+      expect(shell, isNot(contains('showModalBottomSheet<void>(')));
     });
   });
 }
