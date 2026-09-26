@@ -13,6 +13,8 @@ This file freezes the exact product surface to be verified before the next nativ
 - Ending Live clears the saved title/goal so the next setup starts clean.
 - Fame Coin recharge exposes exactly three fixed packs: 100 / 1,000 / 5,000, plus custom amount.
 - Recharge remains PayPal-first. Stripe is deferred until at least 500 active users and explicit CEO approval.
+- Creator Studio includes a read-only Fameverse Pro Live Achievements teaser: only a small 10% preview is visible, Silver / Gold / Diamond are named, and the unreleased details remain visually blurred/locked.
+- Pro Live qualification, tracking, badges, status loss and rewards remain inactive in this candidate. The approved future rules live only in `docs/PRO_LIVE_ACHIEVEMENTS_ROADMAP.md`.
 
 ## Release law
 
