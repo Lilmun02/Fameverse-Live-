@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
@@ -47,6 +49,7 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         _error = null;
       });
     }
+
     try {
       final results = await Future.wait<dynamic>([
         widget.backend.loadPayoutSummary(),
@@ -88,6 +91,7 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
 
   Future<void> _openPayoutRequest() async {
     if (!_summary.canRequestPayout || _busy) return;
+
     final controller = TextEditingController(
       text: (_summary.withdrawableCents / 100).toStringAsFixed(2),
     );
@@ -192,7 +196,9 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
             padding: const EdgeInsets.fromLTRB(18, 10, 18, 42),
             children: [
               const _StudioHero(),
-              const SizedBox(height: 22),
+              const SizedBox(height: 16),
+              const _ProLivePreviewCard(),
+              const SizedBox(height: 24),
               if (_loading)
                 const _StudioLoading()
               else if (_error != null)
@@ -315,8 +321,156 @@ class _StudioHero extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Manage creator earnings and payout setup without mixing account verification or internal QA into your public profile.',
+            'Manage creator earnings and payout setup without mixing internal tools into your public profile.',
             style: TextStyle(color: Color(0xFFC4B8CC), height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProLivePreviewCard extends StatelessWidget {
+  const _ProLivePreviewCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('pro-live-preview-card'),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFF7E46B8), width: 1.2),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF28133A), Color(0xFF17101F), Color(0xFF0E0A12)],
+        ),
+        boxShadow: const [
+          BoxShadow(color: Color(0x332B0A45), blurRadius: 20),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFC176FF), Color(0xFF6530A5)],
+                  ),
+                ),
+                child: const Icon(Icons.workspace_premium_rounded),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fameverse Pro Live Achievements',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Future creator program · read-only preview',
+                      style: TextStyle(
+                        color: Color(0xFFAFA2B7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3A2050),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  '10% PREVIEW',
+                  style: TextStyle(
+                    color: Color(0xFFE0B7FF),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: .7,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Silver  •  Gold  •  Diamond',
+            style: TextStyle(
+              color: Color(0xFFEADAF4),
+              fontWeight: FontWeight.w900,
+              letterSpacing: .4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Consistency in Live performance will matter. The rest stays a surprise for now.',
+            style: TextStyle(color: Color(0xFFB9AEC1), height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                ExcludeSemantics(
+                  child: ImageFiltered(
+                    imageFilter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      color: const Color(0xFF21152A),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Qualification targets and grace windows'),
+                          SizedBox(height: 8),
+                          Text('Status perks, progression and badge details'),
+                          SizedBox(height: 8),
+                          Text('Creator rewards and future Pro Live benefits'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xE6191020),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: const Color(0xFF6D3C8E)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_outline_rounded, size: 15),
+                      SizedBox(width: 6),
+                      Text(
+                        '90% hidden until the feature is ready',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -410,8 +564,7 @@ class _PayoutEligibilityCard extends StatelessWidget {
         'Fameverse needs additional payout information. The external beta does not collect that information on this screen yet.',
       'rejected' =>
         'Payout eligibility was not approved. A future payout setup flow will show the required next steps.',
-      'suspended' =>
-        'Payout requests are currently disabled for this creator account.',
+      'suspended' => 'Payout requests are currently disabled for this creator account.',
       _ =>
         'Payout onboarding is not open in this external beta yet. We will not ask you to press a vague verification button or submit incomplete information.',
     };
@@ -473,6 +626,7 @@ class _PayoutCard extends StatelessWidget {
         : summary.withdrawableCents < summary.minimumPayoutCents
         ? '${_money(summary.minimumPayoutCents)} minimum'
         : null;
+
     return Container(
       key: const Key('creator-payout-card'),
       padding: const EdgeInsets.all(18),
