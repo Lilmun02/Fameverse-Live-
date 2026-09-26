@@ -111,7 +111,8 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
   }
 
   String _reasonFor(FvLiveRoom room) {
-    final friend = widget.network.followingIds.contains(room.hostUserId) &&
+    final friend =
+        widget.network.followingIds.contains(room.hostUserId) &&
         widget.network.followerIds.contains(room.hostUserId);
     if (friend) return 'Friend is live';
     if (widget.network.followingIds.contains(room.hostUserId)) {
@@ -160,7 +161,8 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
               const _HomeEmptyCard(
                 icon: Icons.live_tv_outlined,
                 title: 'Nobody is live yet',
-                body: 'When a Fameverse creator goes live, they will appear here first.',
+                body:
+                    'When a Fameverse creator goes live, they will appear here first.',
               )
             else
               SizedBox(
@@ -216,7 +218,9 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
                 onAction: widget.onOpenDiscover,
               )
             else
-              ...rankedRooms.take(8).map(
+              ...rankedRooms
+                  .take(8)
+                  .map(
                     (room) => Padding(
                       padding: const EdgeInsets.only(bottom: 14),
                       child: _AlgorithmLiveCard(
@@ -259,8 +263,7 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
                       creator: creator,
                       following: following,
                       busy: widget.followBusy,
-                      onFollow: () =>
-                          widget.onToggleFollow(creator.profile.id),
+                      onFollow: () => widget.onToggleFollow(creator.profile.id),
                     );
                   },
                 ),
@@ -292,9 +295,7 @@ class _HomeTopBar extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [Color(0xFFB663FF), Color(0xFF542083)],
             ),
-            boxShadow: [
-              BoxShadow(color: Color(0x665E1B9B), blurRadius: 14),
-            ],
+            boxShadow: [BoxShadow(color: Color(0x665E1B9B), blurRadius: 14)],
           ),
           child: const Center(
             child: Text(
@@ -361,9 +362,13 @@ class _HomeLanePicker extends StatelessWidget {
         final selected = lane == item.$1;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(right: item.$1 == _HomeLane.rising ? 0 : 8),
+            padding: EdgeInsets.only(
+              right: item.$1 == _HomeLane.rising ? 0 : 8,
+            ),
             child: InkWell(
-              key: Key('home-lane-${item.$2.toLowerCase().replaceAll(' ', '-')}'),
+              key: Key(
+                'home-lane-${item.$2.toLowerCase().replaceAll(' ', '-')}',
+              ),
               onTap: () => onChanged(item.$1),
               borderRadius: BorderRadius.circular(999),
               child: AnimatedContainer(
@@ -834,10 +839,7 @@ class _HomeEmptyCard extends StatelessWidget {
                 ),
                 if (actionLabel != null && onAction != null) ...[
                   const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: onAction,
-                    child: Text(actionLabel!),
-                  ),
+                  TextButton(onPressed: onAction, child: Text(actionLabel!)),
                 ],
               ],
             ),
