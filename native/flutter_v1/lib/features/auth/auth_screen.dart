@@ -92,7 +92,8 @@ class _AuthScreenState extends State<AuthScreen> {
       setState(() {
         if (_signUp && alreadyRegistered) {
           _mode = _AuthMode.signIn;
-          _message = 'That email already has a Fameverse account. Sign in instead.';
+          _message =
+              'That email already has a Fameverse account. Sign in instead.';
         } else {
           _message = friendly;
         }
@@ -206,7 +207,9 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _signUp ? 'Create your Fameverse account' : 'Welcome back',
-                    key: Key(_signUp ? 'auth-sign-up-title' : 'auth-sign-in-title'),
+                    key: Key(
+                      _signUp ? 'auth-sign-up-title' : 'auth-sign-in-title',
+                    ),
                     style: const TextStyle(
                       fontSize: 34,
                       height: 1.05,
@@ -326,7 +329,9 @@ class _ModeButton extends StatelessWidget {
       style: TextButton.styleFrom(
         minimumSize: const Size.fromHeight(44),
         foregroundColor: selected ? Colors.white : const Color(0xFFBEB5C8),
-        backgroundColor: selected ? const Color(0xFF5F2DA8) : Colors.transparent,
+        backgroundColor: selected
+            ? const Color(0xFF5F2DA8)
+            : Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),

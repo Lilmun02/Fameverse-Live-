@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('existing account sign in is the default auth mode', (tester) async {
+  testWidgets('existing account sign in is the default auth mode', (
+    tester,
+  ) async {
     final backend = _AuthBackend();
-    await tester.pumpWidget(
-      MaterialApp(home: AuthScreen(backend: backend)),
-    );
+    await tester.pumpWidget(MaterialApp(home: AuthScreen(backend: backend)));
 
     expect(find.byKey(const Key('auth-sign-in-title')), findsOneWidget);
     expect(find.text('Welcome back'), findsOneWidget);
@@ -18,9 +18,7 @@ void main() {
 
   testWidgets('sign in submits to signIn and never signUp', (tester) async {
     final backend = _AuthBackend();
-    await tester.pumpWidget(
-      MaterialApp(home: AuthScreen(backend: backend)),
-    );
+    await tester.pumpWidget(MaterialApp(home: AuthScreen(backend: backend)));
 
     await tester.enterText(
       find.byKey(const Key('auth-email')),
@@ -39,9 +37,7 @@ void main() {
     tester,
   ) async {
     final backend = _AuthBackend(rejectSignUpAsRegistered: true);
-    await tester.pumpWidget(
-      MaterialApp(home: AuthScreen(backend: backend)),
-    );
+    await tester.pumpWidget(MaterialApp(home: AuthScreen(backend: backend)));
 
     await tester.tap(find.byKey(const Key('auth-mode-sign-up')));
     await tester.pumpAndSettle();
@@ -61,7 +57,10 @@ void main() {
 
     expect(backend.signUpCalls, 1);
     expect(find.byKey(const Key('auth-sign-in-title')), findsOneWidget);
-    expect(find.text('That email already has a Fameverse account. Sign in instead.'), findsOneWidget);
+    expect(
+      find.text('That email already has a Fameverse account. Sign in instead.'),
+      findsOneWidget,
+    );
   });
 }
 
