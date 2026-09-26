@@ -108,9 +108,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         roomId: widget.room.id,
         onComment: _receiveComment,
         onGift: _receiveGift,
-        onCohost: (Map<String, dynamic> payload) {
-          unawaited(_handleCohostEvent(payload));
-        },
+        onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
       );
 
       final stats = await widget.liveBackend.loadGifterStats(
@@ -128,9 +126,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           ),
         );
       });
-      _tapRefresh = Timer.periodic(const Duration(seconds: 2), (_) {
-        unawaited(_refreshTapTotal());
-      });
+      _tapRefresh = Timer.periodic(
+        const Duration(seconds: 2),
+        (_) => unawaited(_refreshTapTotal()),
+      );
 
       if (mounted) setState(() => _connecting = false);
     } catch (error) {
@@ -174,8 +173,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
-    final rawQuantity = (payload['quantity'] as num?)?.toInt() ?? 1;
-    final quantity = rawQuantity.clamp(1, 100000);
+    final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
+      1,
+      100000,
+    );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
@@ -307,7 +308,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         if (!mounted) return;
         setState(() {
           _cohostRequests.removeWhere(
-            (Map<String, dynamic> item) =>
+            (item) =>
                 (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
           );
           _cohostRequests.insert(0, <String, dynamic>{
@@ -319,8 +320,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         });
         break;
       case 'cohost-invite-accepted':
-        if (_pendingInviteUserId != viewerId) return;
-        await _grantCohost(viewerId);
+        if (_pendingInviteUserId == viewerId) await _grantCohost(viewerId);
         break;
       case 'cohost-invite-declined':
       case 'cohost-invite-cancelled':
@@ -337,8 +337,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         if (_activeCohostUserId == viewerId && mounted) {
           setState(() => _activeCohostUserId = null);
         }
-        break;
-      default:
         break;
     }
   }
@@ -367,7 +365,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (mounted) {
       setState(() {
         _cohostRequests.removeWhere(
-          (Map<String, dynamic> item) =>
+          (item) =>
               (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
         );
       });
@@ -382,7 +380,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (mounted) {
       setState(() {
         _cohostRequests.removeWhere(
-          (Map<String, dynamic> item) =>
+          (item) =>
               (item['viewerId'] ?? item['userId'])?.toString() == viewerId,
         );
       });
@@ -540,12 +538,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF17101F),
-      builder: (BuildContext context) => SafeArea(
+      builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(22),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            children: [
               NativeProfileAvatar(profile: widget.room.host, radius: 42),
               const SizedBox(height: 12),
               Text(
@@ -556,7 +554,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 ),
               ),
               Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...<Widget>[
+              if (widget.room.host.bio.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(widget.room.host.bio, textAlign: TextAlign.center),
               ],
@@ -574,14 +572,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF17101F),
-      builder: (BuildContext context) => SafeArea(
+      builder: (context) => SafeArea(
         child: SizedBox(
           height: MediaQuery.sizeOf(context).height * .62,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
+              children: [
                 const Text(
                   'Viewers',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
@@ -590,66 +588,62 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 Expanded(
                   child: PartialCallStateBuilder<List<CallParticipantState>>(
                     call: call,
-                    selector: (CallState state) => state.callParticipants,
-                    builder:
-                        (
-                          BuildContext context,
-                          List<CallParticipantState> participants,
-                        ) {
-                          final viewers = participants
-                              .where((p) => !p.isLocal)
-                              .toList();
-                          if (viewers.isEmpty) {
-                            return const Center(child: Text('No viewers yet.'));
-                          }
-                          return ListView.separated(
-                            itemCount: viewers.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 1),
-                            itemBuilder: (BuildContext context, int index) {
-                              final participant = viewers[index];
-                              final isActive =
-                                  participant.userId == _activeCohostUserId;
-                              return ListTile(
-                                leading: CircleAvatar(
-                                  child: Text(
-                                    participant.name.isEmpty
-                                        ? 'F'
-                                        : participant.name
-                                              .substring(0, 1)
-                                              .toUpperCase(),
-                                  ),
-                                ),
-                                title: Text(
-                                  participant.name.isEmpty
-                                      ? 'Fameverse viewer'
-                                      : participant.name,
-                                ),
-                                subtitle: Text(
-                                  isActive ? 'Co-hosting now' : 'Viewer',
-                                ),
-                                trailing: isActive
-                                    ? TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          unawaited(_endCohost());
-                                        },
-                                        child: const Text('End'),
-                                      )
-                                    : _activeCohostUserId == null &&
-                                          _pendingInviteUserId == null
-                                    ? TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          unawaited(_inviteCohost(participant));
-                                        },
-                                        child: const Text('Invite'),
-                                      )
-                                    : null,
-                              );
-                            },
+                    selector: (state) => state.callParticipants,
+                    builder: (context, participants) {
+                      final viewers = participants
+                          .where((participant) => !participant.isLocal)
+                          .toList();
+                      if (viewers.isEmpty) {
+                        return const Center(child: Text('No viewers yet.'));
+                      }
+                      return ListView.separated(
+                        itemCount: viewers.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final participant = viewers[index];
+                          final active =
+                              participant.userId == _activeCohostUserId;
+                          return ListTile(
+                            leading: CircleAvatar(
+                              foregroundImage:
+                                  participant.image != null &&
+                                      participant.image!.isNotEmpty
+                                  ? NetworkImage(participant.image!)
+                                  : null,
+                              child: Text(
+                                participant.name.isEmpty
+                                    ? 'F'
+                                    : participant.name[0].toUpperCase(),
+                              ),
+                            ),
+                            title: Text(
+                              participant.name.isEmpty
+                                  ? 'Fameverse viewer'
+                                  : participant.name,
+                            ),
+                            subtitle: Text(active ? 'Co-hosting now' : 'Viewer'),
+                            trailing: active
+                                ? TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      unawaited(_endCohost());
+                                    },
+                                    child: const Text('End'),
+                                  )
+                                : _activeCohostUserId == null &&
+                                      _pendingInviteUserId == null
+                                ? TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      unawaited(_inviteCohost(participant));
+                                    },
+                                    child: const Text('Invite'),
+                                  )
+                                : null,
                           );
                         },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -667,14 +661,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF17101F),
-      builder: (BuildContext context) => SafeArea(
+      builder: (context) => SafeArea(
         child: SizedBox(
           height: MediaQuery.sizeOf(context).height * .68,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
+              children: [
                 const Text(
                   'Co-host',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
@@ -704,13 +698,13 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                       child: const Text('Cancel'),
                     ),
                   ),
-                if (_cohostRequests.isNotEmpty) ...<Widget>[
+                if (_cohostRequests.isNotEmpty) ...[
                   const Text(
                     'Requests',
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   ..._cohostRequests.map(
-                    (Map<String, dynamic> request) => ListTile(
+                    (request) => ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         (request['displayName'] as String?) ??
@@ -718,20 +712,20 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                       ),
                       subtitle: const Text('Wants to co-host'),
                       trailing: Wrap(
-                        children: <Widget>[
+                        children: [
                           IconButton(
                             onPressed: () {
                               Navigator.of(context).pop();
                               unawaited(_declineCohostRequest(request));
                             },
-                            icon: const Icon(Icons.close),
+                            icon: const Icon(Icons.close_rounded),
                           ),
                           IconButton.filled(
                             onPressed: () {
                               Navigator.of(context).pop();
                               unawaited(_acceptCohostRequest(request));
                             },
-                            icon: const Icon(Icons.check),
+                            icon: const Icon(Icons.check_rounded),
                           ),
                         ],
                       ),
@@ -747,46 +741,42 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 Expanded(
                   child: PartialCallStateBuilder<List<CallParticipantState>>(
                     call: call,
-                    selector: (CallState state) => state.callParticipants,
-                    builder:
-                        (
-                          BuildContext context,
-                          List<CallParticipantState> participants,
-                        ) {
-                          final viewers = participants
-                              .where((p) => !p.isLocal)
-                              .toList();
-                          if (viewers.isEmpty) {
-                            return const Center(
-                              child: Text('No viewers to invite yet.'),
-                            );
-                          }
-                          return ListView.builder(
-                            itemCount: viewers.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              final participant = viewers[index];
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  participant.name.isEmpty
-                                      ? 'Fameverse viewer'
-                                      : participant.name,
-                                ),
-                                trailing: TextButton(
-                                  onPressed:
-                                      _activeCohostUserId == null &&
-                                          _pendingInviteUserId == null
-                                      ? () {
-                                          Navigator.of(context).pop();
-                                          unawaited(_inviteCohost(participant));
-                                        }
-                                      : null,
-                                  child: const Text('Invite'),
-                                ),
-                              );
-                            },
+                    selector: (state) => state.callParticipants,
+                    builder: (context, participants) {
+                      final viewers = participants
+                          .where((participant) => !participant.isLocal)
+                          .toList();
+                      if (viewers.isEmpty) {
+                        return const Center(
+                          child: Text('No viewers to invite yet.'),
+                        );
+                      }
+                      return ListView.builder(
+                        itemCount: viewers.length,
+                        itemBuilder: (context, index) {
+                          final participant = viewers[index];
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              participant.name.isEmpty
+                                  ? 'Fameverse viewer'
+                                  : participant.name,
+                            ),
+                            trailing: TextButton(
+                              onPressed:
+                                  _activeCohostUserId == null &&
+                                      _pendingInviteUserId == null
+                                  ? () {
+                                      Navigator.of(context).pop();
+                                      unawaited(_inviteCohost(participant));
+                                    }
+                                  : null,
+                              child: const Text('Invite'),
+                            ),
                           );
                         },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -801,12 +791,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF17101F),
-      builder: (BuildContext context) => SafeArea(
+      builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            children: [
               const Text(
                 'Live controls',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
@@ -814,7 +804,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               const SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
+                children: [
                   FvRoundLiveButton(
                     keyValue: const Key('native-live-flip'),
                     icon: Icons.cameraswitch_rounded,
@@ -884,14 +874,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
     return PopScope(
       canPop: _ended,
-      onPopInvokedWithResult: (bool didPop, bool? result) {
+      onPopInvokedWithResult: (didPop, result) {
         if (!didPop && !_ending) unawaited(_endLive());
       },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
-          children: <Widget>[
+          children: [
             if (call != null)
               NativeHostV2Stage(
                 call: call,
@@ -903,53 +893,62 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
             const FvLiveGradient(),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
+                  children: [
+                    if (!cohostActive) ...[
+                      const Center(child: _FameverseLiveWordmark()),
+                      const SizedBox(height: 10),
+                    ],
                     Row(
-                      children: <Widget>[
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
                         GestureDetector(
                           onTap: _showProfileSheet,
-                          child: NativeProfileAvatar(
-                            profile: widget.room.host,
-                            radius: 18,
-                          ),
+                          child: _NeonHostAvatar(profile: widget.room.host),
                         ),
                         const SizedBox(width: 9),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
+                            children: [
                               Row(
-                                children: <Widget>[
+                                children: [
                                   Flexible(
-                                    child: FittedBox(
+                                    child: Text(
+                                      widget.room.host.displayName,
                                       key: const Key('host-live-handle'),
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        widget.room.host.handle,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.fade,
+                                      softWrap: false,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: .2,
                                       ),
                                     ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  const Icon(
+                                    Icons.verified_rounded,
+                                    size: 16,
+                                    color: Color(0xFFAA62FF),
                                   ),
                                   const SizedBox(width: 6),
                                   const FvLiveBadge(),
                                 ],
                               ),
+                              const SizedBox(height: 2),
                               Text(
                                 widget.room.title,
                                 maxLines: 1,
-                                softWrap: false,
                                 overflow: TextOverflow.fade,
+                                softWrap: false,
                                 style: const TextStyle(
-                                  color: Color(0xFFD1C7D7),
+                                  color: Color(0xFFD6CADC),
                                   fontSize: 11,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -960,38 +959,39 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                             onTap: _showViewerSheet,
                             child: PartialCallStateBuilder<int>(
                               call: call,
-                              selector: (CallState state) =>
-                                  state.callParticipants.length,
-                              builder: (BuildContext context, int count) =>
-                                  _StatChip(
-                                    icon: Icons.visibility_rounded,
-                                    text: '${count > 0 ? count - 1 : 0}',
-                                  ),
+                              selector: (state) => state.callParticipants.length,
+                              builder: (context, count) => _LiveStatsPill(
+                                viewerCount: count > 0 ? count - 1 : 0,
+                                fameTaps: _fameTaps,
+                              ),
                             ),
+                          )
+                        else
+                          _LiveStatsPill(
+                            viewerCount: 0,
+                            fameTaps: _fameTaps,
                           ),
-                        const SizedBox(width: 6),
-                        _StatChip(
-                          icon: Icons.local_fire_department_rounded,
-                          text: '$_fameTaps',
-                        ),
                         const SizedBox(width: 8),
                         FilledButton(
                           key: const Key('native-end-live'),
                           onPressed: _ending ? null : _endLive,
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFD5284D),
+                            backgroundColor: const Color(0xFFE62952),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
+                              horizontal: 15,
                               vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
                             ),
                           ),
                           child: Text(_ending ? 'Ending…' : 'End'),
                         ),
                       ],
                     ),
-                    if (_connecting || _error != null) ...<Widget>[
-                      const SizedBox(height: 10),
+                    if (_connecting || _error != null) ...[
+                      const SizedBox(height: 9),
                       if (_connecting)
                         const FvLiveStatusCard(
                           icon: Icons.wifi_tethering_rounded,
@@ -1017,6 +1017,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: .44),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0x556F35C5)),
                         ),
                         child: Text(
                           'Goal · ${widget.room.goal}',
@@ -1024,7 +1025,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ),
                       ),
                     SizedBox(
-                      height: cohostActive ? 250 : 220,
+                      height: cohostActive ? 230 : 245,
                       child: SingleChildScrollView(
                         reverse: true,
                         child: FvLiveChatList(messages: _chat),
@@ -1033,7 +1034,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
+                      children: [
                         Expanded(
                           child: FvLiveCommentComposer(
                             controller: _comment,
@@ -1042,12 +1043,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ),
                         const SizedBox(width: 6),
                         IconButton.filled(
+                          key: const Key('host-live-send-comment'),
                           onPressed: _postComment,
                           style: IconButton.styleFrom(
                             backgroundColor: const Color(0xFF6F35C5),
                             foregroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0xFFAD73FF)),
                           ),
-                          icon: const Icon(Icons.arrow_upward_rounded),
+                          icon: const Icon(Icons.send_rounded),
                           tooltip: 'Send comment',
                         ),
                         const SizedBox(width: 4),
@@ -1080,28 +1083,126 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.icon, required this.text});
+class _FameverseLiveWordmark extends StatelessWidget {
+  const _FameverseLiveWordmark();
 
-  final IconData icon;
-  final String text;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        Icon(
+          Icons.workspace_premium_rounded,
+          size: 18,
+          color: Color(0xFFB75CFF),
+          shadows: [Shadow(color: Color(0xFF8B35FF), blurRadius: 12)],
+        ),
+        Text(
+          'FAMEVERSE',
+          key: Key('host-v2-fameverse-wordmark'),
+          style: TextStyle(
+            color: Color(0xFFD6A4FF),
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 4,
+            shadows: [Shadow(color: Color(0xFF8B35FF), blurRadius: 10)],
+          ),
+        ),
+        Text(
+          'PEOPLE MAKE LEGENDS',
+          style: TextStyle(
+            color: Color(0xFFECE4F2),
+            fontSize: 6,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NeonHostAvatar extends StatelessWidget {
+  const _NeonHostAvatar({required this.profile});
+
+  final FvProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFFA94DFF), width: 2),
+            boxShadow: const [
+              BoxShadow(color: Color(0x778A2BE2), blurRadius: 12),
+            ],
+          ),
+          child: NativeProfileAvatar(profile: profile, radius: 20),
+        ),
+        Positioned(
+          right: -1,
+          bottom: 1,
+          child: Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF35E36A),
+              border: Border.all(color: Colors.black, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LiveStatsPill extends StatelessWidget {
+  const _LiveStatsPill({required this.viewerCount, required this.fameTaps});
+
+  final int viewerCount;
+  final int fameTaps;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const Key('host-v2-combined-stats'),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: .45),
+        color: const Color(0xB30D0911),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFF4E3561)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, size: 13),
+        children: [
+          const Icon(
+            Icons.local_fire_department_rounded,
+            size: 13,
+            color: Color(0xFFFF9D2E),
+          ),
           const SizedBox(width: 3),
           Text(
-            text,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+            '$fameTaps',
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: SizedBox(
+              width: 1,
+              height: 14,
+              child: ColoredBox(color: Color(0xFF4E3561)),
+            ),
+          ),
+          const Icon(Icons.visibility_rounded, size: 12),
+          const SizedBox(width: 3),
+          Text(
+            '$viewerCount',
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
           ),
         ],
       ),
