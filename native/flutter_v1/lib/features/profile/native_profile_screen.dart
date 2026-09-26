@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
 
-/// Public-facing native profile.
+/// Public-facing Fameverse profile.
 ///
-/// Product rule: the Profile tab is a social identity surface. Account actions,
-/// owner QA, payout moderation, and other internal tooling do not belong here.
+/// Product law: this is a social identity surface. Owner QA, recharge controls,
+/// payout moderation, account email, backend/build diagnostics, and other
+/// internal tools must never render here.
 class NativeProfileScreen extends StatelessWidget {
   const NativeProfileScreen({
     required this.profile,
@@ -38,19 +39,20 @@ class NativeProfileScreen extends StatelessWidget {
     return SafeArea(
       child: CustomScrollView(
         key: const Key('native-profile-screen'),
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 112),
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 116),
             sliver: SliverList.list(
               children: [
                 _ProfileTopBar(onSettings: onSettings),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
                 _ProfileHero(
                   profile: profile,
                   avatarBusy: avatarBusy,
                   onChangePhoto: onChangePhoto,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 _ProfileIdentity(profile: profile),
                 const SizedBox(height: 20),
                 _ConnectionStats(
@@ -58,20 +60,30 @@ class NativeProfileScreen extends StatelessWidget {
                   following: network.following.length,
                   friends: _friendCount,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
                     key: const Key('edit-profile-button'),
                     onPressed: onEdit,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    icon: const Icon(Icons.edit_rounded, size: 18),
                     label: const Text('Edit profile'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      backgroundColor: const Color(0xFFB889FF),
+                      foregroundColor: const Color(0xFF160B20),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 28),
-                const _SectionLabel('CREATOR TOOLS'),
-                const SizedBox(height: 10),
-                _CreatorStudioCard(onTap: onCreatorStudio),
+                _CreatorStudioRow(onTap: onCreatorStudio),
               ],
             ),
           ),
@@ -90,31 +102,43 @@ class _ProfileTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'FAMEVERSE',
-              style: TextStyle(
-                color: Color(0xFFB98BFF),
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.6,
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'FAMEVERSE',
+                style: TextStyle(
+                  color: Color(0xFFB978FF),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.7,
+                ),
               ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'Profile',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-            ),
-          ],
+              SizedBox(height: 2),
+              Text(
+                'Profile',
+                key: Key('profile-title'),
+                style: TextStyle(
+                  fontSize: 25,
+                  height: 1,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -.35,
+                ),
+              ),
+            ],
+          ),
         ),
-        const Spacer(),
-        IconButton.filledTonal(
+        IconButton(
           key: const Key('profile-settings-button'),
           onPressed: onSettings,
-          icon: const Icon(Icons.settings_outlined),
           tooltip: 'Settings',
+          style: IconButton.styleFrom(
+            backgroundColor: const Color(0xFF1B1321),
+            foregroundColor: const Color(0xFFD9CFE0),
+            side: const BorderSide(color: Color(0xFF382943)),
+          ),
+          icon: const Icon(Icons.settings_rounded, size: 21),
         ),
       ],
     );
@@ -135,62 +159,127 @@ class _ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 182,
+      height: 206,
       child: Stack(
         clipBehavior: Clip.none,
+        alignment: Alignment.bottomLeft,
         children: [
-          Positioned.fill(
-            bottom: 38,
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 46,
             child: Container(
+              key: const Key('profile-cover'),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0xFF4D3265)),
+                border: Border.all(
+                  color: const Color(0xFF6E3A91),
+                  width: 1.25,
+                ),
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF4B236D),
-                    Color(0xFF25132F),
-                    Color(0xFF120C18),
+                    Color(0xFF4B1E6D),
+                    Color(0xFF26112F),
+                    Color(0xFF100B14),
                   ],
                 ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x332C0B42),
+                    blurRadius: 28,
+                    offset: Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: const Stack(
+                children: [
+                  Positioned(
+                    left: 20,
+                    top: 18,
+                    child: Text(
+                      'YOUR SPACE',
+                      style: TextStyle(
+                        color: Color(0xFFD8B8F4),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.55,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 18,
+                    bottom: 18,
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Color(0x338F51C0),
+                      size: 78,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
           Positioned(
-            left: 20,
+            left: 18,
             bottom: 0,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 112,
-                  height: 112,
+                  width: 118,
+                  height: 118,
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFF0C0810),
                     border: Border.all(
-                      color: const Color(0xFFB978FF),
-                      width: 2,
+                      color: const Color(0xFFC17DFF),
+                      width: 2.5,
                     ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x553A0E55),
+                        blurRadius: 20,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                   child: ClipOval(child: _ProfileAvatar(profile: profile)),
                 ),
                 Positioned(
-                  right: -2,
-                  bottom: 3,
-                  child: IconButton.filled(
-                    key: const Key('change-profile-photo-button'),
-                    onPressed: avatarBusy ? null : onChangePhoto,
-                    icon: avatarBusy
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.camera_alt_rounded, size: 17),
-                    tooltip: 'Change profile photo',
+                  right: -3,
+                  bottom: 5,
+                  child: Material(
+                    color: const Color(0xFF9B54F5),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      key: const Key('change-profile-photo-button'),
+                      onTap: avatarBusy ? null : onChangePhoto,
+                      customBorder: const CircleBorder(),
+                      child: SizedBox(
+                        width: 38,
+                        height: 38,
+                        child: Center(
+                          child: avatarBusy
+                              ? const SizedBox(
+                                  width: 17,
+                                  height: 17,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -231,11 +320,15 @@ class _AvatarFallback extends StatelessWidget {
     final text = profile.displayName.trim();
     final initial = text.isEmpty ? 'F' : text.characters.first.toUpperCase();
     return ColoredBox(
-      color: const Color(0xFF332043),
+      color: const Color(0xFF352044),
       child: Center(
         child: Text(
           initial,
-          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            fontSize: 39,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFFF2E9F7),
+          ),
         ),
       ),
     );
@@ -250,41 +343,47 @@ class _ProfileIdentity extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bio = profile.bio.trim();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          profile.displayName,
-          key: const Key('profile-display-name'),
-          style: const TextStyle(
-            fontSize: 27,
-            height: 1.05,
-            fontWeight: FontWeight.w900,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            profile.displayName,
+            key: const Key('profile-display-name'),
+            maxLines: 2,
+            overflow: TextOverflow.fade,
+            style: const TextStyle(
+              fontSize: 27,
+              height: 1.05,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.5,
+            ),
           ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          profile.handle,
-          key: const Key('profile-handle'),
-          style: const TextStyle(
-            color: Color(0xFFB7AABE),
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
+          const SizedBox(height: 5),
+          Text(
+            profile.handle,
+            key: const Key('profile-handle'),
+            style: const TextStyle(
+              color: Color(0xFFB8AABD),
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        const SizedBox(height: 13),
-        Text(
-          bio.isEmpty ? 'Add a bio so people know what you are about.' : bio,
-          key: const Key('profile-bio'),
-          style: TextStyle(
-            color: bio.isEmpty
-                ? const Color(0xFF8F8497)
-                : const Color(0xFFD8D0DD),
-            fontSize: 14,
-            height: 1.45,
+          const SizedBox(height: 12),
+          Text(
+            bio.isEmpty ? 'Add a bio so people know what you are about.' : bio,
+            key: const Key('profile-bio'),
+            style: TextStyle(
+              color: bio.isEmpty
+                  ? const Color(0xFF8E8494)
+                  : const Color(0xFFE5DDE8),
+              fontSize: 14,
+              height: 1.42,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -303,25 +402,20 @@ class _ConnectionStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      key: const Key('profile-social-stats'),
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF17111D),
+        color: const Color(0xFF151019),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF30243A)),
+        border: Border.all(color: const Color(0xFF32253A)),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _Stat(value: followers, label: 'Followers'),
-          ),
+          Expanded(child: _Stat(value: followers, label: 'Followers')),
           const _Divider(),
-          Expanded(
-            child: _Stat(value: following, label: 'Following'),
-          ),
+          Expanded(child: _Stat(value: following, label: 'Following')),
           const _Divider(),
-          Expanded(
-            child: _Stat(value: friends, label: 'Friends'),
-          ),
+          Expanded(child: _Stat(value: friends, label: 'Friends')),
         ],
       ),
     );
@@ -340,12 +434,19 @@ class _Stat extends StatelessWidget {
       children: [
         Text(
           '$value',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          style: const TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w900,
+          ),
         ),
         const SizedBox(height: 3),
         Text(
           label,
-          style: const TextStyle(color: Color(0xFF9F93A8), fontSize: 11),
+          style: const TextStyle(
+            color: Color(0xFFA49AA9),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -357,12 +458,12 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 34, color: const Color(0xFF35283E));
+    return Container(width: 1, height: 32, color: const Color(0xFF382A40));
   }
 }
 
-class _CreatorStudioCard extends StatelessWidget {
-  const _CreatorStudioCard({required this.onTap});
+class _CreatorStudioRow extends StatelessWidget {
+  const _CreatorStudioRow({required this.onTap});
 
   final VoidCallback onTap;
 
@@ -375,24 +476,24 @@ class _CreatorStudioCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Ink(
-          padding: const EdgeInsets.all(17),
+          padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
           decoration: BoxDecoration(
-            color: const Color(0xFF17111D),
+            color: const Color(0xFF151019),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF3D2A48)),
+            border: Border.all(color: const Color(0xFF3C2948)),
           ),
           child: const Row(
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Color(0xFF342047),
+                  color: Color(0xFF2C1B38),
                   borderRadius: BorderRadius.all(Radius.circular(14)),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(11),
                   child: Icon(
-                    Icons.auto_graph_rounded,
-                    color: Color(0xFFC69BFF),
+                    Icons.workspace_premium_outlined,
+                    color: Color(0xFFC99BFF),
                     size: 22,
                   ),
                 ),
@@ -411,35 +512,19 @@ class _CreatorStudioCard extends StatelessWidget {
                     ),
                     SizedBox(height: 3),
                     Text(
-                      'Creator earnings and payout tools',
-                      style: TextStyle(color: Color(0xFF9F93A8), fontSize: 12),
+                      'Earnings and creator tools',
+                      style: TextStyle(
+                        color: Color(0xFFA89EAD),
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: Color(0xFFBBAFC4)),
+              Icon(Icons.chevron_right_rounded, color: Color(0xFFC6BACB)),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFF8E8297),
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.35,
       ),
     );
   }
