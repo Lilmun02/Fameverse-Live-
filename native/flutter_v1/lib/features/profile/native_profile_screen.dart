@@ -212,9 +212,7 @@ class _FameverseMark extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Color(0xFFB663FF), Color(0xFF522080)],
         ),
-        boxShadow: const [
-          BoxShadow(color: Color(0x665E1B9B), blurRadius: 14),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x665E1B9B), blurRadius: 14)],
       ),
       child: const Center(
         child: Text(
@@ -523,9 +521,15 @@ class _ConnectionStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Stat(value: followers, label: 'Followers')),
-          Expanded(child: _Stat(value: following, label: 'Following')),
-          Expanded(child: _Stat(value: friends, label: 'Friends')),
+          Expanded(
+            child: _Stat(value: followers, label: 'Followers'),
+          ),
+          Expanded(
+            child: _Stat(value: following, label: 'Following'),
+          ),
+          Expanded(
+            child: _Stat(value: friends, label: 'Friends'),
+          ),
         ],
       ),
     );
@@ -736,7 +740,8 @@ class _FameverseSettingsScreen extends StatelessWidget {
     );
     if (confirmed != true) return;
     await onSignOut();
-    if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    if (context.mounted)
+      Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
@@ -1007,10 +1012,7 @@ class _SettingsRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF8D858E),
-            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8D858E)),
           ],
         ),
       ),
