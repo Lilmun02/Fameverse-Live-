@@ -15,6 +15,7 @@ function forbidText(file, content, snippet, message) {
 }
 
 const appPath = 'native/flutter_v1/lib/app/fameverse_app.dart'
+const authPath = 'native/flutter_v1/lib/features/auth/auth_screen.dart'
 const profilePath = 'native/flutter_v1/lib/features/profile/native_profile_screen.dart'
 const stagePath = 'native/flutter_v1/lib/features/live/native_live_stage.dart'
 const hostPath = 'native/flutter_v1/lib/features/live/stream_host_live_screen.dart'
@@ -31,6 +32,7 @@ const codemagicPath = 'codemagic.yaml'
 
 const [
   app,
+  auth,
   profile,
   stage,
   host,
@@ -46,6 +48,7 @@ const [
   codemagic,
 ] = await Promise.all([
   load(appPath),
+  load(authPath),
   load(profilePath),
   load(stagePath),
   load(hostPath),
@@ -68,6 +71,14 @@ forbidText(appPath, app, 'Checking for updates', 'candidate must not display a f
 forbidText(appPath, app, 'Syncing Fameverse services', 'candidate must not display repeated backend sync theater')
 requireText(retireNoticePath, retireNotice, 'set active = false', 'stale Build 16 update notice must be retired')
 requireText(retireNoticePath, retireNotice, 'build_number = 16', 'Build 16 retirement must target the stale notice explicitly')
+
+// Authentication law: existing users must land on Sign in by default and never
+// be silently redirected into account creation.
+requireText(authPath, auth, '_AuthMode _mode = _AuthMode.signIn', 'existing-account sign in must be the default auth mode')
+requireText(authPath, auth, "Key('auth-mode-sign-in')", 'explicit Sign in selector is missing')
+requireText(authPath, auth, "Key('auth-mode-sign-up')", 'explicit Create account selector is missing')
+requireText(authPath, auth, 'await widget.backend.signIn(email: email, password: password)', 'existing-account submit must call signIn')
+requireText(authPath, auth, 'That email already has a Fameverse account. Sign in instead.', 'registered signup attempts must return users to sign in')
 
 // Profile law: social identity only. No admin dashboard or QA/payment leakage.
 requireText(profilePath, profile, "Key('profile-cover')", 'social profile cover is missing')
