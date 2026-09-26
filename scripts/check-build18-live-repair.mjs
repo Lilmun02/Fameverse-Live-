@@ -27,6 +27,7 @@ const rechargeScreenPath = 'native/flutter_v1/lib/features/profile/native_rechar
 const creatorStudioPath = 'native/flutter_v1/lib/features/profile/creator_studio_screen.dart'
 const rechargeSessionPath = 'supabase/functions/recharge-session/index.ts'
 const rechargeApiPath = 'supabase/functions/recharge/index.ts'
+const rechargePricingPath = 'supabase/migrations/20260926_owner_qa_coin_pricing_v2.sql'
 const retireNoticePath = 'supabase/migrations/20260926_retire_build16_startup_notice.sql'
 const codemagicPath = 'codemagic.yaml'
 
@@ -44,6 +45,7 @@ const [
   creatorStudio,
   rechargeSession,
   rechargeApi,
+  rechargePricing,
   retireNotice,
   codemagic,
 ] = await Promise.all([
@@ -60,6 +62,7 @@ const [
   load(creatorStudioPath),
   load(rechargeSessionPath),
   load(rechargeApiPath),
+  load(rechargePricingPath),
   load(retireNoticePath),
   load(codemagicPath),
 ])
@@ -93,7 +96,8 @@ forbidText(profilePath, profile, 'Recharge Fame Coins', 'recharge must never ren
 forbidText(profilePath, profile, 'Signed in as', 'account email must never replace social identity')
 forbidText(profilePath, profile, 'Admin - Owner', 'role/debug identity must never render as profile content')
 
-// V2 Live law.
+// V2 Live law: solo is the approved Neon Infamous full-camera composition;
+// co-host remains exactly two equal square cameras side-by-side.
 requireText(stagePath, stage, 'class _V2CohostStage', 'approved co-host stage contract is missing')
 requireText(stagePath, stage, 'aspectRatio: 1', 'co-host cameras must remain square')
 requireText(stagePath, stage, 'class _V2CameraOffSurface', 'camera-off profile surface is missing')
@@ -101,13 +105,19 @@ requireText(stagePath, stage, 'participant.image?.trim()', 'camera-off must use 
 forbidText(stagePath, stage, 'return Column(\n                children: [\n                  Expanded(\n                    child: _V2ParticipantSurface', 'do not restore stacked host/co-host portrait panels')
 
 requireText(hostPath, host, 'image: widget.room.host.avatarUrl', 'host Stream identity must carry the profile photo for camera-off mode')
-requireText(hostPath, host, 'widget.room.host.handle', 'host header must expose the creator handle')
+requireText(hostPath, host, "Key('host-v2-fameverse-wordmark')", 'approved solo Live Fameverse wordmark is missing')
+requireText(hostPath, host, "'PEOPLE MAKE LEGENDS'", 'approved solo Live brand line is missing')
+requireText(hostPath, host, 'widget.room.host.displayName', 'solo Live must show the creator display name rather than a role/debug handle')
+requireText(hostPath, host, 'class _NeonHostAvatar', 'approved neon creator avatar is missing')
+requireText(hostPath, host, 'class _LiveStatsPill', 'viewer and Fame stats must remain one compact V2 pill')
+requireText(hostPath, host, "Key('host-v2-combined-stats')", 'combined V2 stats key is missing')
+requireText(hostPath, host, 'backgroundColor: const Color(0xFFE62952)', 'host End action must stay red')
 requireText(hostPath, host, 'cohostCameraHeight + 32', 'host chat must sit directly below co-host cameras')
 requireText(hostPath, host, 'FvLiveCommentComposer(', 'host must use the multiline Live composer')
 requireText(hostPath, host, 'FvFameActionButton(', 'host must use the purple Fame action control')
 
 requireText(viewerPath, viewer, "Key('viewer-gift-button')", 'tester-visible gift button contract is missing')
-requireText(viewerPath, viewer, 'widget.room.host.handle', 'viewer live header must expose the creator handle')
+requireText(viewerPath, viewer, 'widget.room.host.handle', 'viewer live header must expose the creator identity')
 requireText(viewerPath, viewer, 'state.endedAt != null || state.liveEndedAt != null', 'viewer must react when host ends the Stream call')
 requireText(viewerPath, viewer, 'canPop: _leaving', 'leave flow must be able to release PopScope')
 requireText(viewerPath, viewer, 'class _TapBurstParticle', 'visible F/flame tap feedback is missing')
@@ -119,26 +129,38 @@ forbidText(viewerPath, viewer, "fvGiftById('rose')", 'one-coin Rose shortcut mus
 requireText(sharedPath, shared, 'fontSize: 15', 'physical QA chat readability floor is missing')
 requireText(sharedPath, shared, 'maxLines: 3', 'Live composer must wrap to multiple visible lines')
 requireText(sharedPath, shared, 'keyboardType: TextInputType.multiline', 'Live composer must accept multiline typing')
-requireText(sharedPath, shared, 'color: Color(0xFFB96BFF)', 'Fame F mark must remain purple')
+requireText(sharedPath, shared, 'color: Color(0xFFE1B5FF)', 'Fame F mark must remain purple')
+requireText(sharedPath, shared, "Key('v2-highlighted-gift-chat')", 'gift activity must keep the approved highlighted V2 chat treatment')
+requireText(sharedPath, shared, ': null,', 'ordinary comments must remain lightweight instead of large cards')
 requireText(giftPath, gift, 'playback.gift.cost <= 1', 'one-coin gifts must not use premium takeover overlay')
 requireText(giftPath, gift, 'Future<int> Function() onRefill', 'open gift tray must receive fresh refill balance')
 requireText(giftPath, gift, 'Navigator.of(context).pop();\n    await widget.onSend', 'gift tray must give immediate send feedback')
 forbidText(visualPath, visual, 'ColoredBox(\n            color: Colors.black', 'gift tray black thumbnail boxes must not return')
 
-// PayPal recharge law: native UI + Supabase API + PayPal. Never Vercel HTML.
+// PayPal recharge law: native UI + Supabase API + PayPal. Custom amounts are
+// server-authoritative and bounded; Vercel/HTML must never return.
 requireText(rechargeScreenPath, rechargeScreen, 'class NativeRechargeScreen', 'native PayPal sandbox recharge screen is missing')
 requireText(rechargeScreenPath, rechargeScreen, 'final launched = await launchUrl(', 'native recharge must open the PayPal approval URL')
 requireText(rechargeScreenPath, rechargeScreen, 'mode: LaunchMode.externalApplication', 'PayPal approval must leave the app through the external browser/application')
+requireText(rechargeScreenPath, rechargeScreen, "Key('custom-fame-coins-card')", 'native recharge must expose the custom amount choice')
+requireText(rechargeScreenPath, rechargeScreen, "'custom_coins': coins", 'native custom amount must be sent to the secure recharge API')
 requireText(rechargeScreenPath, rechargeScreen, "'Complete sandbox purchase'", 'native recharge must provide an explicit PayPal capture step')
 requireText(creatorStudioPath, creatorStudio, 'if (_isOwner)', 'PayPal sandbox recharge must remain hidden from normal testers')
 requireText(creatorStudioPath, creatorStudio, 'NativeRechargeScreen', 'Creator Studio must route owner QA into native recharge')
 requireText(rechargeSessionPath, rechargeSession, 'checkout: "native"', 'recharge session must identify native checkout')
 requireText(rechargeSessionPath, rechargeSession, 'session: token', 'recharge session must return a secure native session token')
 forbidText(rechargeSessionPath, rechargeSession, 'vercel.app', 'Vercel must not be part of the PayPal sandbox recharge flow')
+requireText(rechargeApiPath, rechargeApi, 'CUSTOM_PACK_ID = "owner-qa-custom"', 'custom recharge pack contract is missing')
+requireText(rechargeApiPath, rechargeApi, 'CUSTOM_MIN_COINS = 100', 'custom recharge lower bound is missing')
+requireText(rechargeApiPath, rechargeApi, 'CUSTOM_MAX_COINS = 10000', 'custom recharge upper bound is missing')
+requireText(rechargeApiPath, rechargeApi, 'customCoins * CUSTOM_CENTS_PER_COIN', 'custom recharge price must be calculated server-side')
 requireText(rechargeApiPath, rechargeApi, 'approval_url: approvalUrl', 'PayPal create must return its approval URL to native Fameverse')
 requireText(rechargeApiPath, rechargeApi, '"native-checkout-required"', 'direct browser GET must not silently restore an HTML checkout')
 forbidText(rechargeApiPath, rechargeApi, 'vercel.app', 'Vercel must not be part of the PayPal sandbox recharge flow')
 forbidText(rechargeApiPath, rechargeApi, 'text/html', 'Supabase recharge must remain an API rather than trying to serve HTML')
+requireText(rechargePricingPath, rechargePricing, "('owner-qa-100', '100 Fame Coins', 100, 99", 'reasonable 100-coin sandbox pack is missing')
+requireText(rechargePricingPath, rechargePricing, "('owner-qa-5000', '5,000 Fame Coins', 5000, 4999", 'reasonable 5000-coin sandbox pack is missing')
+requireText(rechargePricingPath, rechargePricing, "('owner-qa-custom', 'Custom Fame Coins'", 'custom recharge placeholder pack is missing')
 
 // Source identity law. A Codemagic trigger may originate from the base branch,
 // but the publishing workflow must fetch and detach-checkout the locked repair
