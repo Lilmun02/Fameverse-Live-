@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,10 +15,15 @@ class NativeRechargeScreen extends StatefulWidget {
 class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
   bool _loading = true;
   bool _busy = false;
+  bool _customEnabled = false;
   String? _error;
   String? _sessionToken;
   String? _environment;
   List<_RechargePack> _packs = const [];
+  String _customPackId = 'owner-qa-custom';
+  int _customMinCoins = 100;
+  int _customMaxCoins = 10000;
+  int _customCentsPerCoin = 1;
   String? _pendingOrderId;
   String? _pendingPackLabel;
 
@@ -84,11 +90,21 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                 .where((pack) => pack.id.isNotEmpty && pack.priceCents > 0)
                 .toList()
           : <_RechargePack>[];
+      final customRaw = config['custom'];
+      final custom = customRaw is Map
+          ? Map<String, dynamic>.from(customRaw)
+          : const <String, dynamic>{};
 
       if (!mounted) return;
       setState(() {
         _packs = packs;
         _environment = config['environment']?.toString() ?? 'sandbox';
+        _customEnabled = custom['enabled'] == true;
+        _customPackId = custom['pack_id']?.toString() ?? 'owner-qa-custom';
+        _customMinCoins = (custom['min_coins'] as num?)?.toInt() ?? 100;
+        _customMaxCoins = (custom['max_coins'] as num?)?.toInt() ?? 10000;
+        _customCentsPerCoin =
+            (custom['cents_per_coin'] as num?)?.toInt() ?? 1;
         _loading = false;
       });
     } catch (error) {
@@ -105,14 +121,30 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
     }
   }
 
-  Future<void> _startPurchase(_RechargePack pack) async {
+  Future<void> _startPurchase(_RechargePack pack) => _startOrder(
+    packLabel: pack.label,
+    payload: <String, dynamic>{'pack_id': pack.id},
+  );
+
+  Future<void> _startCustomPurchase(int coins) => _startOrder(
+    packLabel: '$coins Fame Coins',
+    payload: <String, dynamic>{
+      'pack_id': _customPackId,
+      'custom_coins': coins,
+    },
+  );
+
+  Future<void> _startOrder({
+    required String packLabel,
+    required Map<String, dynamic> payload,
+  }) async {
     if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      final created = await _rechargeApi('create', {'pack_id': pack.id});
+      final created = await _rechargeApi('create', payload);
       final orderId = created['order_id']?.toString() ?? '';
       final approval = created['approval_url']?.toString() ?? '';
       if (orderId.isEmpty || approval.isEmpty) {
@@ -133,18 +165,172 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
       if (!mounted) return;
       setState(() {
         _pendingOrderId = orderId;
-        _pendingPackLabel = pack.label;
+        _pendingPackLabel = packLabel;
       });
     } catch (error) {
       if (!mounted) return;
+      final text = error.toString().toLowerCase();
       setState(() {
-        _error = error.toString().toLowerCase().contains('paypal')
+        _error = text.contains('custom')
+            ? 'Choose a custom amount between $_customMinCoins and $_customMaxCoins Fame Coins.'
+            : text.contains('paypal')
             ? 'PayPal sandbox could not start this test purchase.'
             : 'Could not start the sandbox recharge.';
       });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _openCustomAmount() async {
+    if (!_customEnabled || _busy) return;
+    final controller = TextEditingController(text: '1000');
+    var coins = 1000.clamp(_customMinCoins, _customMaxCoins);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF120C18),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final priceCents = coins * _customCentsPerCoin;
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                22 + MediaQuery.viewInsetsOf(context).bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Custom Fame Coins',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Choose $_customMinCoins–$_customMaxCoins coins. Sandbox rate: about 100 Fame Coins per \$1.',
+                    style: const TextStyle(
+                      color: Color(0xFFB9AEC1),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    key: const Key('custom-fame-coins-input'),
+                    controller: controller,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: 'Fame Coins',
+                      prefixIcon: Icon(Icons.toll_rounded),
+                    ),
+                    onChanged: (value) {
+                      final parsed = int.tryParse(value) ?? _customMinCoins;
+                      setSheetState(() {
+                        coins = parsed.clamp(_customMinCoins, _customMaxCoins);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <int>[100, 500, 1000, 2500, 5000, 10000]
+                        .where(
+                          (value) =>
+                              value >= _customMinCoins &&
+                              value <= _customMaxCoins,
+                        )
+                        .map(
+                          (value) => ActionChip(
+                            label: Text(value.toString()),
+                            onPressed: () {
+                              controller.text = value.toString();
+                              setSheetState(() => coins = value);
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF20132C),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFF8047BF)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.toll_rounded,
+                          color: Color(0xFFD3A2FF),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '$coins Fame Coins',
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '\$${(priceCents / 100).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    key: const Key('custom-fame-coins-continue'),
+                    onPressed:
+                        coins < _customMinCoins || coins > _customMaxCoins
+                        ? null
+                        : () {
+                            Navigator.of(sheetContext).pop();
+                            unawaited(_startCustomPurchase(coins));
+                          },
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(54),
+                      backgroundColor: const Color(0xFF8A46DE),
+                    ),
+                    child: Text(
+                      'Continue · \$${(priceCents / 100).toStringAsFixed(2)}',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    controller.dispose();
   }
 
   Future<void> _capturePurchase() async {
@@ -227,7 +413,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       sandbox
-                          ? 'Owner QA · no real money'
+                          ? 'Test Fame Coin recharge'
                           : 'Live PayPal environment',
                       style: const TextStyle(
                         fontSize: 22,
@@ -236,7 +422,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                     ),
                     const SizedBox(height: 7),
                     const Text(
-                      'The recharge UI is native Fameverse. PayPal handles approval; Supabase verifies the order and credits the wallet. No Vercel checkout page is used.',
+                      'Choose a pack or enter a custom amount. PayPal handles approval and Fameverse credits the wallet only after Supabase verifies the captured amount.',
                       style: TextStyle(color: Color(0xFFB9AEC1), height: 1.4),
                     ),
                   ],
@@ -259,69 +445,99 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                   padding: EdgeInsets.symmetric(vertical: 50),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (_packs.isEmpty)
+              else if (_packs.isEmpty && !_customEnabled)
                 const Text('No owner QA recharge packs are active.')
               else ...[
                 const Text(
-                  'Choose a QA pack',
+                  'Get Fame Coins',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
-                const SizedBox(height: 10),
-                ..._packs.map(
-                  (pack) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _busy ? null : () => _startPurchase(pack),
-                        borderRadius: BorderRadius.circular(18),
-                        child: Ink(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF17111D),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0xFF392A44)),
+                const SizedBox(height: 4),
+                const Text(
+                  'Sandbox pricing · about 100 coins per \$1',
+                  style: TextStyle(color: Color(0xFFA99CAF), fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _packs.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.65,
+                  ),
+                  itemBuilder: (context, index) {
+                    final pack = _packs[index];
+                    return _RechargePackCard(
+                      pack: pack,
+                      enabled: !_busy,
+                      onTap: () => _startPurchase(pack),
+                    );
+                  },
+                ),
+                if (_customEnabled) ...[
+                  const SizedBox(height: 10),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: const Key('custom-fame-coins-card'),
+                      onTap: _busy ? null : _openCustomAmount,
+                      borderRadius: BorderRadius.circular(18),
+                      child: Ink(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 15,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF28153A), Color(0xFF17101F)],
                           ),
-                          child: Row(
-                            children: [
-                              const CircleAvatar(
-                                backgroundColor: Color(0xFF3A2050),
-                                child: Icon(Icons.toll_rounded),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      pack.label,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${pack.coins} Fame Coins',
-                                      style: const TextStyle(
-                                        color: Color(0xFFB8ACBF),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                '\$${(pack.priceCents / 100).toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFF8A46DE),
+                            width: 1.2,
                           ),
+                        ),
+                        child: Row(
+                          children: [
+                            const CircleAvatar(
+                              backgroundColor: Color(0xFF4B246A),
+                              child: Icon(Icons.tune_rounded),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Custom amount',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$_customMinCoins–$_customMaxCoins Fame Coins',
+                                    style: const TextStyle(
+                                      color: Color(0xFFB8ACBF),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: Color(0xFFC99BFF),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
               if (_pendingOrderId != null) ...[
                 const SizedBox(height: 18),
@@ -361,6 +577,60 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RechargePackCard extends StatelessWidget {
+  const _RechargePackCard({
+    required this.pack,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final _RechargePack pack;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF17111D),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF392A44)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.toll_rounded, color: Color(0xFFD3A2FF)),
+              const SizedBox(height: 7),
+              Text(
+                '${pack.coins}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                '\$${(pack.priceCents / 100).toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Color(0xFFB8ACBF),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
