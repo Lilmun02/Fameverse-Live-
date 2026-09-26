@@ -216,11 +216,18 @@ void main() {
     test('TestFlight candidate is source-locked to Build 18', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
-      expect(codemagic, contains('EXPECTED_BRANCH="build18/live-repair"'));
+      expect(codemagic, contains('TARGET_BRANCH="build18/live-repair"'));
+      expect(
+        codemagic,
+        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
+      );
+      expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
       expect(codemagic, contains('build18_source_identity.txt'));
       expect(
         codemagic,
-        contains('--dart-define="FAMEVERSE_SOURCE_SHA=\${CM_COMMIT}"'),
+        contains(
+          '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
+        ),
       );
     });
 
