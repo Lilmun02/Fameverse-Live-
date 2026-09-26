@@ -1,0 +1,4 @@
+-- Fameverse payout testing notes
+-- PayPal credentials are configured as Supabase Edge Function secrets, never in Flutter.
+-- Required sandbox secrets: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_ENV=sandbox.
+-- Production requires separate live credentials and PAYPAL_ENV=live.

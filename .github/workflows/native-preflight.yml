@@ -1,0 +1,187 @@
+name: Fameverse Native Preflight
+
+on:
+  push:
+    branches:
+      - native/flutter-v1
+  pull_request:
+    branches:
+      - native/flutter-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fameverse-native-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Validate Codemagic YAML parses
+        working-directory: .
+        run: ruby -e "require 'yaml'; YAML.load_file('codemagic.yaml'); puts 'codemagic.yaml parses'"
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Enforce Fameverse native foundation law
+        run: dart run tool/check_native_contract.dart
+
+      - name: Verify Dart formatting
+        run: |
+          dart format lib test tool
+          if ! git diff --exit-code -- lib test tool; then
+            echo "Dart formatting changed tracked files. Commit the formatted output before Codemagic."
+            exit 1
+          fi
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        run: flutter test
+
+  android-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install SVG rasterizer
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+
+      - name: Bootstrap ephemeral Fameverse Android shell
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_android
+          flutter create \
+            --platforms=android \
+            --org com.fameverse.dev \
+            --project-name fameverse_live \
+            --no-pub \
+            /tmp/fameverse_flutter_android
+          rm -rf android
+          cp -R /tmp/fameverse_flutter_android/android ./android
+
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i.bak 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i.bak 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle
+          fi
+
+          bash tool/apply_android_branding.sh
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Enforce Fameverse Android branding law
+        run: bash tool/verify_android_branding.sh
+
+      - name: Compile Android debug artifact
+        run: flutter build apk --debug
+
+  ios-preflight:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Bootstrap ephemeral Fameverse iOS shell
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_ios
+          flutter create \
+            --platforms=ios \
+            --org com.fameverse \
+            --project-name live \
+            --no-pub \
+            /tmp/fameverse_flutter_ios
+          rm -rf ios
+          cp -R /tmp/fameverse_flutter_ios/ios ./ios
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSMicrophoneUsageDescription Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist
+
+          bash tool/apply_ios_branding.sh
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Verify locked Fameverse bundle identifier
+        run: |
+          set -euo pipefail
+          PROJECT_FILE="ios/Runner.xcodeproj/project.pbxproj"
+          test -f "$PROJECT_FILE"
+          grep -Fq "PRODUCT_BUNDLE_IDENTIFIER = com.fameverse.live;" "$PROJECT_FILE"
+
+      - name: Enforce Fameverse iOS branding law
+        run: bash tool/verify_ios_branding.sh
+
+      - name: Install CocoaPods dependencies
+        run: find . -name "Podfile" -execdir pod install \;
+
+      - name: Generate unsigned Flutter iOS release configuration
+        run: flutter build ios --release --config-only --no-codesign
+
+      - name: Compile unsigned iOS release
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build

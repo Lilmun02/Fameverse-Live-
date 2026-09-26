@@ -1,0 +1,305 @@
+workflows:
+  native-foundation:
+    name: Fameverse Native Foundation
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    working_directory: native/flutter_v1
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        FAMEVERSE_NATIVE_STAGE: "bootstrap"
+        FAMEVERSE_APP_NAME: "Fameverse"
+
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: 'native/flutter-v1'
+          include: true
+          source: true
+      cancel_previous_builds: true
+
+    scripts:
+      - name: Bootstrap ephemeral iOS and Android platform shells
+        script: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_platforms
+          flutter create \
+            --platforms=ios,android \
+            --org com.fameverse.dev \
+            --project-name fameverse_live \
+            --no-pub \
+            /tmp/fameverse_flutter_platforms
+          rm -rf ios android
+          cp -R /tmp/fameverse_flutter_platforms/ios ./ios
+          cp -R /tmp/fameverse_flutter_platforms/android ./android
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSMicrophoneUsageDescription Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist
+
+          bash tool/apply_ios_branding.sh
+          bash tool/apply_android_branding.sh
+
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i.bak 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i.bak 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle
+          fi
+
+      - name: Resolve Flutter packages
+        script: |
+          set -euo pipefail
+          flutter pub get
+
+      - name: Enforce Fameverse native foundation law
+        script: |
+          set -euo pipefail
+          dart run tool/check_native_contract.dart
+
+      - name: Enforce Fameverse iOS branding law
+        script: |
+          set -euo pipefail
+          bash tool/verify_ios_branding.sh
+
+      - name: Enforce Fameverse Android branding law
+        script: |
+          set -euo pipefail
+          bash tool/verify_android_branding.sh
+
+      - name: Enforce Dart formatting
+        script: |
+          set -euo pipefail
+          dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          flutter analyze
+
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          flutter test
+
+      - name: Build Android debug artifact
+        script: |
+          set -euo pipefail
+          flutter build apk --debug
+
+      - name: Build unsigned iOS debug artifact
+        script: |
+          set -euo pipefail
+          flutter build ios --debug --no-codesign
+
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
+      - build/ios/iphoneos/*.app
+      - flutter_drive.log
+
+  native-testflight:
+    name: Fameverse Native TestFlight Candidate
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    working_directory: native/flutter_v1
+
+    environment:
+      groups:
+        - appstore_credentials
+        - manual_signing
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        FAMEVERSE_NATIVE_STAGE: "testflight"
+        FAMEVERSE_APP_NAME: "Fameverse"
+        FAMEVERSE_BUILD_FAMILY: "18"
+        BUNDLE_ID: "com.fameverse.live"
+
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+
+    scripts:
+      - name: Checkout locked Build 18 repair source
+        script: |
+          set -euo pipefail
+          TARGET_BRANCH="build18/live-repair"
+          REPO_ROOT="$(git rev-parse --show-toplevel)"
+          cd "$REPO_ROOT"
+          git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
+          git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          TARGET_SHA="$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)"
+          if [ "$SOURCE_SHA" != "$TARGET_SHA" ]; then
+            echo "BLOCKED: checked-out source does not match $TARGET_BRANCH."
+            exit 1
+          fi
+          echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
+          printf '%s\n' "Build 18 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build18_source_identity.txt"
+          echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
+
+      - name: Verify required TestFlight secrets are present
+        script: |
+          set -euo pipefail
+          for name in \
+            APP_STORE_CONNECT_PRIVATE_KEY \
+            APP_STORE_CONNECT_KEY_IDENTIFIER \
+            APP_STORE_CONNECT_ISSUER_ID \
+            CM_CERTIFICATE \
+            CM_CERTIFICATE_PASSWORD \
+            CM_PROVISIONING_PROFILE
+          do
+            if [ -z "$(eval "printf '%s' \"\${$name:-}\"")" ]; then
+              echo "Missing required environment variable: $name"
+              exit 1
+            fi
+          done
+          echo "All required TestFlight secrets are present."
+
+      - name: Bootstrap ephemeral Fameverse iOS shell
+        script: |
+          set -euo pipefail
+          rm -rf /tmp/fameverse_flutter_ios
+          flutter create \
+            --platforms=ios \
+            --org com.fameverse \
+            --project-name live \
+            --no-pub \
+            /tmp/fameverse_flutter_ios
+          rm -rf ios
+          cp -R /tmp/fameverse_flutter_ios/ios ./ios
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera for native live preview and hosting." \
+            ios/Runner/Info.plist
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSMicrophoneUsageDescription Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
+            ios/Runner/Info.plist
+
+          bash tool/apply_ios_branding.sh
+
+      - name: Resolve Flutter packages
+        script: |
+          set -euo pipefail
+          flutter pub get
+
+      - name: Verify locked Fameverse bundle identifier
+        script: |
+          set -euo pipefail
+          PROJECT_FILE="ios/Runner.xcodeproj/project.pbxproj"
+          test -f "$PROJECT_FILE"
+          if ! grep -Fq "PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;" "$PROJECT_FILE"; then
+            echo "Locked bundle identifier $BUNDLE_ID was not found in $PROJECT_FILE"
+            exit 1
+          fi
+          echo "Verified bundle identifier: $BUNDLE_ID"
+
+      - name: Enforce Fameverse iOS branding law
+        script: |
+          set -euo pipefail
+          bash tool/verify_ios_branding.sh
+
+      - name: Enforce Fameverse native foundation law
+        script: |
+          set -euo pipefail
+          dart run tool/check_native_contract.dart
+
+      - name: Enforce Dart formatting
+        script: |
+          set -euo pipefail
+          dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          flutter analyze
+
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          flutter test
+
+      - name: Install CocoaPods dependencies
+        script: |
+          set -euo pipefail
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: Install Fameverse signing assets directly
+        script: |
+          set -euo pipefail
+          keychain initialize
+
+          PROFILES_HOME="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_HOME"
+          PROFILE_PATH="$PROFILES_HOME/fameverse_app_store.mobileprovision"
+          printf '%s' "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILE_PATH"
+          security cms -D -i "$PROFILE_PATH" >/dev/null
+
+          CERT_PATH="/tmp/fameverse_distribution.p12"
+          printf '%s' "$CM_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+          openssl pkcs12 \
+            -in "$CERT_PATH" \
+            -passin pass:"$CM_CERTIFICATE_PASSWORD" \
+            -noout
+          keychain add-certificates \
+            --certificate "$CERT_PATH" \
+            --certificate-password "$CM_CERTIFICATE_PASSWORD"
+
+          xcode-project use-profiles \
+            --project ios/Runner.xcodeproj \
+            --profile "$PROFILE_PATH"
+
+      - name: Build signed Fameverse IPA candidate
+        script: |
+          set -euo pipefail
+          test -n "${FAMEVERSE_SOURCE_SHA:-}"
+          flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=18" \
+            --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build18_source_identity.txt
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+
+# Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
+# native-testflight always checks out the locked build18/live-repair source before validation/building.
+# A user may trigger the workflow from the base branch; the published candidate source is still the locked repair branch.
+# Every candidate publishes build18_source_identity.txt with the exact source commit used for the IPA.
+# TestFlight upload is a candidate checkpoint, never a product PASS.
+# The candidate must be physically tested before external promotion / release approval.

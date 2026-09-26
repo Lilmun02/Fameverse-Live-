@@ -1,0 +1,47 @@
+name: Fameverse Native Stream Gate
+
+on:
+  push:
+    branches:
+      - native/flutter-v1
+    paths:
+      - 'native/flutter_v1/**'
+      - 'docs/NATIVE_PARITY_MATRIX.md'
+      - 'docs/NATIVE_MEDIA_PROVIDER_LOCK.md'
+      - '.github/workflows/native-live-wire.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-native-stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - name: Checkout native branch
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve Flutter packages
+        run: flutter pub get
+
+      - name: Enforce Fameverse native architecture law
+        run: dart run tool/check_native_contract.dart
+
+      - name: Enforce Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        run: flutter test
