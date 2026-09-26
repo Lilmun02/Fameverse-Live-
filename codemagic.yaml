@@ -116,7 +116,7 @@ workflows:
       - flutter_drive.log
 
   native-testflight:
-    name: Fameverse Native TestFlight
+    name: Fameverse Native TestFlight Candidate
     instance_type: mac_mini_m2
     max_build_duration: 60
     working_directory: native/flutter_v1
@@ -131,6 +131,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
+        FAMEVERSE_BUILD_FAMILY: "18"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -138,6 +139,24 @@ workflows:
         - ~/.pub-cache
 
     scripts:
+      - name: Checkout locked Build 18 repair source
+        script: |
+          set -euo pipefail
+          TARGET_BRANCH="build18/live-repair"
+          REPO_ROOT="$(git rev-parse --show-toplevel)"
+          cd "$REPO_ROOT"
+          git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
+          git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          TARGET_SHA="$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)"
+          if [ "$SOURCE_SHA" != "$TARGET_SHA" ]; then
+            echo "BLOCKED: checked-out source does not match $TARGET_BRANCH."
+            exit 1
+          fi
+          echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
+          printf '%s\n' "Build 18 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build18_source_identity.txt"
+          echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
+
       - name: Verify required TestFlight secrets are present
         script: |
           set -euo pipefail
@@ -256,15 +275,19 @@ workflows:
             --project ios/Runner.xcodeproj \
             --profile "$PROFILE_PATH"
 
-      - name: Build signed Fameverse IPA
+      - name: Build signed Fameverse IPA candidate
         script: |
           set -euo pipefail
+          test -n "${FAMEVERSE_SOURCE_SHA:-}"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=18" \
+            --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - build18_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -275,11 +298,8 @@ workflows:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
-# TestFlight publishing is isolated to the signed native-testflight workflow.
-# TestFlight signing bypasses Codemagic Code Signing Identities resolution entirely.
-# The password-protected .p12 and .mobileprovision are supplied as encrypted base64 app variables.
-# Bundle ID verification is static so it never triggers Xcode dependency resolution before pub get.
-# App Store Connect upload uses the appstore_credentials environment-variable group.
-# Ephemeral iOS shells receive camera/microphone permissions, then the canonical Fameverse name and crown AppIcon before build/signing.
-# Ephemeral Android shells receive the canonical Fameverse name and crown launcher icon before build.
-# Branding laws fail the build if generated native output falls back to Flutter placeholder identity.
+# native-testflight always checks out the locked build18/live-repair source before validation/building.
+# A user may trigger the workflow from the base branch; the published candidate source is still the locked repair branch.
+# Every candidate publishes build18_source_identity.txt with the exact source commit used for the IPA.
+# TestFlight upload is a candidate checkpoint, never a product PASS.
+# The candidate must be physically tested before external promotion / release approval.
