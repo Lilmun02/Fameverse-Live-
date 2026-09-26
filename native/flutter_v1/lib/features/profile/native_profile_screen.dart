@@ -398,11 +398,17 @@ class _ConnectionStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Stat(value: followers, label: 'Followers')),
+          Expanded(
+            child: _Stat(value: followers, label: 'Followers'),
+          ),
           const _StatDivider(),
-          Expanded(child: _Stat(value: following, label: 'Following')),
+          Expanded(
+            child: _Stat(value: following, label: 'Following'),
+          ),
           const _StatDivider(),
-          Expanded(child: _Stat(value: friends, label: 'Friends')),
+          Expanded(
+            child: _Stat(value: friends, label: 'Friends'),
+          ),
         ],
       ),
     );
@@ -681,10 +687,7 @@ class _AvatarFallback extends StatelessWidget {
       child: Center(
         child: Text(
           profile.initial,
-          style: const TextStyle(
-            fontSize: 38,
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900),
         ),
       ),
     );

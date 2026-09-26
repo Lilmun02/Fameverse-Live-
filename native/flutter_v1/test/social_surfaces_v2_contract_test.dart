@@ -83,18 +83,21 @@ void main() {
       expect(policy, contains("'Creator Beta Terms'"));
     });
 
-    test('Build 18 shell wires the new surfaces instead of legacy directory UI', () async {
-      final shell = await File(
-        'lib/features/shell/fameverse_shell_build16.dart',
-      ).readAsString();
+    test(
+      'Build 18 shell wires the new surfaces instead of legacy directory UI',
+      () async {
+        final shell = await File(
+          'lib/features/shell/fameverse_shell_build16.dart',
+        ).readAsString();
 
-      expect(shell, contains('FameverseHomeScreen('));
-      expect(shell, contains('FameverseDiscoverScreen('));
-      expect(shell, contains('NativeProfileScreen('));
-      expect(shell, contains("key: const Key('fameverse-bottom-nav')"));
-      expect(shell, isNot(contains('class _Build16HomeScreen')));
-      expect(shell, isNot(contains('class _Build16DiscoverScreen')));
-      expect(shell, isNot(contains('showModalBottomSheet<void>(')));
-    });
+        expect(shell, contains('FameverseHomeScreen('));
+        expect(shell, contains('FameverseDiscoverScreen('));
+        expect(shell, contains('NativeProfileScreen('));
+        expect(shell, contains("key: const Key('fameverse-bottom-nav')"));
+        expect(shell, isNot(contains('class _Build16HomeScreen')));
+        expect(shell, isNot(contains('class _Build16DiscoverScreen')));
+        expect(shell, isNot(contains('showModalBottomSheet<void>(')));
+      },
+    );
   });
 }
