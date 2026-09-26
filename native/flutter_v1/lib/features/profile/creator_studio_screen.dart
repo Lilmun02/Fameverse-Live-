@@ -346,9 +346,7 @@ class _ProLivePreviewCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Color(0xFF28133A), Color(0xFF17101F), Color(0xFF0E0A12)],
         ),
-        boxShadow: const [
-          BoxShadow(color: Color(0x332B0A45), blurRadius: 20),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x332B0A45), blurRadius: 20)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,10 +379,7 @@ class _ProLivePreviewCard extends StatelessWidget {
                     SizedBox(height: 3),
                     Text(
                       'Future creator program · read-only preview',
-                      style: TextStyle(
-                        color: Color(0xFFAFA2B7),
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Color(0xFFAFA2B7), fontSize: 11),
                     ),
                   ],
                 ),
@@ -448,7 +443,10 @@ class _ProLivePreviewCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xE6191020),
                     borderRadius: BorderRadius.circular(999),
@@ -564,7 +562,8 @@ class _PayoutEligibilityCard extends StatelessWidget {
         'Fameverse needs additional payout information. The external beta does not collect that information on this screen yet.',
       'rejected' =>
         'Payout eligibility was not approved. A future payout setup flow will show the required next steps.',
-      'suspended' => 'Payout requests are currently disabled for this creator account.',
+      'suspended' =>
+        'Payout requests are currently disabled for this creator account.',
       _ =>
         'Payout onboarding is not open in this external beta yet. We will not ask you to press a vague verification button or submit incomplete information.',
     };
