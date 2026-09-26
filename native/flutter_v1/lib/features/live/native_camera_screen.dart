@@ -29,7 +29,6 @@ class NativeCameraScreen extends StatefulWidget {
 class _NativeCameraScreenState extends State<NativeCameraScreen> {
   final TextEditingController _title = TextEditingController();
   final TextEditingController _goal = TextEditingController();
-  final Set<String> _wishlist = <String>{};
   CameraController? _permissionProbe;
   bool _loadingDraft = true;
   bool _liveBusy = false;
@@ -57,14 +56,26 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       if (!mounted) return;
       _title.text = draft.title;
       _goal.text = draft.goal;
-      _wishlist
-        ..clear()
-        ..addAll(draft.wishlistGiftIds);
     } catch (_) {
       // Draft recovery never blocks Live setup.
     } finally {
       if (mounted) setState(() => _loadingDraft = false);
     }
+  }
+
+  Future<void> _resetLiveSetupAfterEnd() async {
+    try {
+      await widget.liveBackend.saveLiveDraft(
+        userId: widget.identity.id,
+        draft: FvLiveDraft.empty,
+      );
+    } catch (_) {
+      // The creator must still be able to leave the ended Live cleanly.
+    }
+    if (!mounted) return;
+    _title.clear();
+    _goal.clear();
+    setState(() => _error = null);
   }
 
   Future<void> _verifyCameraAccess() async {
@@ -107,7 +118,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       final draft = FvLiveDraft(
         title: _title.text,
         goal: _goal.text,
-        wishlistGiftIds: _wishlist.toList(),
+        wishlistGiftIds: const [],
       );
       await widget.liveBackend.saveLiveDraft(
         userId: widget.identity.id,
@@ -121,7 +132,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         profile: widget.profile,
         title: _title.text,
         goal: _goal.text,
-        wishlistGiftIds: _wishlist.toList(),
+        wishlistGiftIds: const [],
       );
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: room.id,
@@ -142,6 +153,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       );
       if (!mounted) return;
 
+      if (ended == true) {
+        await _resetLiveSetupAfterEnd();
+      }
       await widget.onLiveEnded();
       if (ended == true && mounted) {
         await _showLastLiveSummary();
@@ -306,97 +320,6 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                         hintText: 'Example: 1,000 likes or 20 gifts',
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const Text(
-                          'Wishlist gifts',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Optional · ${_wishlist.length} selected',
-                          style: const TextStyle(
-                            color: Color(0xFFBBA9C6),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Pick only gifts that actually exist in Fameverse.',
-                      style: TextStyle(color: Color(0xFF958A9E), fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-                    ...fvGiftCatalog.map((gift) {
-                      final selected = _wishlist.contains(gift.id);
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => setState(() {
-                            if (selected) {
-                              _wishlist.remove(gift.id);
-                            } else {
-                              _wishlist.add(gift.id);
-                            }
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.all(13),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? const Color(0xFF322047)
-                                  : const Color(0xFF17101F),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: selected
-                                    ? const Color(0xFF9D55FF)
-                                    : Colors.white10,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  gift.symbol,
-                                  style: const TextStyle(fontSize: 26),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        gift.label,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${gift.cost} coin${gift.cost == 1 ? '' : 's'}',
-                                        style: const TextStyle(
-                                          color: Color(0xFFACA1B4),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  selected
-                                      ? Icons.check_circle
-                                      : Icons.add_circle_outline,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
                     if (_error != null) ...[
                       const SizedBox(height: 12),
                       Container(
