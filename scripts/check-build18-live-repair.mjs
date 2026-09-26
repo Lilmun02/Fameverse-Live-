@@ -129,10 +129,14 @@ requireText(rechargeApiPath, rechargeApi, '"native-checkout-required"', 'direct 
 forbidText(rechargeApiPath, rechargeApi, 'vercel.app', 'Vercel must not be part of the PayPal sandbox recharge flow')
 forbidText(rechargeApiPath, rechargeApi, 'text/html', 'Supabase recharge must remain an API rather than trying to serve HTML')
 
-// Source identity law.
-requireText(codemagicPath, codemagic, 'EXPECTED_BRANCH="build18/live-repair"', 'TestFlight must be hard-locked to the repair branch')
+// Source identity law. A Codemagic trigger may originate from the base branch,
+// but the publishing workflow must fetch and detach-checkout the locked repair
+// branch, record the resulting SHA, and compile that exact SHA into the IPA.
+requireText(codemagicPath, codemagic, 'TARGET_BRANCH="build18/live-repair"', 'TestFlight must target the locked repair branch')
+requireText(codemagicPath, codemagic, 'git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"', 'TestFlight must checkout the locked repair branch before validation/build')
+requireText(codemagicPath, codemagic, 'FAMEVERSE_SOURCE_SHA=$SOURCE_SHA', 'TestFlight must persist the exact locked repair SHA')
 requireText(codemagicPath, codemagic, 'build18_source_identity.txt', 'TestFlight must publish source identity evidence')
-requireText(codemagicPath, codemagic, '--dart-define="FAMEVERSE_SOURCE_SHA=${CM_COMMIT}"', 'TestFlight must carry the exact source SHA at compile time')
+requireText(codemagicPath, codemagic, '--dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}"', 'TestFlight must compile the exact locked repair SHA into the candidate')
 
 if (failures.length) {
   console.error('Build 18 regression protection failed:')
