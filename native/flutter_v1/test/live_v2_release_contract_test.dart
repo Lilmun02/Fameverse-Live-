@@ -10,11 +10,7 @@ void main() {
       'gift catalog is unique, priced, and cinematic assets are intentional',
       () {
         final ids = fvGiftCatalog.map((gift) => gift.id).toList();
-        expect(
-          ids.toSet().length,
-          ids.length,
-          reason: 'Gift ids must be unique.',
-        );
+        expect(ids.toSet().length, ids.length, reason: 'Gift ids must be unique.');
         expect(fvGiftCatalog, isNotEmpty);
 
         for (final gift in fvGiftCatalog) {
@@ -32,8 +28,7 @@ void main() {
             expect(
               gift.videoUrl,
               isNotNull,
-              reason:
-                  '${gift.id} is cinematic and must have a real video asset.',
+              reason: '${gift.id} is cinematic and must have a real video asset.',
             );
             expect(
               gift.videoUrl!.startsWith('https://'),
@@ -139,7 +134,7 @@ void main() {
       },
     );
 
-    test('tester screenshot host UI regressions stay fixed', () async {
+    test('approved neon solo host V2 layout stays wired', () async {
       final host = await File(
         'lib/features/live/stream_host_live_screen.dart',
       ).readAsString();
@@ -147,16 +142,20 @@ void main() {
         'lib/features/live/stream_live_shared.dart',
       ).readAsString();
 
-      expect(host, contains("Key('host-live-handle')"));
-      expect(host, contains('widget.room.host.handle'));
-      expect(host, contains('fit: BoxFit.scaleDown'));
-      expect(host, isNot(contains('overflow: TextOverflow.ellipsis')));
-      expect(host, contains('backgroundColor: const Color(0xFFD5284D)'));
+      expect(host, contains("Key('host-v2-fameverse-wordmark')"));
+      expect(host, contains("'FAMEVERSE'"));
+      expect(host, contains("'PEOPLE MAKE LEGENDS'"));
+      expect(host, contains('widget.room.host.displayName'));
+      expect(host, contains('class _NeonHostAvatar'));
+      expect(host, contains('class _LiveStatsPill'));
+      expect(host, contains("Key('host-v2-combined-stats')"));
+      expect(host, contains('backgroundColor: const Color(0xFFE62952)'));
       expect(host, contains("Key('host-f-menu-button')"));
-      expect(host, contains('height: cohostActive ? 250 : 220'));
+      expect(host, contains('height: cohostActive ? 230 : 245'));
       expect(host, contains('FvLiveCommentComposer('));
       expect(shared, contains('class FvFameActionButton'));
-      expect(shared, contains('color: Color(0xFFB96BFF)'));
+      expect(shared, contains('color: Color(0xFFE1B5FF)'));
+      expect(shared, contains("Key('v2-highlighted-gift-chat')"));
     });
 
     test(
@@ -184,7 +183,7 @@ void main() {
       },
     );
 
-    test('PayPal sandbox recharge is native and Vercel-free', () async {
+    test('PayPal sandbox recharge is native, custom, and Vercel-free', () async {
       final screen = await File(
         'lib/features/profile/native_recharge_screen.dart',
       ).readAsString();
@@ -201,12 +200,18 @@ void main() {
       expect(screen, contains('class NativeRechargeScreen'));
       expect(screen, contains('final launched = await launchUrl('));
       expect(screen, contains('mode: LaunchMode.externalApplication'));
+      expect(screen, contains("Key('custom-fame-coins-card')"));
+      expect(screen, contains("'custom_coins': coins"));
       expect(screen, contains("'Complete sandbox purchase'"));
       expect(studio, contains('if (_isOwner)'));
       expect(studio, contains('NativeRechargeScreen'));
       expect(session, contains('checkout: "native"'));
       expect(session, contains('session: token'));
       expect(session, isNot(contains('vercel.app')));
+      expect(api, contains('CUSTOM_PACK_ID = "owner-qa-custom"'));
+      expect(api, contains('CUSTOM_MIN_COINS = 100'));
+      expect(api, contains('CUSTOM_MAX_COINS = 10000'));
+      expect(api, contains('customCoins * CUSTOM_CENTS_PER_COIN'));
       expect(api, contains('approval_url: approvalUrl'));
       expect(api, contains('"native-checkout-required"'));
       expect(api, isNot(contains('vercel.app')));
