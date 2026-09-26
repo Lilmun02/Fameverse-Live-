@@ -29,11 +29,11 @@ class FvLiveGradient extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: .52),
+            Colors.black.withValues(alpha: .55),
             Colors.transparent,
-            Colors.black.withValues(alpha: .86),
+            Colors.black.withValues(alpha: .92),
           ],
-          stops: const [0, .38, 1],
+          stops: const [0, .42, 1],
         ),
       ),
     );
@@ -48,8 +48,12 @@ class FvLiveBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF315F),
-        borderRadius: BorderRadius.circular(999),
+        color: const Color(0xFF6E2CCB),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFB86BFF), width: 1.2),
+        boxShadow: const [
+          BoxShadow(color: Color(0x668E4DFF), blurRadius: 9),
+        ],
       ),
       child: const Text(
         'LIVE',
@@ -211,21 +215,21 @@ class FvLiveCommentComposer extends StatelessWidget {
         counterText: '',
         isDense: true,
         filled: true,
-        fillColor: Colors.black.withValues(alpha: .42),
+        fillColor: const Color(0xC70C0810),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 15,
           vertical: 12,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: Color(0xFF4B365B)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: Color(0xFF4B365B)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: Color(0xFF9B55FF), width: 1.4),
         ),
       ),
@@ -248,14 +252,16 @@ class FvFameActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
-      height: 48,
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFF1A1024),
-        border: Border.all(color: const Color(0xFF8E4DFF), width: 1.6),
+        gradient: const RadialGradient(
+          colors: [Color(0xFF8238E4), Color(0xFF29103D)],
+        ),
+        border: Border.all(color: const Color(0xFFC36FFF), width: 1.8),
         boxShadow: const [
-          BoxShadow(color: Color(0x558E4DFF), blurRadius: 12, spreadRadius: 1),
+          BoxShadow(color: Color(0x998E4DFF), blurRadius: 16, spreadRadius: 1),
         ],
       ),
       child: IconButton(
@@ -265,8 +271,8 @@ class FvFameActionButton extends StatelessWidget {
         icon: const Text(
           'F',
           style: TextStyle(
-            color: Color(0xFFB96BFF),
-            fontSize: 20,
+            color: Color(0xFFE1B5FF),
+            fontSize: 21,
             fontWeight: FontWeight.w900,
             fontStyle: FontStyle.italic,
           ),
@@ -302,14 +308,23 @@ class FvLiveChatList extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(9, 8, 11, 9),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: isGift ? .36 : .28),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isGift ? const Color(0x555E38A5) : Colors.white10,
-              ),
-            ),
+            key: isGift ? const Key('v2-highlighted-gift-chat') : null,
+            padding: isGift
+                ? const EdgeInsets.fromLTRB(9, 8, 11, 9)
+                : const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+            decoration: isGift
+                ? BoxDecoration(
+                    color: const Color(0xCC1A0E24),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFB34EFF),
+                      width: 1.1,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x553C0A71), blurRadius: 10),
+                    ],
+                  )
+                : null,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -363,6 +378,10 @@ class FvLiveChatList extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: const Color(0xFF6E32B9),
                                 borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: const Color(0xFFAF6DFF),
+                                  width: .8,
+                                ),
                               ),
                               child: Text(
                                 'Lv. $level',
@@ -380,13 +399,16 @@ class FvLiveChatList extends StatelessWidget {
                         text,
                         style: TextStyle(
                           color: isGift
-                              ? const Color(0xFFFFD9A3)
+                              ? const Color(0xFFFFD8FF)
                               : const Color(0xFFF5EFF8),
                           fontSize: 15,
                           height: 1.3,
                           fontWeight: isGift
                               ? FontWeight.w700
                               : FontWeight.w500,
+                          shadows: const [
+                            Shadow(color: Colors.black, blurRadius: 7),
+                          ],
                         ),
                       ),
                     ],
