@@ -205,14 +205,14 @@ class _FameverseMark extends StatelessWidget {
     return Container(
       width: 38,
       height: 38,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFFB663FF), Color(0xFF522080)],
         ),
-        boxShadow: const [BoxShadow(color: Color(0x665E1B9B), blurRadius: 14)],
+        boxShadow: [BoxShadow(color: Color(0x665E1B9B), blurRadius: 14)],
       ),
       child: const Center(
         child: Text(
@@ -521,15 +521,9 @@ class _ConnectionStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _Stat(value: followers, label: 'Followers'),
-          ),
-          Expanded(
-            child: _Stat(value: following, label: 'Following'),
-          ),
-          Expanded(
-            child: _Stat(value: friends, label: 'Friends'),
-          ),
+          Expanded(child: _Stat(value: followers, label: 'Followers')),
+          Expanded(child: _Stat(value: following, label: 'Following')),
+          Expanded(child: _Stat(value: friends, label: 'Friends')),
         ],
       ),
     );
@@ -740,8 +734,9 @@ class _FameverseSettingsScreen extends StatelessWidget {
     );
     if (confirmed != true) return;
     await onSignOut();
-    if (context.mounted)
+    if (context.mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   @override
