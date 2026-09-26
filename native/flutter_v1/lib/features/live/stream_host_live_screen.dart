@@ -621,7 +621,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                   ? 'Fameverse viewer'
                                   : participant.name,
                             ),
-                            subtitle: Text(active ? 'Co-hosting now' : 'Viewer'),
+                            subtitle: Text(
+                              active ? 'Co-hosting now' : 'Viewer',
+                            ),
                             trailing: active
                                 ? TextButton(
                                     onPressed: () {
@@ -959,7 +961,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                             onTap: _showViewerSheet,
                             child: PartialCallStateBuilder<int>(
                               call: call,
-                              selector: (state) => state.callParticipants.length,
+                              selector: (state) =>
+                                  state.callParticipants.length,
                               builder: (context, count) => _LiveStatsPill(
                                 viewerCount: count > 0 ? count - 1 : 0,
                                 fameTaps: _fameTaps,
@@ -967,10 +970,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                             ),
                           )
                         else
-                          _LiveStatsPill(
-                            viewerCount: 0,
-                            fameTaps: _fameTaps,
-                          ),
+                          _LiveStatsPill(viewerCount: 0, fameTaps: _fameTaps),
                         const SizedBox(width: 8),
                         FilledButton(
                           key: const Key('native-end-live'),

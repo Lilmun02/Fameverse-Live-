@@ -51,9 +51,7 @@ class FvLiveBadge extends StatelessWidget {
         color: const Color(0xFF6E2CCB),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFB86BFF), width: 1.2),
-        boxShadow: const [
-          BoxShadow(color: Color(0x668E4DFF), blurRadius: 9),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x668E4DFF), blurRadius: 9)],
       ),
       child: const Text(
         'LIVE',

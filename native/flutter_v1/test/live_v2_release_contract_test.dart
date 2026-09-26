@@ -10,7 +10,11 @@ void main() {
       'gift catalog is unique, priced, and cinematic assets are intentional',
       () {
         final ids = fvGiftCatalog.map((gift) => gift.id).toList();
-        expect(ids.toSet().length, ids.length, reason: 'Gift ids must be unique.');
+        expect(
+          ids.toSet().length,
+          ids.length,
+          reason: 'Gift ids must be unique.',
+        );
         expect(fvGiftCatalog, isNotEmpty);
 
         for (final gift in fvGiftCatalog) {
@@ -28,7 +32,8 @@ void main() {
             expect(
               gift.videoUrl,
               isNotNull,
-              reason: '${gift.id} is cinematic and must have a real video asset.',
+              reason:
+                  '${gift.id} is cinematic and must have a real video asset.',
             );
             expect(
               gift.videoUrl!.startsWith('https://'),
@@ -183,40 +188,43 @@ void main() {
       },
     );
 
-    test('PayPal sandbox recharge is native, custom, and Vercel-free', () async {
-      final screen = await File(
-        'lib/features/profile/native_recharge_screen.dart',
-      ).readAsString();
-      final studio = await File(
-        'lib/features/profile/creator_studio_screen.dart',
-      ).readAsString();
-      final session = await File(
-        '../../supabase/functions/recharge-session/index.ts',
-      ).readAsString();
-      final api = await File(
-        '../../supabase/functions/recharge/index.ts',
-      ).readAsString();
+    test(
+      'PayPal sandbox recharge is native, custom, and Vercel-free',
+      () async {
+        final screen = await File(
+          'lib/features/profile/native_recharge_screen.dart',
+        ).readAsString();
+        final studio = await File(
+          'lib/features/profile/creator_studio_screen.dart',
+        ).readAsString();
+        final session = await File(
+          '../../supabase/functions/recharge-session/index.ts',
+        ).readAsString();
+        final api = await File(
+          '../../supabase/functions/recharge/index.ts',
+        ).readAsString();
 
-      expect(screen, contains('class NativeRechargeScreen'));
-      expect(screen, contains('final launched = await launchUrl('));
-      expect(screen, contains('mode: LaunchMode.externalApplication'));
-      expect(screen, contains("Key('custom-fame-coins-card')"));
-      expect(screen, contains("'custom_coins': coins"));
-      expect(screen, contains("'Complete sandbox purchase'"));
-      expect(studio, contains('if (_isOwner)'));
-      expect(studio, contains('NativeRechargeScreen'));
-      expect(session, contains('checkout: "native"'));
-      expect(session, contains('session: token'));
-      expect(session, isNot(contains('vercel.app')));
-      expect(api, contains('CUSTOM_PACK_ID = "owner-qa-custom"'));
-      expect(api, contains('CUSTOM_MIN_COINS = 100'));
-      expect(api, contains('CUSTOM_MAX_COINS = 10000'));
-      expect(api, contains('customCoins * CUSTOM_CENTS_PER_COIN'));
-      expect(api, contains('approval_url: approvalUrl'));
-      expect(api, contains('"native-checkout-required"'));
-      expect(api, isNot(contains('vercel.app')));
-      expect(api, isNot(contains('text/html')));
-    });
+        expect(screen, contains('class NativeRechargeScreen'));
+        expect(screen, contains('final launched = await launchUrl('));
+        expect(screen, contains('mode: LaunchMode.externalApplication'));
+        expect(screen, contains("Key('custom-fame-coins-card')"));
+        expect(screen, contains("'custom_coins': coins"));
+        expect(screen, contains("'Complete sandbox purchase'"));
+        expect(studio, contains('if (_isOwner)'));
+        expect(studio, contains('NativeRechargeScreen'));
+        expect(session, contains('checkout: "native"'));
+        expect(session, contains('session: token'));
+        expect(session, isNot(contains('vercel.app')));
+        expect(api, contains('CUSTOM_PACK_ID = "owner-qa-custom"'));
+        expect(api, contains('CUSTOM_MIN_COINS = 100'));
+        expect(api, contains('CUSTOM_MAX_COINS = 10000'));
+        expect(api, contains('customCoins * CUSTOM_CENTS_PER_COIN'));
+        expect(api, contains('approval_url: approvalUrl'));
+        expect(api, contains('"native-checkout-required"'));
+        expect(api, isNot(contains('vercel.app')));
+        expect(api, isNot(contains('text/html')));
+      },
+    );
 
     test('TestFlight candidate is source-locked to Build 18', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
