@@ -1,9 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-// Build 18 recharge is a native Fameverse flow. This function is API-only:
-// Supabase validates the owner QA session and talks to PayPal; no HTML checkout
-// page and no Vercel deployment are part of the payment path.
+// Native Fameverse recharge is API-only: Supabase validates the owner QA
+// session and talks directly to PayPal. Vercel/HTML checkout is never part of
+// the payment path.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
@@ -15,6 +15,11 @@ const jsonHeaders = {
   ...corsHeaders,
   "Content-Type": "application/json; charset=utf-8",
 };
+
+const CUSTOM_PACK_ID = "owner-qa-custom";
+const CUSTOM_MIN_COINS = 100;
+const CUSTOM_MAX_COINS = 10000;
+const CUSTOM_CENTS_PER_COIN = 1;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -101,9 +106,20 @@ async function activeOwnerPacks(admin: ReturnType<typeof createClient>) {
     .select("id,label,coins,price_cents,currency,owner_only")
     .eq("active", true)
     .eq("owner_only", true)
+    .neq("id", CUSTOM_PACK_ID)
     .order("sort_order", { ascending: true })
     .order("price_cents", { ascending: true });
 }
+
+type RechargePack = {
+  id: string;
+  label: string;
+  coins: number;
+  price_cents: number;
+  currency: string;
+  active: boolean;
+  owner_only: boolean;
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -113,7 +129,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return json(405, {
       error: "native-checkout-required",
-      message: "Build 18 recharge is handled in the native Fameverse app.",
+      message: "Fameverse recharge is handled in the native app.",
     });
   }
 
@@ -165,6 +181,13 @@ Deno.serve(async (req: Request) => {
     return json(200, {
       environment: paypalEnvironment,
       packs: packs ?? [],
+      custom: {
+        enabled: true,
+        pack_id: CUSTOM_PACK_ID,
+        min_coins: CUSTOM_MIN_COINS,
+        max_coins: CUSTOM_MAX_COINS,
+        cents_per_coin: CUSTOM_CENTS_PER_COIN,
+      },
       checkout: "native",
     });
   }
@@ -175,18 +198,57 @@ Deno.serve(async (req: Request) => {
 
   if (action === "create") {
     const packId = String(body.pack_id ?? "");
-    const { data: pack, error: packError } = await admin
-      .from("coin_recharge_packs")
-      .select("id,label,coins,price_cents,currency,active,owner_only")
-      .eq("id", packId)
-      .eq("active", true)
-      .maybeSingle();
+    let pack: RechargePack | null = null;
 
-    if (packError || !pack) {
-      return json(404, { error: "recharge-pack-not-found" });
-    }
-    if (!pack.owner_only) {
-      return json(403, { error: "qa-pack-required" });
+    if (packId === CUSTOM_PACK_ID) {
+      const customCoins = Number(body.custom_coins);
+      if (
+        !Number.isInteger(customCoins) ||
+        customCoins < CUSTOM_MIN_COINS ||
+        customCoins > CUSTOM_MAX_COINS
+      ) {
+        return json(400, {
+          error: "invalid-custom-coin-amount",
+          min_coins: CUSTOM_MIN_COINS,
+          max_coins: CUSTOM_MAX_COINS,
+        });
+      }
+
+      const { data: customPack, error: customPackError } = await admin
+        .from("coin_recharge_packs")
+        .select("id,label,currency,active,owner_only")
+        .eq("id", CUSTOM_PACK_ID)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (customPackError || !customPack || !customPack.owner_only) {
+        return json(404, { error: "custom-recharge-not-available" });
+      }
+
+      pack = {
+        id: CUSTOM_PACK_ID,
+        label: "Custom Fame Coins",
+        coins: customCoins,
+        price_cents: customCoins * CUSTOM_CENTS_PER_COIN,
+        currency: String(customPack.currency ?? "USD"),
+        active: true,
+        owner_only: true,
+      };
+    } else {
+      const { data: fixedPack, error: packError } = await admin
+        .from("coin_recharge_packs")
+        .select("id,label,coins,price_cents,currency,active,owner_only")
+        .eq("id", packId)
+        .eq("active", true)
+        .maybeSingle();
+
+      if (packError || !fixedPack) {
+        return json(404, { error: "recharge-pack-not-found" });
+      }
+      if (!fixedPack.owner_only) {
+        return json(403, { error: "qa-pack-required" });
+      }
+      pack = fixedPack as RechargePack;
     }
 
     const { data: recharge, error: rechargeError } = await admin
@@ -269,6 +331,8 @@ Deno.serve(async (req: Request) => {
         order_id: paypalOrder.id,
         approval_url: approvalUrl,
         environment: paypalEnvironment,
+        coins: pack.coins,
+        amount_cents: pack.price_cents,
       });
     } catch {
       await admin
