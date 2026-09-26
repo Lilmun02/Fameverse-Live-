@@ -103,8 +103,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
         _customPackId = custom['pack_id']?.toString() ?? 'owner-qa-custom';
         _customMinCoins = (custom['min_coins'] as num?)?.toInt() ?? 100;
         _customMaxCoins = (custom['max_coins'] as num?)?.toInt() ?? 10000;
-        _customCentsPerCoin =
-            (custom['cents_per_coin'] as num?)?.toInt() ?? 1;
+        _customCentsPerCoin = (custom['cents_per_coin'] as num?)?.toInt() ?? 1;
         _loading = false;
       });
     } catch (error) {
@@ -128,10 +127,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
 
   Future<void> _startCustomPurchase(int coins) => _startOrder(
     packLabel: '$coins Fame Coins',
-    payload: <String, dynamic>{
-      'pack_id': _customPackId,
-      'custom_coins': coins,
-    },
+    payload: <String, dynamic>{'pack_id': _customPackId, 'custom_coins': coins},
   );
 
   Future<void> _startOrder({
