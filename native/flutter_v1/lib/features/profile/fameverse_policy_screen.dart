@@ -114,8 +114,7 @@ class FameversePolicyScreen extends StatelessWidget {
                   icon: Icons.live_tv_outlined,
                   title: 'Creator Beta Terms',
                   subtitle: 'Live, monetization and payout responsibilities',
-                  onTap: () =>
-                      _open(context, 'Creator Beta Terms', _creator),
+                  onTap: () => _open(context, 'Creator Beta Terms', _creator),
                 ),
               ],
             ),
@@ -238,10 +237,7 @@ class _PolicyDocument extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(title),
-      ),
+      appBar: AppBar(backgroundColor: Colors.black, title: Text(title)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),

@@ -108,14 +108,18 @@ class _FameverseEditProfileScreenState
                         BoxShadow(color: Color(0x77551782), blurRadius: 24),
                       ],
                     ),
-                    child: ClipOval(child: _ProfileAvatar(profile: widget.profile)),
+                    child: ClipOval(
+                      child: _ProfileAvatar(profile: widget.profile),
+                    ),
                   ),
                   Positioned(
                     right: -2,
                     bottom: 2,
                     child: IconButton.filled(
                       key: const Key('edit-profile-change-photo'),
-                      onPressed: widget.avatarBusy ? null : widget.onChangePhoto,
+                      onPressed: widget.avatarBusy
+                          ? null
+                          : widget.onChangePhoto,
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFF8F43E0),
                         foregroundColor: Colors.white,
@@ -375,10 +379,7 @@ class _AvatarFallback extends StatelessWidget {
       child: Center(
         child: Text(
           profile.initial,
-          style: const TextStyle(
-            fontSize: 38,
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900),
         ),
       ),
     );

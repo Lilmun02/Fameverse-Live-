@@ -63,14 +63,16 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
     return 0;
   }
 
-  bool _following(String userId) => widget.network.followingIds.contains(userId);
+  bool _following(String userId) =>
+      widget.network.followingIds.contains(userId);
 
   List<FvLiveRoom> get _rooms {
     final rooms = widget.rooms.where((room) {
       if (!_matches([room.title, room.host.displayName, room.host.username])) {
         return false;
       }
-      if (_filter == _DiscoverFilter.following && !_following(room.hostUserId)) {
+      if (_filter == _DiscoverFilter.following &&
+          !_following(room.hostUserId)) {
         return false;
       }
       if (_filter == _DiscoverFilter.creators) return false;
@@ -79,8 +81,10 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
 
     if (_filter == _DiscoverFilter.rising) {
       rooms.sort((a, b) {
-        final aScore = a.fameTaps + (_followerCount(a.hostUserId) < 2500 ? 60 : 0);
-        final bScore = b.fameTaps + (_followerCount(b.hostUserId) < 2500 ? 60 : 0);
+        final aScore =
+            a.fameTaps + (_followerCount(a.hostUserId) < 2500 ? 60 : 0);
+        final bScore =
+            b.fameTaps + (_followerCount(b.hostUserId) < 2500 ? 60 : 0);
         return bScore.compareTo(aScore);
       });
     } else {
@@ -204,7 +208,9 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
               ),
             ),
             const SizedBox(height: 28),
-            if (widget.loading && widget.rooms.isEmpty && widget.creators.isEmpty)
+            if (widget.loading &&
+                widget.rooms.isEmpty &&
+                widget.creators.isEmpty)
               const _DiscoverLoadingCard()
             else ...[
               if (_filter != _DiscoverFilter.creators) ...[
@@ -363,9 +369,7 @@ class _FilterChip extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: selected
-                ? const Color(0xFF6B31B5)
-                : const Color(0xFF17121B),
+            color: selected ? const Color(0xFF6B31B5) : const Color(0xFF17121B),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
@@ -497,10 +501,7 @@ class _DiscoverLiveCard extends StatelessWidget {
                   ),
                   child: const Text(
                     'LIVE',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900),
                   ),
                 ),
               ),
