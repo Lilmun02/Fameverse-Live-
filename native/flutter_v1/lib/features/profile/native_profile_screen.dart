@@ -173,10 +173,7 @@ class _ProfileHero extends StatelessWidget {
               key: const Key('profile-cover'),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: const Color(0xFF6E3A91),
-                  width: 1.25,
-                ),
+                border: Border.all(color: const Color(0xFF6E3A91), width: 1.25),
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -411,11 +408,17 @@ class _ConnectionStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Stat(value: followers, label: 'Followers')),
+          Expanded(
+            child: _Stat(value: followers, label: 'Followers'),
+          ),
           const _Divider(),
-          Expanded(child: _Stat(value: following, label: 'Following')),
+          Expanded(
+            child: _Stat(value: following, label: 'Following'),
+          ),
           const _Divider(),
-          Expanded(child: _Stat(value: friends, label: 'Friends')),
+          Expanded(
+            child: _Stat(value: friends, label: 'Friends'),
+          ),
         ],
       ),
     );
@@ -434,10 +437,7 @@ class _Stat extends StatelessWidget {
       children: [
         Text(
           '$value',
-          style: const TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 3),
         Text(
@@ -513,10 +513,7 @@ class _CreatorStudioRow extends StatelessWidget {
                     SizedBox(height: 3),
                     Text(
                       'Earnings and creator tools',
-                      style: TextStyle(
-                        color: Color(0xFFA89EAD),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Color(0xFFA89EAD), fontSize: 12),
                     ),
                   ],
                 ),

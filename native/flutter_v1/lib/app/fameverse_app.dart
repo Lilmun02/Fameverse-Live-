@@ -123,11 +123,7 @@ class _BrandSplash extends StatelessWidget {
           gradient: RadialGradient(
             center: Alignment(0, -.42),
             radius: 1.15,
-            colors: [
-              Color(0xFF1D0B2B),
-              Color(0xFF0B0810),
-              Color(0xFF050507),
-            ],
+            colors: [Color(0xFF1D0B2B), Color(0xFF0B0810), Color(0xFF050507)],
             stops: [0, .58, 1],
           ),
         ),
@@ -244,11 +240,7 @@ class _FameverseMark extends StatelessWidget {
           colors: [Color(0xFF3B1751), Color(0xFF130B19)],
         ),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0x553E1059),
-            blurRadius: 34,
-            spreadRadius: 3,
-          ),
+          BoxShadow(color: Color(0x553E1059), blurRadius: 34, spreadRadius: 3),
         ],
       ),
       child: const Stack(
@@ -272,9 +264,7 @@ class _FameverseMark extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
                 color: Color(0xFFE1AEFF),
-                shadows: [
-                  Shadow(color: Color(0xFFB34DFF), blurRadius: 15),
-                ],
+                shadows: [Shadow(color: Color(0xFFB34DFF), blurRadius: 15)],
               ),
             ),
           ),
