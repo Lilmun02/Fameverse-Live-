@@ -25,7 +25,9 @@ void main() {
       'existing@example.com',
     );
     await tester.enterText(find.byKey(const Key('auth-password')), 'secret123');
-    await tester.tap(find.byKey(const Key('auth-primary')));
+    final primary = find.byKey(const Key('auth-primary'));
+    await tester.ensureVisible(primary);
+    await tester.tap(primary);
     await tester.pumpAndSettle();
 
     expect(backend.signInCalls, 1);
@@ -52,7 +54,9 @@ void main() {
       'existing@example.com',
     );
     await tester.enterText(find.byKey(const Key('auth-password')), 'secret123');
-    await tester.tap(find.byKey(const Key('auth-primary')));
+    final primary = find.byKey(const Key('auth-primary'));
+    await tester.ensureVisible(primary);
+    await tester.tap(primary);
     await tester.pumpAndSettle();
 
     expect(backend.signUpCalls, 1);
