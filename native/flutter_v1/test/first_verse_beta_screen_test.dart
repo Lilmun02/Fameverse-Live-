@@ -31,7 +31,7 @@ void main() {
       completedMissionKeys: const {
         'complete_profile',
         'browse_home',
-        'discover_search',
+        'browse_discover',
       },
     );
 
@@ -63,7 +63,7 @@ void main() {
       completedMissionKeys: const {
         'complete_profile',
         'browse_home',
-        'discover_search',
+        'browse_discover',
         'open_public_profile',
         'follow_creator',
         'join_live',
@@ -92,6 +92,7 @@ void main() {
     expect(keys, isNot(contains('payout')));
     expect(keys, isNot(contains('request_payout')));
     expect(keys, isNot(contains('approve_payout')));
+    expect(keys, contains('browse_discover'));
     expect(
       fvFirstVerseMissions.where((mission) => mission.required).length,
       8,
