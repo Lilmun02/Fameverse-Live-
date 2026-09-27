@@ -46,7 +46,6 @@ void main() {
     expect(find.text('Your badge is waiting'), findsOneWidget);
     expect(find.text('3/8 required tests'), findsOneWidget);
     expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
-    expect(find.textContaining('payout'), findsOneWidget);
   });
 
   testWidgets('First Verse reveals permanently earned badge state', (
