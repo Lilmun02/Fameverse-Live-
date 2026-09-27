@@ -27,6 +27,8 @@ set_plist_string() {
 
 set_plist_string CFBundleDisplayName "$APP_NAME"
 set_plist_string CFBundleName "$APP_NAME"
+set_plist_string NSPhotoLibraryUsageDescription \
+  "Fameverse uses your photo library so you can choose photos and short videos for Stories and profile photos."
 
 TMP_DIR="$(mktemp -d /tmp/fameverse-ios-branding.XXXXXX)"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -83,4 +85,4 @@ PY
     --out "$ICON_DIR/$filename" >/dev/null
 done
 
-echo "Applied Fameverse iOS branding: name='$APP_NAME', icon='$SOURCE_SVG'"
+echo "Applied Fameverse iOS branding and media permissions: name='$APP_NAME', icon='$SOURCE_SVG'"
