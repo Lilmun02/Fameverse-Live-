@@ -28,7 +28,7 @@ void main() {
   });
 
   test(
-    'owner/admin bypasses tester locks while active testers stay limited',
+    'owner/admin bypass tester locks while creator backend preserves literal roles',
     () {
       final shell = read('lib/features/shell/fameverse_shell_build16.dart');
       final creatorBackend = read('lib/data/fameverse_creator_backend.dart');
@@ -45,7 +45,8 @@ void main() {
       );
       expect(shell, contains('Complete First Verse to unlock Go Live.'));
       expect(shell, contains('Earn First Verse to unlock Creator Studio.'));
-      expect(creatorBackend, contains("role == 'admin' ? 'owner' : role"));
+      expect(creatorBackend, contains('Preserve the authoritative role'));
+      expect(creatorBackend, isNot(contains("role == 'admin' ? 'owner' : role")));
     },
   );
 
