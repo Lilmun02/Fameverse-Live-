@@ -22,7 +22,7 @@ class FirstVerseBetaScreen extends StatefulWidget {
 
 class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
   late final FameverseBetaBackend _backend;
-  late final SupabaseFameverseEconomyBackend _economyBackend;
+  SupabaseFameverseEconomyBackend? _economyBackend;
   final TextEditingController _referralController = TextEditingController();
 
   FvBetaProgramStatus? _status;
@@ -36,8 +36,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
   void initState() {
     super.initState();
     _backend = widget.backend ?? SupabaseFameverseBetaBackend.instance;
-    _economyBackend =
-        widget.economyBackend ?? SupabaseFameverseEconomyBackend.instance;
+    _economyBackend = widget.economyBackend;
     _load();
   }
 
@@ -57,10 +56,11 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
     try {
       final status = await _backend.loadProgramStatus();
       var referral = FvBetaReferralSummary.empty;
-      if (status.enrolled) {
+      final economy = _economyBackend;
+      if (status.enrolled && economy != null) {
         try {
-          await _economyBackend.ensureBetaReferralCode();
-          referral = await _economyBackend.loadBetaReferralSummary();
+          await economy.ensureBetaReferralCode();
+          referral = await economy.loadBetaReferralSummary();
         } catch (_) {
           // Referral availability must never hide First Verse progress.
         }
@@ -93,13 +93,18 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
   Future<void> _claimReferralCode() async {
     final code = _referralController.text.trim();
     if (code.isEmpty || _referralBusy) return;
+    final economy = _economyBackend;
+    if (economy == null) {
+      setState(() => _referralError = 'Referral service is unavailable in this test shell.');
+      return;
+    }
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _referralBusy = true;
       _referralError = null;
     });
     try {
-      final result = await _economyBackend.qualifyBetaReferral(code);
+      final result = await economy.qualifyBetaReferral(code);
       if (!mounted) return;
       _referralController.clear();
       setState(() => _referralBusy = false);
