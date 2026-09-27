@@ -38,18 +38,21 @@ void main() {
     );
   });
 
-  test('money moderation stays owner-only while admin keeps beta QA privileges', () {
-    final creatorBackend = read('lib/data/fameverse_creator_backend.dart');
-    final shell = read('lib/features/shell/fameverse_shell_build16.dart');
-    final ownerPanel = read('lib/features/profile/owner_control_panel.dart');
+  test(
+    'money moderation stays owner-only while admin keeps beta QA privileges',
+    () {
+      final creatorBackend = read('lib/data/fameverse_creator_backend.dart');
+      final shell = read('lib/features/shell/fameverse_shell_build16.dart');
+      final ownerPanel = read('lib/features/profile/owner_control_panel.dart');
 
-    expect(creatorBackend, contains('Preserve the authoritative role'));
-    expect(creatorBackend, isNot(contains("role == 'admin' ? 'owner' : role")));
-    expect(shell, contains("_accountRole != 'owner'"));
-    expect(
-      shell,
-      contains("_ownerPanelEnabled && _accountRole == 'owner'"),
-    );
-    expect(ownerPanel, contains("bool get _isOwner => _role == 'owner';"));
-  });
+      expect(creatorBackend, contains('Preserve the authoritative role'));
+      expect(
+        creatorBackend,
+        isNot(contains("role == 'admin' ? 'owner' : role")),
+      );
+      expect(shell, contains("_accountRole != 'owner'"));
+      expect(shell, contains("_ownerPanelEnabled && _accountRole == 'owner'"));
+      expect(ownerPanel, contains("bool get _isOwner => _role == 'owner';"));
+    },
+  );
 }

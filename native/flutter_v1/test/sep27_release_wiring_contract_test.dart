@@ -46,7 +46,10 @@ void main() {
       expect(shell, contains('Complete First Verse to unlock Go Live.'));
       expect(shell, contains('Earn First Verse to unlock Creator Studio.'));
       expect(creatorBackend, contains('Preserve the authoritative role'));
-      expect(creatorBackend, isNot(contains("role == 'admin' ? 'owner' : role")));
+      expect(
+        creatorBackend,
+        isNot(contains("role == 'admin' ? 'owner' : role")),
+      );
     },
   );
 

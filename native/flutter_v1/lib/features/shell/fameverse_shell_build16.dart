@@ -367,7 +367,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   void _openOwnerPanel() {
-    if (!_ownerPanelEnabled || !_isPrivileged) return;
+    if (!_ownerPanelEnabled || _accountRole != 'owner') return;
     Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (context) => const OwnerControlPanel()),
     );
@@ -495,7 +495,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             onCoinExchange: _coinExchangeEnabled && _hasFullAppAccess
                 ? _openCoinExchange
                 : null,
-            onControlPanel: _ownerPanelEnabled && _isPrivileged
+            onControlPanel: _ownerPanelEnabled && _accountRole == 'owner'
                 ? _openOwnerPanel
                 : null,
           ),
