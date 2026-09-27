@@ -89,6 +89,12 @@ void main() {
         final shell = await File(
           'lib/features/shell/fameverse_shell_build16.dart',
         ).readAsString();
+        final home = await File(
+          'lib/features/shell/fameverse_home_screen.dart',
+        ).readAsString();
+        final discover = await File(
+          'lib/features/shell/fameverse_discover_screen.dart',
+        ).readAsString();
 
         expect(shell, contains('FameverseHomeScreen('));
         expect(shell, contains('FameverseDiscoverScreen('));
