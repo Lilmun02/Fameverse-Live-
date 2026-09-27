@@ -11,7 +11,10 @@ void main() {
     );
     expect(lightweight.length, greaterThanOrEqualTo(50));
     expect(lightweight.every((gift) => gift.videoUrl == null), isTrue);
-    expect(lightweight.every((gift) => gift.cost >= 1 && gift.cost <= 99), isTrue);
+    expect(
+      lightweight.every((gift) => gift.cost >= 1 && gift.cost <= 99),
+      isTrue,
+    );
   });
 
   test('cinematic gifts stay separate from lightweight catalog', () {

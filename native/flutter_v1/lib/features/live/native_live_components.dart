@@ -141,19 +141,27 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
               color: const Color(0xE61B1222),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(color: const Color(0x665F37A1)),
-              boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 12)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black54, blurRadius: 12),
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(playback.gift.symbol, style: const TextStyle(fontSize: 26)),
+                Text(
+                  playback.gift.symbol,
+                  style: const TextStyle(fontSize: 26),
+                ),
                 const SizedBox(width: 9),
                 Flexible(
                   child: Text(
                     '${playback.sender} sent ${playback.gift.label}${playback.quantity > 1 ? ' ×${playback.quantity}' : ''}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ],
@@ -406,7 +414,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             initialValue: '$quantity',
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'Quantity'),
+                            decoration: const InputDecoration(
+                              labelText: 'Quantity',
+                            ),
                             onChanged: (value) {
                               final parsed = int.tryParse(value);
                               if (parsed != null) setQuantity(parsed);
@@ -445,7 +455,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: () => Navigator.of(context).pop(quantity),
-                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                      ),
                       child: Text('Send ×$quantity'),
                     ),
                   ],
@@ -492,7 +504,10 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     ),
                     Text(
                       'Send a Gift',
-                      style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
@@ -515,10 +530,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     onSelected: (_) {
                       final visible = item.$1 == 'all'
                           ? fvGiftCatalog
-                          : fvGiftCatalog.where((gift) => gift.category == item.$1).toList();
+                          : fvGiftCatalog
+                                .where((gift) => gift.category == item.$1)
+                                .toList();
                       setState(() {
                         _category = item.$1;
-                        if (visible.isNotEmpty && !visible.any((gift) => gift.id == _selectedId)) {
+                        if (visible.isNotEmpty &&
+                            !visible.any((gift) => gift.id == _selectedId)) {
                           _selectedId = visible.first.id;
                         }
                       });
@@ -568,11 +586,17 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           Text(
                             '🪙 ${gift.cost}',
-                            style: const TextStyle(fontSize: 10, color: Color(0xFFCFC4D5)),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFFCFC4D5),
+                            ),
                           ),
                         ],
                       ),
