@@ -1195,7 +1195,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                               style: IconButton.styleFrom(
                                 backgroundColor: const Color(0xFF211529),
                                 foregroundColor: const Color(0xFFFFC65A),
-                                side: const BorderSide(color: Color(0xFF4B365B)),
+                                side: const BorderSide(
+                                  color: Color(0xFF4B365B),
+                                ),
                               ),
                               icon: const Icon(Icons.card_giftcard_rounded),
                               tooltip: 'Gifts',
