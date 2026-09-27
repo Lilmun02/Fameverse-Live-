@@ -43,7 +43,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     followingIds: {},
   );
 
-  late final SupabaseFameverseBetaBackend _betaBackend;
+  SupabaseFameverseBetaBackend? _betaBackend;
   int _tab = 0;
   bool _loading = true;
   bool _followBusy = false;
@@ -58,14 +58,17 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   @override
   void initState() {
     super.initState();
-    _betaBackend = SupabaseFameverseBetaBackend(Supabase.instance.client);
     unawaited(_refreshAll());
     unawaited(_refreshBeta());
   }
 
+  SupabaseFameverseBetaBackend _getBetaBackend() =>
+      _betaBackend ??= SupabaseFameverseBetaBackend(Supabase.instance.client);
+
   Future<void> _refreshBeta() async {
     try {
-      final status = await _betaBackend.loadProgramStatus();
+      final backend = _getBetaBackend();
+      final status = await backend.loadProgramStatus();
       if (!mounted) return;
       setState(() => _betaStatus = status);
       if (status.enrolled && _tab == 0) {
@@ -79,8 +82,9 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   Future<void> _recordBetaMission(String missionKey) async {
     if (!_betaStatus.enrolled) return;
     try {
-      await _betaBackend.recordMission(missionKey);
-      final status = await _betaBackend.loadProgramStatus();
+      final backend = _getBetaBackend();
+      await backend.recordMission(missionKey);
+      final status = await backend.loadProgramStatus();
       if (mounted) setState(() => _betaStatus = status);
     } catch (_) {
       // Mission telemetry is non-critical and must fail closed without breaking
@@ -253,10 +257,11 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   Future<void> _openFirstVerse() async {
-    if (!_betaStatus.enrolled) return;
+    final backend = _betaBackend;
+    if (!_betaStatus.enrolled || backend == null) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => FirstVerseBetaScreen(backend: _betaBackend),
+        builder: (context) => FirstVerseBetaScreen(backend: backend),
       ),
     );
     await _refreshBeta();
