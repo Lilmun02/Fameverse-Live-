@@ -119,6 +119,7 @@ class _CreatorStoriesScreenV2State extends State<CreatorStoriesScreenV2> {
         }
       }
 
+      if (!mounted) return;
       final caption = await Navigator.of(context).push<String>(
         MaterialPageRoute(
           fullscreenDialog: true,

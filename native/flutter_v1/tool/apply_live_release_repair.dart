@@ -9,7 +9,8 @@ void main() {
             Icons.local_fire_department_rounded,
             size: 13,
             color: Color(0xFFFF9D2E),
-          ),''': 'const FvFameTapMark(size: 13),',
+          ),''':
+          'const FvFameTapMark(size: 13),',
     },
     'lib/features/live/native_camera_screen.dart': <String, String>{
       "hintText: 'Example: 1,000 likes or 20 gifts',":

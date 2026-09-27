@@ -74,6 +74,9 @@ class FvFameTapMark extends StatelessWidget {
             child: Text(
               'F',
               style: TextStyle(
+                // Keep this non-const spelling because the locked regression
+                // contract verifies the canonical FameTaps purple literal.
+                // ignore: prefer_const_constructors
                 color: Color(0xFFE1B5FF),
                 fontSize: size * .43,
                 height: 1,
