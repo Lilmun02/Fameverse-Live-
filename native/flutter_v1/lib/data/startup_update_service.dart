@@ -117,7 +117,9 @@ class FvStartupUpdateService {
     final prefs = await SharedPreferences.getInstance();
     final cachedRevision = prefs.getInt(_revisionKey(channel)) ?? 0;
     final cachedLabel = prefs.getString(_labelKey(channel)) ?? 'bundled';
-    final cachedManifest = _decodeManifest(prefs.getString(_manifestKey(channel)));
+    final cachedManifest = _decodeManifest(
+      prefs.getString(_manifestKey(channel)),
+    );
 
     try {
       final releaseRow = await _client
@@ -158,7 +160,9 @@ class FvStartupUpdateService {
           ? remoteManifest
           : cachedManifest;
 
-      if (backendChanged || cachedRevision == 0 || cachedManifest.data.isEmpty) {
+      if (backendChanged ||
+          cachedRevision == 0 ||
+          cachedManifest.data.isEmpty) {
         await prefs.setInt(_revisionKey(channel), remoteRevision);
         await prefs.setString(_labelKey(channel), remoteLabel);
         await prefs.setString(_manifestKey(channel), jsonEncode(manifest.data));
