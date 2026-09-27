@@ -77,10 +77,7 @@ class _OwnerControlPanelState extends State<OwnerControlPanel> {
       ..showSnackBar(SnackBar(content: Text(value)));
   }
 
-  Future<void> _reviewPayout(
-    FvPayoutModerationItem item,
-    String status,
-  ) async {
+  Future<void> _reviewPayout(FvPayoutModerationItem item, String status) async {
     if (_busy || !_isOwner) return;
     setState(() => _busy = true);
     try {
@@ -126,10 +123,7 @@ class _OwnerControlPanelState extends State<OwnerControlPanel> {
     try {
       final response = await Supabase.instance.client.functions.invoke(
         'process-creator-payout',
-        body: {
-          'payout_id': item.payoutId,
-          'expected_environment': 'sandbox',
-        },
+        body: {'payout_id': item.payoutId, 'expected_environment': 'sandbox'},
       );
       if (response.status < 200 || response.status >= 300) {
         throw StateError('HTTP ${response.status}: ${response.data}');
@@ -149,10 +143,7 @@ class _OwnerControlPanelState extends State<OwnerControlPanel> {
     try {
       final response = await Supabase.instance.client.functions.invoke(
         'sync-creator-payout',
-        body: {
-          'payout_id': item.payoutId,
-          'expected_environment': 'sandbox',
-        },
+        body: {'payout_id': item.payoutId, 'expected_environment': 'sandbox'},
       );
       if (response.status < 200 || response.status >= 300) {
         throw StateError('HTTP ${response.status}: ${response.data}');
@@ -248,14 +239,16 @@ class _OwnerControlPanelState extends State<OwnerControlPanel> {
                       const _EmptyCard(
                         icon: Icons.verified_user_outlined,
                         title: 'No verification requests',
-                        body: 'Pending creator verification requests will appear here.',
+                        body:
+                            'Pending creator verification requests will appear here.',
                       )
                     else
                       ..._verifications.map(
                         (item) => _VerificationCard(
                           item: item,
                           busy: _busy,
-                          onApprove: () => _reviewVerification(item, 'verified'),
+                          onApprove: () =>
+                              _reviewVerification(item, 'verified'),
                           onNeedsInfo: () =>
                               _reviewVerification(item, 'needs_info'),
                         ),
@@ -333,7 +326,9 @@ class _CountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _CountCard(label: 'Payout queue', value: payouts)),
+        Expanded(
+          child: _CountCard(label: 'Payout queue', value: payouts),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: _CountCard(label: 'Verification queue', value: verifications),
@@ -361,9 +356,15 @@ class _CountCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$value', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
+          Text(
+            '$value',
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Color(0xFFAA9BAF), fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFFAA9BAF), fontSize: 11),
+          ),
         ],
       ),
     );
@@ -402,10 +403,19 @@ class _PayoutCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     item.displayName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
-                Text(_money(item.amountCents), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                Text(
+                  _money(item.amountCents),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -474,7 +484,10 @@ class _VerificationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.displayName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            Text(
+              item.displayName,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            ),
             const SizedBox(height: 4),
             Text(
               '${item.username == null ? '' : '@${item.username} · '}${item.status}',
@@ -523,7 +536,11 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.icon, required this.title, required this.body});
+  const _EmptyCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
 
   final IconData icon;
   final String title;
@@ -546,9 +563,18 @@ class _EmptyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 3),
-                Text(body, style: const TextStyle(color: Color(0xFFA99EAC), fontSize: 12)),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    color: Color(0xFFA99EAC),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -566,7 +592,8 @@ class _SafetyCard extends StatelessWidget {
     return const _EmptyCard(
       icon: Icons.lock_rounded,
       title: 'Owner-only surface',
-      body: 'This panel is hidden from ordinary users and protected again by server-side owner checks.',
+      body:
+          'This panel is hidden from ordinary users and protected again by server-side owner checks.',
     );
   }
 }

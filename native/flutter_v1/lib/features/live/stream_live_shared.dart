@@ -146,7 +146,10 @@ class FvLiveStatusCard extends StatelessWidget {
                 text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -216,7 +219,10 @@ class FvLiveCommentComposer extends StatelessWidget {
         isDense: true,
         filled: true,
         fillColor: const Color(0xD9110B15),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 10,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
           borderSide: const BorderSide(color: Color(0xFF4B365B)),
@@ -319,7 +325,9 @@ class FvLiveChatList extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Profile could not open.')));
+        ..showSnackBar(
+          const SnackBar(content: Text('Profile could not open.')),
+        );
     }
   }
 
@@ -337,7 +345,9 @@ class FvLiveChatList extends StatelessWidget {
         final text = (raw.text as String).trim();
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
-        final initial = user.isEmpty ? 'F' : user.characters.first.toUpperCase();
+        final initial = user.isEmpty
+            ? 'F'
+            : user.characters.first.toUpperCase();
         final isGift = kind == 'gift';
         final canOpenProfile = userId != null && userId.isNotEmpty;
 
@@ -348,10 +358,10 @@ class FvLiveChatList extends StatelessWidget {
             child: InkWell(
               onTap: canOpenProfile
                   ? () => _openProfile(
-                        context,
-                        userId,
-                        user.isEmpty ? 'Fameverse User' : user,
-                      )
+                      context,
+                      userId,
+                      user.isEmpty ? 'Fameverse User' : user,
+                    )
                   : null,
               borderRadius: BorderRadius.circular(14),
               child: Ink(

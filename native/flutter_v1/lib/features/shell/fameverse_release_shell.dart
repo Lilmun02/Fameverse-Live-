@@ -211,9 +211,7 @@ class _ReleaseAction extends StatelessWidget {
                   ? const Color(0xFF644275)
                   : const Color(0xFF75419C),
             ),
-            boxShadow: const [
-              BoxShadow(color: Colors.black54, blurRadius: 12),
-            ],
+            boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 12)],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
