@@ -19,36 +19,39 @@ void main() {
     expect(shell, contains('OwnerControlPanel()'));
   });
 
-  test('First Verse exposes real progress, required missions and referral rules', () {
-    final screen = read('lib/features/profile/first_verse_beta_screen.dart');
-    final backend = read('lib/data/fameverse_beta_backend.dart');
+  test(
+    'First Verse exposes real progress, required missions and referral rules',
+    () {
+      final screen = read('lib/features/profile/first_verse_beta_screen.dart');
+      final backend = read('lib/data/fameverse_beta_backend.dart');
 
-    expect(screen, contains("Key('first-verse-progress-bar')"));
-    expect(screen, contains('REQUIRED BETA MISSIONS'));
-    expect(screen, contains('BONUS CHECKS'));
-    expect(screen, contains('INVITE TO FAMEVERSE'));
-    expect(screen, contains('100 promo Fame Coins'));
-    expect(screen, contains('50 promo Fame Coins'));
-    expect(screen, contains('Promo Fame Coins are gifting-only'));
-    expect(screen, contains('do not create creator cash earnings'));
-    expect(screen, contains('does not count toward badge progress'));
+      expect(screen, contains("Key('first-verse-progress-bar')"));
+      expect(screen, contains('REQUIRED BETA MISSIONS'));
+      expect(screen, contains('BONUS CHECKS'));
+      expect(screen, contains('INVITE TO FAMEVERSE'));
+      expect(screen, contains('100 promo Fame Coins'));
+      expect(screen, contains('50 promo Fame Coins'));
+      expect(screen, contains('Promo Fame Coins are gifting-only'));
+      expect(screen, contains('do not create creator cash earnings'));
+      expect(screen, contains('does not count toward badge progress'));
 
-    for (final mission in <String>[
-      'complete_profile',
-      'browse_home',
-      'browse_discover',
-      'open_public_profile',
-      'follow_creator',
-      'join_live',
-      'send_comment',
-      'view_story',
-    ]) {
-      expect(backend, contains("'$mission'"));
-    }
-    expect(backend, contains("'send_gift'"));
-    expect(backend, contains("'cohost_session'"));
-    expect(backend, isNot(contains("key: 'payout")));
-  });
+      for (final mission in <String>[
+        'complete_profile',
+        'browse_home',
+        'browse_discover',
+        'open_public_profile',
+        'follow_creator',
+        'join_live',
+        'send_comment',
+        'view_story',
+      ]) {
+        expect(backend, contains("'$mission'"));
+      }
+      expect(backend, contains("'send_gift'"));
+      expect(backend, contains("'cohost_session'"));
+      expect(backend, isNot(contains("key: 'payout")));
+    },
+  );
 
   test('gift tray stays owner/admin-only in the current beta UI', () {
     final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
@@ -69,7 +72,10 @@ void main() {
       '../../supabase/migrations/20260927_enforce_zero_promo_creator_earnings.sql',
     );
 
-    expect(migration, contains('promo/test/referral coins create zero creator earnings'));
+    expect(
+      migration,
+      contains('promo/test/referral coins create zero creator earnings'),
+    );
     expect(migration, contains("'promo_first_zero_promo_earnings'"));
     expect(migration, contains('v_cash_spent > 0'));
     expect(migration, contains('0::bigint'));
@@ -87,6 +93,9 @@ void main() {
     expect(backend, contains("'get_active_live_rooms_v2'"));
     expect(activation, contains('get_recommended_creators_v3'));
     expect(activation, contains('get_active_live_rooms_v3'));
-    expect(activation, contains('Compatibility alias. Fame Algo v1 is authoritative'));
+    expect(
+      activation,
+      contains('Compatibility alias. Fame Algo v1 is authoritative'),
+    );
   });
 }
