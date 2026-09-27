@@ -350,7 +350,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                       maxLength: 60,
                       decoration: const InputDecoration(
                         labelText: 'Live goal · Optional',
-                        hintText: 'Example: 1,000 likes or 20 gifts',
+                        hintText: 'Example: 1,000 FameTaps or 20 gifts',
                       ),
                     ),
                     if (_error != null) ...[
@@ -482,7 +482,7 @@ class _NativeLiveSummaryScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 5),
                   Text(
-                    'Cash earnings are not calculated in beta because Fameverse payout conversion is not configured yet.',
+                    'Creator cash earnings stay separate from Fame Coins. Open Creator Studio to see cleared, pending, in-review, and paid earnings.',
                     style: TextStyle(color: Color(0xFF9E93A6), height: 1.35),
                   ),
                 ],

@@ -122,10 +122,8 @@ class _CreatorStoriesScreenV2State extends State<CreatorStoriesScreenV2> {
       final caption = await Navigator.of(context).push<String>(
         MaterialPageRoute(
           fullscreenDialog: true,
-          builder: (context) => _StoryComposerPage(
-            file: file,
-            mediaType: mediaType,
-          ),
+          builder: (context) =>
+              _StoryComposerPage(file: file, mediaType: mediaType),
         ),
       );
       if (caption == null || !mounted) return;
@@ -198,19 +196,22 @@ class _CreatorStoriesScreenV2State extends State<CreatorStoriesScreenV2> {
   Widget build(BuildContext context) {
     final groups = _grouped;
     final myStories = groups[widget.identity.id] ?? const <FvCreatorStory>[];
-    final others = groups.entries
-        .where((entry) => entry.key != widget.identity.id)
-        .toList()
-      ..sort((a, b) {
-        final aUnseen = a.value.any((story) => !story.viewedByMe);
-        final bUnseen = b.value.any((story) => !story.viewedByMe);
-        if (aUnseen != bUnseen) return bUnseen ? 1 : -1;
-        final aTime =
-            a.value.last.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bTime =
-            b.value.last.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bTime.compareTo(aTime);
-      });
+    final others =
+        groups.entries
+            .where((entry) => entry.key != widget.identity.id)
+            .toList()
+          ..sort((a, b) {
+            final aUnseen = a.value.any((story) => !story.viewedByMe);
+            final bUnseen = b.value.any((story) => !story.viewedByMe);
+            if (aUnseen != bUnseen) return bUnseen ? 1 : -1;
+            final aTime =
+                a.value.last.createdAt ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            final bTime =
+                b.value.last.createdAt ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            return bTime.compareTo(aTime);
+          });
 
     return Scaffold(
       key: const Key('creator-stories-v2-screen'),
@@ -263,7 +264,8 @@ class _CreatorStoriesScreenV2State extends State<CreatorStoriesScreenV2> {
                 _StoryInfoCard(text: _error!)
               else if (others.isEmpty)
                 const _StoryInfoCard(
-                  text: 'No other active Stories yet. New Story rings will appear here.',
+                  text:
+                      'No other active Stories yet. New Story rings will appear here.',
                 )
               else
                 Wrap(
@@ -609,7 +611,10 @@ class _AvatarRing extends StatelessWidget {
       ),
       child: Container(
         padding: const EdgeInsets.all(2),
-        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black),
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black,
+        ),
         child: CircleAvatar(
           backgroundColor: const Color(0xFF28162F),
           foregroundImage: avatarUrl?.trim().isNotEmpty == true
@@ -664,7 +669,9 @@ class _StoryViewerV2State extends State<_StoryViewerV2> {
     final story = _story;
     unawaited(widget.backend.recordView(story.id));
     if (story.isVideo) {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(story.mediaUrl));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(story.mediaUrl),
+      );
       try {
         await controller.initialize();
         await controller.play();
@@ -768,7 +775,11 @@ class _StoryViewerV2State extends State<_StoryViewerV2> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xB8000000), Colors.transparent, Color(0xB8000000)],
+                  colors: [
+                    Color(0xB8000000),
+                    Colors.transparent,
+                    Color(0xB8000000),
+                  ],
                   stops: [0, .36, 1],
                 ),
               ),
@@ -788,7 +799,9 @@ class _StoryViewerV2State extends State<_StoryViewerV2> {
                               right: index == widget.stories.length - 1 ? 0 : 4,
                             ),
                             decoration: BoxDecoration(
-                              color: index <= _index ? Colors.white : Colors.white30,
+                              color: index <= _index
+                                  ? Colors.white
+                                  : Colors.white30,
                               borderRadius: BorderRadius.circular(999),
                             ),
                           ),
@@ -800,13 +813,16 @@ class _StoryViewerV2State extends State<_StoryViewerV2> {
                       children: [
                         CircleAvatar(
                           radius: 18,
-                          foregroundImage: story.avatarUrl?.trim().isNotEmpty == true
+                          foregroundImage:
+                              story.avatarUrl?.trim().isNotEmpty == true
                               ? NetworkImage(story.avatarUrl!)
                               : null,
                           child: Text(
                             story.displayName.isEmpty
                                 ? 'F'
-                                : story.displayName.substring(0, 1).toUpperCase(),
+                                : story.displayName
+                                      .substring(0, 1)
+                                      .toUpperCase(),
                           ),
                         ),
                         const SizedBox(width: 9),
@@ -831,7 +847,10 @@ class _StoryViewerV2State extends State<_StoryViewerV2> {
                     const Spacer(),
                     if (story.caption.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(14),

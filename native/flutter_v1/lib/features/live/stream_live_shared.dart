@@ -67,9 +67,7 @@ class FvFameTapMark extends StatelessWidget {
             Icons.local_fire_department_rounded,
             size: size,
             color: const Color(0xFF9B55FF),
-            shadows: const [
-              Shadow(color: Color(0xAA7A2DDB), blurRadius: 7),
-            ],
+            shadows: const [Shadow(color: Color(0xAA7A2DDB), blurRadius: 7)],
           ),
           Positioned(
             bottom: size * .16,

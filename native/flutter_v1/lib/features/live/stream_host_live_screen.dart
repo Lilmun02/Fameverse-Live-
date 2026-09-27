@@ -930,7 +930,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 activeCohostUserId: _activeCohostUserId,
               )
             else
-              const FvLiveBackground(icon: Icons.videocam_off_rounded),
+              const FvLiveBackground(),
             const FvLiveGradient(),
             SafeArea(
               child: Padding(
@@ -1239,11 +1239,7 @@ class _LiveStatsPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.local_fire_department_rounded,
-            size: 13,
-            color: Color(0xFFFF9D2E),
-          ),
+          const FvFameTapMark(size: 13),
           const SizedBox(width: 3),
           Text(
             '$fameTaps',

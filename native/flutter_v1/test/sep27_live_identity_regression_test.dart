@@ -5,42 +5,52 @@ import 'package:flutter_test/flutter_test.dart';
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
-  test('host startup never mislabels asynchronous camera startup as camera off', () {
-    final stage = read('lib/features/live/native_live_stage.dart');
-    final host = read('lib/features/live/stream_host_live_screen.dart');
+  test(
+    'host startup never mislabels asynchronous camera startup as camera off',
+    () {
+      final stage = read('lib/features/live/native_live_stage.dart');
+      final host = read('lib/features/live/stream_host_live_screen.dart');
 
-    expect(stage, contains('videoExpected: cameraEnabled'));
-    expect(stage, contains("Key('live-camera-starting')"));
-    expect(stage, contains('Preparing camera…'));
-    expect(
-      stage,
-      contains('if (videoExpected && (participant == null || !videoEnabled))'),
-    );
-    expect(
-      host,
-      isNot(contains('const FvLiveBackground(icon: Icons.videocam_off_rounded),')),
-    );
-  });
+      expect(stage, contains('videoExpected: cameraEnabled'));
+      expect(stage, contains("Key('live-camera-starting')"));
+      expect(stage, contains('Preparing camera…'));
+      expect(
+        stage,
+        contains(
+          'if (videoExpected && (participant == null || !videoEnabled))',
+        ),
+      );
+      expect(
+        host,
+        isNot(
+          contains('const FvLiveBackground(icon: Icons.videocam_off_rounded),'),
+        ),
+      );
+    },
+  );
 
-  test('FameTaps has one branded F-plus-flame identity across host and viewer', () {
-    final shared = read('lib/features/live/stream_live_shared.dart');
-    final host = read('lib/features/live/stream_host_live_screen.dart');
-    final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
+  test(
+    'FameTaps has one branded F-plus-flame identity across host and viewer',
+    () {
+      final shared = read('lib/features/live/stream_live_shared.dart');
+      final host = read('lib/features/live/stream_host_live_screen.dart');
+      final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
 
-    expect(shared, contains('class FvFameTapMark'));
-    expect(shared, contains("Key('fame-tap-mark')"));
-    expect(shared, contains('Icons.local_fire_department_rounded'));
-    expect(shared, contains("'F'"));
-    expect(shared, contains('color: Color(0xFFE1B5FF)'));
-    expect(host, contains('const FvFameTapMark(size: 13)'));
-    expect(host, isNot(contains('Color(0xFFFF9D2E)')));
-    expect(viewer, contains('const FvFameTapMark(size: 28)'));
-    expect(viewer, contains('const FvFameTapMark(size: 14)'));
-    expect(viewer, isNot(contains("'🔥'")));
-    expect(shared, contains('Colors.black.withValues(alpha: .22)'));
-    expect(shared, contains('Colors.black.withValues(alpha: .48)'));
-    expect(shared, isNot(contains('Colors.black.withValues(alpha: .88)')));
-  });
+      expect(shared, contains('class FvFameTapMark'));
+      expect(shared, contains("Key('fame-tap-mark')"));
+      expect(shared, contains('Icons.local_fire_department_rounded'));
+      expect(shared, contains("'F'"));
+      expect(shared, contains('color: Color(0xFFE1B5FF)'));
+      expect(host, contains('const FvFameTapMark(size: 13)'));
+      expect(host, isNot(contains('Color(0xFFFF9D2E)')));
+      expect(viewer, contains('const FvFameTapMark(size: 28)'));
+      expect(viewer, contains('const FvFameTapMark(size: 14)'));
+      expect(viewer, isNot(contains("'🔥'")));
+      expect(shared, contains('Colors.black.withValues(alpha: .22)'));
+      expect(shared, contains('Colors.black.withValues(alpha: .48)'));
+      expect(shared, isNot(contains('Colors.black.withValues(alpha: .88)')));
+    },
+  );
 
   test(
     'For You preserves backend Fame Algo ranking instead of locally replacing it',

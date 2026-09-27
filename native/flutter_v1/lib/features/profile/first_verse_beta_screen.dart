@@ -684,10 +684,7 @@ class _MessageCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   body,
-                  style: const TextStyle(
-                    color: Color(0xFFA99DAE),
-                    height: 1.4,
-                  ),
+                  style: const TextStyle(color: Color(0xFFA99DAE), height: 1.4),
                 ),
               ],
             ),
