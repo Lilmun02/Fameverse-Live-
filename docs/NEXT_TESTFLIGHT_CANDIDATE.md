@@ -15,6 +15,8 @@ This file freezes the exact product surface to be verified before the next nativ
 - Recharge remains PayPal-first. Stripe is deferred until at least 500 active users and explicit CEO approval.
 - Creator Studio includes a read-only Fameverse Pro Live Achievements teaser: only a small 10% preview is visible, Silver / Gold / Diamond are named, and the unreleased details remain visually blurred/locked.
 - Pro Live qualification, tracking, badges, status loss and rewards remain inactive in this candidate. The approved future rules live only in `docs/PRO_LIVE_ACHIEVEMENTS_ROADMAP.md`.
+- Creator Studio also includes a read-only Badge Transfer preview for TikTok, Favorited and EPIC only. Echo is not offered. The preview states that users may transfer one eligible badge, proof must be a screen recording showing the same account and badge, mismatches are denied, retries are allowed, and only one transferred badge can be active.
+- Badge Transfer submission/upload, manual review tooling, conversion values and badge assignment remain inactive in this candidate.
 
 ## Release law
 
