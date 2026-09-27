@@ -5,14 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
-  test('native startup checks backend revision before product shell', () {
+  test('native startup silently syncs backend revision before product shell', () {
+    final main = read('lib/main.dart');
     final app = read('lib/app/fameverse_app.dart');
     final service = read('lib/data/startup_update_service.dart');
+    final runtime = read('lib/data/backend_runtime.dart');
 
-    expect(app, contains('Checking for updates…'));
-    expect(app, contains('Updating Fameverse…'));
+    expect(main, contains('FvStartupUpdateService(client).sync'));
+    expect(app, isNot(contains('startup_update_service.dart')));
+    expect(app, isNot(contains('Checking for updates')));
     expect(app, contains('You’re all set!'));
-    expect(app, contains('FvStartupUpdateService'));
+    expect(app, contains('FvBackendRuntime.pendingNotice'));
     expect(app, contains('FvBackendRuntime.manifest'));
     expect(app, contains("'app_enabled'"));
 
@@ -21,7 +24,10 @@ void main() {
     expect(service, contains('release_label'));
     expect(service, contains('manifest'));
     expect(service, contains('SharedPreferences.getInstance'));
-    expect(service, contains('backendChanged'));
+    expect(service, contains('if (backendChanged)'));
+    expect(service, contains('loadLatest(channel: channel)'));
+    expect(runtime, contains('backendChangedThisLaunch'));
+    expect(runtime, contains('clearPendingNotice'));
   });
 
   test('server manifest documents supported Sep27 runtime contracts', () {
