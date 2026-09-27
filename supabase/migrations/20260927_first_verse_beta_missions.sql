@@ -14,7 +14,7 @@ create table if not exists public.beta_test_mission_progress (
     mission_key in (
       'complete_profile',
       'browse_home',
-      'discover_search',
+      'browse_discover',
       'open_public_profile',
       'follow_creator',
       'join_live',
@@ -57,7 +57,7 @@ declare
   v_required text[] := array[
     'complete_profile',
     'browse_home',
-    'discover_search',
+    'browse_discover',
     'open_public_profile',
     'follow_creator',
     'join_live',
@@ -126,7 +126,7 @@ declare
   v_required text[] := array[
     'complete_profile',
     'browse_home',
-    'discover_search',
+    'browse_discover',
     'open_public_profile',
     'follow_creator',
     'join_live',
