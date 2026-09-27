@@ -1,0 +1,39 @@
+name: Sep 27 product repair
+
+on:
+  push:
+    branches:
+      - build18/live-repair
+    paths:
+      - scripts/apply-sep27-product-repair.mjs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sep27-product-repair
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: build18/live-repair
+          fetch-depth: 0
+      - name: Apply locked Fameverse product repairs
+        run: node scripts/apply-sep27-product-repair.mjs
+      - name: Validate patch
+        run: git diff --check
+      - name: Commit repair
+        run: |
+          if git diff --quiet; then
+            echo "No repair changes were needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add native/flutter_v1 supabase/functions/recharge/index.ts
+          git commit -m "fix(beta): wire wallet payouts profiles and live controls"
+          git push origin HEAD:build18/live-repair
