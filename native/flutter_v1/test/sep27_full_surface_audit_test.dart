@@ -13,7 +13,12 @@ void main() {
       final firstVerse = read(
         'lib/features/profile/first_verse_beta_screen.dart',
       );
-      final stories = read('lib/features/stories/creator_stories_screen.dart');
+      final storyRoute = read(
+        'lib/features/stories/creator_stories_screen.dart',
+      );
+      final stories = read(
+        'lib/features/stories/creator_stories_screen_v2.dart',
+      );
       final creatorStudio = read(
         'lib/features/profile/creator_studio_screen.dart',
       );
@@ -40,9 +45,11 @@ void main() {
       expect(firstVerse, contains('INVITE TO FAMEVERSE'));
       expect(firstVerse, contains('OWNER / ADMIN PREVIEW · NO FEATURE LOCKS'));
 
+      expect(storyRoute, contains('CreatorStoriesScreenV2('));
       expect(stories, contains("Key('stories-v2-screen')"));
       expect(stories, contains('ImagePicker'));
-      expect(stories, contains('Post Story'));
+      expect(stories, contains("Key('post-story-button')"));
+      expect(stories, contains("Key('single-story-create-area')"));
 
       expect(creatorStudio, contains('loadCreatorLiveHistory'));
       expect(creatorStudio, contains('setCreatorModerator'));
