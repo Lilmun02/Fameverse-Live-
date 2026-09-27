@@ -22,6 +22,8 @@ String fvFriendlyError(Object error) {
   return 'Please try again.';
 }
 
+/// Light edge treatment only. The camera should remain crisp and dominant;
+/// Fameverse chrome must not make the Live picture look muddy or low quality.
 class FvLiveGradient extends StatelessWidget {
   const FvLiveGradient({super.key});
 
@@ -33,12 +35,57 @@ class FvLiveGradient extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: .48),
+            Colors.black.withValues(alpha: .22),
             Colors.transparent,
-            Colors.black.withValues(alpha: .88),
+            Colors.transparent,
+            Colors.black.withValues(alpha: .48),
           ],
-          stops: const [0, .45, 1],
+          stops: const [0, .20, .68, 1],
         ),
+      ),
+    );
+  }
+}
+
+/// FameTaps are a Fameverse product signal, not a generic fire emoji.
+/// The purple F + flame mark is the canonical compact Live representation.
+class FvFameTapMark extends StatelessWidget {
+  const FvFameTapMark({this.size = 20, super.key});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      key: const Key('fame-tap-mark'),
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.local_fire_department_rounded,
+            size: size,
+            color: const Color(0xFF9B55FF),
+            shadows: const [
+              Shadow(color: Color(0xAA7A2DDB), blurRadius: 7),
+            ],
+          ),
+          Positioned(
+            bottom: size * .16,
+            child: Text(
+              'F',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: size * .43,
+                height: 1,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -240,6 +287,8 @@ class FvLiveCommentComposer extends StatelessWidget {
   }
 }
 
+/// This is the Live controls button. The FameTaps identity is intentionally not
+/// reused here so users do not confuse a control menu with the product metric.
 class FvFameActionButton extends StatelessWidget {
   const FvFameActionButton({
     required this.onPressed,
@@ -259,26 +308,20 @@ class FvFameActionButton extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const RadialGradient(
-          colors: [Color(0xFF8238E4), Color(0xFF29103D)],
-        ),
-        border: Border.all(color: const Color(0xFFC36FFF), width: 1.6),
+        color: const Color(0xE617111D),
+        border: Border.all(color: const Color(0xFF7F4A99), width: 1.2),
         boxShadow: const [
-          BoxShadow(color: Color(0x668E4DFF), blurRadius: 12, spreadRadius: 1),
+          BoxShadow(color: Color(0x442F133E), blurRadius: 10, spreadRadius: 1),
         ],
       ),
       child: IconButton(
         key: keyValue,
         onPressed: onPressed,
         tooltip: tooltip,
-        icon: const Text(
-          'F',
-          style: TextStyle(
-            color: Color(0xFFE1B5FF),
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
-          ),
+        icon: const Icon(
+          Icons.more_horiz_rounded,
+          color: Color(0xFFE5D8EB),
+          size: 25,
         ),
       ),
     );
