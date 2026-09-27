@@ -34,6 +34,17 @@ void main() {
       if (!mounted) return;
       final caption = await Navigator.of(context).push<String>(''',
     },
+    'lib/features/shell/fameverse_shell_build16.dart': <String, String>{
+      '''  void _openOwnerPanel() {
+    if (!_ownerPanelEnabled || !_isPrivileged) return;''': '''  void _openOwnerPanel() {
+    if (!_ownerPanelEnabled || _accountRole != 'owner') return;''',
+      '''            onControlPanel: _ownerPanelEnabled && _isPrivileged
+                ? _openOwnerPanel
+                : null,''': '''            onControlPanel:
+                _ownerPanelEnabled && _accountRole == 'owner'
+                ? _openOwnerPanel
+                : null,''',
+    },
   };
 
   var changed = false;
