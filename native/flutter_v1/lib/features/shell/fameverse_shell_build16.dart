@@ -64,7 +64,8 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   List<FvLiveRoom> _rooms = const [];
   FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
-  bool get _isPrivileged => _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _isPrivileged =>
+      _accountRole == 'owner' || _accountRole == 'admin';
 
   bool get _testerLimited =>
       _betaStatus.enrolled && !_betaStatus.badgeUnlocked && !_isPrivileged;
@@ -81,11 +82,11 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   SupabaseFameverseBetaBackend _getBetaBackend() =>
       _betaBackend ??= SupabaseFameverseBetaBackend(Supabase.instance.client);
 
-  SupabaseFameverseCreatorBackend _getCreatorBackend() => _creatorBackend ??=
-      SupabaseFameverseCreatorBackend(Supabase.instance.client);
+  SupabaseFameverseCreatorBackend _getCreatorBackend() =>
+      _creatorBackend ??= SupabaseFameverseCreatorBackend(Supabase.instance.client);
 
-  SupabaseFameverseEconomyBackend _getEconomyBackend() => _economyBackend ??=
-      SupabaseFameverseEconomyBackend(Supabase.instance.client);
+  SupabaseFameverseEconomyBackend _getEconomyBackend() =>
+      _economyBackend ??= SupabaseFameverseEconomyBackend(Supabase.instance.client);
 
   Future<void> _refreshBeta() async {
     try {
@@ -378,6 +379,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
           identity: widget.identity,
           viewerProfile: profile,
           room: room,
+          giftAccess: _hasFullAppAccess,
         ),
       ),
     );
@@ -796,8 +798,7 @@ class _StoryHeaderButton extends StatelessWidget {
                     ),
                     child: ClipOval(
                       child:
-                          profile.avatarUrl != null &&
-                              profile.avatarUrl!.isNotEmpty
+                          profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                           ? Image.network(
                               profile.avatarUrl!,
                               fit: BoxFit.cover,
