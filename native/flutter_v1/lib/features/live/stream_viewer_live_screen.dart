@@ -105,7 +105,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           name: widget.viewerProfile.displayName,
           image: widget.viewerProfile.avatarUrl,
         ),
-        userToken: credentials.userToken,
+        userToken: widget.credentials.userToken,
         options: StreamVideoOptions(autoConnect: false),
       );
       fvRequireSuccess(
@@ -1189,18 +1189,22 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: const Icon(Icons.arrow_upward_rounded),
                             tooltip: 'Send comment',
                           ),
-                          const SizedBox(width: 4),
-                          IconButton.filled(
-                            key: const Key('viewer-gift-button'),
-                            onPressed: _walletReady ? _showGiftTray : null,
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFF211529),
-                              foregroundColor: const Color(0xFFFFC65A),
-                              side: const BorderSide(color: Color(0xFF4B365B)),
+                          if (_canRefill) ...[
+                            const SizedBox(width: 4),
+                            IconButton.filled(
+                              key: const Key('viewer-gift-button'),
+                              onPressed: _walletReady ? _showGiftTray : null,
+                              style: IconButton.styleFrom(
+                                backgroundColor: const Color(0xFF211529),
+                                foregroundColor: const Color(0xFFFFC65A),
+                                side: const BorderSide(
+                                  color: Color(0xFF4B365B),
+                                ),
+                              ),
+                              icon: const Icon(Icons.card_giftcard_rounded),
+                              tooltip: 'Gifts',
                             ),
-                            icon: const Icon(Icons.card_giftcard_rounded),
-                            tooltip: 'Gifts',
-                          ),
+                          ],
                           const SizedBox(width: 4),
                           FvFameActionButton(
                             onPressed: _showFMenu,
