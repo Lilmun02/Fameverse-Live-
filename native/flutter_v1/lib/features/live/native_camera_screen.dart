@@ -93,12 +93,41 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     final controller = CameraController(
       selected,
       ResolutionPreset.high,
-      enableAudio: false,
+      enableAudio: true,
     );
     _permissionProbe = controller;
     await controller.initialize();
     _permissionProbe = null;
     await controller.dispose();
+  }
+
+  Future<bool> _confirmGoLive() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Go live now?'),
+        content: const Text(
+          'Fameverse will turn on your camera and microphone and open this room to viewers.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('cancel-go-live-confirmation'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not yet'),
+          ),
+          FilledButton(
+            key: const Key('confirm-go-live'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF315F),
+            ),
+            child: const Text('Go Live'),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
   }
 
   Future<void> _goLive() async {
@@ -107,6 +136,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       setState(() => _error = 'Add a live title before you go live.');
       return;
     }
+
+    final confirmed = await _confirmGoLive();
+    if (!confirmed || !mounted) return;
 
     setState(() {
       _liveBusy = true;
@@ -125,6 +157,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         draft: draft,
       );
 
+      // Request/check both camera and microphone before any Live room is opened.
       await _verifyCameraAccess();
 
       room = await widget.liveBackend.startLiveRoom(
@@ -177,7 +210,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
           _error = 'Stream Video server credentials are not configured.';
         } else if (text.contains('permission') || text.contains('denied')) {
           _error =
-              'Camera permission is off. Allow camera access in iPhone Settings.';
+              'Camera or microphone permission is off. Allow access in iPhone Settings.';
         } else if (text.contains('no-camera')) {
           _error = 'No camera was found on this device.';
         } else {
@@ -337,7 +370,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                     ],
                     const SizedBox(height: 18),
                     const Text(
-                      'Camera and microphone permission is requested only after you tap Go Live.',
+                      'Camera and microphone permission is checked before your room opens. You will also confirm before Fameverse starts the broadcast.',
                       style: TextStyle(color: Color(0xFF9D92A6), fontSize: 11),
                     ),
                     const SizedBox(height: 12),
