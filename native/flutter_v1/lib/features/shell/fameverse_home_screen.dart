@@ -4,11 +4,10 @@ import '../../data/fameverse_backend.dart';
 
 /// Fameverse Home is the algorithmic, streaming-first surface.
 ///
-/// Product contract:
-/// - Home is not a friends/followers directory.
-/// - Active Live rooms lead the experience.
-/// - Relationship signals, FameTaps, and rising-creator fairness rank V1.
-/// - Discover remains the intentional search/exploration destination.
+/// The backend Fame Algo order is authoritative for For You. The client may
+/// filter that order for Following or build the explicit Rising exploration
+/// lane, but it must never replace the server For You ranking with a local fake
+/// score.
 class FameverseHomeScreen extends StatefulWidget {
   const FameverseHomeScreen({
     required this.profile,
@@ -57,19 +56,6 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
     return 0;
   }
 
-  int _forYouScore(FvLiveRoom room) {
-    var score = room.fameTaps.clamp(0, 120);
-    if (widget.network.followingIds.contains(room.hostUserId)) score += 90;
-    if (widget.network.followerIds.contains(room.hostUserId)) score += 25;
-    if (widget.network.followingIds.contains(room.hostUserId) &&
-        widget.network.followerIds.contains(room.hostUserId)) {
-      score += 35;
-    }
-    final followers = _followersFor(room.hostUserId);
-    if (followers < 1000) score += 18;
-    return score;
-  }
-
   int _risingScore(FvLiveRoom room) {
     final followers = _followersFor(room.hostUserId);
     final discoveryBoost = followers == 0
@@ -85,44 +71,34 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
   }
 
   List<FvLiveRoom> get _rankedRooms {
+    // widget.rooms already arrives in backend Fame Algo order.
     final rooms = widget.rooms.toList();
     if (_lane == _HomeLane.following) {
       rooms.removeWhere(
         (room) => !widget.network.followingIds.contains(room.hostUserId),
       );
-      rooms.sort((a, b) => _forYouScore(b).compareTo(_forYouScore(a)));
       return rooms;
     }
     if (_lane == _HomeLane.rising) {
       rooms.sort((a, b) => _risingScore(b).compareTo(_risingScore(a)));
       return rooms;
     }
-    rooms.sort((a, b) => _forYouScore(b).compareTo(_forYouScore(a)));
     return rooms;
   }
 
-  List<FvLiveRoom> get _liveNow {
-    final rooms = widget.rooms.toList();
-    rooms.sort((a, b) {
-      final aFollowing = widget.network.followingIds.contains(a.hostUserId);
-      final bFollowing = widget.network.followingIds.contains(b.hostUserId);
-      if (aFollowing != bFollowing) return bFollowing ? 1 : -1;
-      return b.fameTaps.compareTo(a.fameTaps);
-    });
-    return rooms;
-  }
+  List<FvLiveRoom> get _liveNow => widget.rooms.toList();
 
   String _reasonFor(FvLiveRoom room) {
     final friend =
         widget.network.followingIds.contains(room.hostUserId) &&
         widget.network.followerIds.contains(room.hostUserId);
-    if (friend) return 'Friend is live';
+    if (friend) return 'Fame Algo · mutual connection';
     if (widget.network.followingIds.contains(room.hostUserId)) {
-      return 'You follow this creator';
+      return 'Fame Algo · creator you follow';
     }
     if (_lane == _HomeLane.rising) return 'Rising on Fameverse';
-    if (room.fameTaps >= 25) return 'Getting momentum';
-    return 'Recommended for you';
+    if (room.fameTaps >= 25) return 'Fame Algo · gaining momentum';
+    return 'Fame Algo · recommended for you';
   }
 
   @override
@@ -142,7 +118,9 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
               profile: widget.profile,
               onOpenProfile: widget.onOpenProfile,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
+            const _FameAlgoIdentityCard(),
+            const SizedBox(height: 22),
             _SectionHeader(
               eyebrow: 'LIVE NOW',
               title: 'Happening right now',
@@ -164,7 +142,7 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
                 icon: Icons.live_tv_outlined,
                 title: 'Nobody is live yet',
                 body:
-                    'When a Fameverse creator goes live, they will appear here first.',
+                    'When a Fameverse creator goes live, Fame Algo will place them into the live feed.',
               )
             else
               SizedBox(
@@ -192,7 +170,7 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
             ),
             const SizedBox(height: 5),
             const Text(
-              'Live recommendations change with your connections and what is gaining momentum.',
+              'Fame Algo orders your For You feed using real Fameverse signals while protecting room for rising creators.',
               style: TextStyle(
                 color: Color(0xFFA89CAB),
                 fontSize: 13,
@@ -278,6 +256,60 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
   }
 }
 
+class _FameAlgoIdentityCard extends StatelessWidget {
+  const _FameAlgoIdentityCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('fame-algo-identity'),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF261333), Color(0xFF120C17)],
+        ),
+        border: Border.all(color: const Color(0xFF4A3158)),
+      ),
+      child: const Row(
+        children: [
+          _FameTapMark(size: 28),
+          SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'FAME ALGO',
+                  style: TextStyle(
+                    color: Color(0xFFD59DFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Your live discovery engine',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'V1',
+            style: TextStyle(
+              color: Color(0xFFAFA1B6),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _HomeTopBar extends StatelessWidget {
   const _HomeTopBar({required this.profile, required this.onOpenProfile});
 
@@ -326,12 +358,12 @@ class _HomeTopBar extends StatelessWidget {
                 ),
               ),
               Text(
-                'LIVE • FOR YOU',
+                'PEOPLE MAKE LEGENDS',
                 style: TextStyle(
                   color: Color(0xFFB67BDE),
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1.25,
+                  letterSpacing: 1.15,
                 ),
               ),
             ],
@@ -608,21 +640,29 @@ class _AlgorithmLiveCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
+                      key: const Key('home-fametaps-pill'),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
+                        horizontal: 8,
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xB5150D1B),
+                        color: const Color(0xD5150D1B),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(color: const Color(0xFF634177)),
                       ),
-                      child: Text(
-                        'F ${_compact(room.fameTaps)}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const _FameTapMark(size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'FameTaps ${_compact(room.fameTaps)}',
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -851,6 +891,43 @@ class _HomeEmptyCard extends StatelessWidget {
                   TextButton(onPressed: onAction, child: Text(actionLabel!)),
                 ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FameTapMark extends StatelessWidget {
+  const _FameTapMark({this.size = 18});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.local_fire_department_rounded,
+            size: size,
+            color: const Color(0xFF9B55FF),
+          ),
+          Positioned(
+            bottom: size * .14,
+            child: Text(
+              'F',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: size * .40,
+                height: 1,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
         ],
