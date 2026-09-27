@@ -528,7 +528,7 @@ class _BadgeTransferPreviewCard extends StatelessWidget {
                   ],
                 ),
               ),
-              DecoratedBox(
+              const DecoratedBox(
                 decoration: BoxDecoration(
                   color: Color(0xFF31203E),
                   borderRadius: BorderRadius.all(Radius.circular(999)),
@@ -572,11 +572,7 @@ class _BadgeTransferPreviewCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Mismatch = denied. You can record a new video and try again. Only one transferred badge can be active.',
-                  style: TextStyle(
-                    color: Color(0xFF9F93A8),
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
+                  style: TextStyle(color: Color(0xFF9F93A8), fontSize: 12, height: 1.35),
                 ),
               ),
             ],
