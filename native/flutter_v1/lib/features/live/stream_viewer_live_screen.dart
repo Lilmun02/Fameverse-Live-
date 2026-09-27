@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
@@ -1130,7 +1130,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             ),
                           const SizedBox(width: 5),
                           _ViewerStatChip(
-                            icon: Icons.local_fire_department_rounded,
+                            fameTap: true,
                             text: '${_fameTaps + _tapBuffer.length}',
                           ),
                         ],
@@ -1265,7 +1265,6 @@ class _TapBurstParticle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = serial.isEven ? '🔥' : 'F';
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
       duration: const Duration(milliseconds: 850),
@@ -1282,24 +1281,17 @@ class _TapBurstParticle extends StatelessWidget {
           ),
         );
       },
-      child: Text(
-        symbol,
-        style: TextStyle(
-          color: symbol == 'F' ? const Color(0xFFB96BFF) : null,
-          fontSize: 28,
-          fontWeight: FontWeight.w900,
-          shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
-        ),
-      ),
+      child: const FvFameTapMark(size: 28),
     );
   }
 }
 
 class _ViewerStatChip extends StatelessWidget {
-  const _ViewerStatChip({required this.icon, required this.text});
+  const _ViewerStatChip({required this.text, this.icon, this.fameTap = false});
 
-  final IconData icon;
+  final IconData? icon;
   final String text;
+  final bool fameTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1312,7 +1304,10 @@ class _ViewerStatChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12),
+          if (fameTap)
+            const FvFameTapMark(size: 14)
+          else
+            Icon(icon ?? Icons.visibility_rounded, size: 12),
           const SizedBox(width: 3),
           Text(
             text,
