@@ -1,13 +1,20 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/fameverse_beta_backend.dart';
+import '../../data/fameverse_economy_backend.dart';
 
 class FirstVerseBetaScreen extends StatefulWidget {
-  const FirstVerseBetaScreen({this.backend, super.key});
+  const FirstVerseBetaScreen({
+    this.backend,
+    this.economyBackend,
+    super.key,
+  });
 
   final FameverseBetaBackend? backend;
+  final SupabaseFameverseEconomyBackend? economyBackend;
 
   @override
   State<FirstVerseBetaScreen> createState() => _FirstVerseBetaScreenState();
@@ -15,15 +22,29 @@ class FirstVerseBetaScreen extends StatefulWidget {
 
 class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
   late final FameverseBetaBackend _backend;
+  late final SupabaseFameverseEconomyBackend _economyBackend;
+  final TextEditingController _referralController = TextEditingController();
+
   FvBetaProgramStatus? _status;
+  FvBetaReferralSummary _referralSummary = FvBetaReferralSummary.empty;
   String? _error;
+  String? _referralError;
   bool _loading = true;
+  bool _referralBusy = false;
 
   @override
   void initState() {
     super.initState();
     _backend = widget.backend ?? SupabaseFameverseBetaBackend.instance;
+    _economyBackend =
+        widget.economyBackend ?? SupabaseFameverseEconomyBackend.instance;
     _load();
+  }
+
+  @override
+  void dispose() {
+    _referralController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -35,9 +56,19 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
     }
     try {
       final status = await _backend.loadProgramStatus();
+      var referral = FvBetaReferralSummary.empty;
+      if (status.enrolled) {
+        try {
+          await _economyBackend.ensureBetaReferralCode();
+          referral = await _economyBackend.loadBetaReferralSummary();
+        } catch (_) {
+          // Referral availability must never hide First Verse progress.
+        }
+      }
       if (!mounted) return;
       setState(() {
         _status = status;
+        _referralSummary = referral;
         _loading = false;
       });
     } catch (_) {
@@ -47,6 +78,58 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
         _error = 'Beta progress could not load. Pull to try again.';
       });
     }
+  }
+
+  Future<void> _copyReferralCode() async {
+    final code = _referralSummary.referralCode;
+    if (code == null || code.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Referral code copied.')));
+  }
+
+  Future<void> _claimReferralCode() async {
+    final code = _referralController.text.trim();
+    if (code.isEmpty || _referralBusy) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _referralBusy = true;
+      _referralError = null;
+    });
+    try {
+      final result = await _economyBackend.qualifyBetaReferral(code);
+      if (!mounted) return;
+      _referralController.clear();
+      setState(() => _referralBusy = false);
+      await _load();
+      if (!mounted) return;
+      final message = result.accepted
+          ? 'Referral qualified: you received ${result.referredRewardCoins} promo Fame Coins.'
+          : 'That account already used a referral reward.';
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _referralBusy = false;
+        _referralError = _friendlyReferralError(error);
+      });
+    }
+  }
+
+  String _friendlyReferralError(Object error) {
+    final text = error.toString().toLowerCase();
+    if (text.contains('self referral')) return 'You cannot use your own referral code.';
+    if (text.contains('complete your fameverse profile')) {
+      return 'Complete your Fameverse name and username before claiming referral coins.';
+    }
+    if (text.contains('referral code unavailable')) {
+      return 'That referral code is not active.';
+    }
+    return 'Referral could not be applied. Check the code and try again.';
   }
 
   @override
@@ -114,6 +197,17 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                         ),
                       ),
                     ),
+                const SizedBox(height: 22),
+                const _SectionTitle('INVITE TO FAMEVERSE'),
+                const SizedBox(height: 9),
+                _ReferralCard(
+                  summary: _referralSummary,
+                  controller: _referralController,
+                  busy: _referralBusy,
+                  error: _referralError,
+                  onCopy: _copyReferralCode,
+                  onClaim: _claimReferralCode,
+                ),
                 const SizedBox(height: 14),
                 const _TesterSafetyNote(),
               ],
@@ -376,6 +470,184 @@ class _MissionCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReferralCard extends StatelessWidget {
+  const _ReferralCard({
+    required this.summary,
+    required this.controller,
+    required this.busy,
+    required this.error,
+    required this.onCopy,
+    required this.onClaim,
+  });
+
+  final FvBetaReferralSummary summary;
+  final TextEditingController controller;
+  final bool busy;
+  final String? error;
+  final VoidCallback onCopy;
+  final VoidCallback onClaim;
+
+  @override
+  Widget build(BuildContext context) {
+    final code = summary.referralCode;
+    return Container(
+      key: const Key('first-verse-referral-card'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141017),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF4A3155)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bring someone into Fameverse',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'You get 100 promo Fame Coins for each qualified referral. The person you bring gets 50 promo Fame Coins.',
+            key: Key('first-verse-referral-reward-copy'),
+            style: TextStyle(color: Color(0xFFB5A9B9), fontSize: 12, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0E0B10),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF35273C)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'YOUR REFERRAL CODE',
+                        style: TextStyle(
+                          color: Color(0xFF8F8394),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        code ?? 'Generating…',
+                        key: const Key('first-verse-referral-code'),
+                        style: const TextStyle(
+                          color: Color(0xFFE1B7FF),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  key: const Key('first-verse-copy-referral-code'),
+                  onPressed: code == null ? null : onCopy,
+                  tooltip: 'Copy referral code',
+                  icon: const Icon(Icons.copy_rounded),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${summary.qualifiedReferrals} qualified · ${summary.promoCoinsEarned} promo coins earned',
+            style: const TextStyle(
+              color: Color(0xFFD0B3E3),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Have a referral code?',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('first-verse-referral-input'),
+                  controller: controller,
+                  enabled: !busy,
+                  textCapitalization: TextCapitalization.characters,
+                  autocorrect: false,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => onClaim(),
+                  decoration: const InputDecoration(
+                    hintText: 'Enter code',
+                    isDense: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                key: const Key('first-verse-claim-referral'),
+                onPressed: busy ? null : onClaim,
+                child: Text(busy ? 'Checking…' : 'Apply'),
+              ),
+            ],
+          ),
+          if (error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              error!,
+              style: const TextStyle(color: Color(0xFFFF8D9F), fontSize: 11),
+            ),
+          ],
+          const SizedBox(height: 14),
+          const _PromoCoinRule(),
+          const SizedBox(height: 10),
+          const Text(
+            'Referral activity is separate from your First Verse badge missions and does not count toward badge progress.',
+            key: Key('first-verse-referral-not-mission'),
+            style: TextStyle(color: Color(0xFF8F8493), fontSize: 10, height: 1.35),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PromoCoinRule extends StatelessWidget {
+  const _PromoCoinRule();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('first-verse-promo-coin-rule'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF211328),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF51325F)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.redeem_rounded, color: Color(0xFFD19BFF), size: 19),
+          SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              'Promo Fame Coins are gifting-only. They cannot be transferred, exchanged, converted, replaced, or cashed out. Gifts funded by promo coins do not create creator cash earnings.',
+              style: TextStyle(color: Color(0xFFC6B6CC), fontSize: 10.5, height: 1.4),
             ),
           ),
         ],
