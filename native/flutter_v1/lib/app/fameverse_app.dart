@@ -1,11 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../data/backend_runtime.dart';
 import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
-import '../data/startup_update_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/shell/fameverse_release_shell.dart';
 
@@ -26,18 +25,12 @@ class FameverseApp extends StatefulWidget {
   State<FameverseApp> createState() => _FameverseAppState();
 }
 
-enum _StartupStage { checking, updating, whatsNew, allSet, ready }
+enum _StartupStage { splash, whatsNew, allSet, ready }
 
 class _FameverseAppState extends State<FameverseApp> {
-  static const _releaseChannel = String.fromEnvironment(
-    'FAMEVERSE_RELEASE_CHANNEL',
-    defaultValue: 'internal',
-  );
-
   StreamSubscription<FvIdentity?>? _subscription;
   FvIdentity? _identity;
-  FvStartupSyncResult? _startup;
-  _StartupStage _startupStage = _StartupStage.checking;
+  _StartupStage _startupStage = _StartupStage.splash;
 
   @override
   void initState() {
@@ -46,50 +39,28 @@ class _FameverseAppState extends State<FameverseApp> {
     _subscription = widget.backend.authChanges.listen((identity) {
       if (mounted) setState(() => _identity = identity);
     });
-    unawaited(_runStartup());
+    unawaited(_finishBrandSplash());
   }
 
-  Future<void> _runStartup() async {
-    final minimumBrandTime = Future<void>.delayed(
-      const Duration(milliseconds: 650),
-    );
-    FvStartupSyncResult? result;
-    try {
-      result = await FvStartupUpdateService(
-        Supabase.instance.client,
-      ).sync(channel: _releaseChannel).timeout(const Duration(seconds: 7));
-    } catch (_) {
-      // A backend check can never strand the user on splash. The native binary
-      // remains usable with its bundled defaults when the network is unavailable.
-    }
-    await minimumBrandTime;
+  Future<void> _finishBrandSplash() async {
+    await Future<void>.delayed(const Duration(milliseconds: 1050));
     if (!mounted) return;
-
-    _startup = result;
-    if (result?.backendChanged == true) {
-      setState(() => _startupStage = _StartupStage.updating);
-      await Future<void>.delayed(const Duration(milliseconds: 650));
-      if (!mounted) return;
-      if (result?.notice != null) {
-        setState(() => _startupStage = _StartupStage.whatsNew);
-      } else {
-        await _showAllSetThenOpen();
-      }
-      return;
-    }
-
-    setState(() => _startupStage = _StartupStage.ready);
+    final hasRealUpdate =
+        FvBackendRuntime.backendChangedThisLaunch &&
+        FvBackendRuntime.pendingNotice != null;
+    setState(
+      () => _startupStage = hasRealUpdate
+          ? _StartupStage.whatsNew
+          : _StartupStage.ready,
+    );
   }
 
-  Future<void> _showAllSetThenOpen() async {
+  Future<void> _continueFromWhatsNew() async {
+    FvBackendRuntime.clearPendingNotice();
     if (!mounted) return;
     setState(() => _startupStage = _StartupStage.allSet);
     await Future<void>.delayed(const Duration(milliseconds: 650));
     if (mounted) setState(() => _startupStage = _StartupStage.ready);
-  }
-
-  Future<void> _continueFromWhatsNew() async {
-    await _showAllSetThenOpen();
   }
 
   @override
@@ -147,25 +118,19 @@ class _FameverseAppState extends State<FameverseApp> {
 
   Widget _buildStartupSurface() {
     switch (_startupStage) {
-      case _StartupStage.checking:
-        return const _BrandSplash(status: 'Checking for updates…');
-      case _StartupStage.updating:
-        return const _BrandSplash(status: 'Updating Fameverse…');
+      case _StartupStage.splash:
+        return const _BrandSplash();
       case _StartupStage.whatsNew:
-        final notice = _startup?.notice;
-        if (notice == null) {
-          return const _BrandSplash(status: 'Fameverse is up to date');
-        }
+        final notice = FvBackendRuntime.pendingNotice;
+        if (notice == null) return const _BrandSplash();
         return _WhatsNewScreen(
           notice: notice,
           onContinue: _continueFromWhatsNew,
         );
       case _StartupStage.allSet:
-        return _BrandSplash(
+        return const _BrandSplash(
           status: 'You’re all set!',
-          detail: _startup == null
-              ? 'Opening Fameverse…'
-              : 'Fameverse is up to date.',
+          detail: 'Fameverse is up to date.',
           showCheck: true,
         );
       case _StartupStage.ready:
@@ -187,12 +152,12 @@ class _FameverseAppState extends State<FameverseApp> {
 
 class _BrandSplash extends StatelessWidget {
   const _BrandSplash({
-    required this.status,
+    this.status,
     this.detail,
     this.showCheck = false,
   });
 
-  final String status;
+  final String? status;
   final String? detail;
   final bool showCheck;
 
@@ -241,45 +206,35 @@ class _BrandSplash extends StatelessWidget {
                           letterSpacing: 2.4,
                         ),
                       ),
-                      const SizedBox(height: 42),
-                      if (showCheck)
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          size: 36,
-                          color: Color(0xFFBE77FF),
-                        )
-                      else
-                        SizedBox(
-                          width: 112,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
-                            child: const LinearProgressIndicator(
-                              minHeight: 4,
-                              backgroundColor: Color(0xFF24172C),
-                              color: Color(0xFFB86BFF),
-                            ),
+                      if (status != null) ...[
+                        const SizedBox(height: 34),
+                        if (showCheck)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            size: 36,
+                            color: Color(0xFFBE77FF),
                           ),
-                        ),
-                      const SizedBox(height: 18),
-                      Text(
-                        status,
-                        key: const Key('startup-update-status'),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      if (detail != null) ...[
-                        const SizedBox(height: 6),
+                        if (showCheck) const SizedBox(height: 12),
                         Text(
-                          detail!,
+                          status!,
+                          key: const Key('startup-update-status'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Color(0xFF9F92A5),
-                            fontSize: 11,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
+                        if (detail != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            detail!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF9F92A5),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),
