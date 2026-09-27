@@ -22,6 +22,7 @@ class FameverseHomeScreen extends StatefulWidget {
     required this.onOpenDiscover,
     required this.onRoomSelected,
     required this.onToggleFollow,
+    required this.onCreatorSelected,
     required this.followBusy,
     super.key,
   });
@@ -37,6 +38,7 @@ class FameverseHomeScreen extends StatefulWidget {
   final VoidCallback onOpenDiscover;
   final ValueChanged<FvLiveRoom> onRoomSelected;
   final ValueChanged<String> onToggleFollow;
+  final ValueChanged<FvProfile> onCreatorSelected;
   final bool followBusy;
 
   @override
@@ -264,6 +266,7 @@ class _FameverseHomeScreenState extends State<FameverseHomeScreen> {
                       following: following,
                       busy: widget.followBusy,
                       onFollow: () => widget.onToggleFollow(creator.profile.id),
+                      onOpen: () => widget.onCreatorSelected(creator.profile),
                     );
                   },
                 ),
@@ -710,12 +713,14 @@ class _SuggestedCreatorCard extends StatelessWidget {
     required this.following,
     required this.busy,
     required this.onFollow,
+    required this.onOpen,
   });
 
   final FvCreator creator;
   final bool following;
   final bool busy;
   final VoidCallback onFollow;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -729,7 +734,11 @@ class _SuggestedCreatorCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _Avatar(profile: creator.profile, radius: 29),
+          GestureDetector(
+            key: Key('home-creator-profile-${creator.profile.id}'),
+            onTap: onOpen,
+            child: _Avatar(profile: creator.profile, radius: 29),
+          ),
           const SizedBox(height: 9),
           Text(
             creator.profile.displayName,

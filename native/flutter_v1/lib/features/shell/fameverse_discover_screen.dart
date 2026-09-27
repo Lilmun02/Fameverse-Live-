@@ -15,6 +15,7 @@ class FameverseDiscoverScreen extends StatefulWidget {
     required this.loading,
     required this.onRefresh,
     required this.onToggleFollow,
+    required this.onCreatorSelected,
     required this.followBusy,
     required this.onOpenProfile,
     required this.onRoomSelected,
@@ -28,6 +29,7 @@ class FameverseDiscoverScreen extends StatefulWidget {
   final bool loading;
   final Future<void> Function() onRefresh;
   final ValueChanged<String> onToggleFollow;
+  final ValueChanged<FvProfile> onCreatorSelected;
   final bool followBusy;
   final VoidCallback onOpenProfile;
   final ValueChanged<FvLiveRoom> onRoomSelected;
@@ -282,6 +284,7 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
                         busy: widget.followBusy,
                         onFollow: () =>
                             widget.onToggleFollow(creator.profile.id),
+                        onOpen: () => widget.onCreatorSelected(creator.profile),
                       ),
                     );
                   }),
@@ -572,12 +575,14 @@ class _CreatorResultCard extends StatelessWidget {
     required this.following,
     required this.busy,
     required this.onFollow,
+    required this.onOpen,
   });
 
   final FvCreator creator;
   final bool following;
   final bool busy;
   final VoidCallback onFollow;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -591,7 +596,11 @@ class _CreatorResultCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _DiscoverAvatar(profile: creator.profile, radius: 27),
+          GestureDetector(
+            key: Key('discover-creator-profile-${creator.profile.id}'),
+            onTap: onOpen,
+            child: _DiscoverAvatar(profile: creator.profile, radius: 27),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

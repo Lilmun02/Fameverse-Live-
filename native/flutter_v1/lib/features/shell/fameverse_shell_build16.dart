@@ -10,6 +10,7 @@ import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_screen.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
+import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/native_profile_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_screen.dart';
@@ -215,6 +216,26 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     );
   }
 
+  Future<void> _openPublicProfile(FvProfile target) async {
+    if (target.id == widget.identity.id) {
+      _setTab(3);
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => FameversePublicProfileScreen(
+          viewerUserId: widget.identity.id,
+          targetUserId: target.id,
+          initialProfile: target,
+        ),
+      ),
+    );
+    try {
+      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      if (mounted) setState(() => _network = network);
+    } catch (_) {}
+  }
+
   void _openRoom(FvLiveRoom room, FvProfile profile) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -270,6 +291,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             onOpenDiscover: () => _setTab(1),
             onRoomSelected: (room) => _openRoom(room, profile),
             onToggleFollow: _toggleFollow,
+            onCreatorSelected: _openPublicProfile,
             followBusy: _followBusy,
           ),
           FameverseDiscoverScreen(
@@ -280,6 +302,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             loading: _loading,
             onRefresh: _refreshAll,
             onToggleFollow: _toggleFollow,
+            onCreatorSelected: _openPublicProfile,
             followBusy: _followBusy,
             onOpenProfile: () => _setTab(3),
             onRoomSelected: (room) => _openRoom(room, profile),

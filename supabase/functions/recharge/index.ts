@@ -20,6 +20,7 @@ const CUSTOM_PACK_ID = "owner-qa-custom";
 const CUSTOM_MIN_COINS = 100;
 const CUSTOM_MAX_COINS = 10000;
 const CUSTOM_CENTS_PER_COIN = 1;
+const PAYPAL_RETURN_URL = "https://fameverse-live-jen9qlbv8-aiw-core.vercel.app/paypal-return.html";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -288,6 +289,18 @@ Deno.serve(async (req: Request) => {
           },
           body: JSON.stringify({
             intent: "CAPTURE",
+            payment_source: {
+              paypal: {
+                experience_context: {
+                  brand_name: "Fameverse",
+                  landing_page: "LOGIN",
+                  shipping_preference: "NO_SHIPPING",
+                  user_action: "PAY_NOW",
+                  return_url: `${PAYPAL_RETURN_URL}?status=approved`,
+                  cancel_url: `${PAYPAL_RETURN_URL}?status=cancelled`,
+                },
+              },
+            },
             purchase_units: [
               {
                 reference_id: recharge.id,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 
@@ -84,6 +85,8 @@ class NativeProfileScreen extends StatelessWidget {
                     following: network.following.length,
                     friends: _friendCount,
                   ),
+                  const SizedBox(height: 14),
+                  _FameCoinWalletCard(userId: identity.id),
                   const SizedBox(height: 18),
                   _ProfileActions(
                     onEdit: onEdit,
@@ -689,6 +692,126 @@ class _AvatarFallback extends StatelessWidget {
           profile.initial,
           style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900),
         ),
+      ),
+    );
+  }
+}
+
+class _FameCoinWalletCard extends StatefulWidget {
+  const _FameCoinWalletCard({required this.userId});
+
+  final String userId;
+
+  @override
+  State<_FameCoinWalletCard> createState() => _FameCoinWalletCardState();
+}
+
+class _FameCoinWalletCardState extends State<_FameCoinWalletCard>
+    with WidgetsBindingObserver {
+  int? _balance;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _load();
+  }
+
+  Future<void> _load() async {
+    if (mounted) setState(() => _loading = true);
+    try {
+      final row = await Supabase.instance.client
+          .from('beta_coin_wallets')
+          .select('balance')
+          .eq('user_id', widget.userId)
+          .maybeSingle();
+      if (!mounted) return;
+      setState(() {
+        _balance = (row?['balance'] as num?)?.toInt() ?? 0;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final balanceText = _balance == null ? '—' : '${_balance!}';
+    return Container(
+      key: const Key('profile-fame-coin-wallet'),
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF5C3470)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF271334), Color(0xFF151019)],
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF4B2465),
+            ),
+            child: const Icon(Icons.toll_rounded, color: Color(0xFFD7A5FF)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Fame Coins',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _loading && _balance == null ? 'Loading balance…' : balanceText,
+                  style: const TextStyle(
+                    color: Color(0xFFE2BCFF),
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  'Spendable gifting balance · creator cash-out uses separate Creator Earnings.',
+                  style: TextStyle(color: Color(0xFF9F92A4), fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            key: const Key('refresh-fame-coin-wallet'),
+            onPressed: _loading ? null : _load,
+            tooltip: 'Refresh Fame Coins',
+            icon: _loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
     );
   }

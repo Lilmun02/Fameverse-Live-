@@ -32,6 +32,7 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
   String? _error;
   String? _accountRole;
   FvCreatorPayoutSummary _summary = FvCreatorPayoutSummary.empty;
+  FvCreatorPayoutMethod? _payoutMethod;
   List<FvCreatorPayoutRequest> _requests = const [];
 
   bool get _isOwner => _accountRole == 'owner';
@@ -54,13 +55,15 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
       final results = await Future.wait<dynamic>([
         widget.backend.loadPayoutSummary(),
         widget.backend.listPayoutRequests(),
+        widget.backend.loadPayoutMethod(),
         widget.backend.loadRole(widget.identity.id),
       ]);
       if (!mounted) return;
       setState(() {
         _summary = results[0] as FvCreatorPayoutSummary;
         _requests = results[1] as List<FvCreatorPayoutRequest>;
-        _accountRole = results[2] as String?;
+        _payoutMethod = results[2] as FvCreatorPayoutMethod?;
+        _accountRole = results[3] as String?;
         _loading = false;
       });
     } catch (_) {
@@ -87,6 +90,69 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         builder: (context) => const NativeRechargeScreen(),
       ),
     );
+  }
+
+  Future<void> _openPayoutMethod() async {
+    if (_busy) return;
+    final controller = TextEditingController(
+      text: _payoutMethod?.recipientEmail ?? '',
+    );
+    final email = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PayPal payout email'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter the email attached to the PayPal account where Fameverse should send approved creator payouts.',
+              style: TextStyle(color: Color(0xFFB5A9BE), height: 1.35),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('creator-paypal-payout-email'),
+              controller: controller,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              textCapitalization: TextCapitalization.none,
+              decoration: const InputDecoration(
+                labelText: 'PayPal email',
+                prefixIcon: Icon(Icons.paypal_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (email == null) return;
+    if (!email.contains('@') || !email.substring(email.indexOf('@') + 1).contains('.')) {
+      _message('Enter a valid PayPal email address.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final method = await widget.backend.setPayoutMethod(recipientEmail: email);
+      if (mounted) setState(() => _payoutMethod = method);
+      _message('PayPal payout method saved.');
+      await _refresh();
+    } catch (_) {
+      _message('Could not save that PayPal payout email.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _openPayoutRequest() async {
@@ -262,8 +328,15 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                 const SizedBox(height: 10),
                 _PayoutEligibilityCard(status: _summary.verificationStatus),
                 const SizedBox(height: 12),
+                _PayoutMethodCard(
+                  method: _payoutMethod,
+                  busy: _busy,
+                  onEdit: _openPayoutMethod,
+                ),
+                const SizedBox(height: 12),
                 _PayoutCard(
                   summary: _summary,
+                  hasPayoutMethod: _payoutMethod?.enabled == true,
                   busy: _busy,
                   onRequest: _openPayoutRequest,
                 ),
@@ -744,20 +817,91 @@ class _PayoutEligibilityCard extends StatelessWidget {
   }
 }
 
+class _PayoutMethodCard extends StatelessWidget {
+  const _PayoutMethodCard({
+    required this.method,
+    required this.busy,
+    required this.onEdit,
+  });
+
+  final FvCreatorPayoutMethod? method;
+  final bool busy;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final configured = method?.enabled == true && method!.recipientEmail.isNotEmpty;
+    return Container(
+      key: const Key('creator-paypal-payout-method'),
+      padding: const EdgeInsets.all(18),
+      decoration: _panelDecoration(),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1C2B55),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.paypal_outlined, color: Color(0xFF8BB7FF)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'PayPal payout method',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  configured ? method!.recipientEmail : 'No PayPal payout email added',
+                  style: TextStyle(
+                    color: configured
+                        ? const Color(0xFFDAD0DF)
+                        : const Color(0xFFFFB5C2),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Fame Coins are not cashable. Approved Creator Earnings are paid separately.',
+                  style: TextStyle(color: Color(0xFF93889B), fontSize: 10, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: busy ? null : onEdit,
+            child: Text(configured ? 'Change' : 'Add'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PayoutCard extends StatelessWidget {
   const _PayoutCard({
     required this.summary,
+    required this.hasPayoutMethod,
     required this.busy,
     required this.onRequest,
   });
 
   final FvCreatorPayoutSummary summary;
+  final bool hasPayoutMethod;
   final bool busy;
   final VoidCallback onRequest;
 
   @override
   Widget build(BuildContext context) {
-    final disabledReason = !summary.isVerified
+    final disabledReason = !hasPayoutMethod
+        ? 'Add PayPal payout email'
+        : !summary.isVerified
         ? 'Payout setup required'
         : summary.withdrawableCents < summary.minimumPayoutCents
         ? '${_money(summary.minimumPayoutCents)} minimum'
@@ -795,7 +939,9 @@ class _PayoutCard extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               key: const Key('request-creator-payout'),
-              onPressed: busy || !summary.canRequestPayout ? null : onRequest,
+              onPressed: busy || !hasPayoutMethod || !summary.canRequestPayout
+                  ? null
+                  : onRequest,
               child: Text(disabledReason ?? 'Request payout'),
             ),
           ),

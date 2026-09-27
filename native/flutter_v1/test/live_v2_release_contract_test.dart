@@ -256,6 +256,7 @@ void main() {
       ).readAsString();
 
       expect(viewer, contains("Key('viewer-gift-button')"));
+      expect(viewer, contains('if (_canRefill) ...['));
       expect(viewer, contains('widget.room.host.handle'));
       expect(viewer, contains('state.liveEndedAt != null'));
       expect(viewer, contains('class _TapBurstParticle'));

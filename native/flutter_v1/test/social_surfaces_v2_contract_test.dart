@@ -93,6 +93,9 @@ void main() {
         expect(shell, contains('FameverseHomeScreen('));
         expect(shell, contains('FameverseDiscoverScreen('));
         expect(shell, contains('NativeProfileScreen('));
+    expect(shell, contains('FameversePublicProfileScreen('));
+    expect(home, contains('onCreatorSelected'));
+    expect(discover, contains('onCreatorSelected'));
         expect(shell, contains("key: const Key('fameverse-bottom-nav')"));
         expect(shell, isNot(contains('class _Build16HomeScreen')));
         expect(shell, isNot(contains('class _Build16DiscoverScreen')));

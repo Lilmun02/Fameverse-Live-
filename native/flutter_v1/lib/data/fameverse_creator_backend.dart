@@ -165,6 +165,26 @@ class FvPayoutModerationItem {
   }
 }
 
+class FvCreatorPayoutMethod {
+  const FvCreatorPayoutMethod({
+    required this.provider,
+    required this.recipientEmail,
+    required this.enabled,
+  });
+
+  final String provider;
+  final String recipientEmail;
+  final bool enabled;
+
+  factory FvCreatorPayoutMethod.fromMap(Map<String, dynamic> row) {
+    return FvCreatorPayoutMethod(
+      provider: row['provider']?.toString() ?? 'paypal',
+      recipientEmail: row['recipient_email']?.toString() ?? '',
+      enabled: row['enabled'] == true,
+    );
+  }
+}
+
 class SupabaseFameverseCreatorBackend {
   SupabaseFameverseCreatorBackend(this._client);
 
@@ -185,6 +205,28 @@ class SupabaseFameverseCreatorBackend {
         .eq('user_id', userId)
         .maybeSingle();
     return (row?['role'] as String?)?.trim().toLowerCase();
+  }
+
+  Future<FvCreatorPayoutMethod?> loadPayoutMethod() async {
+    final response = await _client.rpc('get_creator_payout_method');
+    final rows = _rows(response);
+    if (rows.isEmpty) return null;
+    return FvCreatorPayoutMethod.fromMap(rows.first);
+  }
+
+  Future<FvCreatorPayoutMethod> setPayoutMethod({
+    required String recipientEmail,
+  }) async {
+    final response = await _client.rpc(
+      'set_creator_payout_method',
+      params: {
+        'p_provider': 'paypal',
+        'p_recipient_email': recipientEmail.trim(),
+      },
+    );
+    final rows = _rows(response);
+    if (rows.isEmpty) throw Exception('Payout method was not saved.');
+    return FvCreatorPayoutMethod.fromMap(rows.first);
   }
 
   Future<FvCreatorPayoutSummary> loadPayoutSummary() async {

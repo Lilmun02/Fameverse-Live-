@@ -850,6 +850,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              TextButton.icon(
+                key: const Key('host-share-live-action'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  unawaited(_shareLive());
+                },
+                icon: const Icon(Icons.ios_share_rounded),
+                label: const Text('Share live'),
+              ),
             ],
           ),
         ),
@@ -895,13 +905,13 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
             const FvLiveGradient(),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (!cohostActive) ...[
                       const Center(child: _FameverseLiveWordmark()),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
                     ],
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -910,7 +920,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           onTap: _showProfileSheet,
                           child: _NeonHostAvatar(profile: widget.room.host),
                         ),
-                        const SizedBox(width: 9),
+                        const SizedBox(width: 11),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -978,12 +988,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFE62952),
                             foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 36),
+                            visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 12,
+                              horizontal: 11,
+                              vertical: 8,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                           child: Text(_ending ? 'Ending…' : 'End'),
@@ -1052,12 +1064,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           ),
                           icon: const Icon(Icons.send_rounded),
                           tooltip: 'Send comment',
-                        ),
-                        const SizedBox(width: 4),
-                        IconButton.filledTonal(
-                          onPressed: _shareLive,
-                          icon: const Icon(Icons.ios_share_rounded),
-                          tooltip: 'Share',
                         ),
                         const SizedBox(width: 4),
                         FvFameActionButton(
