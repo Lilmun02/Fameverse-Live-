@@ -5,10 +5,12 @@ on:
     branches:
       - native/flutter-v1
       - build18/live-repair
+      - integration/sep27-big-update
   pull_request:
     branches:
       - native/flutter-v1
       - build18/live-repair
+      - integration/sep27-big-update
   workflow_dispatch:
 
 permissions:
