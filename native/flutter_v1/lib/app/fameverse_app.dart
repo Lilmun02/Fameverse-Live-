@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
 import '../features/auth/auth_screen.dart';
-import '../features/shell/fameverse_shell_build16.dart';
+import '../features/shell/fameverse_release_shell.dart';
 
 /// Native Fameverse app shell.
 ///
@@ -100,7 +100,7 @@ class _FameverseAppState extends State<FameverseApp> {
             ? const _BrandSplash()
             : _identity == null
             ? AuthScreen(backend: widget.backend)
-            : FameverseBuild16Shell(
+            : FameverseReleaseShell(
                 key: ValueKey(_identity!.id),
                 backend: widget.backend,
                 liveBackend: widget.liveBackend,
