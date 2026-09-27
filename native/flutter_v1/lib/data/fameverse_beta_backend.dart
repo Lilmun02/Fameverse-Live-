@@ -29,13 +29,15 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
   FvBetaMissionDefinition(
     key: 'complete_profile',
     title: 'Build your profile',
-    detail: 'Save your name, username, bio or profile photo and confirm the update.',
+    detail:
+        'Save your name, username, bio or profile photo and confirm the update.',
     required: true,
   ),
   FvBetaMissionDefinition(
     key: 'browse_home',
     title: 'Browse Home',
-    detail: 'Use the streaming-first Home feed and check that browsing stays smooth.',
+    detail:
+        'Use the streaming-first Home feed and check that browsing stays smooth.',
     required: true,
   ),
   FvBetaMissionDefinition(
@@ -47,7 +49,8 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
   FvBetaMissionDefinition(
     key: 'open_public_profile',
     title: 'Open another profile',
-    detail: 'Open a public creator profile and make sure the profile loads correctly.',
+    detail:
+        'Open a public creator profile and make sure the profile loads correctly.',
     required: true,
   ),
   FvBetaMissionDefinition(
@@ -59,7 +62,8 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
   FvBetaMissionDefinition(
     key: 'join_live',
     title: 'Join a Live',
-    detail: 'Enter a creator Live and confirm the stream connects and exits normally.',
+    detail:
+        'Enter a creator Live and confirm the stream connects and exits normally.',
     required: true,
   ),
   FvBetaMissionDefinition(
@@ -71,19 +75,22 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
   FvBetaMissionDefinition(
     key: 'view_story',
     title: 'View a Story',
-    detail: 'Open a creator Story and test the Story viewer once Stories are enabled.',
+    detail:
+        'Open a creator Story and test the Story viewer once Stories are enabled.',
     required: true,
   ),
   FvBetaMissionDefinition(
     key: 'send_gift',
     title: 'Gift-path check',
-    detail: 'Optional: send a permitted beta gift and report any visual or playback issue.',
+    detail:
+        'Optional: send a permitted beta gift and report any visual or playback issue.',
     required: false,
   ),
   FvBetaMissionDefinition(
     key: 'cohost_session',
     title: 'Co-host check',
-    detail: 'Optional: complete a co-host session and verify camera/mic recovery.',
+    detail:
+        'Optional: complete a co-host session and verify camera/mic recovery.',
     required: false,
   ),
 ];

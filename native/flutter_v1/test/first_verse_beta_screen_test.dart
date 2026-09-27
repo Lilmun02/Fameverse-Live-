@@ -93,9 +93,6 @@ void main() {
     expect(keys, isNot(contains('request_payout')));
     expect(keys, isNot(contains('approve_payout')));
     expect(keys, contains('browse_discover'));
-    expect(
-      fvFirstVerseMissions.where((mission) => mission.required).length,
-      8,
-    );
+    expect(fvFirstVerseMissions.where((mission) => mission.required).length, 8);
   });
 }
