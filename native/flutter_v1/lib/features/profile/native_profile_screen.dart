@@ -784,7 +784,9 @@ class _FameCoinWalletCardState extends State<_FameCoinWalletCard>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _loading && _balance == null ? 'Loading balance…' : balanceText,
+                  _loading && _balance == null
+                      ? 'Loading balance…'
+                      : balanceText,
                   style: const TextStyle(
                     color: Color(0xFFE2BCFF),
                     fontSize: 21,
