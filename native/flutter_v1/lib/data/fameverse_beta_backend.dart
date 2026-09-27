@@ -29,7 +29,7 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
   FvBetaMissionDefinition(
     key: 'complete_profile',
     title: 'Build your profile',
-    detail: 'Save your name, username or bio and confirm the profile updates.',
+    detail: 'Save your name, username, bio or profile photo and confirm the update.',
     required: true,
   ),
   FvBetaMissionDefinition(
@@ -39,9 +39,9 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
     required: true,
   ),
   FvBetaMissionDefinition(
-    key: 'discover_search',
-    title: 'Search Discover',
-    detail: 'Search for a creator, handle or live title in Discover.',
+    key: 'browse_discover',
+    title: 'Explore Discover',
+    detail: 'Open Discover and browse or search creators and Live rooms.',
     required: true,
   ),
   FvBetaMissionDefinition(
@@ -59,7 +59,7 @@ const fvFirstVerseMissions = <FvBetaMissionDefinition>[
   FvBetaMissionDefinition(
     key: 'join_live',
     title: 'Join a Live',
-    detail: 'Enter a creator Live and confirm the stream connects normally.',
+    detail: 'Enter a creator Live and confirm the stream connects and exits normally.',
     required: true,
   ),
   FvBetaMissionDefinition(
