@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
@@ -67,6 +68,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   String? _error;
 
   bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _giftEnabled => widget.giftAccess && _canRefill;
   bool get _selfIsCohost => _activeCohostUserId == widget.identity.id;
 
   @override
@@ -76,6 +78,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _tapClock.start();
     unawaited(_connect());
     unawaited(_loadFollowState());
+  }
+
+  Future<void> _recordBetaMission(String missionKey) async {
+    try {
+      await Supabase.instance.client.rpc(
+        'record_beta_test_mission',
+        params: <String, dynamic>{'p_mission_key': missionKey},
+      );
+    } catch (_) {
+      // First Verse telemetry is best effort and can never break Live.
+    }
   }
 
   Future<void> _loadFollowState() async {
@@ -271,13 +284,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         'gifterLevel': _gifterLevel,
         'text': clean,
       });
+      await _recordBetaMission('send_comment');
     } catch (_) {
       if (mounted) _showMessage('Comment could not send.');
     }
   }
 
   Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
-    if (!widget.giftAccess) return false;
+    if (!_giftEnabled) return false;
     if (_giftSending) return false;
     if (!_walletReady) {
       _showMessage('Gift wallet is reconnecting.');
@@ -341,6 +355,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           sender: widget.viewerProfile.displayName,
         ),
       );
+      await _recordBetaMission('send_gift');
       return true;
     } catch (error) {
       final text = error.toString().toLowerCase();
@@ -374,7 +389,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _showGiftTray() {
-    if (!widget.giftAccess) return;
+    if (!_giftEnabled) return;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -630,6 +645,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           _cohostMicEnabled = true;
         });
       }
+      await _recordBetaMission('cohost_session');
     } catch (_) {
       if (mounted) {
         _showMessage('Co-host camera or microphone could not start.');
@@ -1193,7 +1209,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: const Icon(Icons.arrow_upward_rounded),
                             tooltip: 'Send comment',
                           ),
-                          if (widget.giftAccess) ...[
+                          if (_giftEnabled) ...[
                             const SizedBox(width: 4),
                             IconButton.filled(
                               key: const Key('viewer-gift-button'),
