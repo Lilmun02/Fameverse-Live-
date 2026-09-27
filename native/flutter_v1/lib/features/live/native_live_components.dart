@@ -80,12 +80,14 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       if (mounted) setState(() {});
       return;
     }
+
     if (_loadedUrl == url && _controller != null) {
       await _controller!.seekTo(Duration.zero);
       await _controller!.setVolume(1);
       await _controller!.play();
       return;
     }
+
     final next = VideoPlayerController.networkUrl(
       Uri.parse(url),
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
@@ -102,6 +104,13 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       if (mounted) setState(() {});
     } catch (_) {
       await next.dispose();
+      if (!mounted) return;
+      // Never substitute an uninitialized/black video frame. The deterministic
+      // poster/fallback below remains visible if cinematic media cannot load.
+      setState(() {
+        _controller = null;
+        _loadedUrl = null;
+      });
     }
   }
 
@@ -117,11 +126,41 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   Widget build(BuildContext context) {
     final playback = widget.playback;
 
-    // Build 18: classic one-coin support gifts stay in chat/activity. They do
-    // not take over the camera with the same overlay reserved for premium
-    // animated gifts.
-    if (!playback.gift.cinematic && playback.gift.cost <= 1) {
-      return const SizedBox.shrink();
+    // Lightweight gifts under 100 coins are intentionally not cinematic. They
+    // get a compact native acknowledgement instead of taking over the camera.
+    if (!playback.gift.cinematic && playback.gift.cost < 100) {
+      return IgnorePointer(
+        child: Align(
+          alignment: const Alignment(0, .58),
+          child: Container(
+            key: Key('lightweight-gift-${playback.gift.id}'),
+            constraints: const BoxConstraints(maxWidth: 310),
+            margin: const EdgeInsets.symmetric(horizontal: 22),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xE61B1222),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: const Color(0x665F37A1)),
+              boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 12)],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(playback.gift.symbol, style: const TextStyle(fontSize: 26)),
+                const SizedBox(width: 9),
+                Flexible(
+                  child: Text(
+                    '${playback.sender} sent ${playback.gift.label}${playback.quantity > 1 ? ' ×${playback.quantity}' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (playback.gift.id == 'pocket-comet') {
@@ -185,6 +224,8 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       );
     }
 
+    // Cinematic media fallback. This is deterministic native art/text, never a
+    // paused remote frame, so a failed or slow network load cannot flash black.
     return IgnorePointer(
       child: Center(
         child: Container(
@@ -226,6 +267,7 @@ class NativeGiftTray extends StatefulWidget {
     required this.canRefill,
     required this.onSend,
     required this.onRefill,
+    this.onExchange,
     super.key,
   });
 
@@ -233,12 +275,27 @@ class NativeGiftTray extends StatefulWidget {
   final bool canRefill;
   final Future<bool> Function(FvGiftDefinition gift, int quantity) onSend;
   final Future<int> Function() onRefill;
+  final VoidCallback? onExchange;
 
   @override
   State<NativeGiftTray> createState() => _NativeGiftTrayState();
 }
 
 class _NativeGiftTrayState extends State<NativeGiftTray> {
+  static const _categories = <(String, String)>[
+    ('all', 'All'),
+    ('classic', 'Classic'),
+    ('reactions', 'React'),
+    ('snacks', 'Snacks'),
+    ('flowers', 'Flowers'),
+    ('celebrate', 'Celebrate'),
+    ('creator', 'Creator'),
+    ('sports', 'Sports'),
+    ('animals', 'Animals'),
+    ('fame', 'Fame'),
+    ('fameverse', 'Fameverse'),
+  ];
+
   String _category = 'all';
   String _selectedId = fvGiftCatalog.first.id;
   bool _sending = false;
@@ -271,9 +328,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     final gift = _selected;
     setState(() => _sending = true);
 
-    // Physical QA showed waiting on the RPC made Send feel broken. Close the
-    // tray immediately; the parent still validates/records the gift and shows
-    // an error if the backend rejects it.
+    // Close immediately to keep the Live surface responsive. The parent still
+    // waits for backend authority before broadcasting/playing the gift.
     Navigator.of(context).pop();
     await widget.onSend(gift, quantity);
   }
@@ -350,9 +406,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             initialValue: '$quantity',
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Quantity',
-                            ),
+                            decoration: const InputDecoration(labelText: 'Quantity'),
                             onChanged: (value) {
                               final parsed = int.tryParse(value);
                               if (parsed != null) setQuantity(parsed);
@@ -391,9 +445,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: () => Navigator.of(context).pop(quantity),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                      ),
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                       child: Text('Send ×$quantity'),
                     ),
                   ],
@@ -440,10 +492,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     ),
                     Text(
                       'Send a Gift',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
@@ -452,19 +501,35 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
               ],
             ),
             const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'all', label: Text('All')),
-                ButtonSegment(value: 'classic', label: Text('Classic')),
-                ButtonSegment(value: 'fameverse', label: Text('Fameverse')),
-              ],
-              selected: {_category},
-              onSelectionChanged: (value) =>
-                  setState(() => _category = value.first),
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 7),
+                itemBuilder: (context, index) {
+                  final item = _categories[index];
+                  return ChoiceChip(
+                    label: Text(item.$2),
+                    selected: _category == item.$1,
+                    onSelected: (_) {
+                      final visible = item.$1 == 'all'
+                          ? fvGiftCatalog
+                          : fvGiftCatalog.where((gift) => gift.category == item.$1).toList();
+                      setState(() {
+                        _category = item.$1;
+                        if (visible.isNotEmpty && !visible.any((gift) => gift.id == _selectedId)) {
+                          _selectedId = visible.first.id;
+                        }
+                      });
+                    },
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 210,
+              height: 220,
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -477,6 +542,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   final gift = _visible[index];
                   final selected = gift.id == _selectedId;
                   return InkWell(
+                    key: Key('gift-tile-${gift.id}'),
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => setState(() => _selectedId = gift.id),
                     child: Container(
@@ -502,17 +568,11 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
                           ),
                           Text(
                             '🪙 ${gift.cost}',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFFCFC4D5),
-                            ),
+                            style: const TextStyle(fontSize: 10, color: Color(0xFFCFC4D5)),
                           ),
                         ],
                       ),
@@ -544,18 +604,24 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               children: [
                 const Text(
-                  'Beta tester balance',
+                  'Fame Coin balance',
                   style: TextStyle(color: Color(0xFFAFA4B6), fontSize: 12),
                 ),
                 const Spacer(),
+                if (widget.onExchange != null)
+                  TextButton(
+                    key: const Key('gift-tray-coin-exchange'),
+                    onPressed: _sending ? null : widget.onExchange,
+                    child: const Text('Exchange earnings'),
+                  ),
                 if (widget.canRefill)
                   TextButton(
                     onPressed: _sending || _refilling ? null : _refill,
-                    child: Text(_refilling ? 'Adding…' : '+10K'),
+                    child: Text(_refilling ? 'Adding…' : '+10K QA'),
                   ),
               ],
             ),
