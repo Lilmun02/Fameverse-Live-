@@ -137,6 +137,7 @@ class _CreatorStoriesScreenState extends State<CreatorStoriesScreen> {
             maxDuration: const Duration(seconds: 30),
           );
     if (file == null) return;
+    if (!mounted) return;
 
     final captionController = TextEditingController();
     final caption = await showDialog<String>(
