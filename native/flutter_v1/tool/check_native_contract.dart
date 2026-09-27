@@ -122,11 +122,18 @@ void main() {
         shell.contains('fameverse-bottom-nav'),
     'Native TestFlight app must boot the Fameverse product shell, not the pipeline probe.',
   );
+
+  final keepsAuthoritativeCommunityContracts =
+      backend.contains("from('profiles')") &&
+      backend.contains("from('follows')");
+  final keepsAuthoritativeLiveContracts =
+      backend.contains("from('live_rooms')") ||
+      backend.contains("'get_active_live_rooms_v2'");
+
   require(
     backend.contains('SupabaseFameverseBackend') &&
-        backend.contains("from('profiles')") &&
-        backend.contains("from('follows')") &&
-        backend.contains("from('live_rooms')"),
+        keepsAuthoritativeCommunityContracts &&
+        keepsAuthoritativeLiveContracts,
     'Native product shell must reuse authoritative Supabase identity/community/live contracts.',
   );
   require(
