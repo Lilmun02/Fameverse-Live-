@@ -144,8 +144,7 @@ class SupabaseFameverseBackend implements FameverseBackend {
   }
 
   @override
-  FvIdentity? get currentIdentity =>
-      _identityFromUser(_client.auth.currentUser);
+  FvIdentity? get currentIdentity => _identityFromUser(_client.auth.currentUser);
 
   @override
   Stream<FvIdentity?> get authChanges => _client.auth.onAuthStateChange.map(
@@ -198,6 +197,26 @@ class SupabaseFameverseBackend implements FameverseBackend {
       bio: (row['bio'] as String?) ?? '',
       avatarUrl: row['avatar_url'] as String?,
       createdAt: DateTime.tryParse((row['created_at'] as String?) ?? ''),
+    );
+  }
+
+  FvProfile _profileFromRpcMap(
+    Map<String, dynamic> row, {
+    String prefix = '',
+  }) {
+    final username = row['${prefix}username'] as String?;
+    final displayName = (row['${prefix}display_name'] as String?)?.trim();
+    return FvProfile(
+      id: (row[prefix.isEmpty ? 'id' : 'host_user_id'] as String),
+      displayName: displayName == null || displayName.isEmpty
+          ? (username?.isNotEmpty == true ? username! : 'Fameverse creator')
+          : displayName,
+      username: username,
+      bio: (row['${prefix}bio'] as String?) ?? '',
+      avatarUrl: row['${prefix}avatar_url'] as String?,
+      createdAt: DateTime.tryParse(
+        (row['${prefix}created_at'] as String?) ?? '',
+      ),
     );
   }
 
@@ -317,19 +336,23 @@ class SupabaseFameverseBackend implements FameverseBackend {
 
   @override
   Future<FvFollowNetwork> loadFollowNetwork(String userId) async {
-    final incomingRows = await _client
-        .from('follows')
-        .select('follower_id')
-        .eq('following_id', userId);
-    final outgoingRows = await _client
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', userId);
+    final results = await Future.wait<dynamic>([
+      _client
+          .from('follows')
+          .select('follower_id')
+          .eq('following_id', userId),
+      _client
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', userId),
+    ]);
+    final incomingRows = results[0] as List;
+    final outgoingRows = results[1] as List;
 
-    final followerIds = (incomingRows as List)
+    final followerIds = incomingRows
         .map((row) => (row as Map)['follower_id'] as String)
         .toSet();
-    final followingIds = (outgoingRows as List)
+    final followingIds = outgoingRows
         .map((row) => (row as Map)['following_id'] as String)
         .toSet();
     final profiles = await _profilesForIds({...followerIds, ...followingIds});
@@ -378,43 +401,20 @@ class SupabaseFameverseBackend implements FameverseBackend {
   Future<List<FvCreator>> listRecommendedCreators({
     required String excludeUserId,
   }) async {
-    final profileRows = await _client
-        .from('profiles')
-        .select(_profileFields)
-        .order('created_at', ascending: false)
-        .limit(40);
-    final followRows = await _client.from('follows').select('following_id');
-
-    final followerCounts = <String, int>{};
-    for (final raw in followRows as List) {
-      final id = (raw as Map)['following_id'] as String;
-      followerCounts[id] = (followerCounts[id] ?? 0) + 1;
-    }
-
-    final creators =
-        (profileRows as List)
-            .map(
-              (row) => _profileFromMap(Map<String, dynamic>.from(row as Map)),
-            )
-            .where((profile) => profile.id != excludeUserId)
-            .map(
-              (profile) => FvCreator(
-                profile: profile,
-                followerCount: followerCounts[profile.id] ?? 0,
-              ),
-            )
-            .toList()
-          ..sort((a, b) {
-            final count = b.followerCount.compareTo(a.followerCount);
-            if (count != 0) return count;
-            final aDate =
-                a.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            final bDate =
-                b.profile.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-            return bDate.compareTo(aDate);
-          });
-
-    return creators.take(12).toList();
+    final data = await _client.rpc(
+      'get_recommended_creators_v2',
+      params: <String, dynamic>{
+        'p_exclude_user_id': excludeUserId,
+        'p_limit': 12,
+      },
+    );
+    return (data as List? ?? const []).map((raw) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      return FvCreator(
+        profile: _profileFromRpcMap(row),
+        followerCount: (row['follower_count'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
   }
 
   @override
@@ -425,51 +425,21 @@ class SupabaseFameverseBackend implements FameverseBackend {
         .subtract(const Duration(seconds: 45))
         .toUtc()
         .toIso8601String();
-    final roomRows = await _client
-        .from('live_rooms')
-        .select(
-          'id, host_user_id, title, goal, wishlist_gift_ids, heartbeat_at, started_at',
-        )
-        .eq('status', 'live')
-        .gte('heartbeat_at', cutoff)
-        .order('started_at', ascending: false);
+    final data = await _client.rpc(
+      'get_active_live_rooms_v2',
+      params: <String, dynamic>{
+        'p_exclude_user_id': excludeUserId,
+        'p_heartbeat_cutoff': cutoff,
+        'p_limit': 100,
+      },
+    );
 
-    final visible = (roomRows as List)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .where((row) => row['host_user_id'] != excludeUserId)
-        .toList();
-    if (visible.isEmpty) return const [];
-
-    final hostIds = visible.map((row) => row['host_user_id'] as String).toSet();
-    final roomIds = visible.map((row) => row['id'] as String).toSet();
-    final hosts = await _profilesForIds(hostIds);
-    final hostById = {for (final host in hosts) host.id: host};
-    final tapRows = await _client
-        .from('live_tap_totals')
-        .select('room_id, raw_taps')
-        .inFilter('room_id', roomIds.toList());
-    final tapsByRoom = <String, int>{};
-    for (final raw in tapRows as List) {
-      final map = raw as Map;
-      tapsByRoom[map['room_id'] as String] =
-          (map['raw_taps'] as num?)?.toInt() ?? 0;
-    }
-
-    return visible.map((room) {
+    return (data as List? ?? const []).map((raw) {
+      final room = Map<String, dynamic>.from(raw as Map);
       final hostUserId = room['host_user_id'] as String;
-      final host =
-          hostById[hostUserId] ??
-          FvProfile(
-            id: hostUserId,
-            displayName: 'Fameverse creator',
-            username: null,
-            bio: '',
-            avatarUrl: null,
-            createdAt: null,
-          );
       final rawWishlist = room['wishlist_gift_ids'];
       return FvLiveRoom(
-        id: room['id'] as String,
+        id: room['room_id'] as String,
         hostUserId: hostUserId,
         title: ((room['title'] as String?)?.trim().isNotEmpty ?? false)
             ? room['title'] as String
@@ -478,8 +448,8 @@ class SupabaseFameverseBackend implements FameverseBackend {
         wishlistGiftIds: rawWishlist is List
             ? rawWishlist.map((item) => item.toString()).toList()
             : const [],
-        fameTaps: tapsByRoom[room['id'] as String] ?? 0,
-        host: host,
+        fameTaps: (room['fame_taps'] as num?)?.toInt() ?? 0,
+        host: _profileFromRpcMap(room, prefix: 'host_'),
       );
     }).toList();
   }
