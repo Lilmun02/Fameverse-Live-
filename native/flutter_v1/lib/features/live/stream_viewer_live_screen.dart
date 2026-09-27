@@ -78,7 +78,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _loadFollowState() async {
     try {
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) {
         setState(
           () => _following = network.followingIds.contains(
