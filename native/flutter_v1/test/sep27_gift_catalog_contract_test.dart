@@ -56,7 +56,9 @@ void main() {
     ).readAsStringSync();
 
     expect(visual, contains('deterministic poster'));
-    expect(components, contains('never a paused remote frame'));
+    expect(components, contains('deterministic native art/text'));
+    expect(components, contains('paused remote frame'));
+    expect(components, contains('cannot flash black'));
     expect(components, contains('lightweight-gift-'));
   });
 }
