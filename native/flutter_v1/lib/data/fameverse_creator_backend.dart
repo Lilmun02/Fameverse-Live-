@@ -204,11 +204,10 @@ class SupabaseFameverseCreatorBackend {
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
-    final role = (row?['role'] as String?)?.trim().toLowerCase();
-    // Private creator-control UI treats the configured Fameverse admin account
-    // as privileged. The general app backend still preserves the literal admin
-    // role so gift/test funding provenance remains distinguishable.
-    return role == 'admin' ? 'owner' : role;
+    // Preserve the authoritative role. Admin is privileged for beta testing
+    // surfaces such as gifts/First Verse, but money moderation remains owner-only
+    // in both the UI and the server RPCs.
+    return (row?['role'] as String?)?.trim().toLowerCase();
   }
 
   Future<FvCreatorPayoutMethod?> loadPayoutMethod() async {
