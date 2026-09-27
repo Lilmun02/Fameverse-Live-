@@ -76,7 +76,7 @@ class FvFameTapMark extends StatelessWidget {
             child: Text(
               'F',
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFFE1B5FF),
                 fontSize: size * .43,
                 height: 1,
                 fontWeight: FontWeight.w900,
