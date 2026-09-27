@@ -86,7 +86,10 @@ class _FameverseReleaseShellState extends State<FameverseReleaseShell> {
     if (!_betaStatus.enrolled) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => FirstVerseBetaScreen(backend: _betaBackend),
+        builder: (context) => FirstVerseBetaScreen(
+          backend: _betaBackend,
+          economyBackend: _economyBackend,
+        ),
       ),
     );
     await _loadReleaseAccess();
