@@ -111,7 +111,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
     final parsed = double.tryParse(dollars);
     final cents = parsed == null ? 0 : (parsed * 100).round();
     if (cents < 1) {
-      _message('Enter at least $0.01.');
+      _message(r'Enter at least $0.01.');
       return;
     }
     await _confirmExchange(cents);
@@ -215,7 +215,10 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
                 )
               else if (_error != null)
                 _ExchangeCard(
-                  child: Text(_error!, style: const TextStyle(color: Color(0xFFB9AEC1))),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Color(0xFFB9AEC1)),
+                  ),
                 )
               else ...[
                 Row(
@@ -350,9 +353,15 @@ class _Balance extends StatelessWidget {
         children: [
           Icon(icon, color: const Color(0xFFC580FF)),
           const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Color(0xFF9E92A4), fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF9E92A4), fontSize: 11),
+          ),
         ],
       ),
     );
@@ -403,7 +412,13 @@ class _HistoryTile extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 3),
-                Text(stamp, style: const TextStyle(color: Color(0xFF968A9B), fontSize: 11)),
+                Text(
+                  stamp,
+                  style: const TextStyle(
+                    color: Color(0xFF968A9B),
+                    fontSize: 11,
+                  ),
+                ),
               ],
             ),
           ),
@@ -423,7 +438,12 @@ class _ConfirmRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Text(label, style: const TextStyle(color: Color(0xFFB7ABBE)))),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(color: Color(0xFFB7ABBE)),
+          ),
+        ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
       ],
     );
