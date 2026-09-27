@@ -8,6 +8,7 @@ import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_beta_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import '../../data/fameverse_story_backend.dart';
 import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_screen.dart';
@@ -16,6 +17,7 @@ import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
 import '../profile/native_profile_screen.dart';
+import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_screen.dart';
 
@@ -256,6 +258,18 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     );
   }
 
+  void _openStories(FvProfile profile) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => CreatorStoriesScreen(
+          backend: SupabaseFameverseStoryBackend(Supabase.instance.client),
+          identity: widget.identity,
+          profile: profile,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openFirstVerse() async {
     final backend = _betaBackend;
     if (!_betaStatus.enrolled || backend == null) return;
@@ -337,6 +351,29 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
           createdAt: null,
         );
 
+    Widget? floatingActionButton;
+    if (_tab == 0) {
+      floatingActionButton = _HomeStoryLauncher(
+        profile: profile,
+        onTap: () => _openStories(profile),
+      );
+    } else if (_tab == 3 && _betaStatus.enrolled) {
+      floatingActionButton = FloatingActionButton.extended(
+        key: const Key('first-verse-tester-entry'),
+        onPressed: _openFirstVerse,
+        icon: Icon(
+          _betaStatus.badgeUnlocked
+              ? Icons.auto_awesome_rounded
+              : Icons.lock_outline_rounded,
+        ),
+        label: Text(
+          _betaStatus.badgeUnlocked
+              ? 'First Verse'
+              : 'First Verse ${_betaStatus.completedRequired}/${_betaStatus.requiredTotal}',
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _tab,
@@ -388,22 +425,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
           ),
         ],
       ),
-      floatingActionButton: _tab == 3 && _betaStatus.enrolled
-          ? FloatingActionButton.extended(
-              key: const Key('first-verse-tester-entry'),
-              onPressed: _openFirstVerse,
-              icon: Icon(
-                _betaStatus.badgeUnlocked
-                    ? Icons.auto_awesome_rounded
-                    : Icons.lock_outline_rounded,
-              ),
-              label: Text(
-                _betaStatus.badgeUnlocked
-                    ? 'First Verse'
-                    : 'First Verse ${_betaStatus.completedRequired}/${_betaStatus.requiredTotal}',
-              ),
-            )
-          : null,
+      floatingActionButton: floatingActionButton,
       bottomNavigationBar: NavigationBar(
         key: const Key('fameverse-bottom-nav'),
         selectedIndex: _tab,
@@ -430,6 +452,73 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             label: 'Profile',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeStoryLauncher extends StatelessWidget {
+  const _HomeStoryLauncher({required this.profile, required this.onTap});
+
+  final FvProfile profile;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Open Creator Stories',
+      child: GestureDetector(
+        key: const Key('home-stories-ring'),
+        onTap: onTap,
+        child: Container(
+          width: 64,
+          height: 64,
+          padding: const EdgeInsets.all(3),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [Color(0xFFF05A86), Color(0xFFB95EFF), Color(0xFF604BFF)],
+            ),
+            boxShadow: [BoxShadow(color: Color(0x665E1B9B), blurRadius: 14)],
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black,
+            ),
+            child: ClipOval(
+              child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      profile.avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _StoryLauncherFallback(initial: profile.initial),
+                    )
+                  : _StoryLauncherFallback(initial: profile.initial),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryLauncherFallback extends StatelessWidget {
+  const _StoryLauncherFallback({required this.initial});
+
+  final String initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFF352044),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
