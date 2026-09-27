@@ -83,7 +83,16 @@ void main() {
     },
   );
 
-  test('gift UI has an explicit access gate and owner/admin-only refill', () {
+  test('Live wires comment, gift and cohost First Verse mission telemetry', () {
+    final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
+
+    expect(viewer, contains("_recordBetaMission('send_comment')"));
+    expect(viewer, contains("_recordBetaMission('send_gift')"));
+    expect(viewer, contains("_recordBetaMission('cohost_session')"));
+    expect(viewer, contains("'record_beta_test_mission'"));
+  });
+
+  test('gift UI stays exclusive to owner/admin beta roles', () {
     final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
 
     expect(
@@ -92,10 +101,10 @@ void main() {
         "bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';",
       ),
     );
-    expect(viewer, contains('final bool giftAccess;'));
-    expect(viewer, contains('if (widget.giftAccess) ...['));
+    expect(viewer, contains('bool get _giftEnabled => widget.giftAccess && _canRefill;'));
+    expect(viewer, contains('if (_giftEnabled) ...['));
     expect(viewer, contains("Key('viewer-gift-button')"));
-    expect(viewer, contains('if (!widget.giftAccess) return false;'));
+    expect(viewer, contains('if (!_giftEnabled) return false;'));
     expect(viewer, contains('You cannot gift your own live.'));
   });
 
