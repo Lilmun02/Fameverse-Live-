@@ -188,10 +188,10 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
       ),
     );
     controller.dispose();
-    final cleaned = username
-        ?.trim()
-        .toLowerCase()
-        .replaceFirst(RegExp(r'^@'), '');
+    final cleaned = username?.trim().toLowerCase().replaceFirst(
+      RegExp(r'^@'),
+      '',
+    );
     if (cleaned == null || cleaned.isEmpty) return;
 
     setState(() => _moderatorBusy = true);
@@ -480,7 +480,8 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                 const SizedBox(height: 10),
                 _StudioInfoCard(
                   icon: Icons.insights_rounded,
-                  title: '$totalGifts gifts across ${_liveHistory.length} Live sessions',
+                  title:
+                      '$totalGifts gifts across ${_liveHistory.length} Live sessions',
                   body:
                       'These server-authoritative Live metrics are the foundation for creator progression. No hidden score or fake tier is being shown before that program is finalized.',
                 ),
@@ -489,12 +490,13 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                   const _StudioInfoCard(
                     icon: Icons.video_library_outlined,
                     title: 'No Live history yet',
-                    body: 'Your completed Live sessions will appear here with taps and gift activity.',
+                    body:
+                        'Your completed Live sessions will appear here with taps and gift activity.',
                   )
                 else
-                  ..._liveHistory.take(5).map(
-                    (item) => _LiveHistoryTile(item: item),
-                  ),
+                  ..._liveHistory
+                      .take(5)
+                      .map((item) => _LiveHistoryTile(item: item)),
                 const SizedBox(height: 26),
                 const _SectionLabel('MODERATORS'),
                 const SizedBox(height: 10),
@@ -511,12 +513,13 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                   const _StudioInfoCard(
                     icon: Icons.card_giftcard_outlined,
                     title: 'No gift activity yet',
-                    body: 'Recent gifts received during your Live sessions will appear here.',
+                    body:
+                        'Recent gifts received during your Live sessions will appear here.',
                   )
                 else
-                  ..._giftActivity.take(8).map(
-                    (item) => _GiftActivityTile(item: item),
-                  ),
+                  ..._giftActivity
+                      .take(8)
+                      .map((item) => _GiftActivityTile(item: item)),
                 const SizedBox(height: 26),
                 if (_isOwner) ...[
                   const _SectionLabel('OWNER QA'),
@@ -664,7 +667,11 @@ class _StudioHero extends StatelessWidget {
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.label, required this.value, required this.icon});
+  const _MetricCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
   final String label;
   final String value;
@@ -680,9 +687,15 @@ class _MetricCard extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: const Color(0xFFB784FF)),
           const SizedBox(height: 10),
-          Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 10)),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 10),
+          ),
         ],
       ),
     );
@@ -726,7 +739,10 @@ class _LiveHistoryTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   '${_dateLabel(item.startedAt)} · ${_compactNumber(item.rawTaps)} taps · ${item.giftCount} gifts · ${item.giftCoins} coins',
-                  style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 11),
+                  style: const TextStyle(
+                    color: Color(0xFFAFA4B8),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -753,7 +769,11 @@ class _GiftActivityTile extends StatelessWidget {
         children: [
           const CircleAvatar(
             backgroundColor: Color(0xFF342047),
-            child: Icon(Icons.card_giftcard_rounded, size: 19, color: Color(0xFFC69BFF)),
+            child: Icon(
+              Icons.card_giftcard_rounded,
+              size: 19,
+              color: Color(0xFFC69BFF),
+            ),
           ),
           const SizedBox(width: 11),
           Expanded(
@@ -769,7 +789,10 @@ class _GiftActivityTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${item.giftId} ×${item.quantity} · ${item.coinsSpent} coins · ${_dateLabel(item.createdAt)}',
-                  style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 11),
+                  style: const TextStyle(
+                    color: Color(0xFFAFA4B8),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -809,7 +832,10 @@ class _ModeratorCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${moderators.length}/3 Live moderators',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               TextButton.icon(
@@ -823,7 +849,11 @@ class _ModeratorCard extends StatelessWidget {
           const SizedBox(height: 6),
           const Text(
             'Moderators can help manage your Live sessions. The beta limit is three and assignments are enforced by the backend.',
-            style: TextStyle(color: Color(0xFFAFA4B8), fontSize: 11, height: 1.4),
+            style: TextStyle(
+              color: Color(0xFFAFA4B8),
+              fontSize: 11,
+              height: 1.4,
+            ),
           ),
           if (moderators.isEmpty) ...[
             const SizedBox(height: 12),
