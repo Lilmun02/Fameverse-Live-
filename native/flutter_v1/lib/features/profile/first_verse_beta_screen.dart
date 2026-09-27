@@ -76,14 +76,18 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
     }
   }
 
+  void _message(String value) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(value)));
+  }
+
   Future<void> _copyReferralCode() async {
     final code = _referralSummary.referralCode;
     if (code == null || code.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: code));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Referral code copied.')));
+    _message('Referral code copied.');
   }
 
   Future<void> _claimReferralCode() async {
@@ -109,12 +113,11 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
       setState(() => _referralBusy = false);
       await _load();
       if (!mounted) return;
-      final message = result.accepted
-          ? 'Referral qualified: you received ${result.referredRewardCoins} promo Fame Coins.'
-          : 'That account already used a referral reward.';
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(message)));
+      _message(
+        result.accepted
+            ? 'Referral qualified: you received ${result.referredRewardCoins} promo Fame Coins.'
+            : 'That account already used a referral reward.',
+      );
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -126,8 +129,9 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
 
   String _friendlyReferralError(Object error) {
     final text = error.toString().toLowerCase();
-    if (text.contains('self referral'))
+    if (text.contains('self referral')) {
       return 'You cannot use your own referral code.';
+    }
     if (text.contains('complete your fameverse profile')) {
       return 'Complete your Fameverse name and username before claiming referral coins.';
     }
@@ -170,7 +174,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   icon: Icons.lock_outline_rounded,
                   title: 'Beta access is not active',
                   body:
-                      'First Verse progress is only available to enrolled external Fameverse beta testers.',
+                      'First Verse progress is only available to enrolled Fameverse beta testers and privileged QA accounts.',
                 )
               else ...[
                 _FirstVerseHero(status: status),
@@ -214,7 +218,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   onClaim: _claimReferralCode,
                 ),
                 const SizedBox(height: 14),
-                const _TesterSafetyNote(),
+                _TesterSafetyNote(privileged: status.privilegedAccess),
               ],
             ],
           ),
@@ -232,13 +236,15 @@ class _FirstVerseHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final unlocked = status.badgeUnlocked;
+    final ownerPreview = status.privilegedAccess && !unlocked;
+    final visible = unlocked || status.privilegedAccess;
     return Container(
       key: const Key('first-verse-progress-card'),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: unlocked ? const Color(0xFFB96BFF) : const Color(0xFF4A3155),
+          color: visible ? const Color(0xFFB96BFF) : const Color(0xFF4A3155),
         ),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -249,17 +255,45 @@ class _FirstVerseHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (status.privilegedAccess) ...[
+            Container(
+              key: const Key('first-verse-owner-preview'),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B1D50),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0xFF744793)),
+              ),
+              child: const Text(
+                'OWNER / ADMIN PREVIEW · NO FEATURE LOCKS',
+                style: TextStyle(
+                  color: Color(0xFFE4C4FF),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .8,
+                ),
+              ),
+            ),
+            const SizedBox(height: 13),
+          ],
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _BadgePreview(unlocked: unlocked),
+              _BadgePreview(
+                unlocked: unlocked,
+                privilegedPreview: status.privilegedAccess,
+              ),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      unlocked ? 'First Verse earned' : 'Your badge is waiting',
+                      unlocked
+                          ? 'First Verse earned'
+                          : ownerPreview
+                          ? 'First Verse owner preview'
+                          : 'Your badge is waiting',
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -268,7 +302,9 @@ class _FirstVerseHero extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       unlocked
-                          ? 'You completed the required external beta checks. This legacy badge stays with your account.'
+                          ? 'You completed the required beta checks. This legacy badge stays with your account.'
+                          : ownerPreview
+                          ? 'You can inspect the real badge art and every First Verse surface without faking mission completion or awarding the badge.'
                           : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
@@ -334,9 +370,13 @@ class _FirstVerseHero extends StatelessWidget {
 }
 
 class _BadgePreview extends StatelessWidget {
-  const _BadgePreview({required this.unlocked});
+  const _BadgePreview({
+    required this.unlocked,
+    required this.privilegedPreview,
+  });
 
   final bool unlocked;
+  final bool privilegedPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +413,7 @@ class _BadgePreview extends StatelessWidget {
       ),
     );
 
-    if (unlocked) return badge;
+    if (unlocked || privilegedPreview) return badge;
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -420,56 +460,30 @@ class _MissionCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: completed
-                  ? const Color(0xFF49215F)
-                  : const Color(0xFF221B26),
-            ),
-            child: Icon(
-              completed ? Icons.check_rounded : Icons.lock_outline_rounded,
-              size: 20,
-              color: completed
-                  ? const Color(0xFFD7A0FF)
-                  : const Color(0xFF817686),
-            ),
+          Icon(
+            completed ? Icons.check_circle_rounded : Icons.circle_outlined,
+            color: completed
+                ? const Color(0xFFB86AFF)
+                : const Color(0xFF766A7A),
+            size: 21,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 11),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        mission.title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                    if (!mission.required)
-                      const Text(
-                        'BONUS',
-                        style: TextStyle(
-                          color: Color(0xFFA772C8),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                  ],
+                Text(
+                  mission.title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   mission.detail,
                   style: const TextStyle(
-                    color: Color(0xFF9F94A3),
+                    color: Color(0xFF9D919F),
                     fontSize: 11,
                     height: 1.35,
                   ),
@@ -509,7 +523,7 @@ class _ReferralCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF141017),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF4A3155)),
+        border: Border.all(color: const Color(0xFF3A2942)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,153 +532,74 @@ class _ReferralCard extends StatelessWidget {
             'Bring someone into Fameverse',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           const Text(
-            'You get 100 promo Fame Coins for each qualified referral. The person you bring gets 50 promo Fame Coins.',
-            key: Key('first-verse-referral-reward-copy'),
+            'You get 100 promo Fame Coins after a qualified referral. The person you invite gets 50 promo Fame Coins.',
             style: TextStyle(
-              color: Color(0xFFB5A9B9),
+              color: Color(0xFFB7A9BC),
               fontSize: 12,
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0E0B10),
+              color: const Color(0xFF211528),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF35273C)),
             ),
             child: Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'YOUR REFERRAL CODE',
-                        style: TextStyle(
-                          color: Color(0xFF8F8394),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        code ?? 'Generating…',
-                        key: const Key('first-verse-referral-code'),
-                        style: const TextStyle(
-                          color: Color(0xFFE1B7FF),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.4,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    code ?? 'Referral code loading…',
+                    key: const Key('first-verse-referral-code'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                    ),
                   ),
                 ),
                 IconButton(
-                  key: const Key('first-verse-copy-referral-code'),
                   onPressed: code == null ? null : onCopy,
                   tooltip: 'Copy referral code',
-                  icon: const Icon(Icons.copy_rounded),
+                  icon: const Icon(Icons.copy_rounded, size: 18),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             '${summary.qualifiedReferrals} qualified · ${summary.promoCoinsEarned} promo coins earned',
-            style: const TextStyle(
-              color: Color(0xFFD0B3E3),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(color: Color(0xFF948899), fontSize: 11),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Have a referral code?',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 7),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const Key('first-verse-referral-input'),
-                  controller: controller,
-                  enabled: !busy,
-                  textCapitalization: TextCapitalization.characters,
-                  autocorrect: false,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => onClaim(),
-                  decoration: const InputDecoration(
-                    hintText: 'Enter code',
-                    isDense: true,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                key: const Key('first-verse-claim-referral'),
-                onPressed: busy ? null : onClaim,
-                child: Text(busy ? 'Checking…' : 'Apply'),
-              ),
-            ],
-          ),
-          if (error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              error!,
-              style: const TextStyle(color: Color(0xFFFF8D9F), fontSize: 11),
+          TextField(
+            key: const Key('first-verse-referral-input'),
+            controller: controller,
+            enabled: !busy,
+            textCapitalization: TextCapitalization.characters,
+            decoration: InputDecoration(
+              labelText: 'Have a referral code?',
+              hintText: 'Enter code',
+              errorText: error,
             ),
-          ],
-          const SizedBox(height: 14),
-          const _PromoCoinRule(),
-          const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 9),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: busy ? null : onClaim,
+              child: Text(busy ? 'Applying…' : 'Apply referral code'),
+            ),
+          ),
+          const SizedBox(height: 12),
           const Text(
-            'Referral activity is separate from your First Verse badge missions and does not count toward badge progress.',
-            key: Key('first-verse-referral-not-mission'),
+            'Promo Fame Coins are gifting-only. They cannot be transferred, transformed, replaced, exchanged, or cashed out. Gifts funded with promo/referral coins do not create creator cash earnings. Referral activity does not count toward badge progress.',
             style: TextStyle(
-              color: Color(0xFF8F8493),
-              fontSize: 10,
-              height: 1.35,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PromoCoinRule extends StatelessWidget {
-  const _PromoCoinRule();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const Key('first-verse-promo-coin-rule'),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF211328),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF51325F)),
-      ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.redeem_rounded, color: Color(0xFFD19BFF), size: 19),
-          SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              'Promo Fame Coins are gifting-only. They cannot be transferred, exchanged, converted, replaced, or cashed out. Gifts funded by promo coins do not create creator cash earnings.',
-              style: TextStyle(
-                color: Color(0xFFC6B6CC),
-                fontSize: 10.5,
-                height: 1.4,
-              ),
+              color: Color(0xFF8F8394),
+              fontSize: 10.5,
+              height: 1.4,
             ),
           ),
         ],
@@ -674,52 +609,28 @@ class _PromoCoinRule extends StatelessWidget {
 }
 
 class _TesterSafetyNote extends StatelessWidget {
-  const _TesterSafetyNote();
+  const _TesterSafetyNote({required this.privileged});
+
+  final bool privileged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF101015),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF2F2933)),
+        color: const Color(0xFF0E0B11),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2B222F)),
       ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.science_outlined, color: Color(0xFFB783D4), size: 20),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'First Verse missions cover normal app testing only. Real-money payout operations and private internal controls are never part of this external beta checklist.',
-              style: TextStyle(
-                color: Color(0xFFA59AA8),
-                fontSize: 11,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFF8D8191),
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.3,
+      child: Text(
+        privileged
+            ? 'Owner/admin access is never blocked by First Verse. Mission progress remains real so you can test the same achievement flow without granting yourself a fake earned badge.'
+            : 'First Verse unlocks only from the required beta missions. Payouts, owner tools, and internal controls are never beta missions.',
+        style: const TextStyle(
+          color: Color(0xFF928795),
+          fontSize: 10.5,
+          height: 1.4,
+        ),
       ),
     );
   }
@@ -730,8 +641,8 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 220,
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 56),
       child: Center(child: CircularProgressIndicator()),
     );
   }
@@ -753,30 +664,54 @@ class _MessageCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF151116),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFF342A39)),
+        color: const Color(0xFF141017),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF34283B)),
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFFB37BD6), size: 32),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            body,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF9F94A3),
-              fontSize: 12,
-              height: 1.4,
+          Icon(icon, color: const Color(0xFFC783FF)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    color: Color(0xFFA99DAE),
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.value);
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      value,
+      style: const TextStyle(
+        color: Color(0xFF9A8BA1),
+        fontSize: 10,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 1.3,
       ),
     );
   }
