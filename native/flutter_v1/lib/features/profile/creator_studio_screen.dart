@@ -137,14 +137,17 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
     );
     controller.dispose();
     if (email == null) return;
-    if (!email.contains('@') || !email.substring(email.indexOf('@') + 1).contains('.')) {
+    if (!email.contains('@') ||
+        !email.substring(email.indexOf('@') + 1).contains('.')) {
       _message('Enter a valid PayPal email address.');
       return;
     }
 
     setState(() => _busy = true);
     try {
-      final method = await widget.backend.setPayoutMethod(recipientEmail: email);
+      final method = await widget.backend.setPayoutMethod(
+        recipientEmail: email,
+      );
       if (mounted) setState(() => _payoutMethod = method);
       _message('PayPal payout method saved.');
       await _refresh();
@@ -830,7 +833,8 @@ class _PayoutMethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final configured = method?.enabled == true && method!.recipientEmail.isNotEmpty;
+    final configured =
+        method?.enabled == true && method!.recipientEmail.isNotEmpty;
     return Container(
       key: const Key('creator-paypal-payout-method'),
       padding: const EdgeInsets.all(18),
@@ -857,7 +861,9 @@ class _PayoutMethodCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  configured ? method!.recipientEmail : 'No PayPal payout email added',
+                  configured
+                      ? method!.recipientEmail
+                      : 'No PayPal payout email added',
                   style: TextStyle(
                     color: configured
                         ? const Color(0xFFDAD0DF)
@@ -869,7 +875,11 @@ class _PayoutMethodCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 const Text(
                   'Fame Coins are not cashable. Approved Creator Earnings are paid separately.',
-                  style: TextStyle(color: Color(0xFF93889B), fontSize: 10, height: 1.3),
+                  style: TextStyle(
+                    color: Color(0xFF93889B),
+                    fontSize: 10,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),

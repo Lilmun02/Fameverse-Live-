@@ -2,8 +2,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // Native Fameverse recharge is API-only: Supabase validates the owner QA
-// session and talks directly to PayPal. Vercel/HTML checkout is never part of
-// the payment path.
+// session and talks directly to PayPal. Web/PWA checkout is never part of
+// the payment path. PayPal returns to a non-crediting Supabase acknowledgement
+// page, then the signed-in native app performs the authenticated capture.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
@@ -20,7 +21,6 @@ const CUSTOM_PACK_ID = "owner-qa-custom";
 const CUSTOM_MIN_COINS = 100;
 const CUSTOM_MAX_COINS = 10000;
 const CUSTOM_CENTS_PER_COIN = 1;
-const PAYPAL_RETURN_URL = "https://fameverse-live-jen9qlbv8-aiw-core.vercel.app/paypal-return.html";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
@@ -146,6 +146,7 @@ Deno.serve(async (req: Request) => {
   if (!supabaseUrl || !serviceRoleKey) {
     return json(503, { error: "backend-not-configured" });
   }
+  const paypalReturnUrl = `${supabaseUrl}/functions/v1/paypal-return`;
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -296,8 +297,8 @@ Deno.serve(async (req: Request) => {
                   landing_page: "LOGIN",
                   shipping_preference: "NO_SHIPPING",
                   user_action: "PAY_NOW",
-                  return_url: `${PAYPAL_RETURN_URL}?status=approved`,
-                  cancel_url: `${PAYPAL_RETURN_URL}?status=cancelled`,
+                  return_url: `${paypalReturnUrl}?status=approved`,
+                  cancel_url: `${paypalReturnUrl}?status=cancelled`,
                 },
               },
             },

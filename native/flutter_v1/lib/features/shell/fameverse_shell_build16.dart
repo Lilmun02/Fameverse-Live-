@@ -278,7 +278,9 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     );
     await _recordBetaMission('open_public_profile');
     try {
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) setState(() => _network = network);
     } catch (_) {}
   }
