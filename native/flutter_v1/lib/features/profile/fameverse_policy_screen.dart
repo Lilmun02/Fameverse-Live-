@@ -214,7 +214,8 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                   key: const Key('settings-change-password'),
                   icon: Icons.password_rounded,
                   title: 'Change password',
-                  subtitle: 'Update the password for ${email ?? 'this account'}',
+                  subtitle:
+                      'Update the password for ${email ?? 'this account'}',
                   onTap: _securityBusy ? null : _changePassword,
                 ),
                 _PolicyRow(
