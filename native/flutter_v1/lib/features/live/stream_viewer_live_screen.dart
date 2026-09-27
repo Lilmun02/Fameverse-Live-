@@ -78,9 +78,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _loadFollowState() async {
     try {
-      final network = await widget.backend.loadFollowNetwork(
-        widget.identity.id,
-      );
+      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
       if (mounted) {
         setState(
           () => _following = network.followingIds.contains(
@@ -932,6 +930,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _leave() async {
     if (_leaving) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _leaving = true);
     _queueTapBuffer();
     unawaited(_drainTapQueue());
@@ -953,6 +952,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _exitEndedLive() {
     if (_leaving || !mounted) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _leaving = true);
     _queueTapBuffer();
     unawaited(_drainTapQueue());
@@ -1187,22 +1187,18 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: const Icon(Icons.arrow_upward_rounded),
                             tooltip: 'Send comment',
                           ),
-                          if (_canRefill) ...[
-                            const SizedBox(width: 4),
-                            IconButton.filled(
-                              key: const Key('viewer-gift-button'),
-                              onPressed: _walletReady ? _showGiftTray : null,
-                              style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF211529),
-                                foregroundColor: const Color(0xFFFFC65A),
-                                side: const BorderSide(
-                                  color: Color(0xFF4B365B),
-                                ),
-                              ),
-                              icon: const Icon(Icons.card_giftcard_rounded),
-                              tooltip: 'Gifts',
+                          const SizedBox(width: 4),
+                          IconButton.filled(
+                            key: const Key('viewer-gift-button'),
+                            onPressed: _walletReady ? _showGiftTray : null,
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF211529),
+                              foregroundColor: const Color(0xFFFFC65A),
+                              side: const BorderSide(color: Color(0xFF4B365B)),
                             ),
-                          ],
+                            icon: const Icon(Icons.card_giftcard_rounded),
+                            tooltip: 'Gifts',
+                          ),
                           const SizedBox(width: 4),
                           FvFameActionButton(
                             onPressed: _showFMenu,
