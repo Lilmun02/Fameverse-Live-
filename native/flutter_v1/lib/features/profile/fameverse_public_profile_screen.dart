@@ -244,7 +244,7 @@ class _FameversePublicProfileScreenState
                     style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ),
-              if (_loading && profile != null) ...[
+              if (_loading) ...[
                 const SizedBox(height: 18),
                 const Center(
                   child: SizedBox(
@@ -254,7 +254,7 @@ class _FameversePublicProfileScreenState
                   ),
                 ),
               ],
-              if (_error != null && profile != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: 18),
                 Text(
                   _error!,
