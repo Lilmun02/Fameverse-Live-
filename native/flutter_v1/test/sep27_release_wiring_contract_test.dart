@@ -1,0 +1,92 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+String read(String path) => File(path).readAsStringSync();
+
+void main() {
+  test('release shell actually wires Sep 27 surfaces into app startup', () {
+    final app = read('lib/app/fameverse_app.dart');
+    final shell = read('lib/features/shell/fameverse_release_shell.dart');
+
+    expect(app, contains('FameverseReleaseShell('));
+    expect(shell, contains("Key('release-first-verse-entry')"));
+    expect(shell, contains('FirstVerseBetaScreen('));
+    expect(shell, contains('economyBackend: _economyBackend'));
+    expect(shell, contains("Key('release-coin-exchange-entry')"));
+    expect(shell, contains('CoinExchangeScreen('));
+    expect(shell, contains("Key('release-owner-control-entry')"));
+    expect(shell, contains('OwnerControlPanel()'));
+  });
+
+  test('First Verse exposes real progress, required missions and referral rules', () {
+    final screen = read('lib/features/profile/first_verse_beta_screen.dart');
+    final backend = read('lib/data/fameverse_beta_backend.dart');
+
+    expect(screen, contains("Key('first-verse-progress-bar')"));
+    expect(screen, contains('REQUIRED BETA MISSIONS'));
+    expect(screen, contains('BONUS CHECKS'));
+    expect(screen, contains('INVITE TO FAMEVERSE'));
+    expect(screen, contains('100 promo Fame Coins'));
+    expect(screen, contains('50 promo Fame Coins'));
+    expect(screen, contains('Promo Fame Coins are gifting-only'));
+    expect(screen, contains('do not create creator cash earnings'));
+    expect(screen, contains('does not count toward badge progress'));
+
+    for (final mission in <String>[
+      'complete_profile',
+      'browse_home',
+      'browse_discover',
+      'open_public_profile',
+      'follow_creator',
+      'join_live',
+      'send_comment',
+      'view_story',
+    ]) {
+      expect(backend, contains("'$mission'"));
+    }
+    expect(backend, contains("'send_gift'"));
+    expect(backend, contains("'cohost_session'"));
+    expect(backend, isNot(contains("key: 'payout")));
+  });
+
+  test('gift tray stays owner/admin-only in the current beta UI', () {
+    final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
+
+    expect(
+      viewer,
+      contains(
+        "bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';",
+      ),
+    );
+    expect(viewer, contains('if (_canRefill) ...['));
+    expect(viewer, contains("Key('viewer-gift-button')"));
+    expect(viewer, contains('You cannot gift your own live.'));
+  });
+
+  test('promo/test/referral gifts cannot create creator cash earnings', () {
+    final migration = read(
+      '../../supabase/migrations/20260927_enforce_zero_promo_creator_earnings.sql',
+    );
+
+    expect(migration, contains('promo/test/referral coins create zero creator earnings'));
+    expect(migration, contains("'promo_first_zero_promo_earnings'"));
+    expect(migration, contains('v_cash_spent > 0'));
+    expect(migration, contains('0::bigint'));
+    expect(migration, isNot(contains("'owner_promo_bonus'")));
+    expect(migration, isNot(contains('cash_reward_reserve')));
+  });
+
+  test('Fame Algo is routed through the RPCs the native app already calls', () {
+    final backend = read('lib/data/fameverse_backend.dart');
+    final activation = read(
+      '../../supabase/migrations/20260927_activate_fame_algo_v1.sql',
+    );
+
+    expect(backend, contains("'get_recommended_creators_v2'"));
+    expect(backend, contains("'get_active_live_rooms_v2'"));
+    expect(activation, contains('get_recommended_creators_v3'));
+    expect(activation, contains('get_active_live_rooms_v3'));
+    expect(activation, contains('Compatibility alias. Fame Algo v1 is authoritative'));
+  });
+}
