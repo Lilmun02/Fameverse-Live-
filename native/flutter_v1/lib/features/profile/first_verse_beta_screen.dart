@@ -7,11 +7,7 @@ import '../../data/fameverse_beta_backend.dart';
 import '../../data/fameverse_economy_backend.dart';
 
 class FirstVerseBetaScreen extends StatefulWidget {
-  const FirstVerseBetaScreen({
-    this.backend,
-    this.economyBackend,
-    super.key,
-  });
+  const FirstVerseBetaScreen({this.backend, this.economyBackend, super.key});
 
   final FameverseBetaBackend? backend;
   final SupabaseFameverseEconomyBackend? economyBackend;
@@ -95,7 +91,10 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
     if (code.isEmpty || _referralBusy) return;
     final economy = _economyBackend;
     if (economy == null) {
-      setState(() => _referralError = 'Referral service is unavailable in this test shell.');
+      setState(
+        () => _referralError =
+            'Referral service is unavailable in this test shell.',
+      );
       return;
     }
     FocusManager.instance.primaryFocus?.unfocus();
@@ -127,7 +126,8 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
 
   String _friendlyReferralError(Object error) {
     final text = error.toString().toLowerCase();
-    if (text.contains('self referral')) return 'You cannot use your own referral code.';
+    if (text.contains('self referral'))
+      return 'You cannot use your own referral code.';
     if (text.contains('complete your fameverse profile')) {
       return 'Complete your Fameverse name and username before claiming referral coins.';
     }
@@ -522,7 +522,11 @@ class _ReferralCard extends StatelessWidget {
           const Text(
             'You get 100 promo Fame Coins for each qualified referral. The person you bring gets 50 promo Fame Coins.',
             key: Key('first-verse-referral-reward-copy'),
-            style: TextStyle(color: Color(0xFFB5A9B9), fontSize: 12, height: 1.4),
+            style: TextStyle(
+              color: Color(0xFFB5A9B9),
+              fontSize: 12,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 14),
           Container(
@@ -623,7 +627,11 @@ class _ReferralCard extends StatelessWidget {
           const Text(
             'Referral activity is separate from your First Verse badge missions and does not count toward badge progress.',
             key: Key('first-verse-referral-not-mission'),
-            style: TextStyle(color: Color(0xFF8F8493), fontSize: 10, height: 1.35),
+            style: TextStyle(
+              color: Color(0xFF8F8493),
+              fontSize: 10,
+              height: 1.35,
+            ),
           ),
         ],
       ),
@@ -652,7 +660,11 @@ class _PromoCoinRule extends StatelessWidget {
           Expanded(
             child: Text(
               'Promo Fame Coins are gifting-only. They cannot be transferred, exchanged, converted, replaced, or cashed out. Gifts funded by promo coins do not create creator cash earnings.',
-              style: TextStyle(color: Color(0xFFC6B6CC), fontSize: 10.5, height: 1.4),
+              style: TextStyle(
+                color: Color(0xFFC6B6CC),
+                fontSize: 10.5,
+                height: 1.4,
+              ),
             ),
           ),
         ],
