@@ -27,24 +27,27 @@ void main() {
     expect(shell, contains('OwnerControlPanel()'));
   });
 
-  test('owner/admin bypasses tester locks while active testers stay limited', () {
-    final shell = read('lib/features/shell/fameverse_shell_build16.dart');
-    final creatorBackend = read('lib/data/fameverse_creator_backend.dart');
+  test(
+    'owner/admin bypasses tester locks while active testers stay limited',
+    () {
+      final shell = read('lib/features/shell/fameverse_shell_build16.dart');
+      final creatorBackend = read('lib/data/fameverse_creator_backend.dart');
 
-    expect(
-      shell,
-      contains("_accountRole == 'owner' || _accountRole == 'admin'"),
-    );
-    expect(
-      shell,
-      contains(
-        '_betaStatus.enrolled && !_betaStatus.badgeUnlocked && !_isPrivileged',
-      ),
-    );
-    expect(shell, contains('Complete First Verse to unlock Go Live.'));
-    expect(shell, contains('Earn First Verse to unlock Creator Studio.'));
-    expect(creatorBackend, contains("role == 'admin' ? 'owner' : role"));
-  });
+      expect(
+        shell,
+        contains("_accountRole == 'owner' || _accountRole == 'admin'"),
+      );
+      expect(
+        shell,
+        contains(
+          '_betaStatus.enrolled && !_betaStatus.badgeUnlocked && !_isPrivileged',
+        ),
+      );
+      expect(shell, contains('Complete First Verse to unlock Go Live.'));
+      expect(shell, contains('Earn First Verse to unlock Creator Studio.'));
+      expect(creatorBackend, contains("role == 'admin' ? 'owner' : role"));
+    },
+  );
 
   test(
     'First Verse exposes real progress, required missions and referral rules',
