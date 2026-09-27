@@ -130,8 +130,11 @@ class FvBetaProgramStatus {
 
   FvBetaProgramStatus withPrivilegedAccess(bool value) {
     return FvBetaProgramStatus(
-      enrolled: enrolled,
-      memberStatus: memberStatus,
+      // Privileged access is treated as UI enrollment so owner/admin never
+      // disappear behind tester-only navigation. Badge and mission state stay
+      // exactly as the backend reported them.
+      enrolled: enrolled || value,
+      memberStatus: memberStatus ?? (value ? 'privileged_preview' : null),
       completedRequired: completedRequired,
       requiredTotal: requiredTotal,
       completedOptional: completedOptional,
