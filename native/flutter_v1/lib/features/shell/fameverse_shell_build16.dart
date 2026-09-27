@@ -406,13 +406,17 @@ class _HomeStoryLauncher extends StatelessWidget {
           ),
           child: Container(
             padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black,
+            ),
             child: ClipOval(
               child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                   ? Image.network(
                       profile.avatarUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _StoryLauncherFallback(initial: profile.initial),
+                      errorBuilder: (_, __, ___) =>
+                          _StoryLauncherFallback(initial: profile.initial),
                     )
                   : _StoryLauncherFallback(initial: profile.initial),
             ),
@@ -433,7 +437,10 @@ class _StoryLauncherFallback extends StatelessWidget {
     return ColoredBox(
       color: const Color(0xFF352044),
       child: Center(
-        child: Text(initial, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        child: Text(
+          initial,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }

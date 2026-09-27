@@ -146,10 +146,10 @@ class SupabaseFameverseStoryBackend {
       throw StateError('Story video must be MP4 or MOV.');
     }
 
-    final safeExtension = extension
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final safeExtension = extension.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
     final ext = safeExtension.isEmpty
         ? (normalizedType == 'photo' ? 'jpg' : 'mp4')
         : safeExtension;

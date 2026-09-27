@@ -37,12 +37,15 @@ void main() {
     expect(screen, isNot(contains('Repost')));
   });
 
-  test('Viewing a Story can progress First Verse without coupling Stories to beta', () {
-    final backend = File(
-      'lib/data/fameverse_story_backend.dart',
-    ).readAsStringSync();
-    expect(backend, contains("'record_beta_test_mission'"));
-    expect(backend, contains("'p_mission_key': 'view_story'"));
-    expect(backend, contains('catch (_) {}'));
-  });
+  test(
+    'Viewing a Story can progress First Verse without coupling Stories to beta',
+    () {
+      final backend = File(
+        'lib/data/fameverse_story_backend.dart',
+      ).readAsStringSync();
+      expect(backend, contains("'record_beta_test_mission'"));
+      expect(backend, contains("'p_mission_key': 'view_story'"));
+      expect(backend, contains('catch (_) {}'));
+    },
+  );
 }

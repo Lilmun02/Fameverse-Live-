@@ -148,9 +148,7 @@ class _CreatorStoriesScreenState extends State<CreatorStoriesScreen> {
           controller: captionController,
           maxLength: 160,
           maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Optional caption',
-          ),
+          decoration: const InputDecoration(hintText: 'Optional caption'),
         ),
         actions: [
           TextButton(
@@ -234,17 +232,22 @@ class _CreatorStoriesScreenState extends State<CreatorStoriesScreen> {
   Widget build(BuildContext context) {
     final groups = _grouped;
     final myStories = groups[widget.identity.id] ?? const <FvCreatorStory>[];
-    final others = groups.entries
-        .where((entry) => entry.key != widget.identity.id)
-        .toList()
-      ..sort((a, b) {
-        final aUnseen = a.value.any((story) => !story.viewedByMe);
-        final bUnseen = b.value.any((story) => !story.viewedByMe);
-        if (aUnseen != bUnseen) return bUnseen ? 1 : -1;
-        final aTime = a.value.last.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bTime = b.value.last.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bTime.compareTo(aTime);
-      });
+    final others =
+        groups.entries
+            .where((entry) => entry.key != widget.identity.id)
+            .toList()
+          ..sort((a, b) {
+            final aUnseen = a.value.any((story) => !story.viewedByMe);
+            final bUnseen = b.value.any((story) => !story.viewedByMe);
+            if (aUnseen != bUnseen) return bUnseen ? 1 : -1;
+            final aTime =
+                a.value.last.createdAt ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            final bTime =
+                b.value.last.createdAt ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            return bTime.compareTo(aTime);
+          });
 
     return Scaffold(
       key: const Key('creator-stories-screen'),
@@ -301,7 +304,8 @@ class _CreatorStoriesScreenState extends State<CreatorStoriesScreen> {
                 _StoryInfoCard(text: _error!)
               else if (others.isEmpty)
                 const _StoryInfoCard(
-                  text: 'No other active Stories yet. When creators post, their rings will appear here.',
+                  text:
+                      'No other active Stories yet. When creators post, their rings will appear here.',
                 )
               else
                 Wrap(
@@ -386,7 +390,10 @@ class _StoryIntro extends StatelessWidget {
                   hasStory
                       ? '${summary.activeStoryCount} active · ${summary.totalViews} views'
                       : 'Share a photo or short video',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -490,13 +497,17 @@ class _AvatarRing extends StatelessWidget {
           ),
           child: Container(
             padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black,
+            ),
             child: ClipOval(
               child: avatarUrl != null && avatarUrl!.isNotEmpty
                   ? Image.network(
                       avatarUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _AvatarFallback(initial: initial),
+                      errorBuilder: (_, __, ___) =>
+                          _AvatarFallback(initial: initial),
                     )
                   : _AvatarFallback(initial: initial),
             ),
@@ -532,7 +543,10 @@ class _AvatarFallback extends StatelessWidget {
     return ColoredBox(
       color: const Color(0xFF382146),
       child: Center(
-        child: Text(initial, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+        child: Text(
+          initial,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
@@ -552,7 +566,10 @@ class _StoryInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF392B40)),
       ),
-      child: Text(text, style: const TextStyle(color: Color(0xFFAFA3B5), height: 1.4)),
+      child: Text(
+        text,
+        style: const TextStyle(color: Color(0xFFAFA3B5), height: 1.4),
+      ),
     );
   }
 }
@@ -607,7 +624,9 @@ class _StoryViewerState extends State<_StoryViewer> {
     } catch (_) {}
 
     if (story.isVideo) {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(story.mediaUrl));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(story.mediaUrl),
+      );
       try {
         await controller.initialize();
         await controller.setLooping(false);
@@ -616,7 +635,9 @@ class _StoryViewerState extends State<_StoryViewer> {
         controller.addListener(() {
           if (!mounted || _videoController != controller) return;
           final value = controller.value;
-          if (value.isInitialized && !value.isPlaying && value.position >= value.duration) {
+          if (value.isInitialized &&
+              !value.isPlaying &&
+              value.position >= value.duration) {
             _next();
           }
         });
@@ -707,10 +728,14 @@ class _StoryViewerState extends State<_StoryViewer> {
                   return Expanded(
                     child: Container(
                       height: 3,
-                      margin: EdgeInsets.only(right: index == widget.stories.length - 1 ? 0 : 4),
+                      margin: EdgeInsets.only(
+                        right: index == widget.stories.length - 1 ? 0 : 4,
+                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
-                        color: complete || active ? Colors.white : Colors.white30,
+                        color: complete || active
+                            ? Colors.white
+                            : Colors.white30,
                       ),
                     ),
                   );
@@ -725,7 +750,9 @@ class _StoryViewerState extends State<_StoryViewer> {
                 children: [
                   _AvatarRing(
                     avatarUrl: story.avatarUrl,
-                    initial: story.displayName.isEmpty ? 'F' : story.displayName.substring(0, 1),
+                    initial: story.displayName.isEmpty
+                        ? 'F'
+                        : story.displayName.substring(0, 1),
                     active: true,
                     seen: false,
                     size: 40,
@@ -734,7 +761,10 @@ class _StoryViewerState extends State<_StoryViewer> {
                   Expanded(
                     child: Text(
                       story.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.w900, shadows: [Shadow(blurRadius: 7)]),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        shadows: [Shadow(blurRadius: 7)],
+                      ),
                     ),
                   ),
                   if (story.isMine)
@@ -790,7 +820,10 @@ class _StoryViewerState extends State<_StoryViewer> {
                     const SizedBox(height: 8),
                     Text(
                       '${story.viewCount} ${story.viewCount == 1 ? 'view' : 'views'}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ],
@@ -809,12 +842,17 @@ class _StoryViewerState extends State<_StoryViewer> {
     if (story.isVideo) {
       if (controller == null || !controller.value.isInitialized) {
         return const Center(
-          child: Text('Video unavailable', style: TextStyle(color: Colors.white70)),
+          child: Text(
+            'Video unavailable',
+            style: TextStyle(color: Colors.white70),
+          ),
         );
       }
       return Center(
         child: AspectRatio(
-          aspectRatio: controller.value.aspectRatio == 0 ? 9 / 16 : controller.value.aspectRatio,
+          aspectRatio: controller.value.aspectRatio == 0
+              ? 9 / 16
+              : controller.value.aspectRatio,
           child: VideoPlayer(controller),
         ),
       );
@@ -826,7 +864,10 @@ class _StoryViewerState extends State<_StoryViewer> {
           ? child
           : const Center(child: CircularProgressIndicator()),
       errorBuilder: (_, __, ___) => const Center(
-        child: Text('Story unavailable', style: TextStyle(color: Colors.white70)),
+        child: Text(
+          'Story unavailable',
+          style: TextStyle(color: Colors.white70),
+        ),
       ),
     );
   }
