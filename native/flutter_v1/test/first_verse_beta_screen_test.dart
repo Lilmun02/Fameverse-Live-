@@ -20,7 +20,7 @@ void main() {
   testWidgets('First Verse stays locked until required missions are complete', (
     tester,
   ) async {
-    final status = FvBetaProgramStatus(
+    const status = FvBetaProgramStatus(
       enrolled: true,
       memberStatus: 'active',
       completedRequired: 3,
@@ -28,7 +28,7 @@ void main() {
       completedOptional: 0,
       badgeUnlocked: false,
       badgeUnlockedAt: null,
-      completedMissionKeys: const {
+      completedMissionKeys: {
         'complete_profile',
         'browse_home',
         'browse_discover',
