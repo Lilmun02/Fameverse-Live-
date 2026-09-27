@@ -88,10 +88,9 @@ class FvStartupUpdateService {
 
       FvStartupUpdateNotice? notice;
       if (backendChanged) {
-        notice = await loadLatest(channel: channel).timeout(
-          const Duration(milliseconds: 900),
-          onTimeout: () => null,
-        );
+        notice = await loadLatest(
+          channel: channel,
+        ).timeout(const Duration(milliseconds: 900), onTimeout: () => null);
       }
 
       if (backendChanged ||

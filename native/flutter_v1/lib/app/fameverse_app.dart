@@ -151,11 +151,7 @@ class _FameverseAppState extends State<FameverseApp> {
 }
 
 class _BrandSplash extends StatelessWidget {
-  const _BrandSplash({
-    this.status,
-    this.detail,
-    this.showCheck = false,
-  });
+  const _BrandSplash({this.status, this.detail, this.showCheck = false});
 
   final String? status;
   final String? detail;
@@ -324,7 +320,9 @@ class _WhatsNewScreen extends StatelessWidget {
                         children: notice.changelog
                             .map(
                               (item) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 7),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 7,
+                                ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [

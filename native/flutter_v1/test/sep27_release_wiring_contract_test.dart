@@ -101,7 +101,10 @@ void main() {
         "bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';",
       ),
     );
-    expect(viewer, contains('bool get _giftEnabled => widget.giftAccess && _canRefill;'));
+    expect(
+      viewer,
+      contains('bool get _giftEnabled => widget.giftAccess && _canRefill;'),
+    );
     expect(viewer, contains('if (_giftEnabled) ...['));
     expect(viewer, contains("Key('viewer-gift-button')"));
     expect(viewer, contains('if (!_giftEnabled) return false;'));
