@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../data/backend_runtime.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_beta_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
@@ -65,9 +66,22 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
   bool get _isPrivileged => _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _storiesEnabled =>
+      FvBackendRuntime.manifest.featureEnabled('stories');
+  bool get _firstVerseEnabled =>
+      FvBackendRuntime.manifest.featureEnabled('first_verse');
+  bool get _coinExchangeEnabled =>
+      FvBackendRuntime.manifest.featureEnabled('coin_exchange');
+  bool get _creatorStudioEnabled =>
+      FvBackendRuntime.manifest.featureEnabled('creator_studio');
+  bool get _ownerPanelEnabled =>
+      FvBackendRuntime.manifest.featureEnabled('owner_control_panel');
 
   bool get _testerLimited =>
-      _betaStatus.enrolled && !_betaStatus.badgeUnlocked && !_isPrivileged;
+      _firstVerseEnabled &&
+      _betaStatus.enrolled &&
+      !_betaStatus.badgeUnlocked &&
+      !_isPrivileged;
 
   bool get _hasFullAppAccess => !_testerLimited;
 
@@ -75,7 +89,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   void initState() {
     super.initState();
     unawaited(_refreshAll());
-    unawaited(_refreshBeta());
+    if (_firstVerseEnabled) unawaited(_refreshBeta());
   }
 
   SupabaseFameverseBetaBackend _getBetaBackend() =>
@@ -88,6 +102,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
       SupabaseFameverseEconomyBackend(Supabase.instance.client);
 
   Future<void> _refreshBeta() async {
+    if (!_firstVerseEnabled) return;
     try {
       final backend = _getBetaBackend();
       final status = await backend.loadProgramStatus();
@@ -102,7 +117,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   Future<void> _recordBetaMission(String missionKey) async {
-    if (!_betaStatus.enrolled) return;
+    if (!_firstVerseEnabled || !_betaStatus.enrolled) return;
     try {
       final backend = _getBetaBackend();
       await backend.recordMission(missionKey);
@@ -268,6 +283,10 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   void _openCreatorStudio(FvProfile profile) {
+    if (!_creatorStudioEnabled) {
+      _message('Creator Studio is temporarily unavailable.');
+      return;
+    }
     if (!_hasFullAppAccess) {
       _message('Earn First Verse to unlock Creator Studio.');
       return;
@@ -288,6 +307,10 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   void _openStories(FvProfile profile) {
+    if (!_storiesEnabled) {
+      _message('Stories are temporarily unavailable.');
+      return;
+    }
     try {
       Navigator.of(context).push<void>(
         MaterialPageRoute(
@@ -304,7 +327,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   Future<void> _openFirstVerse() async {
-    if (!_betaStatus.enrolled) return;
+    if (!_firstVerseEnabled || !_betaStatus.enrolled) return;
     try {
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
@@ -321,6 +344,10 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   void _openCoinExchange() {
+    if (!_coinExchangeEnabled) {
+      _message('Coin Exchange is temporarily unavailable.');
+      return;
+    }
     if (!_hasFullAppAccess) {
       _message('Earn First Verse to unlock Coin Exchange.');
       return;
@@ -340,7 +367,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   }
 
   void _openOwnerPanel() {
-    if (!_isPrivileged) return;
+    if (!_ownerPanelEnabled || !_isPrivileged) return;
     Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (context) => const OwnerControlPanel()),
     );
@@ -395,7 +422,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
       unawaited(_recordBetaMission('browse_home'));
     } else if (value == 1) {
       unawaited(_recordBetaMission('browse_discover'));
-    } else if (value == 3) {
+    } else if (value == 3 && _firstVerseEnabled) {
       unawaited(_refreshBeta());
     }
     if (value == 0 || value == 1) {
@@ -438,16 +465,17 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
           onCreatorSelected: _openPublicProfile,
           followBusy: _followBusy,
         ),
-        Positioned(
-          top: 10,
-          right: 70,
-          child: SafeArea(
-            child: _StoryHeaderButton(
-              profile: profile,
-              onTap: () => _openStories(profile),
+        if (_storiesEnabled)
+          Positioned(
+            top: 10,
+            right: 70,
+            child: SafeArea(
+              child: _StoryHeaderButton(
+                profile: profile,
+                onTap: () => _openStories(profile),
+              ),
             ),
           ),
-        ),
       ],
     );
 
@@ -460,10 +488,13 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             betaStatus: _betaStatus,
             privileged: _isPrivileged,
             testerLimited: _testerLimited,
-            onStories: () => _openStories(profile),
-            onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
-            onCoinExchange: _hasFullAppAccess ? _openCoinExchange : null,
-            onControlPanel: _isPrivileged ? _openOwnerPanel : null,
+            onStories: _storiesEnabled ? () => _openStories(profile) : null,
+            onFirstVerse:
+                _firstVerseEnabled && _betaStatus.enrolled ? _openFirstVerse : null,
+            onCoinExchange:
+                _coinExchangeEnabled && _hasFullAppAccess ? _openCoinExchange : null,
+            onControlPanel:
+                _ownerPanelEnabled && _isPrivileged ? _openOwnerPanel : null,
           ),
         ),
         Expanded(
@@ -481,6 +512,11 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
         ),
       ],
     );
+
+    final homeLabel = FvBackendRuntime.manifest.label('home', 'Home');
+    final discoverLabel = FvBackendRuntime.manifest.label('discover', 'Discover');
+    final liveLabel = FvBackendRuntime.manifest.label('live', 'Live');
+    final profileLabel = FvBackendRuntime.manifest.label('profile', 'Profile');
 
     return Scaffold(
       body: IndexedStack(
@@ -518,26 +554,26 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
         key: const Key('fameverse-bottom-nav'),
         selectedIndex: _tab,
         onDestinationSelected: _setTab,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: homeLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore_rounded),
-            label: 'Discover',
+            icon: const Icon(Icons.explore_outlined),
+            selectedIcon: const Icon(Icons.explore_rounded),
+            label: discoverLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.videocam_outlined),
-            selectedIcon: Icon(Icons.videocam_rounded),
-            label: 'Live',
+            icon: const Icon(Icons.videocam_outlined),
+            selectedIcon: const Icon(Icons.videocam_rounded),
+            label: liveLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded),
+            label: profileLabel,
           ),
         ],
       ),
@@ -561,13 +597,17 @@ class _ProfileReleaseRail extends StatelessWidget {
   final FvBetaProgramStatus betaStatus;
   final bool privileged;
   final bool testerLimited;
-  final VoidCallback onStories;
+  final VoidCallback? onStories;
   final VoidCallback? onFirstVerse;
   final VoidCallback? onCoinExchange;
   final VoidCallback? onControlPanel;
 
   @override
   Widget build(BuildContext context) {
+    final hasTop = onStories != null || onFirstVerse != null;
+    final hasBottom = onCoinExchange != null || onControlPanel != null;
+    if (!hasTop && !hasBottom) return const SizedBox.shrink();
+
     return Container(
       key: const Key('profile-release-rail'),
       margin: const EdgeInsets.fromLTRB(14, 8, 14, 2),
@@ -579,91 +619,94 @@ class _ProfileReleaseRail extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              _StoryHeaderButton(
-                profile: profile,
-                onTap: onStories,
-                compact: false,
-              ),
-              const SizedBox(width: 10),
-              if (betaStatus.enrolled)
-                Expanded(
-                  child: InkWell(
-                    key: const Key('profile-first-verse-entry'),
-                    onTap: onFirstVerse,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                betaStatus.badgeUnlocked
-                                    ? Icons.auto_awesome_rounded
-                                    : Icons.lock_outline_rounded,
-                                color: const Color(0xFFC783FF),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
-                              const Expanded(
-                                child: Text(
-                                  'First Verse',
-                                  style: TextStyle(
-                                    fontSize: 13,
+          if (hasTop)
+            Row(
+              children: [
+                if (onStories != null) ...[
+                  _StoryHeaderButton(
+                    profile: profile,
+                    onTap: onStories!,
+                    compact: false,
+                  ),
+                  if (onFirstVerse != null) const SizedBox(width: 10),
+                ],
+                if (onFirstVerse != null)
+                  Expanded(
+                    child: InkWell(
+                      key: const Key('profile-first-verse-entry'),
+                      onTap: onFirstVerse,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  betaStatus.badgeUnlocked
+                                      ? Icons.auto_awesome_rounded
+                                      : Icons.lock_outline_rounded,
+                                  color: const Color(0xFFC783FF),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                const Expanded(
+                                  child: Text(
+                                    'First Verse',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '${betaStatus.completedRequired}/${betaStatus.requiredTotal}',
+                                  style: const TextStyle(
+                                    color: Color(0xFFCDB7D5),
+                                    fontSize: 10,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
-                              ),
-                              Text(
-                                '${betaStatus.completedRequired}/${betaStatus.requiredTotal}',
-                                style: const TextStyle(
-                                  color: Color(0xFFCDB7D5),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
+                              ],
+                            ),
+                            const SizedBox(height: 7),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                key: const Key('profile-first-verse-progress'),
+                                minHeight: 7,
+                                value: betaStatus.progress,
+                                backgroundColor: const Color(0xFF2A202E),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF9F51E4),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 7),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
-                            child: LinearProgressIndicator(
-                              key: const Key('profile-first-verse-progress'),
-                              minHeight: 7,
-                              value: betaStatus.progress,
-                              backgroundColor: const Color(0xFF2A202E),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Color(0xFF9F51E4),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              privileged
+                                  ? 'Privileged access · badge progress still testable'
+                                  : testerLimited
+                                  ? 'Limited beta access until the badge is earned'
+                                  : 'Badge earned · full creator access unlocked',
+                              style: const TextStyle(
+                                color: Color(0xFF978A9C),
+                                fontSize: 9.5,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            privileged
-                                ? 'Privileged access · badge progress still testable'
-                                : testerLimited
-                                ? 'Limited beta access until the badge is earned'
-                                : 'Badge earned · full creator access unlocked',
-                            style: const TextStyle(
-                              color: Color(0xFF978A9C),
-                              fontSize: 9.5,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          if (onCoinExchange != null || onControlPanel != null) ...[
-            const SizedBox(height: 9),
+              ],
+            ),
+          if (hasTop && hasBottom) const SizedBox(height: 9),
+          if (hasBottom)
             Row(
               children: [
                 if (onCoinExchange != null)
@@ -689,7 +732,6 @@ class _ProfileReleaseRail extends StatelessWidget {
                   ),
               ],
             ),
-          ],
         ],
       ),
     );
