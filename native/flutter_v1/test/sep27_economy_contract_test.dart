@@ -19,19 +19,14 @@ void main() {
     final economy = _readMigration(
       '20260927_sep27_economy_referrals_exchange.sql',
     );
-    final replay = _readMigration(
-      '20260927_sep27_economy_idempotency_fix.sql',
-    );
+    final replay = _readMigration('20260927_sep27_economy_idempotency_fix.sql');
 
     expect(economy, contains('exchange_creator_earnings_for_coins'));
     expect(economy, contains("'coin_exchange'"));
     expect(economy, contains('-p_amount_cents'));
     expect(economy, contains("'creator_earnings_exchange'"));
     expect(economy, contains('unique (user_id, idempotency_key)'));
-    expect(
-      economy,
-      isNot(contains('exchange_coins_for_creator_earnings')),
-    );
+    expect(economy, isNot(contains('exchange_coins_for_creator_earnings')));
     expect(replay, contains('if v_key is not null and exists'));
     expect(replay, contains('return coalesce(v_balance, 0)'));
   });

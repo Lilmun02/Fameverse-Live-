@@ -85,7 +85,9 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
             TextField(
               key: const Key('coin-exchange-custom-amount'),
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Amount',
                 prefixText: r'$ ',
@@ -132,7 +134,10 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ConfirmRow(label: 'Creator earnings', value: '-${_money(amountCents)}'),
+            _ConfirmRow(
+              label: 'Creator earnings',
+              value: '-${_money(amountCents)}',
+            ),
             const SizedBox(height: 8),
             _ConfirmRow(label: 'Fame Coins', value: '+$amountCents'),
             const Divider(height: 28),
@@ -339,7 +344,11 @@ class _ExchangeHero extends StatelessWidget {
 }
 
 class _Balance extends StatelessWidget {
-  const _Balance({required this.label, required this.value, required this.icon});
+  const _Balance({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
   final String label;
   final String value;
@@ -439,10 +448,7 @@ class _ConfirmRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: Color(0xFFB7ABBE)),
-          ),
+          child: Text(label, style: const TextStyle(color: Color(0xFFB7ABBE))),
         ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
       ],
