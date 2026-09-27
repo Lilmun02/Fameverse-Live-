@@ -209,7 +209,7 @@ class FvLiveCommentComposer extends StatelessWidget {
       keyboardType: TextInputType.multiline,
       textInputAction: TextInputAction.newline,
       onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-      style: const TextStyle(fontSize: 14, height: 1.22),
+      style: const TextStyle(fontSize: 15, height: 1.22),
       decoration: InputDecoration(
         hintText: hintText,
         counterText: '',
@@ -356,19 +356,19 @@ class FvLiveChatList extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               child: Ink(
                 key: isGift ? const Key('v2-highlighted-gift-chat') : null,
-                padding: const EdgeInsets.fromLTRB(7, 6, 9, 6),
-                decoration: BoxDecoration(
-                  color: isGift
-                      ? const Color(0xD91A0E24)
-                      : const Color(0x80100913),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isGift
-                        ? const Color(0xFFB34EFF)
-                        : const Color(0x334F365B),
-                    width: isGift ? 1.0 : .6,
-                  ),
-                ),
+                padding: isGift
+                    ? const EdgeInsets.fromLTRB(7, 6, 9, 6)
+                    : const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                decoration: isGift
+                    ? BoxDecoration(
+                        color: const Color(0xD91A0E24),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFB34EFF),
+                          width: 1,
+                        ),
+                      )
+                    : null,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -382,12 +382,18 @@ class FvLiveChatList extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF8E4DFF), Color(0xFF3C1A5A)],
                         ),
-                        border: Border.all(color: const Color(0xFFB478FF), width: .8),
+                        border: Border.all(
+                          color: const Color(0xFFB478FF),
+                          width: .8,
+                        ),
                       ),
                       child: Center(
                         child: Text(
                           initial,
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
                     ),
@@ -403,20 +409,29 @@ class FvLiveChatList extends StatelessWidget {
                                   user.isEmpty ? 'Fameverse viewer' : user,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
                               if (level > 1) ...[
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF6E32B9),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
                                     'Lv. $level',
-                                    style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900),
+                                    style: const TextStyle(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -429,10 +444,14 @@ class FvLiveChatList extends StatelessWidget {
                               color: isGift
                                   ? const Color(0xFFFFD8FF)
                                   : const Color(0xFFF5EFF8),
-                              fontSize: 13.5,
+                              fontSize: 15,
                               height: 1.2,
-                              fontWeight: isGift ? FontWeight.w700 : FontWeight.w500,
-                              shadows: const [Shadow(color: Colors.black, blurRadius: 5)],
+                              fontWeight: isGift
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 5),
+                              ],
                             ),
                           ),
                         ],
