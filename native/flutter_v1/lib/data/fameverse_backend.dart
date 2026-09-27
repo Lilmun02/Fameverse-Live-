@@ -144,7 +144,8 @@ class SupabaseFameverseBackend implements FameverseBackend {
   }
 
   @override
-  FvIdentity? get currentIdentity => _identityFromUser(_client.auth.currentUser);
+  FvIdentity? get currentIdentity =>
+      _identityFromUser(_client.auth.currentUser);
 
   @override
   Stream<FvIdentity?> get authChanges => _client.auth.onAuthStateChange.map(
@@ -200,10 +201,7 @@ class SupabaseFameverseBackend implements FameverseBackend {
     );
   }
 
-  FvProfile _profileFromRpcMap(
-    Map<String, dynamic> row, {
-    String prefix = '',
-  }) {
+  FvProfile _profileFromRpcMap(Map<String, dynamic> row, {String prefix = ''}) {
     final username = row['${prefix}username'] as String?;
     final displayName = (row['${prefix}display_name'] as String?)?.trim();
     return FvProfile(
@@ -337,14 +335,8 @@ class SupabaseFameverseBackend implements FameverseBackend {
   @override
   Future<FvFollowNetwork> loadFollowNetwork(String userId) async {
     final results = await Future.wait<dynamic>([
-      _client
-          .from('follows')
-          .select('follower_id')
-          .eq('following_id', userId),
-      _client
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', userId),
+      _client.from('follows').select('follower_id').eq('following_id', userId),
+      _client.from('follows').select('following_id').eq('follower_id', userId),
     ]);
     final incomingRows = results[0] as List;
     final outgoingRows = results[1] as List;

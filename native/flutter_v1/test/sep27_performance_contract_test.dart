@@ -8,7 +8,14 @@ void main() {
     expect(backend, contains("'get_recommended_creators_v2'"));
     expect(backend, contains("'get_active_live_rooms_v2'"));
     expect(backend, isNot(contains("from('live_tap_totals')")));
-    expect(backend, isNot(contains("from('profiles')\n        .select(_profileFields)\n        .order('created_at'")));
+    expect(
+      backend,
+      isNot(
+        contains(
+          "from('profiles')\n        .select(_profileFields)\n        .order('created_at'",
+        ),
+      ),
+    );
   });
 
   test('performance migration keeps hot RLS auth lookups in initplans', () {
@@ -22,11 +29,14 @@ void main() {
     expect(sql, contains('get_active_live_rooms_v2'));
   });
 
-  test('maintenance pass is additive and does not drop performance indexes', () {
-    final sql = File(
-      '../../supabase/migrations/20260927_performance_maintenance.sql',
-    ).readAsStringSync();
-    expect(sql.toLowerCase(), isNot(contains('drop index')));
-    expect(sql, contains('create index if not exists'));
-  });
+  test(
+    'maintenance pass is additive and does not drop performance indexes',
+    () {
+      final sql = File(
+        '../../supabase/migrations/20260927_performance_maintenance.sql',
+      ).readAsStringSync();
+      expect(sql.toLowerCase(), isNot(contains('drop index')));
+      expect(sql, contains('create index if not exists'));
+    },
+  );
 }
