@@ -22,8 +22,9 @@ class FameversePublicProfileScreen extends StatefulWidget {
 
 class _FameversePublicProfileScreenState
     extends State<FameversePublicProfileScreen> {
-  late final FameverseBackend _backend =
-      SupabaseFameverseBackend(Supabase.instance.client);
+  late final FameverseBackend _backend = SupabaseFameverseBackend(
+    Supabase.instance.client,
+  );
 
   FvProfile? _profile;
   FvFollowNetwork? _network;
@@ -98,7 +99,9 @@ class _FameversePublicProfileScreenState
         targetId: widget.targetUserId,
         following: next,
       );
-      final targetNetwork = await _backend.loadFollowNetwork(widget.targetUserId);
+      final targetNetwork = await _backend.loadFollowNetwork(
+        widget.targetUserId,
+      );
       if (!mounted) return;
       setState(() {
         _following = next;
@@ -108,7 +111,9 @@ class _FameversePublicProfileScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Could not update that connection.')));
+        ..showSnackBar(
+          const SnackBar(content: Text('Could not update that connection.')),
+        );
     } finally {
       if (mounted) setState(() => _followBusy = false);
     }
@@ -254,7 +259,10 @@ class _FameversePublicProfileScreenState
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFFB7AABB), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFFB7AABB),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ],
@@ -278,9 +286,7 @@ class _PublicAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: const Color(0xFFA84EFF), width: 2),
-        boxShadow: const [
-          BoxShadow(color: Color(0x665D1D8E), blurRadius: 24),
-        ],
+        boxShadow: const [BoxShadow(color: Color(0x665D1D8E), blurRadius: 24)],
       ),
       child: CircleAvatar(
         radius: 54,
