@@ -489,12 +489,15 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             privileged: _isPrivileged,
             testerLimited: _testerLimited,
             onStories: _storiesEnabled ? () => _openStories(profile) : null,
-            onFirstVerse:
-                _firstVerseEnabled && _betaStatus.enrolled ? _openFirstVerse : null,
-            onCoinExchange:
-                _coinExchangeEnabled && _hasFullAppAccess ? _openCoinExchange : null,
-            onControlPanel:
-                _ownerPanelEnabled && _isPrivileged ? _openOwnerPanel : null,
+            onFirstVerse: _firstVerseEnabled && _betaStatus.enrolled
+                ? _openFirstVerse
+                : null,
+            onCoinExchange: _coinExchangeEnabled && _hasFullAppAccess
+                ? _openCoinExchange
+                : null,
+            onControlPanel: _ownerPanelEnabled && _isPrivileged
+                ? _openOwnerPanel
+                : null,
           ),
         ),
         Expanded(
@@ -514,7 +517,10 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     );
 
     final homeLabel = FvBackendRuntime.manifest.label('home', 'Home');
-    final discoverLabel = FvBackendRuntime.manifest.label('discover', 'Discover');
+    final discoverLabel = FvBackendRuntime.manifest.label(
+      'discover',
+      'Discover',
+    );
     final liveLabel = FvBackendRuntime.manifest.label('live', 'Live');
     final profileLabel = FvBackendRuntime.manifest.label('profile', 'Profile');
 
