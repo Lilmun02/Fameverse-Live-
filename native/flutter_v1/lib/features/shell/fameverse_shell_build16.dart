@@ -64,8 +64,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   List<FvLiveRoom> _rooms = const [];
   FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
-  bool get _isPrivileged =>
-      _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _isPrivileged => _accountRole == 'owner' || _accountRole == 'admin';
 
   bool get _testerLimited =>
       _betaStatus.enrolled && !_betaStatus.badgeUnlocked && !_isPrivileged;
@@ -82,11 +81,11 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   SupabaseFameverseBetaBackend _getBetaBackend() =>
       _betaBackend ??= SupabaseFameverseBetaBackend(Supabase.instance.client);
 
-  SupabaseFameverseCreatorBackend _getCreatorBackend() =>
-      _creatorBackend ??= SupabaseFameverseCreatorBackend(Supabase.instance.client);
+  SupabaseFameverseCreatorBackend _getCreatorBackend() => _creatorBackend ??=
+      SupabaseFameverseCreatorBackend(Supabase.instance.client);
 
-  SupabaseFameverseEconomyBackend _getEconomyBackend() =>
-      _economyBackend ??= SupabaseFameverseEconomyBackend(Supabase.instance.client);
+  SupabaseFameverseEconomyBackend _getEconomyBackend() => _economyBackend ??=
+      SupabaseFameverseEconomyBackend(Supabase.instance.client);
 
   Future<void> _refreshBeta() async {
     try {
@@ -581,7 +580,11 @@ class _ProfileReleaseRail extends StatelessWidget {
         children: [
           Row(
             children: [
-              _StoryHeaderButton(profile: profile, onTap: onStories, compact: false),
+              _StoryHeaderButton(
+                profile: profile,
+                onTap: onStories,
+                compact: false,
+              ),
               const SizedBox(width: 10),
               if (betaStatus.enrolled)
                 Expanded(
@@ -590,7 +593,10 @@ class _ProfileReleaseRail extends StatelessWidget {
                     onTap: onFirstVerse,
                     borderRadius: BorderRadius.circular(14),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -790,7 +796,8 @@ class _StoryHeaderButton extends StatelessWidget {
                     ),
                     child: ClipOval(
                       child:
-                          profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                          profile.avatarUrl != null &&
+                              profile.avatarUrl!.isNotEmpty
                           ? Image.network(
                               profile.avatarUrl!,
                               fit: BoxFit.cover,
@@ -811,7 +818,11 @@ class _StoryHeaderButton extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: Color(0xFF8E3EDD),
                     ),
-                    child: const Icon(Icons.add_rounded, size: 13, color: Colors.white),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      size: 13,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
