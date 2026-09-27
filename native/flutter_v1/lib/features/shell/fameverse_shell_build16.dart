@@ -1,17 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import '../../data/fameverse_beta_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import '../../data/fameverse_story_backend.dart';
 import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_screen.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
+import '../profile/first_verse_beta_screen.dart';
 import '../profile/native_profile_screen.dart';
+import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_screen.dart';
 
@@ -39,6 +45,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     followingIds: {},
   );
 
+  SupabaseFameverseBetaBackend? _betaBackend;
   int _tab = 0;
   bool _loading = true;
   bool _followBusy = false;
@@ -48,11 +55,43 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
   FvFollowNetwork _network = _emptyNetwork;
   List<FvCreator> _creators = const [];
   List<FvLiveRoom> _rooms = const [];
+  FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
   @override
   void initState() {
     super.initState();
-    _refreshAll();
+    unawaited(_refreshAll());
+    unawaited(_refreshBeta());
+  }
+
+  SupabaseFameverseBetaBackend _getBetaBackend() =>
+      _betaBackend ??= SupabaseFameverseBetaBackend(Supabase.instance.client);
+
+  Future<void> _refreshBeta() async {
+    try {
+      final backend = _getBetaBackend();
+      final status = await backend.loadProgramStatus();
+      if (!mounted) return;
+      setState(() => _betaStatus = status);
+      if (status.enrolled && _tab == 0) {
+        await _recordBetaMission('browse_home');
+      }
+    } catch (_) {
+      // Beta mission infrastructure must never block ordinary Fameverse use.
+    }
+  }
+
+  Future<void> _recordBetaMission(String missionKey) async {
+    if (!_betaStatus.enrolled) return;
+    try {
+      final backend = _getBetaBackend();
+      await backend.recordMission(missionKey);
+      final status = await backend.loadProgramStatus();
+      if (mounted) setState(() => _betaStatus = status);
+    } catch (_) {
+      // Mission telemetry is non-critical and must fail closed without breaking
+      // the tested feature itself.
+    }
   }
 
   Future<void> _refreshAll() async {
@@ -102,6 +141,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
         widget.identity.id,
       );
       if (mounted) setState(() => _network = network);
+      await _recordBetaMission('follow_creator');
     } catch (_) {
       _message('Could not update that connection.');
     } finally {
@@ -125,6 +165,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
       setState(() => _profile = profile);
       Navigator.of(context).pop();
       _message('Profile saved');
+      await _recordBetaMission('complete_profile');
     } catch (error) {
       final text = error.toString();
       _message(
@@ -171,6 +212,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
       if (!mounted) return;
       setState(() => _profile = profile);
       _message('Profile photo updated');
+      await _recordBetaMission('complete_profile');
     } catch (_) {
       _message('Could not update profile photo.');
     } finally {
@@ -216,6 +258,29 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     );
   }
 
+  void _openStories(FvProfile profile) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => CreatorStoriesScreen(
+          backend: SupabaseFameverseStoryBackend(Supabase.instance.client),
+          identity: widget.identity,
+          profile: profile,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openFirstVerse() async {
+    final backend = _betaBackend;
+    if (!_betaStatus.enrolled || backend == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => FirstVerseBetaScreen(backend: backend),
+      ),
+    );
+    await _refreshBeta();
+  }
+
   Future<void> _openPublicProfile(FvProfile target) async {
     if (target.id == widget.identity.id) {
       _setTab(3);
@@ -230,6 +295,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
         ),
       ),
     );
+    await _recordBetaMission('open_public_profile');
     try {
       final network = await widget.backend.loadFollowNetwork(
         widget.identity.id,
@@ -238,8 +304,8 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
     } catch (_) {}
   }
 
-  void _openRoom(FvLiveRoom room, FvProfile profile) {
-    Navigator.of(context).push<void>(
+  Future<void> _openRoom(FvLiveRoom room, FvProfile profile) async {
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => NativeViewerLiveScreen(
           backend: widget.backend,
@@ -250,10 +316,18 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
         ),
       ),
     );
+    await _recordBetaMission('join_live');
   }
 
   void _setTab(int value) {
     setState(() => _tab = value);
+    if (value == 0) {
+      unawaited(_recordBetaMission('browse_home'));
+    } else if (value == 1) {
+      unawaited(_recordBetaMission('browse_discover'));
+    } else if (value == 3) {
+      unawaited(_refreshBeta());
+    }
     if (value == 0 || value == 1) {
       widget.backend
           .listActiveLiveRooms(excludeUserId: widget.identity.id)
@@ -277,6 +351,29 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
           createdAt: null,
         );
 
+    Widget? floatingActionButton;
+    if (_tab == 0) {
+      floatingActionButton = _HomeStoryLauncher(
+        profile: profile,
+        onTap: () => _openStories(profile),
+      );
+    } else if (_tab == 3 && _betaStatus.enrolled) {
+      floatingActionButton = FloatingActionButton.extended(
+        key: const Key('first-verse-tester-entry'),
+        onPressed: _openFirstVerse,
+        icon: Icon(
+          _betaStatus.badgeUnlocked
+              ? Icons.auto_awesome_rounded
+              : Icons.lock_outline_rounded,
+        ),
+        label: Text(
+          _betaStatus.badgeUnlocked
+              ? 'First Verse'
+              : 'First Verse ${_betaStatus.completedRequired}/${_betaStatus.requiredTotal}',
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _tab,
@@ -291,7 +388,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             onRefresh: _refreshAll,
             onOpenProfile: () => _setTab(3),
             onOpenDiscover: () => _setTab(1),
-            onRoomSelected: (room) => _openRoom(room, profile),
+            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
             onToggleFollow: _toggleFollow,
             onCreatorSelected: _openPublicProfile,
             followBusy: _followBusy,
@@ -307,7 +404,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             onCreatorSelected: _openPublicProfile,
             followBusy: _followBusy,
             onOpenProfile: () => _setTab(3),
-            onRoomSelected: (room) => _openRoom(room, profile),
+            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
           ),
           NativeCameraScreen(
             liveBackend: widget.liveBackend,
@@ -328,6 +425,7 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
           ),
         ],
       ),
+      floatingActionButton: floatingActionButton,
       bottomNavigationBar: NavigationBar(
         key: const Key('fameverse-bottom-nav'),
         selectedIndex: _tab,
@@ -354,6 +452,73 @@ class _FameverseBuild16ShellState extends State<FameverseBuild16Shell> {
             label: 'Profile',
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeStoryLauncher extends StatelessWidget {
+  const _HomeStoryLauncher({required this.profile, required this.onTap});
+
+  final FvProfile profile;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Open Creator Stories',
+      child: GestureDetector(
+        key: const Key('home-stories-ring'),
+        onTap: onTap,
+        child: Container(
+          width: 64,
+          height: 64,
+          padding: const EdgeInsets.all(3),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [Color(0xFFF05A86), Color(0xFFB95EFF), Color(0xFF604BFF)],
+            ),
+            boxShadow: [BoxShadow(color: Color(0x665E1B9B), blurRadius: 14)],
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black,
+            ),
+            child: ClipOval(
+              child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      profile.avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _StoryLauncherFallback(initial: profile.initial),
+                    )
+                  : _StoryLauncherFallback(initial: profile.initial),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryLauncherFallback extends StatelessWidget {
+  const _StoryLauncherFallback({required this.initial});
+
+  final String initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFF352044),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }

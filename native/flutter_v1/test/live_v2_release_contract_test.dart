@@ -262,7 +262,8 @@ void main() {
       expect(viewer, contains('class _TapBurstParticle'));
       expect(viewer, isNot(contains("fvGiftById('rose')")));
       expect(components, contains('Future<int> Function() onRefill'));
-      expect(components, contains('playback.gift.cost <= 1'));
+      expect(components, contains('playback.gift.cost < 100'));
+      expect(components, contains("Key('lightweight-gift-"));
       expect(chat, contains('fontSize: 15'));
     });
   });
