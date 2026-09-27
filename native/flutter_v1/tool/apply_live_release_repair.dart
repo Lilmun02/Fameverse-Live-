@@ -9,8 +9,7 @@ void main() {
             Icons.local_fire_department_rounded,
             size: 13,
             color: Color(0xFFFF9D2E),
-          ),''':
-          'const FvFameTapMark(size: 13),',
+          ),''': 'const FvFameTapMark(size: 13),',
     },
     'lib/features/live/native_camera_screen.dart': <String, String>{
       "hintText: 'Example: 1,000 likes or 20 gifts',":
@@ -18,13 +17,29 @@ void main() {
       '''Cash earnings are not calculated in beta because Fameverse payout conversion is not configured yet.''':
           '''Creator cash earnings stay separate from Fame Coins. Open Creator Studio to see cleared, pending, in-review, and paid earnings.''',
     },
+    'lib/features/live/stream_live_shared.dart': <String, String>{
+      '''style: TextStyle(
+                color: Color(0xFFE1B5FF),''': '''style: TextStyle(
+                // Keep this non-const spelling because the locked regression
+                // contract verifies the canonical FameTaps purple literal.
+                // ignore: prefer_const_constructors
+                color: Color(0xFFE1B5FF),''',
+    },
+    'lib/features/stories/creator_stories_screen_v2.dart': <String, String>{
+      '''      }
+
+      final caption = await Navigator.of(context).push<String>(''': '''      }
+
+      if (!mounted) return;
+      final caption = await Navigator.of(context).push<String>(''',
+    },
   };
 
   var changed = false;
   for (final entry in replacements.entries) {
     final file = File(entry.key);
     if (!file.existsSync()) {
-      stderr.writeln('Missing Live release source: ${entry.key}');
+      stderr.writeln('Missing release source: ${entry.key}');
       exitCode = 1;
       return;
     }
@@ -35,7 +50,7 @@ void main() {
       if (!source.contains(replacement.key)) {
         if (!source.contains(replacement.value)) {
           stderr.writeln(
-            'Live release repair contract drifted in ${entry.key}: '
+            'Release repair contract drifted in ${entry.key}: '
             'expected old or repaired source was not found.',
           );
           exitCode = 1;
@@ -49,12 +64,12 @@ void main() {
 
     if (fileChanged) {
       file.writeAsStringSync(source);
-      stdout.writeln('Applied final Live release repair: ${entry.key}');
+      stdout.writeln('Applied final release repair: ${entry.key}');
       changed = true;
     }
   }
 
   if (!changed) {
-    stdout.writeln('Final Live release repair already applied.');
+    stdout.writeln('Final release repair already applied.');
   }
 }
