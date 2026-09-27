@@ -5,18 +5,45 @@ import 'package:flutter_test/flutter_test.dart';
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
-  test('release shell actually wires Sep 27 surfaces into app startup', () {
+  test('release startup delegates controls into the product/profile shell', () {
     final app = read('lib/app/fameverse_app.dart');
-    final shell = read('lib/features/shell/fameverse_release_shell.dart');
+    final release = read('lib/features/shell/fameverse_release_shell.dart');
+    final shell = read('lib/features/shell/fameverse_shell_build16.dart');
 
     expect(app, contains('FameverseReleaseShell('));
-    expect(shell, contains("Key('release-first-verse-entry')"));
+    expect(release, contains('FameverseBuild16Shell('));
+    expect(release, isNot(contains('_ReleaseAction')));
+
+    expect(shell, contains("Key('profile-release-rail')"));
+    expect(shell, contains("Key('profile-first-verse-entry')"));
+    expect(shell, contains("Key('profile-first-verse-progress')"));
+    expect(shell, contains("Key('profile-coin-exchange-entry')"));
+    expect(shell, contains("Key('profile-owner-control-entry')"));
+    expect(shell, contains("Key('home-stories-header')"));
+    expect(shell, contains("Key('profile-stories-header')"));
     expect(shell, contains('FirstVerseBetaScreen('));
-    expect(shell, contains('economyBackend: _economyBackend'));
-    expect(shell, contains("Key('release-coin-exchange-entry')"));
+    expect(shell, contains('economyBackend: _getEconomyBackend()'));
     expect(shell, contains('CoinExchangeScreen('));
-    expect(shell, contains("Key('release-owner-control-entry')"));
     expect(shell, contains('OwnerControlPanel()'));
+  });
+
+  test('owner/admin bypasses tester locks while active testers stay limited', () {
+    final shell = read('lib/features/shell/fameverse_shell_build16.dart');
+    final creatorBackend = read('lib/data/fameverse_creator_backend.dart');
+
+    expect(
+      shell,
+      contains("_accountRole == 'owner' || _accountRole == 'admin'"),
+    );
+    expect(
+      shell,
+      contains(
+        '_betaStatus.enrolled && !_betaStatus.badgeUnlocked && !_isPrivileged',
+      ),
+    );
+    expect(shell, contains('Complete First Verse to unlock Go Live.'));
+    expect(shell, contains('Earn First Verse to unlock Creator Studio.'));
+    expect(creatorBackend, contains("role == 'admin' ? 'owner' : role"));
   });
 
   test(
@@ -53,7 +80,7 @@ void main() {
     },
   );
 
-  test('gift tray stays owner/admin-only in the current beta UI', () {
+  test('gift UI has an explicit access gate and owner/admin-only refill', () {
     final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
 
     expect(
@@ -62,8 +89,10 @@ void main() {
         "bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';",
       ),
     );
-    expect(viewer, contains('if (_canRefill) ...['));
+    expect(viewer, contains('final bool giftAccess;'));
+    expect(viewer, contains('if (widget.giftAccess) ...['));
     expect(viewer, contains("Key('viewer-gift-button')"));
+    expect(viewer, contains('if (!widget.giftAccess) return false;'));
     expect(viewer, contains('You cannot gift your own live.'));
   });
 
