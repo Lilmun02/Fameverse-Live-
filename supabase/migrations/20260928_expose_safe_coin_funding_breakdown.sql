@@ -5,7 +5,7 @@ returns table(
   total_balance bigint
 )
 language plpgsql
-stable
+volatile
 security definer
 set search_path = 'public', 'pg_temp'
 as $$
