@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/fameverse_backend.dart';
@@ -13,7 +14,7 @@ import '../features/shell/fameverse_shell_build23.dart';
 ///
 /// Regression laws:
 /// - The installed Build 23 binary must route through the Build 23 shell.
-/// - Active backend/app notices must be surfaced before the product shell opens.
+/// - Active backend/app notices are shown once per published notice.
 /// - A backend-notice lookup failure must never strand the app on startup.
 class FameverseApp extends StatefulWidget {
   const FameverseApp({
@@ -34,6 +35,9 @@ class FameverseApp extends StatefulWidget {
 }
 
 class _FameverseAppState extends State<FameverseApp> {
+  static const _lastAcknowledgedNoticeKey =
+      'fameverse.last_acknowledged_update_notice_id';
+
   StreamSubscription<FvIdentity?>? _subscription;
   Timer? _splashTimer;
   FvIdentity? _identity;
@@ -60,15 +64,47 @@ class _FameverseAppState extends State<FameverseApp> {
       final notice = await FvStartupUpdateService(
         Supabase.instance.client,
       ).loadLatest(channel: 'internal');
+
+      if (notice == null) {
+        if (mounted) setState(() => _updateCheckComplete = true);
+        return;
+      }
+
+      final preferences = await SharedPreferences.getInstance();
+      final lastAcknowledged = preferences.getString(
+        _lastAcknowledgedNoticeKey,
+      );
+      final shouldShow = notice.id.isNotEmpty && notice.id != lastAcknowledged;
+
       if (!mounted) return;
       setState(() {
-        _startupNotice = notice;
+        _startupNotice = shouldShow ? notice : null;
+        _noticeAcknowledged = !shouldShow;
         _updateCheckComplete = true;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() => _updateCheckComplete = true);
     }
+  }
+
+  Future<void> _acknowledgeStartupNotice() async {
+    final notice = _startupNotice;
+    if (notice == null) {
+      if (mounted) setState(() => _noticeAcknowledged = true);
+      return;
+    }
+
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (notice.id.isNotEmpty) {
+        await preferences.setString(_lastAcknowledgedNoticeKey, notice.id);
+      }
+    } catch (_) {
+      // Local persistence failure must not trap a user on the update notice.
+    }
+
+    if (mounted) setState(() => _noticeAcknowledged = true);
   }
 
   @override
@@ -135,7 +171,7 @@ class _FameverseAppState extends State<FameverseApp> {
       return _StartupUpdateNoticeScreen(
         key: FameverseApp.updateNoticeKey,
         notice: notice,
-        onContinue: () => setState(() => _noticeAcknowledged = true),
+        onContinue: () => unawaited(_acknowledgeStartupNotice()),
       );
     }
 
@@ -258,7 +294,7 @@ class _StartupUpdateNoticeScreen extends StatelessWidget {
                         child: Text(
                           item,
                           style: const TextStyle(
-                            color: Color(0xFFB8ADBb),
+                            color: Color(0xFFB8ADBB),
                             height: 1.4,
                           ),
                         ),
