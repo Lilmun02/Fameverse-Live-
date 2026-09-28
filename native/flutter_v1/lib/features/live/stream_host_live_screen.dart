@@ -6,6 +6,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'fameverse_live_profile_sheet.dart';
 import 'native_live_components.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
@@ -547,9 +548,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       _giftPlayback = null;
     });
 
-    // Leave the host surface on the next rendered frame. Network teardown and
-    // backend finalization continue independently, so a slow SDK call can never
-    // leave a stale frozen Live frame visible to the host.
     final navigator = Navigator.of(context);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && navigator.canPop()) navigator.pop(true);
@@ -564,32 +562,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   void _showProfileSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NativeProfileAvatar(profile: widget.room.host, radius: 42),
-              const SizedBox(height: 12),
-              Text(
-                widget.room.host.displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(widget.room.host.bio, textAlign: TextAlign.center),
-              ],
-            ],
-          ),
-        ),
+    unawaited(
+      showFameverseLiveProfileSheet(
+        context,
+        viewerUserId: widget.identity.id,
+        targetUserId: widget.room.hostUserId,
+        fallbackProfile: widget.room.host,
       ),
     );
   }
@@ -633,6 +611,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           final active =
                               participant.userId == _activeCohostUserId;
                           return ListTile(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              if (!mounted) return;
+                              unawaited(
+                                showFameverseLiveProfileSheet(
+                                  this.context,
+                                  viewerUserId: widget.identity.id,
+                                  targetUserId: participant.userId,
+                                ),
+                              );
+                            },
                             leading: CircleAvatar(
                               foregroundImage:
                                   participant.image != null &&
@@ -970,12 +959,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 5),
-                                  const Icon(
-                                    Icons.verified_rounded,
-                                    size: 16,
-                                    color: Color(0xFFAA62FF),
-                                  ),
                                   const SizedBox(width: 6),
                                   const FvLiveBadge(),
                                 ],
@@ -1200,7 +1183,11 @@ class _NeonHostAvatar extends StatelessWidget {
               BoxShadow(color: Color(0x778A2BE2), blurRadius: 12),
             ],
           ),
-          child: NativeProfileAvatar(profile: profile, radius: 20),
+          child: NativeProfileAvatar(
+            profile: profile,
+            radius: 20,
+            interactive: false,
+          ),
         ),
         Positioned(
           right: -1,
