@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'fameverse_live_profile_sheet.dart';
 import 'native_gift_visual.dart';
 import 'native_pocket_comet_gift.dart';
 
@@ -105,8 +107,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     } catch (_) {
       await next.dispose();
       if (!mounted) return;
-      // Never substitute an uninitialized/black video frame. The deterministic
-      // poster/fallback below remains visible if cinematic media cannot load.
       setState(() {
         _controller = null;
         _loadedUrl = null;
@@ -126,8 +126,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   Widget build(BuildContext context) {
     final playback = widget.playback;
 
-    // Lightweight gifts under 100 coins are intentionally not cinematic. They
-    // get a compact native acknowledgement instead of taking over the camera.
     if (!playback.gift.cinematic && playback.gift.cost < 100) {
       return IgnorePointer(
         child: Align(
@@ -232,8 +230,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       );
     }
 
-    // Cinematic media fallback. This is deterministic native art/text, never a
-    // paused remote frame, so a failed or slow network load cannot flash black.
     return IgnorePointer(
       child: Center(
         child: Container(
@@ -335,9 +331,6 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     if (_sending) return;
     final gift = _selected;
     setState(() => _sending = true);
-
-    // Close immediately to keep the Live surface responsive. The parent still
-    // waits for backend authority before broadcasting/playing the gift.
     Navigator.of(context).pop();
     await widget.onSend(gift, quantity);
   }
@@ -660,21 +653,42 @@ class NativeProfileAvatar extends StatelessWidget {
   const NativeProfileAvatar({
     required this.profile,
     this.radius = 18,
+    this.interactive = true,
     super.key,
   });
 
   final FvProfile profile;
   final double radius;
+  final bool interactive;
+
+  Future<void> _open(BuildContext context) async {
+    if (!interactive) return;
+    final viewerId = Supabase.instance.client.auth.currentUser?.id;
+    if (viewerId == null || !context.mounted) return;
+    await showFameverseLiveProfileSheet(
+      context,
+      viewerUserId: viewerId,
+      targetUserId: profile.id,
+      fallbackProfile: profile,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final avatar = profile.avatarUrl;
-    return CircleAvatar(
+    final circle = CircleAvatar(
       radius: radius,
       foregroundImage: avatar != null && avatar.isNotEmpty
           ? NetworkImage(avatar)
           : null,
       child: Text(profile.initial),
+    );
+    if (!interactive) return circle;
+    return GestureDetector(
+      key: const Key('live-profile-avatar'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _open(context),
+      child: circle,
     );
   }
 }

@@ -105,6 +105,7 @@ class FvBetaProgramStatus {
     required this.badgeUnlocked,
     required this.badgeUnlockedAt,
     required this.completedMissionKeys,
+    this.privilegedAccess = false,
   });
 
   final bool enrolled;
@@ -116,12 +117,33 @@ class FvBetaProgramStatus {
   final DateTime? badgeUnlockedAt;
   final Set<String> completedMissionKeys;
 
+  /// Owner/admin can inspect every First Verse surface without receiving a
+  /// fake badge award or fake mission completion.
+  final bool privilegedAccess;
+
   double get progress {
     if (requiredTotal <= 0) return 0;
     return (completedRequired / requiredTotal).clamp(0.0, 1.0);
   }
 
   bool completed(String key) => completedMissionKeys.contains(key);
+
+  FvBetaProgramStatus withPrivilegedAccess(bool value) {
+    return FvBetaProgramStatus(
+      // Privileged access is treated as UI enrollment so owner/admin never
+      // disappear behind tester-only navigation. Badge and mission state stay
+      // exactly as the backend reported them.
+      enrolled: enrolled || value,
+      memberStatus: memberStatus ?? (value ? 'privileged_preview' : null),
+      completedRequired: completedRequired,
+      requiredTotal: requiredTotal,
+      completedOptional: completedOptional,
+      badgeUnlocked: badgeUnlocked,
+      badgeUnlockedAt: badgeUnlockedAt,
+      completedMissionKeys: completedMissionKeys,
+      privilegedAccess: value,
+    );
+  }
 
   factory FvBetaProgramStatus.fromMap(Map<String, dynamic> row) {
     final rawMissions = row['completed_missions'];
@@ -174,12 +196,34 @@ class SupabaseFameverseBetaBackend implements FameverseBetaBackend {
         .toList();
   }
 
+  Future<bool> _hasPrivilegedAccess() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return false;
+    try {
+      final row = await _client
+          .from('account_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+      final role = row?['role']?.toString().trim().toLowerCase();
+      return role == 'owner' || role == 'admin';
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Future<FvBetaProgramStatus> loadProgramStatus() async {
-    final response = await _client.rpc('get_beta_program_status');
-    final rows = _rows(response);
-    if (rows.isEmpty) return FvBetaProgramStatus.notEnrolled;
-    return FvBetaProgramStatus.fromMap(rows.first);
+    final results = await Future.wait<dynamic>([
+      _client.rpc('get_beta_program_status'),
+      _hasPrivilegedAccess(),
+    ]);
+    final rows = _rows(results[0]);
+    final privileged = results[1] == true;
+    final status = rows.isEmpty
+        ? FvBetaProgramStatus.notEnrolled
+        : FvBetaProgramStatus.fromMap(rows.first);
+    return status.withPrivilegedAccess(privileged);
   }
 
   @override

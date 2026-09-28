@@ -72,6 +72,7 @@ class NativeHostV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
+                  videoExpected: cameraEnabled,
                   label: host?.name.isNotEmpty == true ? host!.name : 'Host',
                 );
               }
@@ -82,12 +83,14 @@ class NativeHostV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
+                  videoExpected: cameraEnabled,
                   label: 'Host',
                 ),
                 right: _V2ParticipantSurface(
                   call: call,
                   participant: cohost,
                   videoEnabled: cohost?.isVideoEnabled ?? false,
+                  videoExpected: cohost == null,
                   label: cohost?.name.isNotEmpty == true
                       ? cohost!.name
                       : 'Co-host',
@@ -133,6 +136,7 @@ class NativeViewerV2Stage extends StatelessWidget {
                   call: call,
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
+                  videoExpected: host == null,
                   label: host?.name.isNotEmpty == true ? host!.name : 'Host',
                 );
               }
@@ -142,12 +146,14 @@ class NativeViewerV2Stage extends StatelessWidget {
                   call: call,
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
+                  videoExpected: host == null,
                   label: 'Host',
                 ),
                 right: _V2ParticipantSurface(
                   call: call,
                   participant: cohost,
                   videoEnabled: cohost?.isVideoEnabled ?? false,
+                  videoExpected: cohost == null,
                   label: cohost?.name.isNotEmpty == true
                       ? cohost!.name
                       : 'Co-host',
@@ -214,17 +220,27 @@ class _V2ParticipantSurface extends StatelessWidget {
     required this.call,
     required this.participant,
     required this.videoEnabled,
+    required this.videoExpected,
     this.label,
   });
 
   final Call call;
   final CallParticipantState? participant;
   final bool videoEnabled;
+  final bool videoExpected;
   final String? label;
 
   @override
   Widget build(BuildContext context) {
     final participant = this.participant;
+
+    // Host startup is asynchronous inside Stream. A participant can exist for
+    // a short moment before the local video track reports enabled. That is a
+    // camera-starting state, not a user-selected camera-off state.
+    if (videoExpected && (participant == null || !videoEnabled)) {
+      return _V2StartingCameraSurface(label: label);
+    }
+
     if (participant == null) {
       return Stack(
         fit: StackFit.expand,
@@ -249,6 +265,56 @@ class _V2ParticipantSurface extends StatelessWidget {
           showConnectionQualityIndicator: false,
           showParticipantLabel: false,
           showSpeakerBorder: false,
+        ),
+        if (label != null) _V2StageLabel(text: label!),
+      ],
+    );
+  }
+}
+
+class _V2StartingCameraSurface extends StatelessWidget {
+  const _V2StartingCameraSurface({this.label});
+
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -.2),
+              radius: 1.15,
+              colors: [Color(0xFF271432), Color(0xFF100A14), Colors.black],
+            ),
+          ),
+        ),
+        const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: Color(0xFFB96BFF),
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Preparing camera…',
+                key: Key('live-camera-starting'),
+                style: TextStyle(
+                  color: Color(0xFFD8CCDE),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
         if (label != null) _V2StageLabel(text: label!),
       ],

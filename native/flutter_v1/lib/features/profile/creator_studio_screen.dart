@@ -1,15 +1,17 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
+import '../../data/fameverse_live_backend.dart';
 import 'native_recharge_screen.dart';
 
 /// Creator-facing business surface.
 ///
-/// External beta law: internal owner QA, moderation controls, and one-tap
-/// verification shortcuts must never appear in the tester-facing UI.
+/// External beta law: internal owner QA, payout moderation controls, and other
+/// private operator tools must never appear in the tester-facing UI.
 class CreatorStudioScreen extends StatefulWidget {
   const CreatorStudioScreen({
     required this.backend,
@@ -27,20 +29,74 @@ class CreatorStudioScreen extends StatefulWidget {
 }
 
 class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
+  late final FameverseLiveBackend _liveBackend;
+
   bool _loading = true;
   bool _busy = false;
+  bool _moderatorBusy = false;
   String? _error;
   String? _accountRole;
   FvCreatorPayoutSummary _summary = FvCreatorPayoutSummary.empty;
   FvCreatorPayoutMethod? _payoutMethod;
   List<FvCreatorPayoutRequest> _requests = const [];
+  List<FvCreatorLiveSummary> _liveHistory = const [];
+  List<FvCreatorGiftActivity> _giftActivity = const [];
+  List<_CreatorModerator> _moderators = const [];
 
   bool get _isOwner => _accountRole == 'owner';
 
   @override
   void initState() {
     super.initState();
+    _liveBackend = SupabaseFameverseLiveBackend(Supabase.instance.client);
     _refresh();
+  }
+
+  Future<List<_CreatorModerator>> _loadModerators() async {
+    final client = Supabase.instance.client;
+    final raw = await client
+        .from('creator_moderators')
+        .select('moderator_user_id,assigned_at')
+        .eq('creator_user_id', widget.identity.id)
+        .order('assigned_at');
+    final rows = (raw as List)
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .toList();
+    final ids = rows
+        .map((row) => row['moderator_user_id']?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+    if (ids.isEmpty) return const [];
+
+    final profileRaw = await client
+        .from('profiles')
+        .select('id,username,display_name,avatar_url')
+        .inFilter('id', ids);
+    final profiles = <String, Map<String, dynamic>>{};
+    for (final item in (profileRaw as List).whereType<Map>()) {
+      final row = Map<String, dynamic>.from(item);
+      final id = row['id']?.toString();
+      if (id != null) profiles[id] = row;
+    }
+
+    return rows.map((row) {
+      final id = row['moderator_user_id']?.toString() ?? '';
+      final profile = profiles[id] ?? const <String, dynamic>{};
+      final username = profile['username']?.toString();
+      final displayName = profile['display_name']?.toString().trim();
+      return _CreatorModerator(
+        userId: id,
+        displayName: displayName == null || displayName.isEmpty
+            ? (username?.isNotEmpty == true ? username! : 'Fameverse User')
+            : displayName,
+        username: username,
+        avatarUrl: profile['avatar_url']?.toString(),
+        assignedAt: DateTime.tryParse(row['assigned_at']?.toString() ?? ''),
+      );
+    }).toList();
   }
 
   Future<void> _refresh() async {
@@ -57,6 +113,9 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         widget.backend.listPayoutRequests(),
         widget.backend.loadPayoutMethod(),
         widget.backend.loadRole(widget.identity.id),
+        _liveBackend.loadCreatorLiveHistory(limit: 20),
+        _liveBackend.loadCreatorGiftActivity(limit: 30),
+        _loadModerators(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -64,6 +123,9 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         _requests = results[1] as List<FvCreatorPayoutRequest>;
         _payoutMethod = results[2] as FvCreatorPayoutMethod?;
         _accountRole = results[3] as String?;
+        _liveHistory = results[4] as List<FvCreatorLiveSummary>;
+        _giftActivity = results[5] as List<FvCreatorGiftActivity>;
+        _moderators = results[6] as List<_CreatorModerator>;
         _loading = false;
       });
     } catch (_) {
@@ -90,6 +152,99 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         builder: (context) => const NativeRechargeScreen(),
       ),
     );
+  }
+
+  Future<void> _addModerator() async {
+    if (_moderatorBusy) return;
+    if (_moderators.length >= 3) {
+      _message('Creator moderator limit is 3 during beta.');
+      return;
+    }
+    final controller = TextEditingController();
+    final username = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add moderator'),
+        content: TextField(
+          key: const Key('creator-moderator-username'),
+          controller: controller,
+          autocorrect: false,
+          textCapitalization: TextCapitalization.none,
+          decoration: const InputDecoration(
+            labelText: 'Fameverse username',
+            prefixText: '@',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    final cleaned = username?.trim().toLowerCase().replaceFirst(
+      RegExp(r'^@'),
+      '',
+    );
+    if (cleaned == null || cleaned.isEmpty) return;
+
+    setState(() => _moderatorBusy = true);
+    try {
+      final row = await Supabase.instance.client
+          .from('profiles')
+          .select('id')
+          .eq('username', cleaned)
+          .maybeSingle();
+      final moderatorId = row?['id']?.toString();
+      if (moderatorId == null || moderatorId.isEmpty) {
+        _message('No Fameverse user found for @$cleaned.');
+        return;
+      }
+      if (moderatorId == widget.identity.id) {
+        _message('You cannot add yourself as your own moderator.');
+        return;
+      }
+      await _liveBackend.setCreatorModerator(
+        moderatorUserId: moderatorId,
+        enabled: true,
+      );
+      final moderators = await _loadModerators();
+      if (mounted) setState(() => _moderators = moderators);
+      _message('@$cleaned can now moderate your Live sessions.');
+    } catch (error) {
+      final text = error.toString().toLowerCase();
+      _message(
+        text.contains('limit')
+            ? 'Creator moderator limit is 3 during beta.'
+            : 'Moderator could not be added.',
+      );
+    } finally {
+      if (mounted) setState(() => _moderatorBusy = false);
+    }
+  }
+
+  Future<void> _removeModerator(_CreatorModerator moderator) async {
+    if (_moderatorBusy) return;
+    setState(() => _moderatorBusy = true);
+    try {
+      await _liveBackend.setCreatorModerator(
+        moderatorUserId: moderator.userId,
+        enabled: false,
+      );
+      final moderators = await _loadModerators();
+      if (mounted) setState(() => _moderators = moderators);
+      _message('${moderator.displayName} removed from moderators.');
+    } catch (_) {
+      _message('Moderator could not be removed.');
+    } finally {
+      if (mounted) setState(() => _moderatorBusy = false);
+    }
   }
 
   Future<void> _openPayoutMethod() async {
@@ -244,6 +399,19 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalTaps = _liveHistory.fold<int>(
+      0,
+      (total, item) => total + item.rawTaps,
+    );
+    final totalGiftCoins = _liveHistory.fold<int>(
+      0,
+      (total, item) => total + item.giftCoins,
+    );
+    final totalGifts = _liveHistory.fold<int>(
+      0,
+      (total, item) => total + item.giftCount,
+    );
+
     return Scaffold(
       key: const Key('creator-studio-screen'),
       backgroundColor: const Color(0xFF0C0810),
@@ -279,6 +447,80 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                   body: _error!,
                 )
               else ...[
+                const _SectionLabel('LIVE PERFORMANCE'),
+                const SizedBox(height: 10),
+                Row(
+                  key: const Key('creator-live-analytics'),
+                  children: [
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Sessions',
+                        value: '${_liveHistory.length}',
+                        icon: Icons.videocam_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Fame taps',
+                        value: _compactNumber(totalTaps),
+                        icon: Icons.local_fire_department_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Gift coins',
+                        value: _compactNumber(totalGiftCoins),
+                        icon: Icons.card_giftcard_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                _StudioInfoCard(
+                  icon: Icons.insights_rounded,
+                  title:
+                      '$totalGifts gifts across ${_liveHistory.length} Live sessions',
+                  body:
+                      'These server-authoritative Live metrics are the foundation for creator progression. No hidden score or fake tier is being shown before that program is finalized.',
+                ),
+                const SizedBox(height: 12),
+                if (_liveHistory.isEmpty)
+                  const _StudioInfoCard(
+                    icon: Icons.video_library_outlined,
+                    title: 'No Live history yet',
+                    body:
+                        'Your completed Live sessions will appear here with taps and gift activity.',
+                  )
+                else
+                  ..._liveHistory
+                      .take(5)
+                      .map((item) => _LiveHistoryTile(item: item)),
+                const SizedBox(height: 26),
+                const _SectionLabel('MODERATORS'),
+                const SizedBox(height: 10),
+                _ModeratorCard(
+                  moderators: _moderators,
+                  busy: _moderatorBusy,
+                  onAdd: _addModerator,
+                  onRemove: _removeModerator,
+                ),
+                const SizedBox(height: 26),
+                const _SectionLabel('RECENT GIFT ACTIVITY'),
+                const SizedBox(height: 10),
+                if (_giftActivity.isEmpty)
+                  const _StudioInfoCard(
+                    icon: Icons.card_giftcard_outlined,
+                    title: 'No gift activity yet',
+                    body:
+                        'Recent gifts received during your Live sessions will appear here.',
+                  )
+                else
+                  ..._giftActivity
+                      .take(8)
+                      .map((item) => _GiftActivityTile(item: item)),
+                const SizedBox(height: 26),
                 if (_isOwner) ...[
                   const _SectionLabel('OWNER QA'),
                   const SizedBox(height: 10),
@@ -364,6 +606,22 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
   }
 }
 
+class _CreatorModerator {
+  const _CreatorModerator({
+    required this.userId,
+    required this.displayName,
+    required this.username,
+    required this.avatarUrl,
+    required this.assignedAt,
+  });
+
+  final String userId;
+  final String displayName;
+  final String? username;
+  final String? avatarUrl;
+  final DateTime? assignedAt;
+}
+
 class _StudioHero extends StatelessWidget {
   const _StudioHero();
 
@@ -399,9 +657,239 @@ class _StudioHero extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Manage creator earnings and payout setup without mixing internal tools into your public profile.',
+            'Live analytics, moderators, creator earnings, and payout setup in one private creator workspace.',
             style: TextStyle(color: Color(0xFFC4B8CC), height: 1.4),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: _panelDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFFB784FF)),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFFAFA4B8), fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LiveHistoryTile extends StatelessWidget {
+  const _LiveHistoryTile({required this.item});
+
+  final FvCreatorLiveSummary item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: Key('creator-live-${item.roomId}'),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: _panelDecoration(),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFF342047),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Icon(Icons.videocam_rounded, color: Color(0xFFC69BFF)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${_dateLabel(item.startedAt)} · ${_compactNumber(item.rawTaps)} taps · ${item.giftCount} gifts · ${item.giftCoins} coins',
+                  style: const TextStyle(
+                    color: Color(0xFFAFA4B8),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _StatusPill(status: item.status),
+        ],
+      ),
+    );
+  }
+}
+
+class _GiftActivityTile extends StatelessWidget {
+  const _GiftActivityTile({required this.item});
+
+  final FvCreatorGiftActivity item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(13),
+      decoration: _panelDecoration(),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            backgroundColor: Color(0xFF342047),
+            child: Icon(
+              Icons.card_giftcard_rounded,
+              size: 19,
+              color: Color(0xFFC69BFF),
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.senderDisplayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${item.giftId} ×${item.quantity} · ${item.coinsSpent} coins · ${_dateLabel(item.createdAt)}',
+                  style: const TextStyle(
+                    color: Color(0xFFAFA4B8),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeratorCard extends StatelessWidget {
+  const _ModeratorCard({
+    required this.moderators,
+    required this.busy,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<_CreatorModerator> moderators;
+  final bool busy;
+  final VoidCallback onAdd;
+  final ValueChanged<_CreatorModerator> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('creator-moderators-card'),
+      padding: const EdgeInsets.all(16),
+      decoration: _panelDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.shield_outlined, color: Color(0xFFB784FF)),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  '${moderators.length}/3 Live moderators',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                key: const Key('add-creator-moderator'),
+                onPressed: busy || moderators.length >= 3 ? null : onAdd,
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 17),
+                label: const Text('Add'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Moderators can help manage your Live sessions. The beta limit is three and assignments are enforced by the backend.',
+            style: TextStyle(
+              color: Color(0xFFAFA4B8),
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+          if (moderators.isEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'No moderators assigned yet.',
+              style: TextStyle(color: Color(0xFF8F8497), fontSize: 12),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            ...moderators.map(
+              (moderator) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  foregroundImage: moderator.avatarUrl?.isNotEmpty == true
+                      ? NetworkImage(moderator.avatarUrl!)
+                      : null,
+                  child: Text(
+                    moderator.displayName.isEmpty
+                        ? 'F'
+                        : moderator.displayName[0].toUpperCase(),
+                  ),
+                ),
+                title: Text(moderator.displayName),
+                subtitle: Text(
+                  moderator.username?.isNotEmpty == true
+                      ? '@${moderator.username}'
+                      : 'Fameverse moderator',
+                ),
+                trailing: IconButton(
+                  onPressed: busy ? null : () => onRemove(moderator),
+                  tooltip: 'Remove moderator',
+                  icon: const Icon(Icons.person_remove_outlined),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1154,6 +1642,12 @@ BoxDecoration _panelDecoration() {
 }
 
 String _money(int cents) => '\$${(cents / 100).toStringAsFixed(2)}';
+
+String _compactNumber(int value) {
+  if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
+  if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}K';
+  return '$value';
+}
 
 String _dateLabel(DateTime? value) {
   if (value == null) return 'Pending date';

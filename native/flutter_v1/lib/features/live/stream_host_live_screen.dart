@@ -6,6 +6,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'fameverse_live_profile_sheet.dart';
 import 'native_live_components.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
@@ -44,6 +45,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   bool _connecting = true;
   bool _ending = false;
   bool _ended = false;
+  bool _cleanupStarted = false;
+  bool _roomEndSent = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
   int _fameTaps = 0;
@@ -153,7 +156,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   void _receiveComment(Map<String, dynamic> payload) {
     final raw = (payload['text'] as String?)?.trim() ?? '';
-    if (!mounted || raw.isEmpty) return;
+    if (_ending || !mounted || raw.isEmpty) return;
     final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     setState(() {
       _chat.add(
@@ -172,7 +175,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
-    if (!mounted || gift == null) return;
+    if (_ending || !mounted || gift == null) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -227,7 +230,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Future<void> _postComment() async {
     final activity = _activity;
     final raw = _comment.text.trim();
-    if (activity == null || raw.isEmpty) return;
+    if (_ending || activity == null || raw.isEmpty) return;
     final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     final id = 'comment-${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
@@ -298,7 +301,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Future<void> _handleCohostEvent(Map<String, dynamic> payload) async {
     final event = payload['_event'] as String?;
     final viewerId = (payload['viewerId'] ?? payload['userId'])?.toString();
-    if (viewerId == null || viewerId == widget.identity.id) return;
+    if (_ending || viewerId == null || viewerId == widget.identity.id) return;
 
     switch (event) {
       case 'cohost-request':
@@ -343,7 +346,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _inviteCohost(CallParticipantState participant) async {
     final activity = _activity;
-    if (activity == null ||
+    if (_ending ||
+        activity == null ||
         _activeCohostUserId != null ||
         _pendingInviteUserId != null ||
         participant.isLocal) {
@@ -361,7 +365,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _acceptCohostRequest(Map<String, dynamic> request) async {
     final viewerId = (request['viewerId'] ?? request['userId'])?.toString();
-    if (viewerId == null || _activeCohostUserId != null) return;
+    if (_ending || viewerId == null || _activeCohostUserId != null) return;
     if (mounted) {
       setState(() {
         _cohostRequests.removeWhere(
@@ -376,7 +380,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Future<void> _declineCohostRequest(Map<String, dynamic> request) async {
     final viewerId = (request['viewerId'] ?? request['userId'])?.toString();
     final activity = _activity;
-    if (viewerId == null || activity == null) return;
+    if (_ending || viewerId == null || activity == null) return;
     if (mounted) {
       setState(() {
         _cohostRequests.removeWhere(
@@ -397,7 +401,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }) async {
     final call = _call;
     final activity = _activity;
-    if (call == null || activity == null) return;
+    if (_ending || call == null || activity == null) return;
     try {
       fvRequireSuccess(
         await call.grantPermissions(
@@ -453,13 +457,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         });
       } catch (_) {}
     }
-    if (mounted) setState(() => _activeCohostUserId = null);
+    _activeCohostUserId = null;
+    if (mounted && !_ending) setState(() {});
   }
 
   Future<void> _cancelInvite() async {
     final userId = _pendingInviteUserId;
     final activity = _activity;
-    if (userId == null || activity == null) return;
+    if (_ending || userId == null || activity == null) return;
     await activity.send('cohost-invite-cancelled', <String, dynamic>{
       'viewerId': userId,
       'userId': userId,
@@ -475,8 +480,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   Future<void> _markRoomEnded() async {
-    if (_ended) return;
-    _ended = true;
+    if (_roomEndSent) return;
+    _roomEndSent = true;
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     try {
@@ -510,9 +515,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     } catch (_) {}
   }
 
-  Future<void> _endLive() async {
-    if (_ending) return;
-    setState(() => _ending = true);
+  Future<void> _finishEndLive() async {
+    if (_cleanupStarted) return;
+    _cleanupStarted = true;
+
     await _endCohost();
     final call = _call;
     if (call != null) {
@@ -525,7 +531,28 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
     await _markRoomEnded();
     await _disposeTransport();
-    if (mounted) Navigator.of(context).pop(true);
+  }
+
+  void _endLive() {
+    if (_ending) return;
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    _heartbeat?.cancel();
+    _tapRefresh?.cancel();
+    _giftTimer?.cancel();
+    _giftQueue.clear();
+
+    setState(() {
+      _ending = true;
+      _ended = true;
+      _giftPlayback = null;
+    });
+
+    final navigator = Navigator.of(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && navigator.canPop()) navigator.pop(true);
+    });
+    unawaited(_finishEndLive());
   }
 
   void _showMessage(String message) {
@@ -535,32 +562,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   void _showProfileSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NativeProfileAvatar(profile: widget.room.host, radius: 42),
-              const SizedBox(height: 12),
-              Text(
-                widget.room.host.displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(widget.room.host.bio, textAlign: TextAlign.center),
-              ],
-            ],
-          ),
-        ),
+    unawaited(
+      showFameverseLiveProfileSheet(
+        context,
+        viewerUserId: widget.identity.id,
+        targetUserId: widget.room.hostUserId,
+        fallbackProfile: widget.room.host,
       ),
     );
   }
@@ -604,6 +611,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           final active =
                               participant.userId == _activeCohostUserId;
                           return ListTile(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              if (!mounted) return;
+                              unawaited(
+                                showFameverseLiveProfileSheet(
+                                  this.context,
+                                  viewerUserId: widget.identity.id,
+                                  targetUserId: participant.userId,
+                                ),
+                              );
+                            },
                             leading: CircleAvatar(
                               foregroundImage:
                                   participant.image != null &&
@@ -873,8 +891,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
-    if (!_ended) unawaited(_markRoomEnded());
-    unawaited(_disposeTransport());
+    if (!_roomEndSent) unawaited(_markRoomEnded());
+    if (!_cleanupStarted) unawaited(_disposeTransport());
     super.dispose();
   }
 
@@ -887,7 +905,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     return PopScope(
       canPop: _ended,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && !_ending) unawaited(_endLive());
+        if (!didPop && !_ending) _endLive();
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -901,7 +919,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 activeCohostUserId: _activeCohostUserId,
               )
             else
-              const FvLiveBackground(icon: Icons.videocam_off_rounded),
+              const FvLiveBackground(),
             const FvLiveGradient(),
             SafeArea(
               child: Padding(
@@ -940,12 +958,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                         letterSpacing: .2,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  const Icon(
-                                    Icons.verified_rounded,
-                                    size: 16,
-                                    color: Color(0xFFAA62FF),
                                   ),
                                   const SizedBox(width: 6),
                                   const FvLiveBadge(),
@@ -1056,7 +1068,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         const SizedBox(width: 6),
                         IconButton.filled(
                           key: const Key('host-live-send-comment'),
-                          onPressed: _postComment,
+                          onPressed: _ending ? null : _postComment,
                           style: IconButton.styleFrom(
                             backgroundColor: const Color(0xFF6F35C5),
                             foregroundColor: Colors.white,
@@ -1068,7 +1080,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         const SizedBox(width: 4),
                         FvFameActionButton(
                           keyValue: const Key('host-f-menu-button'),
-                          onPressed: _showFMenu,
+                          onPressed: _ending ? null : _showFMenu,
                           tooltip: 'Live controls',
                         ),
                       ],
@@ -1077,10 +1089,34 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 ),
               ),
             ),
-            if (_giftPlayback != null)
+            if (_giftPlayback != null && !_ending)
               NativeGiftOverlay(
                 key: ValueKey<String>('host-gift-$_giftSerial'),
                 playback: _giftPlayback!,
+              ),
+            if (_ending)
+              const Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _FameverseLiveWordmark(),
+                        SizedBox(height: 14),
+                        Text(
+                          'Ending live…',
+                          key: Key('host-live-ending-curtain'),
+                          style: TextStyle(
+                            color: Color(0xFFD6CADC),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
@@ -1147,7 +1183,11 @@ class _NeonHostAvatar extends StatelessWidget {
               BoxShadow(color: Color(0x778A2BE2), blurRadius: 12),
             ],
           ),
-          child: NativeProfileAvatar(profile: profile, radius: 20),
+          child: NativeProfileAvatar(
+            profile: profile,
+            radius: 20,
+            interactive: false,
+          ),
         ),
         Positioned(
           right: -1,
@@ -1186,11 +1226,7 @@ class _LiveStatsPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.local_fire_department_rounded,
-            size: 13,
-            color: Color(0xFFFF9D2E),
-          ),
+          const FvFameTapMark(size: 13),
           const SizedBox(width: 3),
           Text(
             '$fameTaps',

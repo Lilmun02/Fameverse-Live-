@@ -204,6 +204,9 @@ class SupabaseFameverseCreatorBackend {
         .select('role')
         .eq('user_id', userId)
         .maybeSingle();
+    // Preserve the authoritative role. Admin is privileged for beta testing
+    // surfaces such as gifts/First Verse, but money moderation remains owner-only
+    // in both the UI and the server RPCs.
     return (row?['role'] as String?)?.trim().toLowerCase();
   }
 

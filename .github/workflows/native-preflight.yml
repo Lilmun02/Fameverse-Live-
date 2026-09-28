@@ -6,6 +6,7 @@ on:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - repair/build24-full-update
   pull_request:
     branches:
       - native/flutter-v1

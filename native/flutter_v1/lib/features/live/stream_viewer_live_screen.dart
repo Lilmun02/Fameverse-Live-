@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'fameverse_live_profile_sheet.dart';
 import 'native_live_components.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
@@ -17,6 +19,7 @@ class NativeViewerLiveScreen extends StatefulWidget {
     required this.identity,
     required this.viewerProfile,
     required this.room,
+    this.giftAccess = true,
     super.key,
   });
 
@@ -25,6 +28,7 @@ class NativeViewerLiveScreen extends StatefulWidget {
   final FvIdentity identity;
   final FvProfile viewerProfile;
   final FvLiveRoom room;
+  final bool giftAccess;
 
   @override
   State<NativeViewerLiveScreen> createState() => _NativeViewerLiveScreenState();
@@ -65,6 +69,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   String? _error;
 
   bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _giftEnabled => widget.giftAccess && _canRefill;
   bool get _selfIsCohost => _activeCohostUserId == widget.identity.id;
 
   @override
@@ -74,6 +79,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _tapClock.start();
     unawaited(_connect());
     unawaited(_loadFollowState());
+  }
+
+  Future<void> _recordBetaMission(String missionKey) async {
+    try {
+      await Supabase.instance.client.rpc(
+        'record_beta_test_mission',
+        params: <String, dynamic>{'p_mission_key': missionKey},
+      );
+    } catch (_) {
+      // First Verse telemetry is best effort and can never break Live.
+    }
   }
 
   Future<void> _loadFollowState() async {
@@ -269,12 +285,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         'gifterLevel': _gifterLevel,
         'text': clean,
       });
+      await _recordBetaMission('send_comment');
     } catch (_) {
       if (mounted) _showMessage('Comment could not send.');
     }
   }
 
   Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
+    if (!_giftEnabled) return false;
     if (_giftSending) return false;
     if (!_walletReady) {
       _showMessage('Gift wallet is reconnecting.');
@@ -338,6 +356,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           sender: widget.viewerProfile.displayName,
         ),
       );
+      await _recordBetaMission('send_gift');
       return true;
     } catch (error) {
       final text = error.toString().toLowerCase();
@@ -371,6 +390,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _showGiftTray() {
+    if (!_giftEnabled) return;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -626,6 +646,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           _cohostMicEnabled = true;
         });
       }
+      await _recordBetaMission('cohost_session');
     } catch (_) {
       if (mounted) {
         _showMessage('Co-host camera or microphone could not start.');
@@ -712,37 +733,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _showProfileSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NativeProfileAvatar(profile: widget.room.host, radius: 42),
-              const SizedBox(height: 12),
-              Text(
-                widget.room.host.displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(widget.room.host.bio, textAlign: TextAlign.center),
-              ],
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: _followBusy ? null : _toggleFollow,
-                child: Text(_following ? 'Following' : 'Follow'),
-              ),
-            ],
-          ),
-        ),
+    unawaited(
+      showFameverseLiveProfileSheet(
+        context,
+        viewerUserId: widget.identity.id,
+        targetUserId: widget.room.hostUserId,
+        fallbackProfile: widget.room.host,
       ),
     );
   }
@@ -781,6 +777,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                         itemBuilder: (context, index) {
                           final participant = participants[index];
                           return ListTile(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              if (!mounted) return;
+                              unawaited(
+                                showFameverseLiveProfileSheet(
+                                  this.context,
+                                  viewerUserId: widget.identity.id,
+                                  targetUserId: participant.userId,
+                                ),
+                              );
+                            },
                             leading: CircleAvatar(
                               foregroundImage:
                                   participant.image != null &&
@@ -932,6 +939,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _leave() async {
     if (_leaving) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _leaving = true);
     _queueTapBuffer();
     unawaited(_drainTapQueue());
@@ -953,6 +961,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _exitEndedLive() {
     if (_leaving || !mounted) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _leaving = true);
     _queueTapBuffer();
     unawaited(_drainTapQueue());
@@ -1048,6 +1057,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             child: NativeProfileAvatar(
                               profile: widget.room.host,
                               radius: 18,
+                              interactive: false,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -1108,7 +1118,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             ),
                           const SizedBox(width: 5),
                           _ViewerStatChip(
-                            icon: Icons.local_fire_department_rounded,
+                            fameTap: true,
                             text: '${_fameTaps + _tapBuffer.length}',
                           ),
                         ],
@@ -1187,7 +1197,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: const Icon(Icons.arrow_upward_rounded),
                             tooltip: 'Send comment',
                           ),
-                          if (_canRefill) ...[
+                          if (_giftEnabled) ...[
                             const SizedBox(width: 4),
                             IconButton.filled(
                               key: const Key('viewer-gift-button'),
@@ -1243,7 +1253,6 @@ class _TapBurstParticle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = serial.isEven ? '🔥' : 'F';
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
       duration: const Duration(milliseconds: 850),
@@ -1260,24 +1269,17 @@ class _TapBurstParticle extends StatelessWidget {
           ),
         );
       },
-      child: Text(
-        symbol,
-        style: TextStyle(
-          color: symbol == 'F' ? const Color(0xFFB96BFF) : null,
-          fontSize: 28,
-          fontWeight: FontWeight.w900,
-          shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
-        ),
-      ),
+      child: const FvFameTapMark(size: 28),
     );
   }
 }
 
 class _ViewerStatChip extends StatelessWidget {
-  const _ViewerStatChip({required this.icon, required this.text});
+  const _ViewerStatChip({required this.text, this.icon, this.fameTap = false});
 
-  final IconData icon;
+  final IconData? icon;
   final String text;
+  final bool fameTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1290,7 +1292,10 @@ class _ViewerStatChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12),
+          if (fameTap)
+            const FvFameTapMark(size: 14)
+          else
+            Icon(icon ?? Icons.visibility_rounded, size: 12),
           const SizedBox(width: 3),
           Text(
             text,

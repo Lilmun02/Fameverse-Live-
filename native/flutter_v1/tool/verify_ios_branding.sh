@@ -20,6 +20,9 @@ done
 
 display_name="$($PLIST_BUDDY -c 'Print :CFBundleDisplayName' "$PLIST")"
 bundle_name="$($PLIST_BUDDY -c 'Print :CFBundleName' "$PLIST")"
+camera_usage="$($PLIST_BUDDY -c 'Print :NSCameraUsageDescription' "$PLIST" 2>/dev/null || true)"
+microphone_usage="$($PLIST_BUDDY -c 'Print :NSMicrophoneUsageDescription' "$PLIST" 2>/dev/null || true)"
+photos_usage="$($PLIST_BUDDY -c 'Print :NSPhotoLibraryUsageDescription' "$PLIST" 2>/dev/null || true)"
 
 if [ "$display_name" != "$EXPECTED_NAME" ]; then
   echo "Branding law failed: CFBundleDisplayName='$display_name', expected '$EXPECTED_NAME'"
@@ -28,6 +31,21 @@ fi
 
 if [ "$bundle_name" != "$EXPECTED_NAME" ]; then
   echo "Branding law failed: CFBundleName='$bundle_name', expected '$EXPECTED_NAME'"
+  exit 1
+fi
+
+if [ -z "$camera_usage" ]; then
+  echo "Branding law failed: NSCameraUsageDescription is missing"
+  exit 1
+fi
+
+if [ -z "$microphone_usage" ]; then
+  echo "Branding law failed: NSMicrophoneUsageDescription is missing"
+  exit 1
+fi
+
+if [ -z "$photos_usage" ]; then
+  echo "Branding law failed: NSPhotoLibraryUsageDescription is missing; Stories/profile media picking would be broken"
   exit 1
 fi
 
@@ -73,4 +91,4 @@ if grep -Eq '<string>(Live|live)</string>' "$PLIST"; then
   exit 1
 fi
 
-echo "Fameverse iOS branding law passed: '$EXPECTED_NAME' with canonical crown AppIcon set."
+echo "Fameverse iOS branding/media law passed: '$EXPECTED_NAME', camera, mic, Photos and canonical crown AppIcon are present."

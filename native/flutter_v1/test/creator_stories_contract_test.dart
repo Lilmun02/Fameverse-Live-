@@ -24,18 +24,44 @@ void main() {
     expect(sql, contains('auth.uid()::text'));
   });
 
-  test('Stories V1 stays intentionally small', () {
-    final screen = File(
+  test('every legacy Stories entry routes into the repaired V2 experience', () {
+    final compatibility = File(
       'lib/features/stories/creator_stories_screen.dart',
     ).readAsStringSync();
-    expect(screen, contains('Photo'));
-    expect(screen, contains('Short video'));
-    expect(screen, contains('Active for 24 hours'));
-    expect(screen, contains('Story caption'));
-    expect(screen, isNot(contains('Poll')));
-    expect(screen, isNot(contains('Music library')));
-    expect(screen, isNot(contains('Repost')));
+    expect(compatibility, contains('CreatorStoriesScreenV2('));
+    expect(compatibility, isNot(contains('showModalBottomSheet')));
   });
+
+  test(
+    'Stories V2 has one create area and a real media composer/upload path',
+    () {
+      final screen = File(
+        'lib/features/stories/creator_stories_screen_v2.dart',
+      ).readAsStringSync();
+      final backend = File(
+        'lib/data/fameverse_story_backend.dart',
+      ).readAsStringSync();
+
+      expect(screen, contains("Key('single-story-create-area')"));
+      expect(screen, contains("Key('add-story-photo')"));
+      expect(screen, contains("Key('add-story-video')"));
+      expect(screen, contains("Key('story-composer-page')"));
+      expect(screen, contains("Key('post-story-button')"));
+      expect(screen, contains('ImagePicker()'));
+      expect(screen, contains('ImageSource.gallery'));
+      expect(screen, contains('maxDuration: const Duration(seconds: 30)'));
+      expect(screen, contains('Story posted for 24 hours.'));
+      expect(screen, isNot(contains('showModalBottomSheet')));
+      expect(screen, isNot(contains('Poll')));
+      expect(screen, isNot(contains('Music library')));
+      expect(screen, isNot(contains('Repost')));
+
+      expect(backend, contains("bucketName = 'fameverse-stories'"));
+      expect(backend, contains('uploadBinary('));
+      expect(backend, contains("'create_creator_story'"));
+      expect(backend, contains('50 * 1024 * 1024'));
+    },
+  );
 
   test(
     'Viewing a Story can progress First Verse without coupling Stories to beta',

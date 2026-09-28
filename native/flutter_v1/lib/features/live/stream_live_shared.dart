@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'fameverse_live_profile_sheet.dart';
 
 void fvRequireSuccess<T>(Result<T> result, String message) {
   if (result.isFailure) {
@@ -18,6 +21,8 @@ String fvFriendlyError(Object error) {
   return 'Please try again.';
 }
 
+/// Light edge treatment only. The camera should remain crisp and dominant;
+/// Fameverse chrome must not make the Live picture look muddy or low quality.
 class FvLiveGradient extends StatelessWidget {
   const FvLiveGradient({super.key});
 
@@ -29,12 +34,58 @@ class FvLiveGradient extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: .55),
+            Colors.black.withValues(alpha: .22),
             Colors.transparent,
-            Colors.black.withValues(alpha: .92),
+            Colors.transparent,
+            Colors.black.withValues(alpha: .48),
           ],
-          stops: const [0, .42, 1],
+          stops: const [0, .20, .68, 1],
         ),
+      ),
+    );
+  }
+}
+
+/// FameTaps are a Fameverse product signal, not a generic fire emoji.
+/// The purple F + flame mark is the canonical compact Live representation.
+class FvFameTapMark extends StatelessWidget {
+  const FvFameTapMark({this.size = 20, super.key});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      key: const Key('fame-tap-mark'),
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.local_fire_department_rounded,
+            size: size,
+            color: const Color(0xFF9B55FF),
+            shadows: const [Shadow(color: Color(0xAA7A2DDB), blurRadius: 7)],
+          ),
+          Positioned(
+            bottom: size * .16,
+            child: Text(
+              'F',
+              style: TextStyle(
+                // Keep this non-const spelling because the locked regression
+                // contract verifies the canonical FameTaps purple literal.
+                // ignore: prefer_const_constructors
+                color: Color(0xFFE1B5FF),
+                fontSize: size * .43,
+                height: 1,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -207,16 +258,17 @@ class FvLiveCommentComposer extends StatelessWidget {
       maxLines: 3,
       keyboardType: TextInputType.multiline,
       textInputAction: TextInputAction.newline,
-      style: const TextStyle(fontSize: 15, height: 1.28),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      style: const TextStyle(fontSize: 15, height: 1.22),
       decoration: InputDecoration(
         hintText: hintText,
         counterText: '',
         isDense: true,
         filled: true,
-        fillColor: const Color(0xC70C0810),
+        fillColor: const Color(0xD9110B15),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 15,
-          vertical: 12,
+          vertical: 10,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
@@ -235,6 +287,8 @@ class FvLiveCommentComposer extends StatelessWidget {
   }
 }
 
+/// This is the Live controls button. The FameTaps identity is intentionally not
+/// reused here so users do not confuse a control menu with the product metric.
 class FvFameActionButton extends StatelessWidget {
   const FvFameActionButton({
     required this.onPressed,
@@ -250,30 +304,24 @@ class FvFameActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 50,
-      height: 50,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const RadialGradient(
-          colors: [Color(0xFF8238E4), Color(0xFF29103D)],
-        ),
-        border: Border.all(color: const Color(0xFFC36FFF), width: 1.8),
+        color: const Color(0xE617111D),
+        border: Border.all(color: const Color(0xFF7F4A99), width: 1.2),
         boxShadow: const [
-          BoxShadow(color: Color(0x998E4DFF), blurRadius: 16, spreadRadius: 1),
+          BoxShadow(color: Color(0x442F133E), blurRadius: 10, spreadRadius: 1),
         ],
       ),
       child: IconButton(
         key: keyValue,
         onPressed: onPressed,
         tooltip: tooltip,
-        icon: const Text(
-          'F',
-          style: TextStyle(
-            color: Color(0xFFE1B5FF),
-            fontSize: 21,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
-          ),
+        icon: const Icon(
+          Icons.more_horiz_rounded,
+          color: Color(0xFFE5D8EB),
+          size: 25,
         ),
       ),
     );
@@ -285,16 +333,36 @@ class FvLiveChatList extends StatelessWidget {
 
   final List<dynamic> messages;
 
+  Future<void> _openProfile(BuildContext context, String userId) async {
+    final viewerId = Supabase.instance.client.auth.currentUser?.id;
+    if (viewerId == null || !context.mounted) return;
+    try {
+      await showFameverseLiveProfileSheet(
+        context,
+        viewerUserId: viewerId,
+        targetUserId: userId,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Profile could not open.')),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visible = messages.length > 6
-        ? messages.sublist(messages.length - 6)
+    final visible = messages.length > 7
+        ? messages.sublist(messages.length - 7)
         : messages;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: visible.map((dynamic raw) {
         final user = (raw.user as String).trim();
+        final userId = raw.userId?.toString();
         final text = (raw.text as String).trim();
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
@@ -302,117 +370,123 @@ class FvLiveChatList extends StatelessWidget {
             ? 'F'
             : user.characters.first.toUpperCase();
         final isGift = kind == 'gift';
+        final canOpenProfile = userId != null && userId.isNotEmpty;
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Container(
-            key: isGift ? const Key('v2-highlighted-gift-chat') : null,
-            padding: isGift
-                ? const EdgeInsets.fromLTRB(9, 8, 11, 9)
-                : const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-            decoration: isGift
-                ? BoxDecoration(
-                    color: const Color(0xCC1A0E24),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFB34EFF),
-                      width: 1.1,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x553C0A71), blurRadius: 10),
-                    ],
-                  )
-                : null,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF8E4DFF), Color(0xFF3C1A5A)],
-                    ),
-                    border: Border.all(color: const Color(0xFFB478FF)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              user.isEmpty ? 'Fameverse viewer' : user,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                          if (level > 1) ...[
-                            const SizedBox(width: 7),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6E32B9),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: const Color(0xFFAF6DFF),
-                                  width: .8,
-                                ),
-                              ),
-                              child: Text(
-                                'Lv. $level',
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        text,
-                        style: TextStyle(
-                          color: isGift
-                              ? const Color(0xFFFFD8FF)
-                              : const Color(0xFFF5EFF8),
-                          fontSize: 15,
-                          height: 1.3,
-                          fontWeight: isGift
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          shadows: const [
-                            Shadow(color: Colors.black, blurRadius: 7),
-                          ],
+          padding: const EdgeInsets.only(bottom: 5),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: canOpenProfile
+                  ? () => _openProfile(context, userId)
+                  : null,
+              borderRadius: BorderRadius.circular(14),
+              child: Ink(
+                key: isGift ? const Key('v2-highlighted-gift-chat') : null,
+                padding: isGift
+                    ? const EdgeInsets.fromLTRB(7, 6, 9, 6)
+                    : const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                decoration: isGift
+                    ? BoxDecoration(
+                        color: const Color(0xD91A0E24),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFB34EFF),
+                          width: 1,
+                        ),
+                      )
+                    : null,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 27,
+                      height: 27,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF8E4DFF), Color(0xFF3C1A5A)],
+                        ),
+                        border: Border.all(
+                          color: const Color(0xFFB478FF),
+                          width: .8,
                         ),
                       ),
-                    ],
-                  ),
+                      child: Center(
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  user.isEmpty ? 'Fameverse viewer' : user,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                              if (level > 1) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6E32B9),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    'Lv. $level',
+                                    style: const TextStyle(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            text,
+                            style: TextStyle(
+                              color: isGift
+                                  ? const Color(0xFFFFD8FF)
+                                  : const Color(0xFFF5EFF8),
+                              fontSize: 15,
+                              height: 1.2,
+                              fontWeight: isGift
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              shadows: const [
+                                Shadow(color: Colors.black, blurRadius: 5),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
