@@ -9,6 +9,8 @@ void main() {
     final sheet = read('lib/features/live/fameverse_live_profile_sheet.dart');
     final shared = read('lib/features/live/stream_live_shared.dart');
     final components = read('lib/features/live/native_live_components.dart');
+    final host = read('lib/features/live/stream_host_live_screen.dart');
+    final viewer = read('lib/features/live/stream_viewer_live_screen.dart');
 
     expect(sheet, contains("Key('live-profile-sheet')"));
     expect(sheet, contains("Key('live-profile-social-stats')"));
@@ -19,12 +21,16 @@ void main() {
     expect(sheet, contains('Gift coins sent'));
     expect(sheet, contains("Key('live-profile-gifter-level')"));
     expect(sheet, contains('Follow back'));
-    expect(sheet, contains('Friends'));
     expect(sheet, contains("'get_live_profile_sheet_summary'"));
 
     expect(shared, contains('showFameverseLiveProfileSheet'));
     expect(components, contains("Key('live-profile-avatar')"));
     expect(components, contains('showFameverseLiveProfileSheet'));
+    expect(host, contains('showFameverseLiveProfileSheet'));
+    expect(viewer, contains('showFameverseLiveProfileSheet'));
+    expect(host, contains('targetUserId: participant.userId'));
+    expect(viewer, contains('targetUserId: participant.userId'));
+    expect(host, isNot(contains('Icons.verified_rounded')));
   });
 
   test('Live profile backend never exposes private owner or payout fields', () {
