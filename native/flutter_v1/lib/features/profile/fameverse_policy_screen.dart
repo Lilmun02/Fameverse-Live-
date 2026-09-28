@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'fameverse_system_status_screen.dart';
+
 class FameversePolicyScreen extends StatefulWidget {
   const FameversePolicyScreen({super.key});
 
@@ -26,10 +28,20 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
 
   bool _securityBusy = false;
 
-  void _open(BuildContext context, String title, String body) {
+  void _openDocument(String title, String body) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => _PolicyDocument(title: title, body: body),
+      ),
+    );
+  }
+
+  void _openSystem(String section) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => FameverseSystemStatusScreen(
+          initialSection: section,
+        ),
       ),
     );
   }
@@ -151,7 +163,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
         backgroundColor: Colors.black,
         centerTitle: true,
         title: const Text(
-          'Privacy, safety & legal',
+          'Privacy, safety & system',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
@@ -184,7 +196,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Your account. Your safety. Clear rules.',
+                          'Your account. Your safety. Your Fameverse system.',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
@@ -192,7 +204,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                         ),
                         SizedBox(height: 5),
                         Text(
-                          'Account security, privacy information, community standards, creator economics, and Fameverse legal terms live here.',
+                          'Account security, Fame Algo, backend updates, community standards, creator economics and legal terms.',
                           style: TextStyle(
                             color: Color(0xFFB2A6B6),
                             fontSize: 12,
@@ -206,6 +218,27 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            const _PolicySectionLabel('FAMEVERSE SYSTEM'),
+            const SizedBox(height: 8),
+            _PolicyGroup(
+              children: [
+                _PolicyRow(
+                  key: const Key('settings-fame-algo-entry'),
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'Fame Algo',
+                  subtitle: 'See what powers For You and creator discovery',
+                  onTap: () => _openSystem('algo'),
+                ),
+                _PolicyRow(
+                  key: const Key('settings-backend-updater-entry'),
+                  icon: Icons.system_update_alt_rounded,
+                  title: 'App & backend updates',
+                  subtitle: 'Revision, release label, status and Check now',
+                  onTap: () => _openSystem('updates'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
             const _PolicySectionLabel('ACCOUNT SECURITY'),
             const SizedBox(height: 8),
             _PolicyGroup(
@@ -236,14 +269,14 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                   icon: Icons.privacy_tip_outlined,
                   title: 'Privacy Notice',
                   subtitle: 'What Fameverse uses and why',
-                  onTap: () => _open(context, 'Privacy Notice', _privacy),
+                  onTap: () => _openDocument('Privacy Notice', _privacy),
                 ),
                 _PolicyRow(
                   icon: Icons.groups_2_outlined,
                   title: 'Community Standards',
                   subtitle: 'What Fameverse will and will not tolerate',
                   onTap: () =>
-                      _open(context, 'Community Standards', _community),
+                      _openDocument('Community Standards', _community),
                 ),
               ],
             ),
@@ -256,7 +289,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                   icon: Icons.live_tv_outlined,
                   title: 'Creator Beta Terms',
                   subtitle: '70/30 gifts, payouts and creator responsibilities',
-                  onTap: () => _open(context, 'Creator Beta Terms', _creator),
+                  onTap: () => _openDocument('Creator Beta Terms', _creator),
                 ),
                 _PolicyRow(
                   key: const Key('fame-coins-referral-rules'),
@@ -264,7 +297,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                   title: 'Fame Coins & referrals',
                   subtitle: 'Purchased vs promotional coins and 100/50 rewards',
                   onTap: () =>
-                      _open(context, 'Fame Coins & Referral Rules', _coins),
+                      _openDocument('Fame Coins & Referral Rules', _coins),
                 ),
               ],
             ),
@@ -277,7 +310,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                   icon: Icons.description_outlined,
                   title: 'Terms of Use',
                   subtitle: 'Rules for using Fameverse',
-                  onTap: () => _open(context, 'Terms of Use', _terms),
+                  onTap: () => _openDocument('Terms of Use', _terms),
                 ),
               ],
             ),
