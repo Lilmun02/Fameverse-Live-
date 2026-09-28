@@ -523,7 +523,11 @@ class _SheetDivider extends StatelessWidget {
 }
 
 class _MetricTile extends StatelessWidget {
-  const _MetricTile({required this.icon, required this.value, required this.label});
+  const _MetricTile({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
 
   final Widget icon;
   final String value;
