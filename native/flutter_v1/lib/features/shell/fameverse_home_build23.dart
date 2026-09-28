@@ -65,8 +65,9 @@ class _FameverseHomeBuild23ScreenState
           current.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final nextTime =
           story.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      if (nextTime.isAfter(currentTime))
+      if (nextTime.isAfter(currentTime)) {
         newestByCreator[story.creatorUserId] = story;
+      }
     }
     final result = newestByCreator.values.toList();
     result.sort((a, b) {
