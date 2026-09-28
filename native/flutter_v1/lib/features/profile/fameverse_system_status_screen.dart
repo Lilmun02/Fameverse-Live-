@@ -31,7 +31,9 @@ class _FameverseSystemStatusScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _jumpToInitialSection());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _jumpToInitialSection(),
+    );
   }
 
   @override
@@ -115,11 +117,7 @@ class _FameverseSystemStatusScreenState
               ),
               child: const Row(
                 children: [
-                  Icon(
-                    Icons.hub_rounded,
-                    color: Color(0xFFC985FF),
-                    size: 26,
-                  ),
+                  Icon(Icons.hub_rounded, color: Color(0xFFC985FF), size: 26),
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -193,10 +191,7 @@ class _FameverseSystemStatusScreenState
                   const SizedBox(height: 16),
                   const Text(
                     'Fame Algo ranks discovery using Fameverse signals such as follows, mutual connections, eligible FameTaps, gifts, active Stories, active Lives, freshness, momentum and creator-discovery boosts.',
-                    style: TextStyle(
-                      color: Color(0xFFB7AABD),
-                      height: 1.45,
-                    ),
+                    style: TextStyle(color: Color(0xFFB7AABD), height: 1.45),
                   ),
                   const SizedBox(height: 12),
                   const Text(
