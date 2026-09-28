@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../data/fameverse_backend.dart';
-import '../profile/fameverse_public_profile_screen.dart';
+import 'fameverse_live_profile_sheet.dart';
 
 void fvRequireSuccess<T>(Result<T> result, String message) {
   if (result.isFailure) {
@@ -334,36 +333,14 @@ class FvLiveChatList extends StatelessWidget {
 
   final List<dynamic> messages;
 
-  Future<void> _openProfile(
-    BuildContext context,
-    String userId,
-    String fallbackName,
-  ) async {
+  Future<void> _openProfile(BuildContext context, String userId) async {
+    final viewerId = Supabase.instance.client.auth.currentUser?.id;
+    if (viewerId == null || !context.mounted) return;
     try {
-      final viewerId = Supabase.instance.client.auth.currentUser?.id;
-      if (viewerId == null || !context.mounted) return;
-      final row = await Supabase.instance.client
-          .from('profiles')
-          .select('id,username,display_name,bio,avatar_url,created_at')
-          .eq('id', userId)
-          .maybeSingle();
-      if (row == null || !context.mounted) return;
-      final profile = FvProfile(
-        id: row['id']?.toString() ?? userId,
-        username: row['username']?.toString(),
-        displayName: row['display_name']?.toString() ?? fallbackName,
-        bio: row['bio']?.toString() ?? '',
-        avatarUrl: row['avatar_url']?.toString(),
-        createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
-      );
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (context) => FameversePublicProfileScreen(
-            viewerUserId: viewerId,
-            targetUserId: userId,
-            initialProfile: profile,
-          ),
-        ),
+      await showFameverseLiveProfileSheet(
+        context,
+        viewerUserId: viewerId,
+        targetUserId: userId,
       );
     } catch (_) {
       if (!context.mounted) return;
@@ -401,11 +378,7 @@ class FvLiveChatList extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: canOpenProfile
-                  ? () => _openProfile(
-                      context,
-                      userId,
-                      user.isEmpty ? 'Fameverse User' : user,
-                    )
+                  ? () => _openProfile(context, userId)
                   : null,
               borderRadius: BorderRadius.circular(14),
               child: Ink(
