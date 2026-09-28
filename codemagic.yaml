@@ -131,7 +131,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
-        FAMEVERSE_BUILD_FAMILY: "18"
+        FAMEVERSE_BUILD_FAMILY: "23"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -139,10 +139,10 @@ workflows:
         - ~/.pub-cache
 
     scripts:
-      - name: Checkout locked Build 18 repair source
+      - name: Checkout locked Build 23 repair source
         script: |
           set -euo pipefail
-          TARGET_BRANCH="build18/live-repair"
+          TARGET_BRANCH="integration/sep27-big-update"
           REPO_ROOT="$(git rev-parse --show-toplevel)"
           cd "$REPO_ROOT"
           git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
@@ -154,7 +154,7 @@ workflows:
             exit 1
           fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
-          printf '%s\n' "Build 18 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build18_source_identity.txt"
+          printf '%s\n' "Build 23 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build23_source_identity.txt"
           echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
 
       - name: Verify required TestFlight secrets are present
@@ -281,13 +281,13 @@ workflows:
           test -n "${FAMEVERSE_SOURCE_SHA:-}"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
-            --dart-define="FAMEVERSE_BUILD_FAMILY=18" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=23" \
             --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - build18_source_identity.txt
+      - build23_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -298,8 +298,8 @@ workflows:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
-# native-testflight always checks out the locked build18/live-repair source before validation/building.
-# A user may trigger the workflow from the base branch; the published candidate source is still the locked repair branch.
-# Every candidate publishes build18_source_identity.txt with the exact source commit used for the IPA.
+# native-testflight always checks out the locked integration/sep27-big-update Build 23 repair source before validation/building.
+# A user may trigger the workflow from another branch; the published candidate source is still the locked Build 23 repair branch.
+# Every candidate publishes build23_source_identity.txt with the exact source commit used for the IPA.
 # TestFlight upload is a candidate checkpoint, never a product PASS.
 # The candidate must be physically tested before external promotion / release approval.
