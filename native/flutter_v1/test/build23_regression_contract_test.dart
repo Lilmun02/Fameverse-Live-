@@ -28,7 +28,9 @@ void main() {
     });
 
     test('First Verse lives in Settings with real progress', () {
-      final profile = _source('lib/features/profile/native_profile_build23.dart');
+      final profile = _source(
+        'lib/features/profile/native_profile_build23.dart',
+      );
       final shell = _source('lib/features/shell/fameverse_shell_build23.dart');
 
       expect(profile, contains("Key('settings-first-verse-entry')"));
@@ -39,8 +41,12 @@ void main() {
     });
 
     test('owner premium surface is not blurred or fake locked', () {
-      final profile = _source('lib/features/profile/native_profile_build23.dart');
-      final studio = _source('lib/features/profile/creator_studio_build23.dart');
+      final profile = _source(
+        'lib/features/profile/native_profile_build23.dart',
+      );
+      final studio = _source(
+        'lib/features/profile/creator_studio_build23.dart',
+      );
 
       expect(profile, contains('FAMEVERSE OWNER • PREMIUM'));
       expect(profile, contains('Owner Premium'));
@@ -51,7 +57,9 @@ void main() {
     });
 
     test('promo QA value stays visibly separate from real cash earnings', () {
-      final studio = _source('lib/features/profile/creator_studio_build23.dart');
+      final studio = _source(
+        'lib/features/profile/creator_studio_build23.dart',
+      );
 
       expect(studio, contains('REAL CREATOR EARNINGS'));
       expect(studio, contains('Promotional (non-withdrawable)'));

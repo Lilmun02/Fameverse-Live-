@@ -27,8 +27,12 @@ void main() {
   final shell = read('lib/features/shell/fameverse_shell.dart');
   final build23Shell = read('lib/features/shell/fameverse_shell_build23.dart');
   final build23Home = read('lib/features/shell/fameverse_home_build23.dart');
-  final build23Profile = read('lib/features/profile/native_profile_build23.dart');
-  final build23Studio = read('lib/features/profile/creator_studio_build23.dart');
+  final build23Profile = read(
+    'lib/features/profile/native_profile_build23.dart',
+  );
+  final build23Studio = read(
+    'lib/features/profile/creator_studio_build23.dart',
+  );
   final pubspec = read('pubspec.yaml');
   final test = read('test/app_smoke_test.dart');
 

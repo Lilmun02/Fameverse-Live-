@@ -348,7 +348,11 @@ class _UpdateMark extends StatelessWidget {
             colors: [Color(0xFF3C1854), Color(0xFF130B19)],
           ),
           boxShadow: const [
-            BoxShadow(color: Color(0x554A1467), blurRadius: 32, spreadRadius: 2),
+            BoxShadow(
+              color: Color(0x554A1467),
+              blurRadius: 32,
+              spreadRadius: 2,
+            ),
           ],
         ),
         child: const Icon(
