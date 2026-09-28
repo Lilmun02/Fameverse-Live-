@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FvStartupUpdateNotice {
   const FvStartupUpdateNotice({
+    required this.id,
     required this.updateType,
     required this.title,
     required this.summary,
@@ -11,6 +12,7 @@ class FvStartupUpdateNotice {
     this.buildNumber,
   });
 
+  final String id;
   final String updateType;
   final String title;
   final String summary;
@@ -36,7 +38,7 @@ class FvStartupUpdateService {
     final rows = await _client
         .from('app_update_notices')
         .select(
-          'update_type, title, summary, version_label, build_number, '
+          'id, update_type, title, summary, version_label, build_number, '
           'changelog, requires_acknowledgement, published_at',
         )
         .eq('active', true)
@@ -52,6 +54,7 @@ class FvStartupUpdateService {
         : const <String>[];
 
     return FvStartupUpdateNotice(
+      id: row['id']?.toString() ?? '',
       updateType: (row['update_type'] as String?) ?? 'backend',
       title: (row['title'] as String?) ?? 'Fameverse update',
       summary: (row['summary'] as String?) ?? '',
