@@ -39,9 +39,8 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
   void _openSystem(String section) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => FameverseSystemStatusScreen(
-          initialSection: section,
-        ),
+        builder: (context) =>
+            FameverseSystemStatusScreen(initialSection: section),
       ),
     );
   }
@@ -275,8 +274,7 @@ class _FameversePolicyScreenState extends State<FameversePolicyScreen> {
                   icon: Icons.groups_2_outlined,
                   title: 'Community Standards',
                   subtitle: 'What Fameverse will and will not tolerate',
-                  onTap: () =>
-                      _openDocument('Community Standards', _community),
+                  onTap: () => _openDocument('Community Standards', _community),
                 ),
               ],
             ),
