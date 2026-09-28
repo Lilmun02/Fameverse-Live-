@@ -128,7 +128,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       final results = await Future.wait<dynamic>([
         widget.backend.loadProfile(widget.identity.id),
         widget.backend.loadFollowNetwork(widget.identity.id),
-        widget.backend.listRecommendedCreators(excludeUserId: widget.identity.id),
+        widget.backend.listRecommendedCreators(
+          excludeUserId: widget.identity.id,
+        ),
         widget.backend.listActiveLiveRooms(excludeUserId: widget.identity.id),
       ]);
       if (!mounted) return;
@@ -160,7 +162,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
         targetId: targetId,
         following: !following,
       );
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) setState(() => _network = network);
       await _recordBetaMission('follow_creator');
     } catch (_) {
@@ -320,7 +324,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     );
     await _recordBetaMission('open_public_profile');
     try {
-      final network = await widget.backend.loadFollowNetwork(widget.identity.id);
+      final network = await widget.backend.loadFollowNetwork(
+        widget.identity.id,
+      );
       if (mounted) setState(() => _network = network);
     } catch (_) {}
   }
@@ -363,14 +369,16 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = _profile ?? FvProfile(
-      id: widget.identity.id,
-      displayName: 'Fameverse User',
-      username: null,
-      bio: '',
-      avatarUrl: null,
-      createdAt: null,
-    );
+    final profile =
+        _profile ??
+        FvProfile(
+          id: widget.identity.id,
+          displayName: 'Fameverse User',
+          username: null,
+          bio: '',
+          avatarUrl: null,
+          createdAt: null,
+        );
 
     return Scaffold(
       body: IndexedStack(
