@@ -28,7 +28,7 @@ void main() {
     );
     await _continuePastStartupGate(tester);
 
-    expect(find.byKey(const Key('native-product-wordmark')), findsOneWidget);
+    expect(find.byKey(const Key('build23-home')), findsOneWidget);
     expect(find.byKey(const Key('fameverse-bottom-nav')), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Discover'), findsOneWidget);
