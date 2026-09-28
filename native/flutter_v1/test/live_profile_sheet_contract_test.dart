@@ -18,7 +18,9 @@ void main() {
     expect(sheet, contains('Following'));
     expect(sheet, contains('Friends'));
     expect(sheet, contains('FameTaps'));
-    expect(sheet, contains('Gift coins sent'));
+    expect(sheet, contains('Gifts sent'));
+    expect(sheet, contains("Key('live-profile-gift-coins-sent')"));
+    expect(sheet, contains('Fame Coins sent in gifts'));
     expect(sheet, contains("Key('live-profile-gifter-level')"));
     expect(sheet, contains('Follow back'));
     expect(sheet, contains("'get_live_profile_sheet_summary'"));
