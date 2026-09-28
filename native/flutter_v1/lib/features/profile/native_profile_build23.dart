@@ -652,8 +652,9 @@ class _Build23SettingsScreen extends StatelessWidget {
     );
     if (confirmed != true) return;
     await onSignOut();
-    if (context.mounted)
+    if (context.mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   @override
