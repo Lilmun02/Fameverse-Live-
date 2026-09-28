@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../profile/fameverse_public_profile_screen.dart';
-import 'stream_live_shared.dart';
 
 class FameverseLiveProfileSummary {
   const FameverseLiveProfileSummary({
@@ -244,7 +243,7 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
                         BoxShadow(color: Color(0x665A1B86), blurRadius: 22),
                       ],
                     ),
-                    child: NativeProfileAvatar(profile: profile, radius: 48),
+                    child: _ProfileAvatar(profile: profile, radius: 48),
                   ),
                   if (summary != null)
                     Positioned(
@@ -351,7 +350,7 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
                 children: [
                   Expanded(
                     child: _MetricTile(
-                      icon: const FvFameTapMark(size: 20),
+                      icon: const _SheetFameTapMark(size: 20),
                       value: _compact(summary.fameTaps),
                       label: 'FameTaps',
                     ),
@@ -424,6 +423,66 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
   }
 }
 
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.profile, required this.radius});
+
+  final FvProfile profile;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = profile.avatarUrl?.trim();
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: const Color(0xFF2B1838),
+      foregroundImage: avatar == null || avatar.isEmpty
+          ? null
+          : NetworkImage(avatar),
+      child: Text(
+        profile.initial,
+        style: const TextStyle(fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+}
+
+class _SheetFameTapMark extends StatelessWidget {
+  const _SheetFameTapMark({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.local_fire_department_rounded,
+            size: size,
+            color: const Color(0xFF9B55FF),
+          ),
+          Positioned(
+            bottom: size * .15,
+            child: Text(
+              'F',
+              style: TextStyle(
+                color: const Color(0xFFE1B5FF),
+                fontSize: size * .42,
+                height: 1,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SheetStat extends StatelessWidget {
   const _SheetStat({required this.label, required this.value});
 
@@ -464,11 +523,7 @@ class _SheetDivider extends StatelessWidget {
 }
 
 class _MetricTile extends StatelessWidget {
-  const _MetricTile({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
+  const _MetricTile({required this.icon, required this.value, required this.label});
 
   final Widget icon;
   final String value;
