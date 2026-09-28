@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import 'fameverse_system_status_screen.dart';
 
 /// Public Fameverse identity surface.
 ///
@@ -314,32 +315,19 @@ class _ProfileIdentity extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                profile.displayName,
-                key: const Key('profile-display-name'),
-                maxLines: 1,
-                overflow: TextOverflow.fade,
-                softWrap: false,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 30,
-                  height: 1.05,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -.7,
-                ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Icon(
-              Icons.verified_rounded,
-              color: Color(0xFFA95AFF),
-              size: 20,
-            ),
-          ],
+        Text(
+          profile.displayName,
+          key: const Key('profile-display-name'),
+          maxLines: 1,
+          overflow: TextOverflow.fade,
+          softWrap: false,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 30,
+            height: 1.05,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -.7,
+          ),
         ),
         const SizedBox(height: 5),
         Text(
@@ -845,6 +833,15 @@ class _FameverseSettingsScreen extends StatelessWidget {
     return value;
   }
 
+  void _openSystem(BuildContext context, String section) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) =>
+            FameverseSystemStatusScreen(initialSection: section),
+      ),
+    );
+  }
+
   Future<void> _signOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -955,12 +952,31 @@ class _FameverseSettingsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 22),
+            const _SettingsSectionTitle('FAMEVERSE SYSTEM'),
+            const SizedBox(height: 8),
+            _SettingsGroup(
+              children: [
+                _SettingsRow(
+                  label: 'Fame Algo',
+                  value: 'Discovery engine status and ranking signals',
+                  icon: Icons.auto_awesome_rounded,
+                  onTap: () => _openSystem(context, 'algo'),
+                ),
+                _SettingsRow(
+                  label: 'App & backend updates',
+                  value: 'Backend revision, release label and Check now',
+                  icon: Icons.system_update_alt_rounded,
+                  onTap: () => _openSystem(context, 'updates'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
             const _SettingsSectionTitle('SAFETY & ACCOUNT'),
             const SizedBox(height: 8),
             _SettingsGroup(
               children: [
                 _SettingsRow(
-                  label: 'Safety & legal',
+                  label: 'Privacy, safety & legal',
                   value: 'Terms, privacy, community and creator rules',
                   icon: Icons.shield_outlined,
                   onTap: onLegalAndSafety,
