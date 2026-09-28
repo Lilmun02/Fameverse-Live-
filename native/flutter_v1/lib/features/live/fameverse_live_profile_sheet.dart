@@ -277,7 +277,10 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
                 profile.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 3),
               Text(
@@ -326,11 +329,20 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
                 ),
                 child: Row(
                   children: [
-                    _SheetStat(label: 'Followers', value: _compact(summary.followers)),
+                    _SheetStat(
+                      label: 'Followers',
+                      value: _compact(summary.followers),
+                    ),
                     const _SheetDivider(),
-                    _SheetStat(label: 'Following', value: _compact(summary.following)),
+                    _SheetStat(
+                      label: 'Following',
+                      value: _compact(summary.following),
+                    ),
                     const _SheetDivider(),
-                    _SheetStat(label: 'Friends', value: _compact(summary.friends)),
+                    _SheetStat(
+                      label: 'Friends',
+                      value: _compact(summary.friends),
+                    ),
                   ],
                 ),
               ),
@@ -397,7 +409,9 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
                       key: const Key('live-profile-open-full'),
                       onPressed: _openFullProfile,
                       tooltip: 'Full profile',
-                      style: IconButton.styleFrom(minimumSize: const Size(50, 50)),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(50, 50),
+                      ),
                       icon: const Icon(Icons.open_in_new_rounded),
                     ),
                   ],
@@ -421,9 +435,15 @@ class _SheetStat extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 3),
-          Text(label, style: const TextStyle(color: Color(0xFF998E9D), fontSize: 10)),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF998E9D), fontSize: 10),
+          ),
         ],
       ),
     );
@@ -444,7 +464,11 @@ class _SheetDivider extends StatelessWidget {
 }
 
 class _MetricTile extends StatelessWidget {
-  const _MetricTile({required this.icon, required this.value, required this.label});
+  const _MetricTile({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
 
   final Widget icon;
   final String value;
@@ -467,8 +491,20 @@ class _MetricTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                Text(label, style: const TextStyle(color: Color(0xFF998E9D), fontSize: 10)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF998E9D),
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
           ),
