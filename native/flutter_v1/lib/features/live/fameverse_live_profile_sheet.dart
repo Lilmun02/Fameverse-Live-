@@ -363,11 +363,21 @@ class _FameverseLiveProfileSheetState extends State<FameverseLiveProfileSheet> {
                         size: 20,
                         color: Color(0xFFFFCB67),
                       ),
-                      value: _compact(summary.totalCoinsSent),
-                      label: 'Gift coins sent',
+                      value: _compact(summary.giftCount),
+                      label: 'Gifts sent',
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '${_compact(summary.totalCoinsSent)} Fame Coins sent in gifts',
+                key: const Key('live-profile-gift-coins-sent'),
+                style: const TextStyle(
+                  color: Color(0xFF9B8FA0),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 15),
               if (_isSelf)
