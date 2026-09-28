@@ -237,7 +237,7 @@ class _FameverseSystemStatusScreenState
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _InfoRow(label: 'Channel', value: _releaseChannel),
+                  const _InfoRow(label: 'Channel', value: _releaseChannel),
                   _InfoRow(label: 'Backend revision', value: '$revision'),
                   _InfoRow(label: 'Release label', value: label),
                   const SizedBox(height: 8),
