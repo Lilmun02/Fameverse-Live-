@@ -29,6 +29,7 @@ const rechargeSessionPath = 'supabase/functions/recharge-session/index.ts'
 const rechargeApiPath = 'supabase/functions/recharge/index.ts'
 const rechargePricingPath = 'supabase/migrations/20260926_owner_qa_coin_pricing_v2.sql'
 const retireNoticePath = 'supabase/migrations/20260926_retire_build16_startup_notice.sql'
+const cashRewardPath = 'supabase/migrations/20260928_separate_qa_and_cash_backed_reward_gifts.sql'
 const codemagicPath = 'codemagic.yaml'
 
 const [
@@ -47,6 +48,7 @@ const [
   rechargeApi,
   rechargePricing,
   retireNotice,
+  cashReward,
   codemagic,
 ] = await Promise.all([
   load(appPath),
@@ -64,12 +66,16 @@ const [
   load(rechargeApiPath),
   load(rechargePricingPath),
   load(retireNoticePath),
+  load(cashRewardPath),
   load(codemagicPath),
 ])
 
-// Startup law: one branded splash is allowed. Stale backend/update theater is not.
+// Startup law: one branded splash is allowed. New backend notices can surface
+// once, but the same notice must never replay on every launch.
 requireText(appPath, app, "Key('fameverse-native-splash')", 'native brand splash contract is missing')
-forbidText(appPath, app, 'startup_update_service.dart', 'startup must not replay backend notices on every launch')
+requireText(appPath, app, 'startup_update_service.dart', 'backend update notice wiring is missing')
+requireText(appPath, app, '_lastAcknowledgedNoticeKey', 'startup update notice must persist one-time acknowledgement')
+requireText(appPath, app, 'SharedPreferences.getInstance()', 'startup update acknowledgement persistence is missing')
 forbidText(appPath, app, 'Checking for updates', 'candidate must not display a fake/repeated update-check phase')
 forbidText(appPath, app, 'Syncing Fameverse services', 'candidate must not display repeated backend sync theater')
 requireText(retireNoticePath, retireNotice, 'set active = false', 'stale Build 16 update notice must be retired')
@@ -163,20 +169,30 @@ requireText(rechargePricingPath, rechargePricing, "('owner-qa-100', '100 Fame Co
 requireText(rechargePricingPath, rechargePricing, "('owner-qa-5000', '5,000 Fame Coins', 5000, 4999", 'reasonable 5000-coin sandbox pack is missing')
 requireText(rechargePricingPath, rechargePricing, "('owner-qa-custom', 'Custom Fame Coins'", 'custom recharge placeholder pack is missing')
 
-// Source identity law. A Codemagic trigger may originate from the base branch,
-// but the publishing workflow must fetch and detach-checkout the locked repair
-// branch, record the resulting SHA, and compile that exact SHA into the IPA.
-requireText(codemagicPath, codemagic, 'TARGET_BRANCH="build18/live-repair"', 'TestFlight must target the locked repair branch')
+// Money law: owner/admin ordinary QA gifts are always promo-only. Cash-backed
+// rewards require a separate reserve-funded, explicit path.
+requireText(cashRewardPath, cashReward, "in ('owner', 'admin')", 'staff QA gift role protection is missing')
+requireText(cashRewardPath, cashReward, 'staff_promo_only_zero_earnings', 'staff QA gifts must stay non-withdrawable')
+requireText(cashRewardPath, cashReward, 'owner_issue_cash_backed_reward_coins', 'reserve-backed reward coin issuance is missing')
+requireText(cashRewardPath, cashReward, 'insufficient funded cash reward reserve', 'cash-backed reward issuance must fail when reserve is insufficient')
+requireText(cashRewardPath, cashReward, 'send_fameverse_cash_reward_gift', 'explicit cash-backed staff reward path is missing')
+requireText(cashRewardPath, cashReward, 'explicit_staff_cash_reward', 'cash-backed rewards must remain auditable')
+
+// Source identity law. A Codemagic trigger may originate elsewhere, but the
+// publishing workflow must detach-checkout the locked Build 23 repair branch,
+// record its SHA, and compile that exact SHA into the IPA.
+requireText(codemagicPath, codemagic, 'TARGET_BRANCH="integration/sep27-big-update"', 'TestFlight must target the locked Build 23 repair branch')
 requireText(codemagicPath, codemagic, 'git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"', 'TestFlight must checkout the locked repair branch before validation/build')
 requireText(codemagicPath, codemagic, 'FAMEVERSE_SOURCE_SHA=$SOURCE_SHA', 'TestFlight must persist the exact locked repair SHA')
-requireText(codemagicPath, codemagic, 'build18_source_identity.txt', 'TestFlight must publish source identity evidence')
+requireText(codemagicPath, codemagic, 'build23_source_identity.txt', 'TestFlight must publish Build 23 source identity evidence')
+requireText(codemagicPath, codemagic, 'FAMEVERSE_BUILD_FAMILY: "23"', 'TestFlight must identify Build 23')
 requireText(codemagicPath, codemagic, '--dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}"', 'TestFlight must compile the exact locked repair SHA into the candidate')
 
 if (failures.length) {
-  console.error('Build 18 regression protection failed:')
+  console.error('Build 23 regression protection failed:')
   for (const failure of failures) console.error(`- ${failure}`)
   console.error('DO NOT DISTRIBUTE THE NEXT TESTFLIGHT CANDIDATE.')
   process.exit(1)
 }
 
-console.log('Build 18 regression contracts are present. Physical iPhone owner + external tester QA is still required before PASS.')
+console.log('Build 23 regression contracts are present. Physical iPhone owner + external tester QA is still required before PASS.')
