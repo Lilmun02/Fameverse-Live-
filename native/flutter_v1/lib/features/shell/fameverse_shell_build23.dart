@@ -11,12 +11,12 @@ import '../../data/fameverse_live_backend.dart';
 import '../../data/fameverse_story_backend.dart';
 import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
+import '../profile/creator_studio_build23.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
 import '../profile/native_profile_build23.dart';
-import '../profile/creator_studio_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_build23.dart';
@@ -45,9 +45,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     followingIds: {},
   );
 
-  late final SupabaseFameverseBetaBackend _betaBackend;
-  late final SupabaseFameverseStoryBackend _storyBackend;
-  late final SupabaseFameverseCreatorBackend _creatorBackend;
+  SupabaseFameverseBetaBackend? _betaBackend;
+  SupabaseFameverseStoryBackend? _storyBackend;
+  SupabaseFameverseCreatorBackend? _creatorBackend;
 
   int _tab = 0;
   bool _loading = true;
@@ -67,28 +67,45 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   @override
   void initState() {
     super.initState();
-    final client = Supabase.instance.client;
-    _betaBackend = SupabaseFameverseBetaBackend(client);
-    _storyBackend = SupabaseFameverseStoryBackend(client);
-    _creatorBackend = SupabaseFameverseCreatorBackend(client);
     unawaited(_refreshAll());
     unawaited(_refreshBeta());
     unawaited(_refreshStories());
     unawaited(_refreshRole());
   }
 
+  bool _ensureSupplementalBackends() {
+    if (_betaBackend != null &&
+        _storyBackend != null &&
+        _creatorBackend != null) {
+      return true;
+    }
+    try {
+      final client = Supabase.instance.client;
+      _betaBackend ??= SupabaseFameverseBetaBackend(client);
+      _storyBackend ??= SupabaseFameverseStoryBackend(client);
+      _creatorBackend ??= SupabaseFameverseCreatorBackend(client);
+      return true;
+    } catch (_) {
+      // Tests and degraded startup can inject the core backend before the
+      // global Supabase singleton exists. Supplemental features fail open.
+      return false;
+    }
+  }
+
   Future<void> _refreshRole() async {
     try {
-      final role = await _creatorBackend.loadRole(widget.identity.id);
+      final role = await widget.backend.loadAccountRole(widget.identity.id);
       if (mounted) setState(() => _accountRole = role);
     } catch (_) {
-      // Role lookup must never block the public product shell.
+      // Role decoration must never block the public product shell.
     }
   }
 
   Future<void> _refreshBeta() async {
+    if (!_ensureSupplementalBackends()) return;
+    final backend = _betaBackend!;
     try {
-      final status = await _betaBackend.loadProgramStatus();
+      final status = await backend.loadProgramStatus();
       if (!mounted) return;
       setState(() => _betaStatus = status);
       if (status.enrolled && _tab == 0) {
@@ -100,17 +117,19 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   Future<void> _recordBetaMission(String missionKey) async {
-    if (!_betaStatus.enrolled) return;
+    if (!_betaStatus.enrolled || !_ensureSupplementalBackends()) return;
+    final backend = _betaBackend!;
     try {
-      await _betaBackend.recordMission(missionKey);
-      final status = await _betaBackend.loadProgramStatus();
+      await backend.recordMission(missionKey);
+      final status = await backend.loadProgramStatus();
       if (mounted) setState(() => _betaStatus = status);
     } catch (_) {}
   }
 
   Future<void> _refreshStories() async {
+    if (!_ensureSupplementalBackends()) return;
     try {
-      final stories = await _storyBackend.listActiveStories();
+      final stories = await _storyBackend!.listActiveStories();
       if (mounted) setState(() => _stories = stories);
     } catch (_) {
       // Stories are additive; a story refresh failure cannot blank Home.
@@ -272,10 +291,14 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   void _openCreatorStudio(FvProfile profile) {
+    if (!_ensureSupplementalBackends()) {
+      _message('Creator Studio is reconnecting.');
+      return;
+    }
     Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => Build23CreatorStudioScreen(
-          backend: _creatorBackend,
+          backend: _creatorBackend!,
           identity: widget.identity,
           profile: profile,
           isOwner: _isOwner,
@@ -285,10 +308,14 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   Future<void> _openStories(FvProfile profile) async {
+    if (!_ensureSupplementalBackends()) {
+      _message('Stories are reconnecting.');
+      return;
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => CreatorStoriesScreen(
-          backend: _storyBackend,
+          backend: _storyBackend!,
           identity: widget.identity,
           profile: profile,
         ),
@@ -299,10 +326,10 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   Future<void> _openFirstVerse() async {
-    if (!_betaStatus.enrolled) return;
+    if (!_betaStatus.enrolled || !_ensureSupplementalBackends()) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => FirstVerseBetaScreen(backend: _betaBackend),
+        builder: (context) => FirstVerseBetaScreen(backend: _betaBackend!),
       ),
     );
     await _refreshBeta();
