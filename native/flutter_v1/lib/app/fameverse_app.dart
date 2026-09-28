@@ -1,17 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
+import '../data/startup_update_service.dart';
 import '../features/auth/auth_screen.dart';
-import '../features/shell/fameverse_shell_build16.dart';
+import '../features/shell/fameverse_shell_build23.dart';
 
-/// Native Fameverse app shell.
+/// Build 23 native Fameverse app shell.
 ///
-/// Candidate law: startup may show the brand splash once, but it must not replay
-/// stale backend/build notices or pretend a backend sync is an app update. Tester
-/// update UX will be introduced only after the current physical candidate passes.
+/// Regression laws:
+/// - The installed Build 23 binary must route through the Build 23 shell.
+/// - Active backend/app notices must be surfaced before the product shell opens.
+/// - A backend-notice lookup failure must never strand the app on startup.
 class FameverseApp extends StatefulWidget {
   const FameverseApp({
     required this.backend,
@@ -24,6 +27,7 @@ class FameverseApp extends StatefulWidget {
 
   static const productShellKey = Key('fameverse-native-product-shell');
   static const splashKey = Key('fameverse-native-splash');
+  static const updateNoticeKey = Key('fameverse-startup-update-notice');
 
   @override
   State<FameverseApp> createState() => _FameverseAppState();
@@ -33,7 +37,10 @@ class _FameverseAppState extends State<FameverseApp> {
   StreamSubscription<FvIdentity?>? _subscription;
   Timer? _splashTimer;
   FvIdentity? _identity;
+  FvStartupUpdateNotice? _startupNotice;
   bool _splashComplete = false;
+  bool _updateCheckComplete = false;
+  bool _noticeAcknowledged = false;
 
   @override
   void initState() {
@@ -45,6 +52,23 @@ class _FameverseAppState extends State<FameverseApp> {
     _splashTimer = Timer(const Duration(milliseconds: 1050), () {
       if (mounted) setState(() => _splashComplete = true);
     });
+    unawaited(_loadStartupNotice());
+  }
+
+  Future<void> _loadStartupNotice() async {
+    try {
+      final notice = await FvStartupUpdateService(
+        Supabase.instance.client,
+      ).loadLatest(channel: 'internal');
+      if (!mounted) return;
+      setState(() {
+        _startupNotice = notice;
+        _updateCheckComplete = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _updateCheckComplete = true);
+    }
   }
 
   @override
@@ -96,16 +120,206 @@ class _FameverseAppState extends State<FameverseApp> {
       ),
       home: KeyedSubtree(
         key: FameverseApp.productShellKey,
-        child: !_splashComplete
-            ? const _BrandSplash()
-            : _identity == null
-            ? AuthScreen(backend: widget.backend)
-            : FameverseBuild16Shell(
-                key: ValueKey(_identity!.id),
-                backend: widget.backend,
-                liveBackend: widget.liveBackend,
-                identity: _identity!,
+        child: _buildStartupRoute(),
+      ),
+    );
+  }
+
+  Widget _buildStartupRoute() {
+    if (!_splashComplete || !_updateCheckComplete) {
+      return const _BrandSplash();
+    }
+
+    final notice = _startupNotice;
+    if (notice != null && !_noticeAcknowledged) {
+      return _StartupUpdateNoticeScreen(
+        key: FameverseApp.updateNoticeKey,
+        notice: notice,
+        onContinue: () => setState(() => _noticeAcknowledged = true),
+      );
+    }
+
+    if (_identity == null) {
+      return AuthScreen(backend: widget.backend);
+    }
+
+    return FameverseBuild23Shell(
+      key: ValueKey(_identity!.id),
+      backend: widget.backend,
+      liveBackend: widget.liveBackend,
+      identity: _identity!,
+    );
+  }
+}
+
+class _StartupUpdateNoticeScreen extends StatelessWidget {
+  const _StartupUpdateNoticeScreen({
+    required this.notice,
+    required this.onContinue,
+    super.key,
+  });
+
+  final FvStartupUpdateNotice notice;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final versionBits = <String>[
+      if (notice.versionLabel != null && notice.versionLabel!.trim().isNotEmpty)
+        notice.versionLabel!.trim(),
+      if (notice.buildNumber != null) 'Build ${notice.buildNumber}',
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF08060B),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(22, 36, 22, 28),
+          children: [
+            const _UpdateMark(),
+            const SizedBox(height: 28),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF301844),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: const Color(0xFF75449A)),
               ),
+              child: Text(
+                notice.badgeLabel,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFD69BFF),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.3,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              notice.title,
+              style: const TextStyle(
+                fontSize: 30,
+                height: 1.05,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -.6,
+              ),
+            ),
+            if (versionBits.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                versionBits.join(' • '),
+                style: const TextStyle(
+                  color: Color(0xFFC287E9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+            const SizedBox(height: 14),
+            if (notice.summary.trim().isNotEmpty)
+              Text(
+                notice.summary,
+                style: const TextStyle(
+                  color: Color(0xFFC3B7C7),
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+            if (notice.changelog.isNotEmpty) ...[
+              const SizedBox(height: 26),
+              const Text(
+                'WHAT CHANGED',
+                style: TextStyle(
+                  color: Color(0xFF988B9E),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.4,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...notice.changelog.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 5),
+                        child: Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 13,
+                          color: Color(0xFFBB71EF),
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: const TextStyle(
+                            color: Color(0xFFB8ADBb),
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 28),
+            FilledButton.icon(
+              key: const Key('startup-update-continue'),
+              onPressed: onContinue,
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: const Text('Continue to Fameverse'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(54),
+                textStyle: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'This notice comes from the Fameverse backend release channel. It does not install a new binary by itself.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF776F7A),
+                fontSize: 10,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UpdateMark extends StatelessWidget {
+  const _UpdateMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 92,
+        height: 92,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFF8149AE), width: 2),
+          gradient: const RadialGradient(
+            colors: [Color(0xFF3C1854), Color(0xFF130B19)],
+          ),
+          boxShadow: const [
+            BoxShadow(color: Color(0x554A1467), blurRadius: 32, spreadRadius: 2),
+          ],
+        ),
+        child: const Icon(
+          Icons.system_update_alt_rounded,
+          size: 42,
+          color: Color(0xFFD29BFF),
+        ),
       ),
     );
   }
