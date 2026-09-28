@@ -37,7 +37,9 @@ class FameverseDiscoverScreen extends StatefulWidget {
 }
 
 enum _DiscoverView { explore, rankings }
+
 enum _DiscoverFilter { all, live, creators, rising, following }
+
 enum _RankingKind { tappers, gifters, creators }
 
 class _RankingEntry {
@@ -98,7 +100,8 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
       if (!_matches([room.title, room.host.displayName, room.host.username])) {
         return false;
       }
-      if (_filter == _DiscoverFilter.following && !_following(room.hostUserId)) {
+      if (_filter == _DiscoverFilter.following &&
+          !_following(room.hostUserId)) {
         return false;
       }
       if (_filter == _DiscoverFilter.creators) return false;
@@ -159,10 +162,7 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
     try {
       final raw = await Supabase.instance.client.rpc(
         'get_fameverse_rankings',
-        params: <String, dynamic>{
-          'p_kind': _rankingRpcKind,
-          'p_limit': 25,
-        },
+        params: <String, dynamic>{'p_kind': _rankingRpcKind, 'p_limit': 25},
       );
       final entries = (raw as List? ?? const []).map((item) {
         final row = Map<String, dynamic>.from(item as Map);
@@ -309,17 +309,20 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
               _FilterChip(
                 label: 'Following',
                 selected: _filter == _DiscoverFilter.following,
-                onTap: () => setState(() => _filter = _DiscoverFilter.following),
+                onTap: () =>
+                    setState(() => _filter = _DiscoverFilter.following),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
         if (widget.loading && widget.rooms.isEmpty && widget.creators.isEmpty)
-          const Center(child: Padding(
-            padding: EdgeInsets.all(38),
-            child: CircularProgressIndicator(),
-          ))
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(38),
+              child: CircularProgressIndicator(),
+            ),
+          )
         else ...[
           if (_filter != _DiscoverFilter.creators) ...[
             _SectionHeader(
@@ -337,7 +340,9 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
                 body: 'Try another filter or search for a creator instead.',
               )
             else
-              ...rooms.take(12).map(
+              ...rooms
+                  .take(12)
+                  .map(
                     (room) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _LiveRow(
@@ -374,10 +379,8 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
                     creator: creator,
                     following: following,
                     busy: widget.followBusy,
-                    onFollow: () =>
-                        widget.onToggleFollow(creator.profile.id),
-                    onOpen: () =>
-                        widget.onCreatorSelected(creator.profile),
+                    onFollow: () => widget.onToggleFollow(creator.profile.id),
+                    onOpen: () => widget.onCreatorSelected(creator.profile),
                   ),
                 );
               }),
@@ -399,11 +402,7 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
         const SizedBox(height: 5),
         const Text(
           'Server-authoritative rankings. FameTaps use eligible taps, not raw spam.',
-          style: TextStyle(
-            color: Color(0xFFA99CAB),
-            fontSize: 12,
-            height: 1.4,
-          ),
+          style: TextStyle(color: Color(0xFFA99CAB), fontSize: 12, height: 1.4),
         ),
         const SizedBox(height: 14),
         Row(
@@ -435,10 +434,12 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
         ),
         const SizedBox(height: 18),
         if (_rankingLoading)
-          const Center(child: Padding(
-            padding: EdgeInsets.all(36),
-            child: CircularProgressIndicator(),
-          ))
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(36),
+              child: CircularProgressIndicator(),
+            ),
+          )
         else if (_rankingError != null)
           _EmptyCard(
             icon: Icons.cloud_off_rounded,
@@ -571,9 +572,7 @@ class _ViewButton extends StatelessWidget {
           color: selected ? const Color(0xFF6B31B5) : const Color(0xFF151018),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected
-                ? const Color(0xFFB56CFF)
-                : const Color(0xFF35263D),
+            color: selected ? const Color(0xFFB56CFF) : const Color(0xFF35263D),
           ),
         ),
         child: Row(
@@ -611,9 +610,7 @@ class _RankingChip extends StatelessWidget {
           color: selected ? const Color(0xFF342046) : const Color(0xFF151018),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF9A5BC2)
-                : const Color(0xFF35263D),
+            color: selected ? const Color(0xFF9A5BC2) : const Color(0xFF35263D),
           ),
         ),
         child: Text(
@@ -1000,7 +997,10 @@ class _EmptyCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   body,
