@@ -127,7 +127,9 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Icon(
-                isOwner ? Icons.workspace_premium_rounded : Icons.verified_rounded,
+                isOwner
+                    ? Icons.workspace_premium_rounded
+                    : Icons.verified_rounded,
                 color: isOwner
                     ? const Color(0xFFFFD27D)
                     : const Color(0xFFA95AFF),
@@ -457,11 +459,17 @@ class _Stats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Stat(value: followers, label: 'Followers')),
+          Expanded(
+            child: _Stat(value: followers, label: 'Followers'),
+          ),
           const _Divider(),
-          Expanded(child: _Stat(value: following, label: 'Following')),
+          Expanded(
+            child: _Stat(value: following, label: 'Following'),
+          ),
           const _Divider(),
-          Expanded(child: _Stat(value: friends, label: 'Friends')),
+          Expanded(
+            child: _Stat(value: friends, label: 'Friends'),
+          ),
         ],
       ),
     );
@@ -567,7 +575,9 @@ class _WalletCardState extends State<_WalletCard> {
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),
                 Text(
-                  _loading && _balance == null ? 'Loading…' : '${_balance ?? 0}',
+                  _loading && _balance == null
+                      ? 'Loading…'
+                      : '${_balance ?? 0}',
                   style: const TextStyle(
                     color: Color(0xFFE2BCFF),
                     fontSize: 21,
@@ -642,7 +652,8 @@ class _Build23SettingsScreen extends StatelessWidget {
     );
     if (confirmed != true) return;
     await onSignOut();
-    if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    if (context.mounted)
+      Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
@@ -672,7 +683,10 @@ class _Build23SettingsScreen extends StatelessWidget {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD17F)),
+                    Icon(
+                      Icons.workspace_premium_rounded,
+                      color: Color(0xFFFFD17F),
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -685,7 +699,10 @@ class _Build23SettingsScreen extends StatelessWidget {
                           SizedBox(height: 3),
                           Text(
                             'Owner previews are shown clearly — no blurred or fake locked cards.',
-                            style: TextStyle(color: Color(0xFFC5B7C8), fontSize: 12),
+                            style: TextStyle(
+                              color: Color(0xFFC5B7C8),
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -737,10 +754,7 @@ class _Build23SettingsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            _FirstVerseSettingsCard(
-              status: betaStatus,
-              onTap: onFirstVerse,
-            ),
+            _FirstVerseSettingsCard(status: betaStatus, onTap: onFirstVerse),
             const SizedBox(height: 22),
             _Section(
               title: 'SAFETY & ACCOUNT',

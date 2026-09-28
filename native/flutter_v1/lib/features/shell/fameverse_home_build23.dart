@@ -45,6 +45,7 @@ class FameverseHomeBuild23Screen extends StatefulWidget {
 }
 
 enum _FeedTab { live, stories }
+
 enum _LiveLane { forYou, following, rising }
 
 class _FameverseHomeBuild23ScreenState
@@ -60,9 +61,12 @@ class _FameverseHomeBuild23ScreenState
         newestByCreator[story.creatorUserId] = story;
         continue;
       }
-      final currentTime = current.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final nextTime = story.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      if (nextTime.isAfter(currentTime)) newestByCreator[story.creatorUserId] = story;
+      final currentTime =
+          current.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final nextTime =
+          story.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      if (nextTime.isAfter(currentTime))
+        newestByCreator[story.creatorUserId] = story;
     }
     final result = newestByCreator.values.toList();
     result.sort((a, b) {
@@ -123,7 +127,10 @@ class _FameverseHomeBuild23ScreenState
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 116),
           children: [
-            _TopBar(profile: widget.profile, onOpenProfile: widget.onOpenProfile),
+            _TopBar(
+              profile: widget.profile,
+              onOpenProfile: widget.onOpenProfile,
+            ),
             const SizedBox(height: 18),
             _FeedSwitch(
               selected: _feed,
@@ -202,16 +209,20 @@ class _FameverseHomeBuild23ScreenState
           body: 'Try another feed or discover more creators.',
         )
       else
-        ...ranked.take(8).map(
-          (room) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _LiveCard(
-              room: room,
-              following: widget.network.followingIds.contains(room.hostUserId),
-              onTap: () => widget.onRoomSelected(room),
+        ...ranked
+            .take(8)
+            .map(
+              (room) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _LiveCard(
+                  room: room,
+                  following: widget.network.followingIds.contains(
+                    room.hostUserId,
+                  ),
+                  onTap: () => widget.onRoomSelected(room),
+                ),
+              ),
             ),
-          ),
-        ),
       const SizedBox(height: 14),
       _SectionHeader(
         eyebrow: 'DISCOVER PEOPLE',
@@ -298,10 +309,7 @@ class _FameverseHomeBuild23ScreenState
         ...stories.map(
           (story) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _StoryFeedCard(
-              story: story,
-              onTap: widget.onOpenStories,
-            ),
+            child: _StoryFeedCard(story: story, onTap: widget.onOpenStories),
           ),
         ),
     ];
@@ -531,7 +539,11 @@ class _StoryBubble extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 9,
                       backgroundColor: Color(0xFF8A3DDD),
-                      child: Icon(Icons.add_rounded, size: 13, color: Colors.white),
+                      child: Icon(
+                        Icons.add_rounded,
+                        size: 13,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
               ],
@@ -687,7 +699,9 @@ class _TopBar extends StatelessWidget {
               color: Color(0xFF342044),
             ),
             child: ClipOval(
-              child: profile.avatarUrl != null && profile.avatarUrl!.trim().isNotEmpty
+              child:
+                  profile.avatarUrl != null &&
+                      profile.avatarUrl!.trim().isNotEmpty
                   ? Image.network(
                       profile.avatarUrl!,
                       fit: BoxFit.cover,
@@ -711,10 +725,7 @@ class _Initial extends StatelessWidget {
     return ColoredBox(
       color: const Color(0xFF352044),
       child: Center(
-        child: Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.w900),
-        ),
+        child: Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
       ),
     );
   }
@@ -738,7 +749,9 @@ class _LiveLanePicker extends StatelessWidget {
         final selected = lane == item.$1;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(right: item.$1 == _LiveLane.rising ? 0 : 8),
+            padding: EdgeInsets.only(
+              right: item.$1 == _LiveLane.rising ? 0 : 8,
+            ),
             child: InkWell(
               onTap: () => onChanged(item.$1),
               borderRadius: BorderRadius.circular(999),
@@ -894,7 +907,11 @@ class _LiveCard extends StatelessWidget {
               ),
             ),
             if (following)
-              const Icon(Icons.favorite_rounded, color: Color(0xFFC879FF), size: 18),
+              const Icon(
+                Icons.favorite_rounded,
+                color: Color(0xFFC879FF),
+                size: 18,
+              ),
             const SizedBox(width: 6),
             const Icon(Icons.chevron_right_rounded),
           ],
@@ -1001,7 +1018,10 @@ class _SectionHeader extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 title,
-                style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
