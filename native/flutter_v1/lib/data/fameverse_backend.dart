@@ -84,6 +84,8 @@ class FvLiveRoom {
   final FvProfile host;
   final String goal;
   final List<String> wishlistGiftIds;
+
+  String get hostDisplayName => host.displayName;
 }
 
 class FvAuthResult {
