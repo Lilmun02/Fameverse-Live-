@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'fameverse_live_profile_sheet.dart';
 import 'native_live_components.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
@@ -732,37 +733,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _showProfileSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NativeProfileAvatar(profile: widget.room.host, radius: 42),
-              const SizedBox(height: 12),
-              Text(
-                widget.room.host.displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(widget.room.host.bio, textAlign: TextAlign.center),
-              ],
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: _followBusy ? null : _toggleFollow,
-                child: Text(_following ? 'Following' : 'Follow'),
-              ),
-            ],
-          ),
-        ),
+    unawaited(
+      showFameverseLiveProfileSheet(
+        context,
+        viewerUserId: widget.identity.id,
+        targetUserId: widget.room.hostUserId,
+        fallbackProfile: widget.room.host,
       ),
     );
   }
@@ -801,6 +777,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                         itemBuilder: (context, index) {
                           final participant = participants[index];
                           return ListTile(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              if (!mounted) return;
+                              unawaited(
+                                showFameverseLiveProfileSheet(
+                                  this.context,
+                                  viewerUserId: widget.identity.id,
+                                  targetUserId: participant.userId,
+                                ),
+                              );
+                            },
                             leading: CircleAvatar(
                               foregroundImage:
                                   participant.image != null &&
@@ -1070,6 +1057,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             child: NativeProfileAvatar(
                               profile: widget.room.host,
                               radius: 18,
+                              interactive: false,
                             ),
                           ),
                           const SizedBox(width: 8),
