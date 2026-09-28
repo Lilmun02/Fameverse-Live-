@@ -66,7 +66,9 @@ class _Build23CreatorStudioScreenState
         widget.backend.loadPayoutSummary(),
         widget.backend.listPayoutRequests(),
         widget.backend.loadPayoutMethod(),
-        Supabase.instance.client.rpc('get_creator_promotional_earnings_summary'),
+        Supabase.instance.client.rpc(
+          'get_creator_promotional_earnings_summary',
+        ),
       ]);
       final promoRows = _rows(results[3]);
       if (!mounted) return;
@@ -198,7 +200,9 @@ class _Build23CreatorStudioScreenState
             TextField(
               key: const Key('build23-payout-amount'),
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Amount (USD)',
                 prefixText: r'$ ',
@@ -462,7 +466,11 @@ class _OwnerPremiumCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   'Owner-facing previews stay readable. Build 23 removes the blurred/locked Creator Studio preview from the owner experience.',
-                  style: TextStyle(color: Color(0xFFC2B4C5), fontSize: 12, height: 1.35),
+                  style: TextStyle(
+                    color: Color(0xFFC2B4C5),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -528,7 +536,11 @@ class _PromoCard extends StatelessWidget {
           const SizedBox(height: 12),
           const Text(
             'This balance proves promo/test gifting is being recorded. It is not cash-backed, cannot be withdrawn, and is never added to real Creator Earnings.',
-            style: TextStyle(color: Color(0xFFA99DAE), fontSize: 11, height: 1.4),
+            style: TextStyle(
+              color: Color(0xFFA99DAE),
+              fontSize: 11,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -743,11 +755,17 @@ class _ActionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Color(0xFFA99DAD), fontSize: 11),
+                  style: const TextStyle(
+                    color: Color(0xFFA99DAD),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -790,7 +808,10 @@ class _PayoutTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     request.status.replaceAll('_', ' '),
-                    style: const TextStyle(color: Color(0xFFA99DAD), fontSize: 11),
+                    style: const TextStyle(
+                      color: Color(0xFFA99DAD),
+                      fontSize: 11,
+                    ),
                   ),
                 ],
               ),
@@ -831,11 +852,17 @@ class _InfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   body,
-                  style: const TextStyle(color: Color(0xFFA99DAD), height: 1.35),
+                  style: const TextStyle(
+                    color: Color(0xFFA99DAD),
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
