@@ -18,12 +18,17 @@ void main() {
   final app = read('lib/app/fameverse_app.dart');
   final backend = read('lib/data/fameverse_backend.dart');
   final liveBackend = read('lib/data/fameverse_live_backend.dart');
+  final startupUpdater = read('lib/data/startup_update_service.dart');
   final camera = read('lib/features/live/native_camera_screen.dart');
   final liveExports = read('lib/features/live/stream_live_screen.dart');
   final hostLive = read('lib/features/live/stream_host_live_screen.dart');
   final viewerLive = read('lib/features/live/stream_viewer_live_screen.dart');
   final liveMedia = '$liveExports\n$hostLive\n$viewerLive';
   final shell = read('lib/features/shell/fameverse_shell.dart');
+  final build23Shell = read('lib/features/shell/fameverse_shell_build23.dart');
+  final build23Home = read('lib/features/shell/fameverse_home_build23.dart');
+  final build23Profile = read('lib/features/profile/native_profile_build23.dart');
+  final build23Studio = read('lib/features/profile/creator_studio_build23.dart');
   final pubspec = read('pubspec.yaml');
   final test = read('test/app_smoke_test.dart');
 
@@ -87,6 +92,13 @@ void main() {
       releaseSection.contains('flutter build ipa --release'),
       'TestFlight workflow must build a signed release IPA.',
     );
+    require(
+      releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "23"') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=23') &&
+          !releaseSection.contains('TARGET_BRANCH="build18/live-repair"'),
+      'TestFlight Build 23 must package the repaired integration branch, never the old Build 18 source.',
+    );
 
     final usesEnvironmentPublishing =
         releaseSection.contains('app_store_connect:') &&
@@ -121,6 +133,41 @@ void main() {
         !app.contains('Native pipeline probe') &&
         shell.contains('fameverse-bottom-nav'),
     'Native TestFlight app must boot the Fameverse product shell, not the pipeline probe.',
+  );
+  require(
+    app.contains('fameverse_shell_build23.dart') &&
+        app.contains('FameverseBuild23Shell') &&
+        !app.contains('FameverseBuild16Shell'),
+    'Build 23 startup must route the current product shell instead of silently launching Build 16.',
+  );
+  require(
+    app.contains('startup_update_service.dart') &&
+        app.contains('FvStartupUpdateService') &&
+        startupUpdater.contains("from('app_update_notices')"),
+    'The active backend updater must remain wired into startup.',
+  );
+  require(
+    build23Home.contains('home-live-feed-tab') &&
+        build23Home.contains('home-story-feed-tab') &&
+        build23Home.contains('_StoryRail(') &&
+        build23Home.indexOf('_StoryRail(') < build23Home.indexOf("'LIVE NOW'"),
+    'Home must preserve Stories above Live and the Live Feed / Story Feed top navigation.',
+  );
+  require(
+    build23Profile.contains('settings-first-verse-entry') &&
+        build23Profile.contains('settings-first-verse-progress') &&
+        build23Profile.contains('status.progress') &&
+        !build23Shell.contains('first-verse-tester-entry') &&
+        !build23Shell.contains('_HomeStoryLauncher'),
+    'First Verse must live in Settings with its real progress bar, not as a floating profile/home control.',
+  );
+  require(
+    build23Profile.contains('FAMEVERSE OWNER • PREMIUM') &&
+        build23Studio.contains('Premium owner access') &&
+        !build23Studio.contains('ImageFiltered') &&
+        !build23Studio.contains('ImageFilter.blur') &&
+        build23Studio.contains('Promotional (non-withdrawable)'),
+    'Owner premium surfaces must stay readable and promo QA value must remain separate from withdrawable cash.',
   );
 
   final keepsAuthoritativeCommunityContracts =
@@ -164,7 +211,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, parity, CI, direct signing, publishing, product shell, Supabase, Stream Video host/viewer, and camera contracts passed',
+      '[native-foundation-law] constitution, Build 23 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
     );
   }
 }
