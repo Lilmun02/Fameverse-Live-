@@ -3,7 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Build23OwnerControlCenterScreen extends StatefulWidget {
-  const Build23OwnerControlCenterScreen({super.key});
+  const Build23OwnerControlCenterScreen({
+    this.onOpenCreatorStudio,
+    super.key,
+  });
+
+  final VoidCallback? onOpenCreatorStudio;
 
   @override
   State<Build23OwnerControlCenterScreen> createState() =>
@@ -246,6 +251,18 @@ class _Build23OwnerControlCenterScreenState
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 40),
             children: [
               const _Hero(),
+              if (widget.onOpenCreatorStudio != null) ...[
+                const SizedBox(height: 12),
+                _Action(
+                  key: const Key('owner-open-personal-creator-studio'),
+                  icon: Icons.workspace_premium_rounded,
+                  title: 'Creator earnings & payout',
+                  body:
+                      'Open your personal creator earnings, verification, PayPal payout method and payout history.',
+                  label: 'Open',
+                  onTap: widget.onOpenCreatorStudio,
+                ),
+              ],
               const SizedBox(height: 20),
               if (_loading)
                 const Padding(
@@ -478,7 +495,11 @@ class _LiabilityCard extends StatelessWidget {
           const SizedBox(height: 12),
           const Text(
             'Do not treat these protected buckets as owner profit. Payout requests may overlap unpaid creator earnings, so they are displayed separately rather than double-counted here.',
-            style: TextStyle(color: Color(0xFFB6A9AC), fontSize: 11, height: 1.4),
+            style: TextStyle(
+              color: Color(0xFFB6A9AC),
+              fontSize: 11,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -496,7 +517,10 @@ class _Line extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(label, style: const TextStyle(color: Color(0xFFB7AAB9))),
+          child: Text(
+            label,
+            style: const TextStyle(color: Color(0xFFB7AAB9)),
+          ),
         ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
       ],
@@ -524,9 +548,15 @@ class _Metric extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: const Color(0xFFC98BFF)),
           const SizedBox(height: 10),
-          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 3),
-          Text(label, style: const TextStyle(color: Color(0xFFA195A5), fontSize: 10)),
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFFA195A5), fontSize: 10),
+          ),
         ],
       ),
     );
@@ -566,9 +596,19 @@ class _Action extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 4),
-                Text(body, style: const TextStyle(color: Color(0xFFA99DAD), fontSize: 11, height: 1.35)),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    color: Color(0xFFA99DAD),
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
+                ),
               ],
             ),
           ),
@@ -604,9 +644,19 @@ class _Notice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 4),
-                Text(body, style: const TextStyle(color: Color(0xFFA99DAD), fontSize: 11, height: 1.4)),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    color: Color(0xFFA99DAD),
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           ),
