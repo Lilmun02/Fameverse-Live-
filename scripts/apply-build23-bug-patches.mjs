@@ -101,6 +101,81 @@ let changed = false
   await write(path, source)
 }
 
+// PATCH 4 — Live comment/gift transitions must dismiss the software keyboard.
+{
+  const hostPath = 'native/flutter_v1/lib/features/live/stream_host_live_screen.dart'
+  let host = await read(hostPath)
+  let result = replaceOnce(
+    host,
+    `      _comment.clear();\n    });\n    try {`,
+    `      _comment.clear();\n    });\n    FocusManager.instance.primaryFocus?.unfocus();\n    try {`,
+    'host comment keyboard dismissal',
+  )
+  host = result.content
+  changed ||= result.changed
+  await write(hostPath, host)
+
+  const viewerPath = 'native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart'
+  let viewer = await read(viewerPath)
+  result = replaceOnce(
+    viewer,
+    `      _comment.clear();\n    });\n    try {`,
+    `      _comment.clear();\n    });\n    FocusManager.instance.primaryFocus?.unfocus();\n    try {`,
+    'viewer comment keyboard dismissal',
+  )
+  viewer = result.content
+  changed ||= result.changed
+
+  result = replaceOnce(
+    viewer,
+    `  Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {\n    if (_giftSending) return false;`,
+    `  Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {\n    if (_giftSending) return false;\n    FocusManager.instance.primaryFocus?.unfocus();`,
+    'gift send keyboard dismissal',
+  )
+  viewer = result.content
+  changed ||= result.changed
+
+  result = replaceOnce(
+    viewer,
+    `  void _showGiftTray() {\n    showModalBottomSheet<void>(`,
+    `  void _showGiftTray() {\n    FocusManager.instance.primaryFocus?.unfocus();\n    showModalBottomSheet<void>(`,
+    'gift tray keyboard dismissal',
+  )
+  viewer = result.content
+  changed ||= result.changed
+  await write(viewerPath, viewer)
+}
+
+// PATCH 5 — Gift chat activity is lightweight, never a giant purple card.
+{
+  const path = 'native/flutter_v1/lib/features/live/stream_live_shared.dart'
+  let source = await read(path)
+  const result = replaceOnce(
+    source,
+    `            padding: isGift\n                ? const EdgeInsets.fromLTRB(9, 8, 11, 9)\n                : const EdgeInsets.symmetric(horizontal: 2, vertical: 2),\n            decoration: isGift\n                ? BoxDecoration(\n                    color: const Color(0xCC1A0E24),\n                    borderRadius: BorderRadius.circular(14),\n                    border: Border.all(\n                      color: const Color(0xFFB34EFF),\n                      width: 1.1,\n                    ),\n                    boxShadow: const [\n                      BoxShadow(color: Color(0x553C0A71), blurRadius: 10),\n                    ],\n                  )\n                : null,`,
+    `            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),`,
+    'gift activity oversized card removal',
+  )
+  source = result.content
+  changed ||= result.changed
+  await write(path, source)
+}
+
+// PATCH 6 — Host Live must not display a fake unconditional verification check.
+{
+  const path = 'native/flutter_v1/lib/features/live/stream_host_live_screen.dart'
+  let source = await read(path)
+  const result = replaceOnce(
+    source,
+    `                                  const SizedBox(width: 5),\n                                  const Icon(\n                                    Icons.verified_rounded,\n                                    size: 16,\n                                    color: Color(0xFFAA62FF),\n                                  ),\n                                  const SizedBox(width: 6),\n                                  const FvLiveBadge(),`,
+    `                                  const SizedBox(width: 6),\n                                  const FvLiveBadge(),`,
+    'host live fake verification badge removal',
+  )
+  source = result.content
+  changed ||= result.changed
+  await write(path, source)
+}
+
 console.log(
   changed
     ? '[build23-patch] Applied exact bug patches; formatter will persist them.'
