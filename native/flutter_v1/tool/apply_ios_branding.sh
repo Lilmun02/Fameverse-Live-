@@ -8,6 +8,7 @@ IOS_ROOT="$PROJECT_ROOT/ios"
 PLIST="$IOS_ROOT/Runner/Info.plist"
 ICON_DIR="$IOS_ROOT/Runner/Assets.xcassets/AppIcon.appiconset"
 CONTENTS_JSON="$ICON_DIR/Contents.json"
+LAUNCH_STORYBOARD="$IOS_ROOT/Runner/Base.lproj/LaunchScreen.storyboard"
 SOURCE_SVG="$REPO_ROOT/public/icon.svg"
 PLIST_BUDDY="/usr/libexec/PlistBuddy"
 
@@ -27,6 +28,40 @@ set_plist_string() {
 
 set_plist_string CFBundleDisplayName "$APP_NAME"
 set_plist_string CFBundleName "$APP_NAME"
+set_plist_string UILaunchStoryboardName "LaunchScreen"
+
+# Flutter creates a fresh iOS shell in CI. Its default LaunchScreen is white and
+# is visible before Dart renders the Fameverse splash. Replace it every build
+# with a deterministic native dark launch surface so there can never be a white
+# frame between tapping the app icon and the first Flutter frame.
+mkdir -p "$(dirname "$LAUNCH_STORYBOARD")"
+cat > "$LAUNCH_STORYBOARD" <<'STORYBOARD'
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21762" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <!-- FAMEVERSE_NATIVE_LAUNCH_DARK -->
+    <device id="retina6_12" orientation="portrait" appearance="dark"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21754"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" red="0.01960784314" green="0.01960784314" blue="0.02745098039" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+</document>
+STORYBOARD
 
 TMP_DIR="$(mktemp -d /tmp/fameverse-ios-branding.XXXXXX)"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -83,4 +118,4 @@ PY
     --out "$ICON_DIR/$filename" >/dev/null
 done
 
-echo "Applied Fameverse iOS branding: name='$APP_NAME', icon='$SOURCE_SVG'"
+echo "Applied Fameverse iOS branding: name='$APP_NAME', dark native launch, icon='$SOURCE_SVG'"
