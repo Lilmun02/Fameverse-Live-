@@ -45,14 +45,18 @@ void main() {
 
     test('comments and gifts dismiss sticky keyboard focus', () {
       final host = _source('lib/features/live/stream_host_live_screen.dart');
-      final viewer = _source('lib/features/live/stream_viewer_live_screen.dart');
+      final viewer = _source(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      );
 
       expect(
         'FocusManager.instance.primaryFocus?.unfocus()'.allMatches(host).length,
         greaterThanOrEqualTo(1),
       );
       expect(
-        'FocusManager.instance.primaryFocus?.unfocus()'.allMatches(viewer).length,
+        'FocusManager.instance.primaryFocus?.unfocus()'
+            .allMatches(viewer)
+            .length,
         greaterThanOrEqualTo(3),
       );
     });

@@ -261,6 +261,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       );
       _comment.clear();
     });
+    FocusManager.instance.primaryFocus?.unfocus();
     try {
       await activity.send('comment', {
         'id': id,
@@ -276,6 +277,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
     if (_giftSending) return false;
+    FocusManager.instance.primaryFocus?.unfocus();
     if (!_walletReady) {
       _showMessage('Gift wallet is reconnecting.');
       return false;
@@ -371,6 +373,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _showGiftTray() {
+    FocusManager.instance.primaryFocus?.unfocus();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

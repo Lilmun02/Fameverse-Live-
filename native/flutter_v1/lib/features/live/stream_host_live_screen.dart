@@ -243,6 +243,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       );
       _comment.clear();
     });
+    FocusManager.instance.primaryFocus?.unfocus();
     try {
       await activity.send('comment', <String, dynamic>{
         'id': id,
@@ -960,12 +961,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                         letterSpacing: .2,
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  const Icon(
-                                    Icons.verified_rounded,
-                                    size: 16,
-                                    color: Color(0xFFAA62FF),
                                   ),
                                   const SizedBox(width: 6),
                                   const FvLiveBadge(),

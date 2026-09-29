@@ -307,22 +307,7 @@ class FvLiveChatList extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 8),
           child: Container(
             key: isGift ? const Key('v2-highlighted-gift-chat') : null,
-            padding: isGift
-                ? const EdgeInsets.fromLTRB(9, 8, 11, 9)
-                : const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-            decoration: isGift
-                ? BoxDecoration(
-                    color: const Color(0xCC1A0E24),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFB34EFF),
-                      width: 1.1,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x553C0A71), blurRadius: 10),
-                    ],
-                  )
-                : null,
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
