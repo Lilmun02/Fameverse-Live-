@@ -42,5 +42,40 @@ void main() {
         contains('if (!_verified) return const SizedBox.shrink();'),
       );
     });
+
+    test('comments and gifts dismiss sticky keyboard focus', () {
+      final host = _source('lib/features/live/stream_host_live_screen.dart');
+      final viewer = _source('lib/features/live/stream_viewer_live_screen.dart');
+
+      expect(
+        'FocusManager.instance.primaryFocus?.unfocus()'.allMatches(host).length,
+        greaterThanOrEqualTo(1),
+      );
+      expect(
+        'FocusManager.instance.primaryFocus?.unfocus()'.allMatches(viewer).length,
+        greaterThanOrEqualTo(3),
+      );
+    });
+
+    test('gift activity stays lightweight instead of a purple card', () {
+      final source = _source('lib/features/live/stream_live_shared.dart');
+
+      expect(source, contains("Key('v2-highlighted-gift-chat')"));
+      expect(
+        source,
+        contains(
+          'padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2)',
+        ),
+      );
+      expect(source, isNot(contains('Color(0xCC1A0E24)')));
+      expect(source, isNot(contains('Color(0x553C0A71)')));
+    });
+
+    test('host live does not show an unconditional verification check', () {
+      final source = _source('lib/features/live/stream_host_live_screen.dart');
+
+      expect(source, isNot(contains('Icons.verified_rounded')));
+      expect(source, contains('const FvLiveBadge()'));
+    });
   });
 }
