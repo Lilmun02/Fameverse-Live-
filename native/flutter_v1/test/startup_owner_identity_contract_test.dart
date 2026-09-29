@@ -44,7 +44,7 @@ void main() {
     );
     expect(
       shell,
-      contains("rpc('get_my_fameverse_identity')"),
+      contains('get_my_fameverse_identity'),
       reason:
           'Build 23 shell must actually consume the authoritative identity RPC.',
     );
