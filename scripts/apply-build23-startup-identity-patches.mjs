@@ -68,12 +68,20 @@ const appPath = 'native/flutter_v1/lib/app/fameverse_app.dart'
 const shellPath = 'native/flutter_v1/lib/features/shell/fameverse_shell_build23.dart'
 const profilePath = 'native/flutter_v1/lib/features/profile/native_profile_build23.dart'
 
-const app = await read(appPath)
+let app = await read(appPath)
 if (!app.includes('WidgetsBinding.instance.addPostFrameCallback')) {
   throw new Error('[build23-final-patch] visible splash timer is not first-frame anchored')
 }
-if (!app.includes('Duration(milliseconds: 1500)')) {
-  throw new Error('[build23-final-patch] 1500ms visible splash floor is missing')
+if (app.includes('Duration(milliseconds: 1500)')) {
+  app = app.replace(
+    'Duration(milliseconds: 1500)',
+    'Duration(milliseconds: 2500)',
+  )
+  await write(appPath, app)
+  changed = true
+}
+if (!app.includes('Duration(milliseconds: 2500)')) {
+  throw new Error('[build23-final-patch] 2500ms visible splash floor is missing')
 }
 if (!app.includes('width: 94') || !app.includes('height: 94')) {
   throw new Error('[build23-final-patch] compact splash mark is missing')
@@ -102,7 +110,7 @@ for (const required of [
   }
 }
 
-if (changed) await write(shellPath, shell)
+if (identityCount > 1) await write(shellPath, shell)
 
 const profile = await read(profilePath)
 if (!profile.includes("label: isOwner ? 'Owner Control Center' : 'Creator Studio'")) {
@@ -111,6 +119,6 @@ if (!profile.includes("label: isOwner ? 'Owner Control Center' : 'Creator Studio
 
 console.log(
   changed
-    ? '[build23-final-patch] Removed duplicate identity loader; persisted contracts remain intact.'
+    ? '[build23-final-patch] Applied/persisted startup or identity repair; contracts remain intact.'
     : '[build23-final-patch] Startup/identity source is already clean and idempotent.',
 )
