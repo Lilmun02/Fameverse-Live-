@@ -95,7 +95,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) setState(() => _walletBalance = balance);
       return balance;
     } catch (_) {
-      if (mounted) _message('Test-coin refill is limited to owner/admin accounts.');
+      if (mounted)
+        _message('Test-coin refill is limited to owner/admin accounts.');
       return _walletBalance;
     }
   }
