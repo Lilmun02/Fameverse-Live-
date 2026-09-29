@@ -50,6 +50,10 @@ jobs:
         working-directory: .
         run: node scripts/apply-build23-bug-patches.mjs
 
+      - name: Apply Build 23 startup and identity patches
+        working-directory: .
+        run: node scripts/apply-build23-startup-identity-patches.mjs
+
       - name: Enforce Fameverse native foundation law
         run: dart run tool/check_native_contract.dart
 
