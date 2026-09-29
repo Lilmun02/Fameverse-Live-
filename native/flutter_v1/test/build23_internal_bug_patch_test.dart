@@ -22,7 +22,7 @@ void main() {
       final source = _source('lib/features/live/stream_host_live_screen.dart');
 
       expect(source, contains('bool _flipCameraBusy = false;'));
-      expect(source, contains('|| _flipCameraBusy'));
+      expect(source, contains('_flipCameraBusy) {'));
       expect(source, contains('setState(() => _flipCameraBusy = true);'));
       expect(source, contains('setState(() => _flipCameraBusy = false);'));
       expect(source, contains('_cameraEnabled && !_flipCameraBusy'));
