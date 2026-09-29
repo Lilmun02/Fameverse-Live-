@@ -45,17 +45,20 @@ void main() {
     expect(
       shell,
       contains("rpc('get_my_fameverse_identity')"),
-      reason: 'Build 23 shell must actually consume the authoritative identity RPC.',
+      reason:
+          'Build 23 shell must actually consume the authoritative identity RPC.',
     );
     expect(
       shell,
       contains("throw StateError('current-account-mismatch')"),
-      reason: 'A stale profile must never be accepted for another auth session.',
+      reason:
+          'A stale profile must never be accepted for another auth session.',
     );
     expect(
       shell,
       contains('final account = await _loadAuthoritativeAccount();'),
-      reason: 'Owner routing must revalidate account authority before navigation.',
+      reason:
+          'Owner routing must revalidate account authority before navigation.',
     );
     expect(
       profile,

@@ -93,10 +93,61 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     }
   }
 
+  Future<({FvProfile profile, String? role})?>
+  _loadAuthoritativeAccount() async {
+    final expectedId = widget.identity.id;
+    try {
+      final raw = await Supabase.instance.client.rpc(
+        'get_my_fameverse_identity',
+      );
+      Map<String, dynamic>? row;
+      if (raw is List && raw.isNotEmpty && raw.first is Map) {
+        row = Map<String, dynamic>.from(raw.first as Map);
+      } else if (raw is Map) {
+        row = Map<String, dynamic>.from(raw);
+      }
+      if (row == null) return null;
+
+      final userId = (row['user_id'] as String?)?.trim() ?? '';
+      if (userId != expectedId) {
+        throw StateError('current-account-mismatch');
+      }
+      final username = (row['username'] as String?)?.trim();
+      final displayName = (row['display_name'] as String?)?.trim();
+      final role = (row['role'] as String?)?.trim().toLowerCase();
+      final profile = FvProfile(
+        id: userId,
+        displayName: displayName == null || displayName.isEmpty
+            ? (username?.isNotEmpty == true ? username! : 'Fameverse User')
+            : displayName,
+        username: username == null || username.isEmpty ? null : username,
+        bio: (row['bio'] as String?) ?? '',
+        avatarUrl: row['avatar_url'] as String?,
+        createdAt: null,
+      );
+      return (profile: profile, role: role);
+    } catch (_) {
+      final liveIdentity = widget.backend.currentIdentity;
+      if (liveIdentity == null || liveIdentity.id != expectedId) return null;
+      final results = await Future.wait<dynamic>([
+        widget.backend.loadProfile(expectedId),
+        widget.backend.loadAccountRole(expectedId),
+      ]);
+      final profile = results[0] as FvProfile?;
+      if (profile == null) return null;
+      final role = (results[1] as String?)?.trim().toLowerCase();
+      return (profile: profile, role: role);
+    }
+  }
+
   Future<void> _refreshRole() async {
     try {
-      final role = await widget.backend.loadAccountRole(widget.identity.id);
-      if (mounted) setState(() => _accountRole = role);
+      final account = await _loadAuthoritativeAccount();
+      if (!mounted || account == null) return;
+      setState(() {
+        _profile = account.profile;
+        _accountRole = account.role;
+      });
     } catch (_) {
       // Role decoration must never block the public product shell.
     }
@@ -146,7 +197,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     }
     try {
       final results = await Future.wait<dynamic>([
-        widget.backend.loadProfile(widget.identity.id),
+        _loadAuthoritativeAccount(),
         widget.backend.loadFollowNetwork(widget.identity.id),
         widget.backend.listRecommendedCreators(
           excludeUserId: widget.identity.id,
@@ -154,8 +205,13 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
         widget.backend.listActiveLiveRooms(excludeUserId: widget.identity.id),
       ]);
       if (!mounted) return;
+      final account = results[0] as ({FvProfile profile, String? role})?;
+      if (account == null || account.profile.id != widget.identity.id) {
+        throw StateError('current-account-mismatch');
+      }
       setState(() {
-        _profile = results[0] as FvProfile?;
+        _profile = account.profile;
+        _accountRole = account.role;
         _network = results[1] as FvFollowNetwork;
         _creators = results[2] as List<FvCreator>;
         _rooms = results[3] as List<FvLiveRoom>;
@@ -308,22 +364,38 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     );
   }
 
-  void _openCreatorStudio(FvProfile profile) {
+  Future<void> _openCreatorStudio(FvProfile profile) async {
     if (!_ensureSupplementalBackends()) {
       _message('Creator Studio is reconnecting.');
       return;
     }
-    if (_isOwner) {
+
+    final account = await _loadAuthoritativeAccount();
+    if (!mounted) return;
+    if (account == null || account.profile.id != widget.identity.id) {
+      _message('Your account session changed. Refreshing Fameverse.');
+      await _refreshAll();
+      return;
+    }
+
+    setState(() {
+      _profile = account.profile;
+      _accountRole = account.role;
+    });
+    final currentProfile = account.profile;
+
+    if (account.role == 'owner') {
       Navigator.of(context).push<void>(
         MaterialPageRoute(
           builder: (context) => Build23OwnerControlCenterScreen(
-            onOpenCreatorStudio: () => _openPersonalCreatorStudio(profile),
+            onOpenCreatorStudio: () =>
+                _openPersonalCreatorStudio(currentProfile),
           ),
         ),
       );
       return;
     }
-    _openPersonalCreatorStudio(profile);
+    _openPersonalCreatorStudio(currentProfile);
   }
 
   Future<void> _openStories(FvProfile profile) async {
@@ -475,7 +547,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             avatarBusy: _avatarBusy,
             onChangePhoto: _pickProfilePhoto,
             onEdit: () => _openEdit(profile),
-            onCreatorStudio: () => _openCreatorStudio(profile),
+            onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
             onPolicies: _openPolicies,
             onSignOut: widget.backend.signOut,

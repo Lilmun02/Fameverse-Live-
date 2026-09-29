@@ -53,8 +53,11 @@ class _FameverseAppState extends State<FameverseApp> {
     _subscription = widget.backend.authChanges.listen((identity) {
       if (mounted) setState(() => _identity = identity);
     });
-    _splashTimer = Timer(const Duration(milliseconds: 1050), () {
-      if (mounted) setState(() => _splashComplete = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _splashTimer != null) return;
+      _splashTimer = Timer(const Duration(milliseconds: 1500), () {
+        if (mounted) setState(() => _splashComplete = true);
+      });
     });
     unawaited(_loadStartupNotice());
   }
@@ -393,11 +396,11 @@ class _BrandSplash extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const _FameverseMark(),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 16),
                       const Text(
                         'FAMEVERSE',
                         style: TextStyle(
-                          fontSize: 29,
+                          fontSize: 26,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 3.4,
                         ),
@@ -413,9 +416,9 @@ class _BrandSplash extends StatelessWidget {
                           letterSpacing: 2.4,
                         ),
                       ),
-                      const SizedBox(height: 42),
+                      const SizedBox(height: 30),
                       SizedBox(
-                        width: 112,
+                        width: 92,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(999),
                           child: const LinearProgressIndicator(
@@ -485,8 +488,8 @@ class _FameverseMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 116,
-      height: 116,
+      width: 94,
+      height: 94,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: const Color(0xFF8D4FC7), width: 2),
@@ -501,19 +504,19 @@ class _FameverseMark extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Positioned(
-            top: 19,
+            top: 13,
             child: Icon(
               Icons.workspace_premium_rounded,
-              size: 42,
+              size: 32,
               color: Color(0xFFC57BFF),
             ),
           ),
           Positioned(
-            bottom: 18,
+            bottom: 13,
             child: Text(
               'F',
               style: TextStyle(
-                fontSize: 48,
+                fontSize: 38,
                 height: 1,
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,

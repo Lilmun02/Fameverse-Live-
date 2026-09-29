@@ -726,7 +726,7 @@ class _Build23SettingsScreen extends StatelessWidget {
               title: 'CREATOR',
               children: [
                 _RowItem(
-                  label: 'Creator Studio',
+                  label: isOwner ? 'Owner Control Center' : 'Creator Studio',
                   value: isOwner
                       ? 'Premium tools, earnings and promo QA'
                       : 'Earnings, payouts and creator tools',
