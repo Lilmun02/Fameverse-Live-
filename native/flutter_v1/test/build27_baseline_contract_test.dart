@@ -62,9 +62,14 @@ void main() {
       expect(applyBranding, contains('FAMEVERSE_NATIVE_LAUNCH_DARK'));
       expect(
         applyBranding,
-        contains('red="0.01960784314" green="0.01960784314" blue="0.02745098039"'),
+        contains(
+          'red="0.01960784314" green="0.01960784314" blue="0.02745098039"',
+        ),
       );
-      expect(verifyBranding, contains('white native LaunchScreen background returned'));
+      expect(
+        verifyBranding,
+        contains('white native LaunchScreen background returned'),
+      );
     });
   });
 }
