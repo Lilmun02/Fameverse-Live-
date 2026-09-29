@@ -46,6 +46,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   bool _ended = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
+  bool _flipCameraBusy = false;
   int _fameTaps = 0;
   int _gifterLevel = 1;
   int _giftSerial = 0;
@@ -257,11 +258,30 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _flipCamera() async {
     final call = _call;
-    if (call == null || _connecting || _ending || !_cameraEnabled) return;
+    if (call == null ||
+        _connecting ||
+        _ending ||
+        !_cameraEnabled ||
+        _flipCameraBusy) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _flipCameraBusy = true);
+    } else {
+      _flipCameraBusy = true;
+    }
+
     try {
       fvRequireSuccess(await call.flipCamera(), 'Camera flip failed');
     } catch (_) {
       if (mounted) _showMessage('Camera flip failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _flipCameraBusy = false);
+      } else {
+        _flipCameraBusy = false;
+      }
     }
   }
 
@@ -811,7 +831,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                     keyValue: const Key('native-live-flip'),
                     icon: Icons.cameraswitch_rounded,
                     label: 'Flip',
-                    onPressed: _cameraEnabled
+                    onPressed: _cameraEnabled && !_flipCameraBusy
                         ? () {
                             Navigator.of(context).pop();
                             unawaited(_flipCamera());

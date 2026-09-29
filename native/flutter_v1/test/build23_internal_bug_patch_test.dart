@@ -12,13 +12,14 @@ void main() {
       );
 
       expect(source, contains("r'Enter an amount greater than \$0.'"));
-      expect(source, isNot(contains("_message('Enter an amount greater than \$0.');")));
+      expect(
+        source,
+        isNot(contains("_message('Enter an amount greater than \$0.');")),
+      );
     });
 
     test('host camera flips are serialized and cannot overlap', () {
-      final source = _source(
-        'lib/features/live/stream_host_live_screen.dart',
-      );
+      final source = _source('lib/features/live/stream_host_live_screen.dart');
 
       expect(source, contains('bool _flipCameraBusy = false;'));
       expect(source, contains('|| _flipCameraBusy'));
@@ -36,7 +37,10 @@ void main() {
       expect(source, contains("from('creator_verification_requests')"));
       expect(source, contains(".select('status')"));
       expect(source, contains("== 'verified'"));
-      expect(source, contains('if (!_verified) return const SizedBox.shrink();'));
+      expect(
+        source,
+        contains('if (!_verified) return const SizedBox.shrink();'),
+      );
     });
   });
 }

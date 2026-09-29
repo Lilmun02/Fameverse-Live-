@@ -125,16 +125,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              Icon(
-                isOwner
-                    ? Icons.workspace_premium_rounded
-                    : Icons.verified_rounded,
-                color: isOwner
-                    ? const Color(0xFFFFD27D)
-                    : const Color(0xFFA95AFF),
-                size: 21,
-              ),
+              _Build23VerificationBadge(userId: profile.id, isOwner: isOwner),
             ],
           ),
           const SizedBox(height: 4),
@@ -973,6 +964,77 @@ class _RowItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Build23VerificationBadge extends StatefulWidget {
+  const _Build23VerificationBadge({
+    required this.userId,
+    required this.isOwner,
+  });
+
+  final String userId;
+  final bool isOwner;
+
+  @override
+  State<_Build23VerificationBadge> createState() =>
+      _Build23VerificationBadgeState();
+}
+
+class _Build23VerificationBadgeState extends State<_Build23VerificationBadge> {
+  bool _verified = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.isOwner) _loadVerification();
+  }
+
+  @override
+  void didUpdateWidget(covariant _Build23VerificationBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userId != widget.userId ||
+        oldWidget.isOwner != widget.isOwner) {
+      if (widget.isOwner) {
+        _verified = false;
+      } else {
+        _loadVerification();
+      }
+    }
+  }
+
+  Future<void> _loadVerification() async {
+    try {
+      final row = await Supabase.instance.client
+          .from('creator_verification_requests')
+          .select('status')
+          .eq('user_id', widget.userId)
+          .maybeSingle();
+      final verified =
+          (row?['status'] as String?)?.trim().toLowerCase() == 'verified';
+      if (mounted) setState(() => _verified = verified);
+    } catch (_) {
+      if (mounted) setState(() => _verified = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isOwner) {
+      return const Padding(
+        padding: EdgeInsets.only(left: 6),
+        child: Icon(
+          Icons.workspace_premium_rounded,
+          color: Color(0xFFFFD27D),
+          size: 21,
+        ),
+      );
+    }
+    if (!_verified) return const SizedBox.shrink();
+    return const Padding(
+      padding: EdgeInsets.only(left: 6),
+      child: Icon(Icons.verified_rounded, color: Color(0xFFA95AFF), size: 21),
     );
   }
 }

@@ -3,10 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Build23OwnerControlCenterScreen extends StatefulWidget {
-  const Build23OwnerControlCenterScreen({
-    this.onOpenCreatorStudio,
-    super.key,
-  });
+  const Build23OwnerControlCenterScreen({this.onOpenCreatorStudio, super.key});
 
   final VoidCallback? onOpenCreatorStudio;
 
@@ -129,7 +126,7 @@ class _Build23OwnerControlCenterScreenState
     final dollars = double.tryParse(text);
     final cents = dollars == null ? 0 : (dollars * 100).round();
     if (cents <= 0) {
-      _message('Enter an amount greater than $0.');
+      _message(r'Enter an amount greater than $0.');
       return null;
     }
     return cents;
@@ -517,10 +514,7 @@ class _Line extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(color: Color(0xFFB7AAB9)),
-          ),
+          child: Text(label, style: const TextStyle(color: Color(0xFFB7AAB9))),
         ),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
       ],
