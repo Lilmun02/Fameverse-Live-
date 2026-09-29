@@ -55,7 +55,7 @@ class _FameverseAppState extends State<FameverseApp> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _splashTimer != null) return;
-      _splashTimer = Timer(const Duration(milliseconds: 1500), () {
+      _splashTimer = Timer(const Duration(milliseconds: 2500), () {
         if (mounted) setState(() => _splashComplete = true);
       });
     });

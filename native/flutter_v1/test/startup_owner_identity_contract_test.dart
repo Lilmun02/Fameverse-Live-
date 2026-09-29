@@ -25,7 +25,8 @@ void main() {
     expect(
       app,
       contains('Duration(milliseconds: 2500)'),
-      reason: 'The branded splash must remain visibly on-screen for 2.5 seconds.',
+      reason:
+          'The branded splash must remain visibly on-screen for 2.5 seconds.',
     );
     expect(
       iosBranding,
