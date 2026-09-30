@@ -1211,12 +1211,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   ),
                 ),
               ),
-              if (_giftPlayback != null)
-                NativeGiftOverlay(
-                  key: ValueKey('viewer-gift-$_giftSerial'),
-                  playback: _giftPlayback!,
-                  onFinished: _playNextGift,
-                ),
               ..._tapBursts.map(
                 (serial) => Positioned(
                   right: 16 + (serial % 3) * 16,
@@ -1226,6 +1220,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   ),
                 ),
               ),
+              if (_giftPlayback != null)
+                NativeGiftOverlay(
+                  key: ValueKey('viewer-gift-$_giftSerial'),
+                  playback: _giftPlayback!,
+                  onFinished: _playNextGift,
+                ),
             ],
           ),
         ),
