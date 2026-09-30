@@ -19,6 +19,7 @@ class _Build23OwnerControlCenterScreenState
   String? _error;
   Map<String, dynamic> _summary = const {};
   Map<String, dynamic> _wallet = const {};
+  List<Map<String, dynamic>> _payouts = const [];
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -41,6 +42,14 @@ class _Build23OwnerControlCenterScreenState
     return const {};
   }
 
+  List<Map<String, dynamic>> _rows(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .toList();
+  }
+
   Future<void> _refresh() async {
     if (mounted) {
       setState(() {
@@ -52,11 +61,16 @@ class _Build23OwnerControlCenterScreenState
       final results = await Future.wait<dynamic>([
         _client.rpc('get_owner_finance_control_summary'),
         _client.rpc('get_my_coin_funding_breakdown'),
+        _client.rpc(
+          'get_creator_payout_moderation_queue',
+          params: const {'p_limit': 50},
+        ),
       ]);
       if (!mounted) return;
       setState(() {
         _summary = _firstRow(results[0]);
         _wallet = _firstRow(results[1]);
+        _payouts = _rows(results[2]);
         _loading = false;
       });
     } catch (_) {
@@ -130,6 +144,164 @@ class _Build23OwnerControlCenterScreenState
       return null;
     }
     return cents;
+  }
+
+  Future<({String note, String reference})?> _askPayoutReview({
+    required String title,
+    required String body,
+    required String action,
+    bool requireReference = false,
+  }) async {
+    final noteController = TextEditingController();
+    final referenceController = TextEditingController();
+    final result = await showDialog<({String note, String reference})>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(body),
+              const SizedBox(height: 14),
+              TextField(
+                controller: noteController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Moderation note (optional)',
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: referenceController,
+                decoration: InputDecoration(
+                  labelText: requireReference
+                      ? 'Provider reference / transaction ID'
+                      : 'Provider reference (optional)',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final reference = referenceController.text.trim();
+              if (requireReference && reference.isEmpty) return;
+              Navigator.of(context).pop((
+                note: noteController.text.trim(),
+                reference: reference,
+              ));
+            },
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    noteController.dispose();
+    referenceController.dispose();
+    return result;
+  }
+
+  Future<void> _reviewPayout(
+    Map<String, dynamic> payout,
+    String status,
+  ) async {
+    if (_busy) return;
+    final payoutId = payout['payout_id']?.toString();
+    if (payoutId == null || payoutId.isEmpty) return;
+    final title = switch (status) {
+      'approved' => 'Approve payout',
+      'held' => 'Hold payout',
+      'rejected' => 'Reject payout',
+      'paid' => 'Mark payout paid',
+      'failed' => 'Mark payout failed',
+      _ => 'Update payout',
+    };
+    final result = await _askPayoutReview(
+      title: title,
+      body: status == 'paid'
+          ? 'Only mark this paid after the real provider payment has succeeded. Fameverse will debit the creator earnings ledger when this is confirmed.'
+          : 'This action changes the payout moderation status. It does not move money through PayPal by itself.',
+      action: status == 'paid' ? 'Confirm paid' : 'Confirm',
+      requireReference: status == 'paid',
+    );
+    if (result == null) return;
+    setState(() => _busy = true);
+    try {
+      await _client.rpc(
+        'review_creator_payout',
+        params: {
+          'p_payout_id': payoutId,
+          'p_status': status,
+          'p_moderation_note': result.note,
+          'p_external_reference': result.reference,
+        },
+      );
+      _message('Payout status updated to ${status.replaceAll('_', ' ')}.');
+      await _refresh();
+    } catch (error) {
+      final text = error.toString().toLowerCase();
+      if (text.contains('verified creator required')) {
+        _message('This creator must be verified before a payout can be marked paid.');
+      } else {
+        _message('Could not update that payout.');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _beginPayoutProcessing(Map<String, dynamic> payout) async {
+    if (_busy) return;
+    final payoutId = payout['payout_id']?.toString();
+    if (payoutId == null || payoutId.isEmpty) return;
+    setState(() => _busy = true);
+    try {
+      final raw = await _client.rpc(
+        'begin_creator_payout_processing',
+        params: {'p_payout_id': payoutId},
+      );
+      final details = _firstRow(raw);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Payout ready for provider'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Amount: ${_money(_int(details['amount_cents']))}'),
+              const SizedBox(height: 6),
+              Text('Provider: ${details['payout_provider'] ?? 'Not set'}'),
+              const SizedBox(height: 6),
+              Text('Recipient: ${details['payout_recipient'] ?? 'Not set'}'),
+              const SizedBox(height: 12),
+              const Text(
+                'Send the real payment with the provider. Do not mark Paid until the provider confirms success.',
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+      await _refresh();
+    } catch (_) {
+      _message('Could not begin payout processing.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _recordSettledReserve() async {
@@ -273,6 +445,32 @@ class _Build23OwnerControlCenterScreenState
                   body: _error!,
                 )
               else ...[
+                const _Section('PAYOUT REVIEW'),
+                const SizedBox(height: 10),
+                if (_payouts.isEmpty)
+                  const _Notice(
+                    icon: Icons.task_alt_rounded,
+                    title: 'No payouts waiting',
+                    body:
+                        'Pending, approved and processing creator payouts will appear here for owner review.',
+                  )
+                else
+                  ..._payouts.map(
+                    (payout) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _PayoutCard(
+                        payout: payout,
+                        busy: _busy,
+                        onApprove: () => _reviewPayout(payout, 'approved'),
+                        onHold: () => _reviewPayout(payout, 'held'),
+                        onReject: () => _reviewPayout(payout, 'rejected'),
+                        onProcess: () => _beginPayoutProcessing(payout),
+                        onPaid: () => _reviewPayout(payout, 'paid'),
+                        onFailed: () => _reviewPayout(payout, 'failed'),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
                 const _Section('BUSINESS MONEY'),
                 const SizedBox(height: 10),
                 Row(
@@ -409,6 +607,143 @@ class _Build23OwnerControlCenterScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PayoutCard extends StatelessWidget {
+  const _PayoutCard({
+    required this.payout,
+    required this.busy,
+    required this.onApprove,
+    required this.onHold,
+    required this.onReject,
+    required this.onProcess,
+    required this.onPaid,
+    required this.onFailed,
+  });
+
+  final Map<String, dynamic> payout;
+  final bool busy;
+  final VoidCallback onApprove;
+  final VoidCallback onHold;
+  final VoidCallback onReject;
+  final VoidCallback onProcess;
+  final VoidCallback onPaid;
+  final VoidCallback onFailed;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = payout['status']?.toString() ?? 'pending_review';
+    final creator = payout['display_name']?.toString() ?? 'Fameverse Creator';
+    final username = payout['username']?.toString();
+    final verification = payout['verification_status']?.toString() ?? 'unverified';
+    final amount = _money((payout['amount_cents'] as num?)?.toInt() ?? 0);
+    return Container(
+      key: Key('owner-payout-${payout['payout_id']}'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17111B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF4A3553)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      creator,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (username != null && username.isNotEmpty)
+                      Text(
+                        '@$username',
+                        style: const TextStyle(color: Color(0xFFA89CAE)),
+                      ),
+                  ],
+                ),
+              ),
+              Text(
+                amount,
+                style: const TextStyle(
+                  color: Color(0xFFFFD38E),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Chip(label: Text(status.replaceAll('_', ' '))),
+              Chip(label: Text('Verification: $verification')),
+            ],
+          ),
+          if ((payout['moderation_note']?.toString() ?? '').isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              payout['moderation_note'].toString(),
+              style: const TextStyle(color: Color(0xFFB8ACBC), fontSize: 11),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (status == 'pending_review')
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton(
+                  key: const Key('owner-payout-approve'),
+                  onPressed: busy ? null : onApprove,
+                  child: const Text('Approve'),
+                ),
+                FilledButton.tonal(
+                  onPressed: busy ? null : onHold,
+                  child: const Text('Hold'),
+                ),
+                TextButton(
+                  onPressed: busy ? null : onReject,
+                  child: const Text('Reject'),
+                ),
+              ],
+            )
+          else if (status == 'approved')
+            FilledButton.icon(
+              key: const Key('owner-payout-begin-processing'),
+              onPressed: busy ? null : onProcess,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Begin processing'),
+            )
+          else if (status == 'processing')
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  key: const Key('owner-payout-mark-paid'),
+                  onPressed: busy ? null : onPaid,
+                  icon: const Icon(Icons.check_circle_rounded),
+                  label: const Text('Mark paid'),
+                ),
+                TextButton(
+                  onPressed: busy ? null : onFailed,
+                  child: const Text('Mark failed'),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
