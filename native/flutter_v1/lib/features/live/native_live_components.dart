@@ -43,9 +43,14 @@ class FvGiftPlayback {
 }
 
 class NativeGiftOverlay extends StatefulWidget {
-  const NativeGiftOverlay({required this.playback, super.key});
+  const NativeGiftOverlay({
+    required this.playback,
+    this.onFinished,
+    super.key,
+  });
 
   final FvGiftPlayback playback;
+  final VoidCallback? onFinished;
 
   @override
   State<NativeGiftOverlay> createState() => _NativeGiftOverlayState();
@@ -54,6 +59,8 @@ class NativeGiftOverlay extends StatefulWidget {
 class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   VideoPlayerController? _controller;
   String? _loadedUrl;
+  Timer? _finishTimer;
+  bool _reportedFinished = false;
 
   @override
   void initState() {
@@ -64,19 +71,42 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   void didUpdateWidget(covariant NativeGiftOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.gift.id != widget.playback.gift.id) {
+    if (oldWidget.playback.gift.id != widget.playback.gift.id ||
+        oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
+        oldWidget.playback.quantity != widget.playback.quantity) {
+      _reportedFinished = false;
+      _finishTimer?.cancel();
       unawaited(_syncVideo());
     }
   }
 
+  void _scheduleFinish(Duration duration) {
+    _finishTimer?.cancel();
+    _finishTimer = Timer(duration, _reportFinished);
+  }
+
+  void _reportFinished() {
+    if (_reportedFinished) return;
+    _reportedFinished = true;
+    widget.onFinished?.call();
+  }
+
+  Duration _staticDuration(FvGiftDefinition gift) {
+    if (gift.id == 'pocket-comet') return const Duration(milliseconds: 4300);
+    if (gift.cinematic) return const Duration(milliseconds: 3200);
+    if (gift.cost >= 100) return const Duration(milliseconds: 3000);
+    return const Duration(milliseconds: 1900);
+  }
+
   Future<void> _syncVideo() async {
-    final url = widget.playback.gift.videoUrl;
+    final gift = widget.playback.gift;
+    final url = gift.videoUrl;
     if (url == null || url.isEmpty) {
       final previous = _controller;
       _controller = null;
       _loadedUrl = null;
       if (previous != null) await previous.dispose();
+      _scheduleFinish(_staticDuration(gift));
       if (mounted) setState(() {});
       return;
     }
@@ -85,6 +115,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       await _controller!.seekTo(Duration.zero);
       await _controller!.setVolume(1);
       await _controller!.play();
+      final rawMs = _controller!.value.duration.inMilliseconds + 350;
+      final safeMs = rawMs.clamp(1500, 15000);
+      _scheduleFinish(Duration(milliseconds: safeMs));
       return;
     }
 
@@ -101,74 +134,119 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       _controller = next;
       _loadedUrl = url;
       if (previous != null) await previous.dispose();
+      final rawMs = next.value.duration.inMilliseconds + 350;
+      final safeMs = rawMs.clamp(1500, 15000);
+      _scheduleFinish(Duration(milliseconds: safeMs));
       if (mounted) setState(() {});
     } catch (_) {
       await next.dispose();
       if (!mounted) return;
-      // Never substitute an uninitialized/black video frame. The deterministic
-      // poster/fallback below remains visible if cinematic media cannot load.
-      setState(() {
-        _controller = null;
-        _loadedUrl = null;
-      });
+      _controller = null;
+      _loadedUrl = null;
+      _scheduleFinish(const Duration(milliseconds: 3200));
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
+    _finishTimer?.cancel();
     final controller = _controller;
     _controller = null;
     if (controller != null) unawaited(controller.dispose());
     super.dispose();
   }
 
+  Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
+    final size = MediaQuery.sizeOf(context);
+    final premium = playback.gift.cost >= 100;
+    return IgnorePointer(
+      child: Align(
+        alignment: const Alignment(0, .02),
+        child: SizedBox(
+          key: Key('native-gift-presentation-${playback.gift.id}'),
+          width: size.width * .90,
+          height: size.height * (premium ? .52 : .44),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: size.width * (premium ? .74 : .60),
+                height: size.width * (premium ? .74 : .60),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF9D55FF).withValues(alpha: premium ? .44 : .30),
+                      const Color(0xFF5C22A7).withValues(alpha: .16),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: .72, end: 1),
+                duration: const Duration(milliseconds: 560),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: child,
+                ),
+                child: Text(
+                  playback.gift.symbol,
+                  style: TextStyle(
+                    fontSize: premium ? 132 : 104,
+                    shadows: const [
+                      Shadow(color: Color(0xAA8F46E8), blurRadius: 28),
+                      Shadow(color: Colors.black87, blurRadius: 8),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 18,
+                right: 18,
+                bottom: 20,
+                child: Column(
+                  children: [
+                    Text(
+                      playback.gift.label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: premium ? 22 : 18,
+                        fontWeight: FontWeight.w900,
+                        shadows: const [Shadow(color: Colors.black, blurRadius: 8)],
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${playback.sender}${playback.quantity > 1 ? ' · ×${playback.quantity}' : ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFFD8CBE0),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 8)],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final playback = widget.playback;
 
-    // Lightweight gifts under 100 coins are intentionally not cinematic. They
-    // get a compact native acknowledgement instead of taking over the camera.
-    if (!playback.gift.cinematic && playback.gift.cost < 100) {
-      return IgnorePointer(
-        child: Align(
-          alignment: const Alignment(0, .58),
-          child: Container(
-            key: Key('lightweight-gift-${playback.gift.id}'),
-            constraints: const BoxConstraints(maxWidth: 310),
-            margin: const EdgeInsets.symmetric(horizontal: 22),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xE61B1222),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0x665F37A1)),
-              boxShadow: const [
-                BoxShadow(color: Colors.black54, blurRadius: 12),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  playback.gift.symbol,
-                  style: const TextStyle(fontSize: 26),
-                ),
-                const SizedBox(width: 9),
-                Flexible(
-                  child: Text(
-                    '${playback.sender} sent ${playback.gift.label}${playback.quantity > 1 ? ' ×${playback.quantity}' : ''}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    if (!playback.gift.cinematic) {
+      return _largeNativeGift(context, playback);
     }
 
     if (playback.gift.id == 'pocket-comet') {
@@ -197,75 +275,80 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     }
 
     final controller = _controller;
-    if (playback.gift.cinematic &&
-        controller != null &&
-        controller.value.isInitialized) {
+    if (controller != null && controller.value.isInitialized) {
+      final size = MediaQuery.sizeOf(context);
       return IgnorePointer(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(color: Colors.black.withValues(alpha: .18)),
-            Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio == 0
-                    ? 1
-                    : controller.value.aspectRatio,
-                child: VideoPlayer(controller),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 110,
-              child: Text(
-                '${playback.sender} sent ${playback.gift.label}${playback.quantity > 1 ? ' ×${playback.quantity}' : ''}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+        child: Center(
+          child: SizedBox(
+            key: Key('cinematic-gift-presentation-${playback.gift.id}'),
+            width: size.width * .96,
+            height: size.height * .58,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    clipBehavior: Clip.hardEdge,
+                    child: SizedBox(
+                      width: controller.value.size.width <= 0
+                          ? size.width
+                          : controller.value.size.width,
+                      height: controller.value.size.height <= 0
+                          ? size.height * .58
+                          : controller.value.size.height,
+                      child: VideoPlayer(controller),
+                    ),
+                  ),
                 ),
-              ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Color(0xB0000000)],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                  child: Column(
+                    children: [
+                      Text(
+                        playback.gift.label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${playback.sender}${playback.quantity > 1 ? ' · ×${playback.quantity}' : ''}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFD9CEDF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
 
-    // Cinematic media fallback. This is deterministic native art/text, never a
-    // paused remote frame, so a failed or slow network load cannot flash black.
-    return IgnorePointer(
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          decoration: BoxDecoration(
-            color: const Color(0xDD1C1227),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0x669D55FF)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(playback.gift.symbol, style: const TextStyle(fontSize: 54)),
-              const SizedBox(height: 8),
-              Text(
-                '${playback.sender} sent ${playback.gift.label}',
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              if (playback.quantity > 1)
-                Text(
-                  '×${playback.quantity}',
-                  style: const TextStyle(
-                    color: Color(0xFFCEB9FF),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return _largeNativeGift(context, playback);
   }
 }
 
@@ -291,31 +374,61 @@ class NativeGiftTray extends StatefulWidget {
 
 class _NativeGiftTrayState extends State<NativeGiftTray> {
   static const _categories = <(String, String)>[
-    ('all', 'All'),
-    ('classic', 'Classic'),
-    ('reactions', 'React'),
-    ('snacks', 'Snacks'),
-    ('flowers', 'Flowers'),
-    ('celebrate', 'Celebrate'),
-    ('creator', 'Creator'),
-    ('sports', 'Sports'),
-    ('animals', 'Animals'),
-    ('fame', 'Fame'),
+    ('trending', 'Trending'),
+    ('support', 'Support'),
+    ('fun', 'Fun'),
+    ('luxury', 'Luxury'),
     ('fameverse', 'Fameverse'),
   ];
 
-  String _category = 'all';
-  String _selectedId = fvGiftCatalog.first.id;
+  static const _trendingIds = <String>{
+    'rose',
+    'heart',
+    'fire',
+    'star',
+    'planet',
+    'galaxy',
+    'welcome-to-fameverse',
+    'fame-burst',
+  };
+
+  String _category = 'trending';
+  String _selectedId = 'rose';
   bool _sending = false;
   bool _refilling = false;
   late int _coins;
 
-  List<FvGiftDefinition> get _visible => _category == 'all'
-      ? fvGiftCatalog
-      : fvGiftCatalog.where((gift) => gift.category == _category).toList();
+  bool _matchesCategory(FvGiftDefinition gift, String category) {
+    switch (category) {
+      case 'trending':
+        return _trendingIds.contains(gift.id);
+      case 'support':
+        return gift.cost <= 10;
+      case 'fun':
+        return const <String>{
+          'reactions',
+          'snacks',
+          'flowers',
+          'celebrate',
+          'creator',
+          'sports',
+          'animals',
+        }.contains(gift.category);
+      case 'luxury':
+        return gift.cost >= 40 && gift.cost < 1000;
+      case 'fameverse':
+        return gift.category == 'fameverse';
+      default:
+        return false;
+    }
+  }
+
+  List<FvGiftDefinition> get _visible => fvGiftCatalog
+      .where((gift) => _matchesCategory(gift, _category))
+      .toList();
 
   FvGiftDefinition get _selected =>
-      fvGiftById(_selectedId) ?? fvGiftCatalog.first;
+      fvGiftById(_selectedId) ?? _visible.firstOrNull ?? fvGiftCatalog.first;
 
   @override
   void initState() {
@@ -335,9 +448,6 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     if (_sending) return;
     final gift = _selected;
     setState(() => _sending = true);
-
-    // Close immediately to keep the Live surface responsive. The parent still
-    // waits for backend authority before broadcasting/playing the gift.
     Navigator.of(context).pop();
     await widget.onSend(gift, quantity);
   }
@@ -525,14 +635,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                 itemBuilder: (context, index) {
                   final item = _categories[index];
                   return ChoiceChip(
+                    key: Key('gift-category-${item.$1}'),
                     label: Text(item.$2),
                     selected: _category == item.$1,
                     onSelected: (_) {
-                      final visible = item.$1 == 'all'
-                          ? fvGiftCatalog
-                          : fvGiftCatalog
-                                .where((gift) => gift.category == item.$1)
-                                .toList();
+                      final visible = fvGiftCatalog
+                          .where((gift) => _matchesCategory(gift, item.$1))
+                          .toList();
                       setState(() {
                         _category = item.$1;
                         if (visible.isNotEmpty &&
