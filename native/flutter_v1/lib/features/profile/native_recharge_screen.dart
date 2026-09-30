@@ -28,6 +28,8 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
   String? _pendingPackLabel;
 
   SupabaseClient get _client => Supabase.instance.client;
+  bool get _sandbox => (_environment ?? 'sandbox').toLowerCase() != 'live';
+  String get _paypalMode => _sandbox ? 'sandbox' : 'live';
 
   @override
   void initState() {
@@ -112,10 +114,10 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
       setState(() {
         _loading = false;
         _error = text.contains('owner')
-            ? 'This PayPal sandbox recharge tool is limited to the Fameverse owner account.'
+            ? 'This PayPal $_paypalMode recharge tool is limited to the Fameverse owner account.'
             : text.contains('paypal-not-configured')
-            ? 'PayPal sandbox credentials are not configured.'
-            : 'Fameverse could not open PayPal sandbox recharge right now.';
+            ? 'PayPal $_paypalMode credentials are not configured.'
+            : 'Fameverse could not open PayPal $_paypalMode recharge right now.';
       });
     }
   }
@@ -170,8 +172,8 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
         _error = text.contains('custom')
             ? 'Choose a custom amount between $_customMinCoins and $_customMaxCoins Fame Coins.'
             : text.contains('paypal')
-            ? 'PayPal sandbox could not start this test purchase.'
-            : 'Could not start the sandbox recharge.';
+            ? 'PayPal $_paypalMode could not start this purchase.'
+            : 'Could not start the $_paypalMode recharge.';
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -221,7 +223,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Choose $_customMinCoins–$_customMaxCoins coins. Sandbox rate: about 100 Fame Coins per \$1.',
+                    'Choose $_customMinCoins–$_customMaxCoins coins. ${_sandbox ? 'Sandbox' : 'Live'} rate: about 100 Fame Coins per \$1.',
                     style: const TextStyle(
                       color: Color(0xFFB9AEC1),
                       height: 1.4,
@@ -354,8 +356,8 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
           SnackBar(
             content: Text(
               balance == null
-                  ? 'PayPal sandbox completed. $coins Fame Coins credited.'
-                  : 'PayPal sandbox completed. $coins Fame Coins credited · balance $balance.',
+                  ? 'PayPal $_paypalMode completed. $coins Fame Coins credited.'
+                  : 'PayPal $_paypalMode completed. $coins Fame Coins credited · balance $balance.',
             ),
           ),
         );
@@ -364,7 +366,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
       if (!mounted) return;
       setState(() {
         _error =
-            'PayPal has not completed this sandbox order yet. Finish approval in PayPal, return to Fameverse, then tap Complete sandbox purchase.';
+            'PayPal has not completed this $_paypalMode order yet. Finish approval in PayPal, return to Fameverse, then tap Complete purchase.';
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -373,7 +375,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sandbox = (_environment ?? 'sandbox').toLowerCase() != 'live';
+    final sandbox = _sandbox;
     return Scaffold(
       key: const Key('native-paypal-recharge-screen'),
       backgroundColor: const Color(0xFF0C0810),
@@ -397,9 +399,9 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'PAYPAL SANDBOX',
-                      style: TextStyle(
+                    Text(
+                      sandbox ? 'PAYPAL SANDBOX' : 'PAYPAL LIVE',
+                      style: const TextStyle(
                         color: Color(0xFFC89BFF),
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
@@ -449,9 +451,9 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Sandbox pricing · about 100 coins per \$1',
-                  style: TextStyle(color: Color(0xFFA99CAF), fontSize: 12),
+                Text(
+                  '${sandbox ? 'Sandbox' : 'Live'} pricing · about 100 coins per \$1',
+                  style: const TextStyle(color: Color(0xFFA99CAF), fontSize: 12),
                 ),
                 const SizedBox(height: 12),
                 GridView.builder(
@@ -548,25 +550,25 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        '${_pendingPackLabel ?? 'Sandbox order'} opened in PayPal',
+                        '${_pendingPackLabel ?? 'PayPal order'} opened in PayPal',
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Finish approval with your PayPal sandbox buyer, return to Fameverse, then complete the order here.',
-                        style: TextStyle(color: Color(0xFFB9AEC1), height: 1.4),
+                      Text(
+                        sandbox
+                            ? 'Finish approval with your PayPal sandbox buyer, return to Fameverse, then complete the order here.'
+                            : 'Finish approval in PayPal, return to Fameverse, then complete the order here.',
+                        style: const TextStyle(color: Color(0xFFB9AEC1), height: 1.4),
                       ),
                       const SizedBox(height: 14),
                       FilledButton(
                         key: const Key('complete-paypal-sandbox-purchase'),
                         onPressed: _busy ? null : _capturePurchase,
                         child: Text(
-                          _busy
-                              ? 'Checking PayPal…'
-                              : 'Complete sandbox purchase',
+                          _busy ? 'Checking PayPal…' : 'Complete purchase',
                         ),
                       ),
                     ],
