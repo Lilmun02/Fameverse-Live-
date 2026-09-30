@@ -56,8 +56,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
           position: (row['rank_position'] as num?)?.toInt() ?? 0,
           userId: row['user_id']?.toString() ?? '',
           username: row['username'] as String?,
-          displayName:
-              (row['display_name'] as String?) ?? 'Fameverse Creator',
+          displayName: (row['display_name'] as String?) ?? 'Fameverse Creator',
           avatarUrl: row['avatar_url'] as String?,
           score: (row['score'] as num?)?.toInt() ?? 0,
           secondary: (row['secondary'] as num?)?.toInt() ?? 0,
@@ -104,9 +103,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
           color: const Color(0xFF120C17),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(color: const Color(0xFF493353)),
-          boxShadow: const [
-            BoxShadow(color: Colors.black54, blurRadius: 28),
-          ],
+          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 28)],
         ),
         child: Column(
           children: [
@@ -121,18 +118,12 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
             const SizedBox(height: 14),
             const Row(
               children: [
-                Icon(
-                  Icons.emoji_events_rounded,
-                  color: Color(0xFFFFC75A),
-                ),
+                Icon(Icons.emoji_events_rounded, color: Color(0xFFFFC75A)),
                 SizedBox(width: 9),
                 Expanded(
                   child: Text(
                     'Live Rankings',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
                   ),
                 ),
               ],

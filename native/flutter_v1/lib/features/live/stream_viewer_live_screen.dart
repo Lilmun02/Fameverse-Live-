@@ -7,6 +7,8 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_live_profile_sheet.dart';
+import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
@@ -713,37 +715,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _showProfileSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NativeProfileAvatar(profile: widget.room.host, radius: 42),
-              const SizedBox(height: 12),
-              Text(
-                widget.room.host.displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(widget.room.host.bio, textAlign: TextAlign.center),
-              ],
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: _followBusy ? null : _toggleFollow,
-                child: Text(_following ? 'Following' : 'Follow'),
-              ),
-            ],
-          ),
-        ),
+    unawaited(
+      showNativeLiveProfileSheet(
+        context: context,
+        liveBackend: widget.liveBackend,
+        backend: widget.backend,
+        identity: widget.identity,
+        roomId: widget.room.id,
+        profile: widget.room.host,
+        onFollowingChanged: (following) {
+          if (mounted) setState(() => _following = following);
+        },
       ),
     );
   }
@@ -1111,6 +1093,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           _ViewerStatChip(
                             icon: Icons.local_fire_department_rounded,
                             text: '${_fameTaps + _tapBuffer.length}',
+                          ),
+                          const SizedBox(width: 3),
+                          IconButton(
+                            key: const Key('viewer-live-rankings-button'),
+                            onPressed: () =>
+                                unawaited(showNativeLiveRankings(context)),
+                            constraints: const BoxConstraints.tightFor(
+                              width: 28,
+                              height: 28,
+                            ),
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.emoji_events_rounded,
+                              size: 16,
+                              color: Color(0xFFFFC75A),
+                            ),
+                            tooltip: 'Rankings',
                           ),
                         ],
                       ),

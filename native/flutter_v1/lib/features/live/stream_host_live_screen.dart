@@ -7,6 +7,8 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_live_profile_sheet.dart';
+import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
@@ -558,32 +560,13 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   void _showProfileSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NativeProfileAvatar(profile: widget.room.host, radius: 42),
-              const SizedBox(height: 12),
-              Text(
-                widget.room.host.displayName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(widget.room.host.handle),
-              if (widget.room.host.bio.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Text(widget.room.host.bio, textAlign: TextAlign.center),
-              ],
-            ],
-          ),
-        ),
+    unawaited(
+      showNativeLiveProfileSheet(
+        context: context,
+        liveBackend: widget.liveBackend,
+        identity: widget.identity,
+        roomId: widget.room.id,
+        profile: widget.room.host,
       ),
     );
   }
@@ -998,7 +981,25 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           )
                         else
                           _LiveStatsPill(viewerCount: 0, fameTaps: _fameTaps),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          key: const Key('host-live-rankings-button'),
+                          onPressed: () =>
+                              unawaited(showNativeLiveRankings(context)),
+                          constraints: const BoxConstraints.tightFor(
+                            width: 32,
+                            height: 32,
+                          ),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(
+                            Icons.emoji_events_rounded,
+                            size: 17,
+                            color: Color(0xFFFFC75A),
+                          ),
+                          tooltip: 'Rankings',
+                        ),
+                        const SizedBox(width: 4),
                         FilledButton(
                           key: const Key('native-end-live'),
                           onPressed: _ending ? null : _endLive,

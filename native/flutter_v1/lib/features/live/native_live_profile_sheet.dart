@@ -49,8 +49,7 @@ class NativeLiveProfileSheet extends StatefulWidget {
   final ValueChanged<bool>? onFollowingChanged;
 
   @override
-  State<NativeLiveProfileSheet> createState() =>
-      _NativeLiveProfileSheetState();
+  State<NativeLiveProfileSheet> createState() => _NativeLiveProfileSheetState();
 }
 
 class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
@@ -169,9 +168,7 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
           color: const Color(0xFF130D18),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(color: const Color(0xFF4A3456)),
-          boxShadow: const [
-            BoxShadow(color: Colors.black54, blurRadius: 28),
-          ],
+          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 28)],
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -626,10 +623,7 @@ class _GifterProgressCard extends StatelessWidget {
               const Spacer(),
               Text(
                 '$totalCoinsSent coins',
-                style: const TextStyle(
-                  color: Color(0xFFB7A9BE),
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Color(0xFFB7A9BE), fontSize: 11),
               ),
             ],
           ),
@@ -644,10 +638,7 @@ class _GifterProgressCard extends StatelessWidget {
             progress.isMaxLevel
                 ? 'Max gifter level reached'
                 : '${progress.coinsToNext} coins to Lv. ${progress.nextLevel}',
-            style: const TextStyle(
-              color: Color(0xFFA99BAC),
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Color(0xFFA99BAC), fontSize: 11),
           ),
         ],
       ),
@@ -682,10 +673,7 @@ class _MiniStat extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF9F92A4),
-              fontSize: 9,
-            ),
+            style: const TextStyle(color: Color(0xFF9F92A4), fontSize: 9),
           ),
         ],
       ),
