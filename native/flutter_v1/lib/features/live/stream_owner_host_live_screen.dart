@@ -152,12 +152,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       });
 
       _giftTimer?.cancel();
-      _giftTimer = Timer(
-        Duration(milliseconds: gift.cinematic ? 6800 : 1800),
-        () {
-          if (mounted) setState(() => _giftPlayback = null);
-        },
-      );
+      _giftTimer = Timer(const Duration(seconds: 20), () {
+        if (mounted) setState(() => _giftPlayback = null);
+      });
       return true;
     } catch (error) {
       final value = error.toString().toLowerCase();
@@ -217,45 +214,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           identity: widget.identity,
           room: widget.room,
           credentials: widget.credentials,
+          onGiftPressed: _qaGiftAllowed ? _showGiftTray : null,
+          giftButtonEnabled: !_giftBusy,
         ),
-        if (_qaGiftAllowed)
-          Positioned(
-            right: 20,
-            bottom: MediaQuery.paddingOf(context).bottom + 78,
-            child: SafeArea(
-              minimum: EdgeInsets.zero,
-              child: Semantics(
-                label: 'Owner QA gifts',
-                button: true,
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFC464FF), Color(0xFF6A28B7)],
-                    ),
-                    border: Border.all(color: const Color(0xFFE0A7FF)),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x887D2FC4), blurRadius: 16),
-                    ],
-                  ),
-                  child: IconButton(
-                    key: const Key('owner-host-gift-button'),
-                    onPressed: _giftBusy ? null : _showGiftTray,
-                    tooltip: 'QA gifts',
-                    icon: const Icon(Icons.card_giftcard_rounded),
-                  ),
-                ),
-              ),
-            ),
-          ),
         if (_giftPlayback != null)
           NativeGiftOverlay(
             key: ValueKey<String>('owner-host-qa-gift-$_giftSerial'),
             playback: _giftPlayback!,
+            onFinished: () {
+              _giftTimer?.cancel();
+              if (mounted) setState(() => _giftPlayback = null);
+            },
           ),
       ],
     );

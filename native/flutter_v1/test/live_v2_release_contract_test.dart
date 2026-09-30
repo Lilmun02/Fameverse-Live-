@@ -260,14 +260,16 @@ void main() {
       ).readAsString();
 
       expect(viewer, contains("Key('viewer-gift-button')"));
-      expect(viewer, contains('if (_canRefill) ...['));
+      expect(viewer, isNot(contains("if (_canRefill) ...[")));
+      expect(viewer, contains('canRefill: _canRefill'));
       expect(viewer, contains('widget.room.host.handle'));
       expect(viewer, contains('state.liveEndedAt != null'));
       expect(viewer, contains('class _TapBurstParticle'));
       expect(viewer, isNot(contains("fvGiftById('rose')")));
       expect(components, contains('Future<int> Function() onRefill'));
-      expect(components, contains('playback.gift.cost < 100'));
-      expect(components, contains("Key('lightweight-gift-"));
+      expect(components, contains("Key('native-gift-presentation-"));
+      expect(components, contains("Key('cinematic-gift-presentation-"));
+      expect(components, contains('onFinished'));
       expect(chat, contains('fontSize: 15'));
     });
   });

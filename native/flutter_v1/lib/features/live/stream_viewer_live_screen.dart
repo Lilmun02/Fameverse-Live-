@@ -237,10 +237,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _giftSerial += 1;
       });
     }
-    _giftTimer = Timer(
-      Duration(milliseconds: next.gift.cinematic ? 6800 : 1800),
-      _playNextGift,
-    );
+    // Renderer completion advances normally; this only prevents a deadlock.
+    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -1190,22 +1188,18 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: const Icon(Icons.arrow_upward_rounded),
                             tooltip: 'Send comment',
                           ),
-                          if (_canRefill) ...[
-                            const SizedBox(width: 4),
-                            IconButton.filled(
-                              key: const Key('viewer-gift-button'),
-                              onPressed: _walletReady ? _showGiftTray : null,
-                              style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFF211529),
-                                foregroundColor: const Color(0xFFFFC65A),
-                                side: const BorderSide(
-                                  color: Color(0xFF4B365B),
-                                ),
-                              ),
-                              icon: const Icon(Icons.card_giftcard_rounded),
-                              tooltip: 'Gifts',
+                          const SizedBox(width: 4),
+                          IconButton.filled(
+                            key: const Key('viewer-gift-button'),
+                            onPressed: _walletReady ? _showGiftTray : null,
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF211529),
+                              foregroundColor: const Color(0xFFFFC65A),
+                              side: const BorderSide(color: Color(0xFF4B365B)),
                             ),
-                          ],
+                            icon: const Icon(Icons.card_giftcard_rounded),
+                            tooltip: 'Gifts',
+                          ),
                           const SizedBox(width: 4),
                           FvFameActionButton(
                             onPressed: _showFMenu,
@@ -1221,6 +1215,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                 NativeGiftOverlay(
                   key: ValueKey('viewer-gift-$_giftSerial'),
                   playback: _giftPlayback!,
+                  onFinished: _playNextGift,
                 ),
               ..._tapBursts.map(
                 (serial) => Positioned(

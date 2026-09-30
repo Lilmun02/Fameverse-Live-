@@ -16,6 +16,8 @@ class NativeHostLiveScreen extends StatefulWidget {
     required this.identity,
     required this.room,
     required this.credentials,
+    this.onGiftPressed,
+    this.giftButtonEnabled = true,
     super.key,
   });
 
@@ -23,6 +25,8 @@ class NativeHostLiveScreen extends StatefulWidget {
   final FvIdentity identity;
   final FvLiveRoom room;
   final FvLiveCredentials credentials;
+  final VoidCallback? onGiftPressed;
+  final bool giftButtonEnabled;
 
   @override
   State<NativeHostLiveScreen> createState() => _NativeHostLiveScreenState();
@@ -219,10 +223,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         _giftSerial += 1;
       });
     }
-    _giftTimer = Timer(
-      Duration(milliseconds: next.gift.cinematic ? 6800 : 1800),
-      _playNextGift,
-    );
+    // Renderer completion advances normally; this only prevents a deadlock.
+    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -1080,6 +1082,22 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           icon: const Icon(Icons.send_rounded),
                           tooltip: 'Send comment',
                         ),
+                        if (widget.onGiftPressed != null) ...[
+                          const SizedBox(width: 4),
+                          IconButton.filled(
+                            key: const Key('owner-host-gift-button'),
+                            onPressed: widget.giftButtonEnabled
+                                ? widget.onGiftPressed
+                                : null,
+                            style: IconButton.styleFrom(
+                              backgroundColor: const Color(0xFF211529),
+                              foregroundColor: const Color(0xFFFFC65A),
+                              side: const BorderSide(color: Color(0xFF4B365B)),
+                            ),
+                            icon: const Icon(Icons.card_giftcard_rounded),
+                            tooltip: 'Gifts',
+                          ),
+                        ],
                         const SizedBox(width: 4),
                         FvFameActionButton(
                           keyValue: const Key('host-f-menu-button'),
@@ -1096,6 +1114,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               NativeGiftOverlay(
                 key: ValueKey<String>('host-gift-$_giftSerial'),
                 playback: _giftPlayback!,
+                onFinished: _playNextGift,
               ),
           ],
         ),

@@ -450,6 +450,13 @@ const fvGiftCatalog = <FvGiftDefinition>[
     emoji: '🌌',
   ),
   FvGiftDefinition(
+    id: 'fame-burst',
+    label: 'Fame Burst',
+    cost: 100,
+    category: 'fameverse',
+    activityEmoji: '✦',
+  ),
+  FvGiftDefinition(
     id: 'welcome-to-fameverse',
     label: 'Welcome to Fameverse',
     cost: 100,

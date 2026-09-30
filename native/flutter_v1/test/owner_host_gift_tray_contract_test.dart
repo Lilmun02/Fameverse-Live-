@@ -7,6 +7,9 @@ void main() {
     final wrapper = File(
       'lib/features/live/stream_owner_host_live_screen.dart',
     ).readAsStringSync();
+    final host = File(
+      'lib/features/live/stream_host_live_screen.dart',
+    ).readAsStringSync();
     final barrel = File(
       'lib/features/live/stream_live_screen.dart',
     ).readAsStringSync();
@@ -25,9 +28,10 @@ void main() {
       reason: 'QA gift access must stay restricted to owner/admin accounts.',
     );
     expect(
-      wrapper,
+      host,
       contains("Key('owner-host-gift-button')"),
-      reason: 'The privileged host gift-tray entry point must not disappear.',
+      reason:
+          'The privileged host gift entry point must stay beside the canonical composer.',
     );
     expect(
       wrapper,
@@ -36,7 +40,7 @@ void main() {
     );
     expect(
       wrapper,
-      contains('if (_qaGiftAllowed)'),
+      contains('onGiftPressed: _qaGiftAllowed ? _showGiftTray : null'),
       reason: 'Regular hosts must not receive the privileged QA gift control.',
     );
     expect(

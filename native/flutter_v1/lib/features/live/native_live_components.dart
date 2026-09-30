@@ -43,11 +43,7 @@ class FvGiftPlayback {
 }
 
 class NativeGiftOverlay extends StatefulWidget {
-  const NativeGiftOverlay({
-    required this.playback,
-    this.onFinished,
-    super.key,
-  });
+  const NativeGiftOverlay({required this.playback, this.onFinished, super.key});
 
   final FvGiftPlayback playback;
   final VoidCallback? onFinished;
@@ -116,7 +112,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       await _controller!.setVolume(1);
       await _controller!.play();
       final rawMs = _controller!.value.duration.inMilliseconds + 350;
-      final safeMs = rawMs.clamp(1500, 15000);
+      final safeMs = rawMs.clamp(1500, 15000).toInt();
       _scheduleFinish(Duration(milliseconds: safeMs));
       return;
     }
@@ -135,7 +131,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       _loadedUrl = url;
       if (previous != null) await previous.dispose();
       final rawMs = next.value.duration.inMilliseconds + 350;
-      final safeMs = rawMs.clamp(1500, 15000);
+      final safeMs = rawMs.clamp(1500, 15000).toInt();
       _scheduleFinish(Duration(milliseconds: safeMs));
       if (mounted) setState(() {});
     } catch (_) {
@@ -177,7 +173,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF9D55FF).withValues(alpha: premium ? .44 : .30),
+                      const Color(
+                        0xFF9D55FF,
+                      ).withValues(alpha: premium ? .44 : .30),
                       const Color(0xFF5C22A7).withValues(alpha: .16),
                       Colors.transparent,
                     ],
@@ -188,10 +186,8 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                 tween: Tween<double>(begin: .72, end: 1),
                 duration: const Duration(milliseconds: 560),
                 curve: Curves.easeOutBack,
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: child,
-                ),
+                builder: (context, value, child) =>
+                    Transform.scale(scale: value, child: child),
                 child: Text(
                   playback.gift.symbol,
                   style: TextStyle(
@@ -215,7 +211,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                       style: TextStyle(
                         fontSize: premium ? 22 : 18,
                         fontWeight: FontWeight.w900,
-                        shadows: const [Shadow(color: Colors.black, blurRadius: 8)],
+                        shadows: const [
+                          Shadow(color: Colors.black, blurRadius: 8),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -423,12 +421,15 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     }
   }
 
-  List<FvGiftDefinition> get _visible => fvGiftCatalog
-      .where((gift) => _matchesCategory(gift, _category))
-      .toList();
+  List<FvGiftDefinition> get _visible =>
+      fvGiftCatalog.where((gift) => _matchesCategory(gift, _category)).toList();
 
-  FvGiftDefinition get _selected =>
-      fvGiftById(_selectedId) ?? _visible.firstOrNull ?? fvGiftCatalog.first;
+  FvGiftDefinition get _selected {
+    final selected = fvGiftById(_selectedId);
+    if (selected != null) return selected;
+    final visible = _visible;
+    return visible.isNotEmpty ? visible.first : fvGiftCatalog.first;
+  }
 
   @override
   void initState() {

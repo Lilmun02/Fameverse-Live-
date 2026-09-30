@@ -21,11 +21,14 @@ void main() {
       final wrapper = File(
         'lib/features/live/stream_owner_host_live_screen.dart',
       ).readAsStringSync();
+      final host = File(
+        'lib/features/live/stream_host_live_screen.dart',
+      ).readAsStringSync();
       final liveExport = File(
         'lib/features/live/stream_live_screen.dart',
       ).readAsStringSync();
 
-      expect(wrapper, contains("Key('owner-host-gift-button')"));
+      expect(host, contains("Key('owner-host-gift-button')"));
       expect(wrapper, contains("'record_beta_gift'"));
       expect(
         liveExport,

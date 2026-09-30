@@ -193,10 +193,9 @@ class _Build23OwnerControlCenterScreenState
             onPressed: () {
               final reference = referenceController.text.trim();
               if (requireReference && reference.isEmpty) return;
-              Navigator.of(context).pop((
-                note: noteController.text.trim(),
-                reference: reference,
-              ));
+              Navigator.of(
+                context,
+              ).pop((note: noteController.text.trim(), reference: reference));
             },
             child: Text(action),
           ),
@@ -208,10 +207,7 @@ class _Build23OwnerControlCenterScreenState
     return result;
   }
 
-  Future<void> _reviewPayout(
-    Map<String, dynamic> payout,
-    String status,
-  ) async {
+  Future<void> _reviewPayout(Map<String, dynamic> payout, String status) async {
     if (_busy) return;
     final payoutId = payout['payout_id']?.toString();
     if (payoutId == null || payoutId.isEmpty) return;
@@ -248,7 +244,9 @@ class _Build23OwnerControlCenterScreenState
     } catch (error) {
       final text = error.toString().toLowerCase();
       if (text.contains('verified creator required')) {
-        _message('This creator must be verified before a payout can be marked paid.');
+        _message(
+          'This creator must be verified before a payout can be marked paid.',
+        );
       } else {
         _message('Could not update that payout.');
       }
@@ -638,7 +636,8 @@ class _PayoutCard extends StatelessWidget {
     final status = payout['status']?.toString() ?? 'pending_review';
     final creator = payout['display_name']?.toString() ?? 'Fameverse Creator';
     final username = payout['username']?.toString();
-    final verification = payout['verification_status']?.toString() ?? 'unverified';
+    final verification =
+        payout['verification_status']?.toString() ?? 'unverified';
     final amount = _money((payout['amount_cents'] as num?)?.toInt() ?? 0);
     return Container(
       key: Key('owner-payout-${payout['payout_id']}'),
