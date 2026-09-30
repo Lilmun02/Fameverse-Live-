@@ -35,11 +35,41 @@ class FvGiftPlayback {
     required this.gift,
     required this.quantity,
     required this.sender,
+    this.comboIndex = 1,
+    this.comboTotal = 1,
   });
 
   final FvGiftDefinition gift;
   final int quantity;
   final String sender;
+  final int comboIndex;
+  final int comboTotal;
+
+  String get visualCountLabel {
+    if (comboTotal > 1) return ' · Combo ×$comboIndex';
+    if (quantity > 1) return ' · ×$quantity';
+    return '';
+  }
+}
+
+const int fvMaxSequentialGiftCombo = 50;
+
+List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
+  if (playback.quantity <= 1 || playback.quantity > fvMaxSequentialGiftCombo) {
+    return <FvGiftPlayback>[playback];
+  }
+
+  return List<FvGiftPlayback>.generate(
+    playback.quantity,
+    (index) => FvGiftPlayback(
+      gift: playback.gift,
+      quantity: 1,
+      sender: playback.sender,
+      comboIndex: index + 1,
+      comboTotal: playback.quantity,
+    ),
+    growable: false,
+  );
 }
 
 class NativeGiftOverlay extends StatefulWidget {
@@ -218,7 +248,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${playback.sender}${playback.quantity > 1 ? ' · ×${playback.quantity}' : ''}',
+                      '${playback.sender}${playback.visualCountLabel}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -252,13 +282,15 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         fit: StackFit.expand,
         children: [
           NativePocketCometGift(sender: playback.sender),
-          if (playback.quantity > 1)
+          if (playback.comboTotal > 1 || playback.quantity > 1)
             Positioned(
               left: 20,
               right: 20,
               bottom: 92,
               child: Text(
-                '×${playback.quantity}',
+                playback.comboTotal > 1
+                    ? 'COMBO ×${playback.comboIndex}'
+                    : '×${playback.quantity}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFFFFE7A2),
@@ -327,7 +359,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        '${playback.sender}${playback.quantity > 1 ? ' · ×${playback.quantity}' : ''}',
+                        '${playback.sender}${playback.visualCountLabel}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFFD9CEDF),

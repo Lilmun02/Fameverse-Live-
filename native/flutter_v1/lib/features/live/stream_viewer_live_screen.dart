@@ -222,7 +222,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
-    _giftQueue.add(playback);
+    _giftQueue.addAll(fvExpandGiftVisualCombo(playback));
     if (_giftPlayback == null) _playNextGift();
   }
 

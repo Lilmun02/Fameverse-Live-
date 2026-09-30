@@ -39,6 +39,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   int _walletBalance = 0;
   int _gifterLevel = 1;
   int _giftSerial = 0;
+  final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
   FvGiftPlayback? _giftPlayback;
   Timer? _giftTimer;
   FvLiveActivitySession? _qaActivity;
@@ -135,10 +136,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         setState(() {
           _walletBalance = nextBalance;
           _gifterLevel = nextLevel;
-          _giftPlayback = playback;
-          _giftSerial += 1;
         });
       }
+      _enqueueQaGift(playback);
 
       await _qaActivity?.send('gift', <String, dynamic>{
         'id': eventId,
@@ -151,10 +151,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         'qaHostPreview': true,
       });
 
-      _giftTimer?.cancel();
-      _giftTimer = Timer(const Duration(seconds: 20), () {
-        if (mounted) setState(() => _giftPlayback = null);
-      });
       return true;
     } catch (error) {
       final value = error.toString().toLowerCase();
@@ -170,6 +166,27 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     } finally {
       if (mounted) setState(() => _giftBusy = false);
     }
+  }
+
+  void _enqueueQaGift(FvGiftPlayback playback) {
+    _giftQueue.addAll(fvExpandGiftVisualCombo(playback));
+    if (_giftPlayback == null) _playNextQaGift();
+  }
+
+  void _playNextQaGift() {
+    _giftTimer?.cancel();
+    if (_giftQueue.isEmpty) {
+      if (mounted) setState(() => _giftPlayback = null);
+      return;
+    }
+    final next = _giftQueue.removeAt(0);
+    if (mounted) {
+      setState(() {
+        _giftPlayback = next;
+        _giftSerial += 1;
+      });
+    }
+    _giftTimer = Timer(const Duration(seconds: 20), _playNextQaGift);
   }
 
   void _showGiftTray() {
@@ -198,6 +215,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   @override
   void dispose() {
     _giftTimer?.cancel();
+    _giftQueue.clear();
     final activity = _qaActivity;
     _qaActivity = null;
     if (activity != null) unawaited(activity.close());
@@ -221,10 +239,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           NativeGiftOverlay(
             key: ValueKey<String>('owner-host-qa-gift-$_giftSerial'),
             playback: _giftPlayback!,
-            onFinished: () {
-              _giftTimer?.cancel();
-              if (mounted) setState(() => _giftPlayback = null);
-            },
+            onFinished: _playNextQaGift,
           ),
       ],
     );

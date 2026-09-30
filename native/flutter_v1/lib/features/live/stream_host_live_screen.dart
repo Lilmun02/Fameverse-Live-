@@ -208,7 +208,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
-    _giftQueue.add(playback);
+    _giftQueue.addAll(fvExpandGiftVisualCombo(playback));
     if (_giftPlayback == null) _playNextGift();
   }
 
