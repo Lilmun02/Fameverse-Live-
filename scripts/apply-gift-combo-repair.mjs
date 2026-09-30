@@ -18,26 +18,31 @@ function replaceOnce(path, before, after) {
   write(path, source.slice(0, first) + after + source.slice(first + before.length))
 }
 
+function replaceAllExpected(path, before, after, expectedCount) {
+  const source = read(path)
+  const count = source.split(before).length - 1
+  if (count !== expectedCount) {
+    throw new Error(`Expected ${expectedCount} patch targets in ${path}, found ${count}`)
+  }
+  write(path, source.split(before).join(after))
+}
+
 const components = 'native/flutter_v1/lib/features/live/native_live_components.dart'
 replaceOnce(
   components,
   `class FvGiftPlayback {\n  const FvGiftPlayback({\n    required this.gift,\n    required this.quantity,\n    required this.sender,\n  });\n\n  final FvGiftDefinition gift;\n  final int quantity;\n  final String sender;\n}\n`,
   `class FvGiftPlayback {\n  const FvGiftPlayback({\n    required this.gift,\n    required this.quantity,\n    required this.sender,\n    this.comboIndex = 1,\n    this.comboTotal = 1,\n  });\n\n  final FvGiftDefinition gift;\n  final int quantity;\n  final String sender;\n  final int comboIndex;\n  final int comboTotal;\n\n  String get visualCountLabel {\n    if (comboTotal > 1) return ' · Combo ×$comboIndex';\n    if (quantity > 1) return ' · ×$quantity';\n    return '';\n  }\n}\n\nconst int fvMaxSequentialGiftCombo = 50;\n\nList<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {\n  if (playback.quantity <= 1 ||\n      playback.quantity > fvMaxSequentialGiftCombo) {\n    return <FvGiftPlayback>[playback];\n  }\n\n  return List<FvGiftPlayback>.generate(\n    playback.quantity,\n    (index) => FvGiftPlayback(\n      gift: playback.gift,\n      quantity: 1,\n      sender: playback.sender,\n      comboIndex: index + 1,\n      comboTotal: playback.quantity,\n    ),\n    growable: false,\n  );\n}\n`,
 )
-replaceOnce(
+replaceAllExpected(
   components,
   "'${playback.sender}${playback.quantity > 1 ? ' · ×${playback.quantity}' : ''}',",
   "'${playback.sender}${playback.visualCountLabel}',",
+  2,
 )
 replaceOnce(
   components,
   "          if (playback.quantity > 1)\n            Positioned(\n              left: 20,\n              right: 20,\n              bottom: 92,\n              child: Text(\n                '×${playback.quantity}',",
   "          if (playback.comboTotal > 1 || playback.quantity > 1)\n            Positioned(\n              left: 20,\n              right: 20,\n              bottom: 92,\n              child: Text(\n                playback.comboTotal > 1\n                    ? 'COMBO ×${playback.comboIndex}'\n                    : '×${playback.quantity}',",
-)
-replaceOnce(
-  components,
-  "'${playback.sender}${playback.quantity > 1 ? ' · ×${playback.quantity}' : ''}',",
-  "'${playback.sender}${playback.visualCountLabel}',",
 )
 
 for (const path of [
