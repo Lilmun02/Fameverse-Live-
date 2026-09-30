@@ -6,6 +6,7 @@ on:
       - integration/sep27-big-update
     paths:
       - scripts/apply-integration-live-repair.mjs
+      - scripts/fix-integration-live-contract.mjs
 
 permissions:
   contents: write
@@ -33,6 +34,9 @@ jobs:
 
       - name: Apply exact Live and payout repair patch
         run: node scripts/apply-integration-live-repair.mjs
+
+      - name: Normalize generated regression contract
+        run: node scripts/fix-integration-live-contract.mjs
 
       - name: Resolve Flutter packages
         working-directory: native/flutter_v1
