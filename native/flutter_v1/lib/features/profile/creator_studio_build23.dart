@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
-import 'native_recharge_screen.dart';
 
 class Build23CreatorStudioScreen extends StatefulWidget {
   const Build23CreatorStudioScreen({
@@ -98,16 +97,6 @@ class _Build23CreatorStudioScreenState
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(value)));
-  }
-
-  void _openOwnerRecharge() {
-    if (!widget.isOwner) return;
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (context) => const NativeRechargeScreen(),
-      ),
-    );
   }
 
   Future<void> _requestVerification() async {
@@ -341,10 +330,6 @@ class _Build23CreatorStudioScreenState
                   grossCoins: _promoGrossCoins,
                   creatorEquivalentCents: _promoCreatorEquivalentCents,
                 ),
-                if (widget.isOwner) ...[
-                  const SizedBox(height: 12),
-                  _OwnerRechargeCard(onTap: _openOwnerRecharge),
-                ],
                 const SizedBox(height: 26),
                 const _SectionLabel('PAYOUT SETUP'),
                 const SizedBox(height: 10),
@@ -701,25 +686,6 @@ class _PayoutCard extends StatelessWidget {
         key: const Key('build23-request-payout'),
         onPressed: canRequest ? onRequest : null,
         child: const Text('Request'),
-      ),
-    );
-  }
-}
-
-class _OwnerRechargeCard extends StatelessWidget {
-  const _OwnerRechargeCard({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ActionCard(
-      icon: Icons.account_balance_wallet_rounded,
-      title: 'PayPal sandbox recharge',
-      subtitle: 'Owner QA coin purchase flow',
-      trailing: IconButton(
-        key: const Key('build23-owner-recharge'),
-        onPressed: onTap,
-        icon: const Icon(Icons.chevron_right_rounded),
       ),
     );
   }
