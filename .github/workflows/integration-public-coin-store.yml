@@ -8,6 +8,7 @@ on:
       - scripts/apply-public-coin-store.mjs
       - scripts/fix-owner-finance-copy.mjs
       - scripts/fix-public-store-analysis.mjs
+      - scripts/fix-paypal-recharge-regression-contract.mjs
       - .github/workflows/integration-public-coin-store.yml
 
 permissions:
@@ -35,6 +36,9 @@ jobs:
 
       - name: Remove dead public store code
         run: node scripts/fix-public-store-analysis.mjs
+
+      - name: Align PayPal recharge regression contract
+        run: node scripts/fix-paypal-recharge-regression-contract.mjs
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
