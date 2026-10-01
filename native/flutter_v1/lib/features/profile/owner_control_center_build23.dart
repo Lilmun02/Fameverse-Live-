@@ -909,40 +909,44 @@ class _Action extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF3B2B43)),
-        color: const Color(0xFF151018),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFFC88BFF)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  body,
-                  style: const TextStyle(
-                    color: Color(0xFFA99DAD),
-                    fontSize: 11,
-                    height: 1.35,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFF3B2B43)),
+          color: const Color(0xFF151018),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFC88BFF)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      color: Color(0xFFA99DAD),
+                      fontSize: 11,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          FilledButton.tonal(onPressed: onTap, child: Text(label)),
-        ],
+            const SizedBox(width: 10),
+            FilledButton.tonal(onPressed: onTap, child: Text(label)),
+          ],
+        ),
       ),
     );
   }
