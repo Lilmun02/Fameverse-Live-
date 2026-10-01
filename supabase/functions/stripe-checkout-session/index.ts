@@ -39,7 +39,19 @@ type StripePack = {
   currency: string;
   stripe_test_price_id: string | null;
   stripe_live_price_id: string | null;
+  stripe_test_price_cents: number | null;
+  stripe_live_price_cents: number | null;
 };
+
+function priceForEnvironment(pack: StripePack, environment: string) {
+  const environmentPrice = environment === "live"
+    ? pack.stripe_live_price_cents
+    : pack.stripe_test_price_cents;
+  if (Number.isInteger(environmentPrice) && Number(environmentPrice) > 0) {
+    return Number(environmentPrice);
+  }
+  return pack.price_cents;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
@@ -77,12 +89,12 @@ Deno.serve(async (req: Request) => {
   const action = String(body.action ?? "config");
   const environment = stripeEnvironment();
   const secretKey = secretForEnvironment(environment);
+  const packColumns =
+    "id,label,coins,price_cents,currency,stripe_test_price_id,stripe_live_price_id,stripe_test_price_cents,stripe_live_price_cents";
 
   const packQuery = admin
     .from("coin_recharge_packs")
-    .select(
-      "id,label,coins,price_cents,currency,stripe_test_price_id,stripe_live_price_id",
-    )
+    .select(packColumns)
     .eq("active", true)
     .eq("owner_only", false)
     .like("id", "stripe-%")
@@ -98,7 +110,7 @@ Deno.serve(async (req: Request) => {
         id: pack.id,
         label: pack.label,
         coins: pack.coins,
-        price_cents: pack.price_cents,
+        price_cents: priceForEnvironment(pack, environment),
         currency: pack.currency,
       };
     });
@@ -123,9 +135,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: rawPack, error: packError } = await admin
     .from("coin_recharge_packs")
-    .select(
-      "id,label,coins,price_cents,currency,stripe_test_price_id,stripe_live_price_id",
-    )
+    .select(packColumns)
     .eq("id", packId)
     .eq("active", true)
     .eq("owner_only", false)
@@ -133,6 +143,11 @@ Deno.serve(async (req: Request) => {
   if (packError || !rawPack) return json(404, { error: "stripe-pack-not-found" });
 
   const pack = rawPack as StripePack;
+  const priceCents = priceForEnvironment(pack, environment);
+  if (!Number.isInteger(priceCents) || priceCents <= 0) {
+    return json(503, { error: "stripe-price-amount-not-configured", environment });
+  }
+
   const stripePriceId = environment === "live"
     ? String(pack.stripe_live_price_id ?? "")
     : String(pack.stripe_test_price_id ?? "");
@@ -146,7 +161,7 @@ Deno.serve(async (req: Request) => {
       user_id: user.id,
       pack_id: pack.id,
       provider: "stripe",
-      amount_cents: pack.price_cents,
+      amount_cents: priceCents,
       currency: pack.currency,
       coins: pack.coins,
       status: "created",
@@ -212,7 +227,7 @@ Deno.serve(async (req: Request) => {
       checkout_session_id: sessionId,
       checkout_url: checkoutUrl,
       coins: pack.coins,
-      amount_cents: pack.price_cents,
+      amount_cents: priceCents,
       currency: pack.currency,
     });
   } catch {
