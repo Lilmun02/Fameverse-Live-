@@ -7,6 +7,7 @@ on:
     paths:
       - scripts/apply-public-coin-store.mjs
       - scripts/fix-owner-finance-copy.mjs
+      - scripts/fix-public-store-analysis.mjs
       - .github/workflows/integration-public-coin-store.yml
 
 permissions:
@@ -31,6 +32,9 @@ jobs:
 
       - name: Apply public Fame Coin store wiring
         run: node scripts/apply-public-coin-store.mjs
+
+      - name: Remove dead public store code
+        run: node scripts/fix-public-store-analysis.mjs
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
