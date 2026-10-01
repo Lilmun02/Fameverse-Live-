@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FameCoinStoreScreen extends StatefulWidget {
   const FameCoinStoreScreen({
@@ -19,19 +20,49 @@ class FameCoinStoreScreen extends StatefulWidget {
   State<FameCoinStoreScreen> createState() => _FameCoinStoreScreenState();
 }
 
-class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
+class _StripeOffer {
+  const _StripeOffer({
+    required this.id,
+    required this.label,
+    required this.coins,
+    required this.priceCents,
+    required this.currency,
+  });
+
+  final String id;
+  final String label;
+  final int coins;
+  final int priceCents;
+  final String currency;
+
+  String get priceLabel {
+    final amount = (priceCents / 100).toStringAsFixed(2);
+    return currency.toUpperCase() == 'USD'
+        ? '\$$amount'
+        : '${currency.toUpperCase()} $amount';
+  }
+}
+
+class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
+    with WidgetsBindingObserver {
   final InAppPurchase _store = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 
   bool _loading = true;
   bool _storeAvailable = false;
   bool _verifying = false;
+  bool _stripeLoading = true;
+  bool _stripeCheckoutEnabled = false;
+  bool _awaitingStripeReturn = false;
+  String _stripeEnvironment = 'test';
   String? _busyProductId;
+  String? _stripeBusyPackId;
   String? _notice;
   int _balance = 0;
   Map<String, int> _coinByProduct = const {};
   List<ProductDetails> _products = const [];
   Set<String> _missingProductIds = const {};
+  List<_StripeOffer> _stripeOffers = const [];
 
   SupabaseClient get _client => Supabase.instance.client;
   String get _platform => Platform.isIOS ? 'ios' : 'android';
@@ -39,6 +70,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _purchaseSubscription = _store.purchaseStream.listen(
       _handlePurchases,
       onError: (_) {
@@ -50,13 +82,26 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
         });
       },
     );
-    unawaited(_load());
+    unawaited(_refreshAll());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_purchaseSubscription?.cancel());
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingStripeReturn) {
+      _awaitingStripeReturn = false;
+      unawaited(_refreshWalletAfterStripe());
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait<void>([_load(), _loadStripeConfig()]);
   }
 
   Future<void> _load() async {
@@ -150,8 +195,68 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
     }
   }
 
+  Future<void> _loadStripeConfig() async {
+    if (!mounted) return;
+    setState(() => _stripeLoading = true);
+
+    try {
+      final response = await _client.functions.invoke(
+        'stripe-checkout-session',
+        body: {'action': 'config'},
+      );
+      if (response.data is! Map) {
+        throw StateError('invalid-stripe-config');
+      }
+      final result = Map<String, dynamic>.from(response.data as Map);
+      if (result['error'] != null) {
+        throw StateError(result['error'].toString());
+      }
+      final rawPacks = result['packs'];
+      final offers = <_StripeOffer>[];
+      if (rawPacks is List) {
+        for (final raw in rawPacks.whereType<Map>()) {
+          final row = Map<String, dynamic>.from(raw);
+          final id = row['id']?.toString() ?? '';
+          final label = row['label']?.toString() ?? '';
+          final coins = (row['coins'] as num?)?.toInt() ?? 0;
+          final priceCents = (row['price_cents'] as num?)?.toInt() ?? 0;
+          final currency = row['currency']?.toString() ?? 'USD';
+          if (id.isEmpty || coins <= 0 || priceCents <= 0) continue;
+          offers.add(
+            _StripeOffer(
+              id: id,
+              label: label.isEmpty ? '$coins Fame Coins' : label,
+              coins: coins,
+              priceCents: priceCents,
+              currency: currency,
+            ),
+          );
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _stripeOffers = offers;
+        _stripeCheckoutEnabled = result['checkout_enabled'] == true;
+        _stripeEnvironment = result['environment']?.toString() == 'live'
+            ? 'live'
+            : 'test';
+        _stripeLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _stripeOffers = const [];
+        _stripeCheckoutEnabled = false;
+        _stripeLoading = false;
+      });
+    }
+  }
+
   Future<void> _buy(ProductDetails product) async {
-    if (_busyProductId != null || _verifying) return;
+    if (_busyProductId != null || _verifying || _stripeBusyPackId != null) {
+      return;
+    }
     if (!Platform.isIOS) {
       setState(() {
         _notice =
@@ -184,6 +289,88 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
       setState(() {
         _busyProductId = null;
         _notice = 'The App Store could not start that purchase.';
+      });
+    }
+  }
+
+  Future<void> _buyWithStripe(_StripeOffer offer) async {
+    if (_stripeBusyPackId != null || _busyProductId != null || _verifying) {
+      return;
+    }
+    if (!_stripeCheckoutEnabled) {
+      setState(() {
+        _notice =
+            'Stripe Checkout is wired but not enabled for this environment yet.';
+      });
+      return;
+    }
+
+    setState(() {
+      _stripeBusyPackId = offer.id;
+      _notice = null;
+    });
+
+    try {
+      final response = await _client.functions.invoke(
+        'stripe-checkout-session',
+        body: {'action': 'create', 'pack_id': offer.id},
+      );
+      if (response.data is! Map) {
+        throw StateError('invalid-stripe-checkout-response');
+      }
+      final result = Map<String, dynamic>.from(response.data as Map);
+      if (result['error'] != null) {
+        throw StateError(result['error'].toString());
+      }
+      final checkoutUrl = result['checkout_url']?.toString() ?? '';
+      final uri = Uri.tryParse(checkoutUrl);
+      if (uri == null || uri.scheme != 'https') {
+        throw StateError('invalid-stripe-checkout-url');
+      }
+
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) throw StateError('stripe-checkout-launch-failed');
+
+      if (!mounted) return;
+      setState(() {
+        _awaitingStripeReturn = true;
+        _notice =
+            'Stripe Checkout opened in your browser. Fame Coins are credited only after Stripe confirms payment with Fameverse.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _stripeBusyPackId = null;
+        _awaitingStripeReturn = false;
+        _notice = 'Stripe Checkout could not start. No Fame Coins were charged.';
+      });
+    }
+  }
+
+  Future<void> _refreshWalletAfterStripe() async {
+    final previousBalance = _balance;
+    try {
+      final wallet = await _client
+          .from('beta_coin_wallets')
+          .select('balance')
+          .eq('user_id', widget.userId)
+          .maybeSingle();
+      final balance = (wallet?['balance'] as num?)?.toInt() ?? previousBalance;
+      if (!mounted) return;
+      if (balance != previousBalance) widget.onBalanceChanged?.call(balance);
+      setState(() {
+        _balance = balance;
+        _stripeBusyPackId = null;
+        _notice = balance > previousBalance
+            ? '${balance - previousBalance} Fame Coins added through Stripe. Balance: $balance.'
+            : 'Stripe payment confirmation is still processing. Pull down to refresh your Fame Coin balance.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _stripeBusyPackId = null;
+        _notice =
+            'Fameverse could not refresh your balance yet. Pull down to retry; Stripe Checkout never credits coins from the browser alone.';
       });
     }
   }
@@ -315,7 +502,9 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
         title: const Text('Buy Fame Coins'),
         actions: [
           IconButton(
-            onPressed: _loading || _verifying ? null : _load,
+            onPressed: _loading || _verifying || _stripeLoading
+                ? null
+                : _refreshAll,
             tooltip: 'Refresh store',
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -323,7 +512,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _load,
+          onRefresh: _refreshAll,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 38),
@@ -382,7 +571,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'APPLE IAP',
+                          'SECURE STORE',
                           style: TextStyle(
                             color: Color(0xFFC98BFF),
                             fontSize: 9,
@@ -392,7 +581,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
                         ),
                         SizedBox(height: 3),
                         Text(
-                          'Secure checkout',
+                          'Verified checkout',
                           style: TextStyle(
                             color: Color(0xFF9F94A4),
                             fontSize: 10,
@@ -425,7 +614,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
               ],
               const SizedBox(height: 22),
               const Text(
-                'Fame Coin packs',
+                'App Store packs',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 5),
@@ -512,7 +701,74 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
                     );
                   },
                 ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Stripe Checkout',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  Container(
+                    key: const Key('stripe-environment-badge'),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2B1A34),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: const Color(0xFF68407B)),
+                    ),
+                    child: Text(
+                      _stripeEnvironment == 'live' ? 'STRIPE LIVE' : 'STRIPE TEST',
+                      style: const TextStyle(
+                        color: Color(0xFFCFA1F2),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Stripe opens its hosted Checkout page in your browser. Fameverse never collects your card number and only credits coins after the signed Stripe webhook is verified on the server.',
+                style: TextStyle(
+                  color: Color(0xFFA79BAA),
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (_stripeLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_stripeOffers.isEmpty)
+                const _StripeUnavailableCard(
+                  message: 'Stripe Checkout packs could not be loaded right now.',
+                )
+              else ...[
+                if (!_stripeCheckoutEnabled)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: _StripeUnavailableCard(
+                      message:
+                          'Stripe Checkout is wired but disabled until the matching test/live Stripe secrets are configured on the Fameverse backend.',
+                    ),
+                  ),
+                for (final offer in _stripeOffers) ...[
+                  _StripeOfferCard(
+                    offer: offer,
+                    enabled: _stripeCheckoutEnabled,
+                    busy: _stripeBusyPackId == offer.id,
+                    onBuy: () => _buyWithStripe(offer),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ],
+              const SizedBox(height: 8),
               const _PurchaseSafetyNote(),
             ],
           ),
@@ -565,13 +821,113 @@ class _StoreUnavailableCard extends StatelessWidget {
   }
 }
 
+class _StripeUnavailableCard extends StatelessWidget {
+  const _StripeUnavailableCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('stripe-checkout-unavailable'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17111B),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF45334D)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lock_outline_rounded, color: Color(0xFFC895F5), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFFB8ACBC),
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StripeOfferCard extends StatelessWidget {
+  const _StripeOfferCard({
+    required this.offer,
+    required this.enabled,
+    required this.busy,
+    required this.onBuy,
+  });
+
+  final _StripeOffer offer;
+  final bool enabled;
+  final bool busy;
+  final VoidCallback onBuy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: Key('stripe-pack-${offer.id}'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17111B),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF493057)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Color(0xFF2D1B39),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.credit_card_rounded, color: Color(0xFFD4A2FF)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  offer.label,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${offer.coins} Fame Coins · ${offer.priceLabel}',
+                  style: const TextStyle(color: Color(0xFFA99DAC), fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          FilledButton(
+            key: Key('stripe-buy-${offer.id}'),
+            onPressed: enabled && !busy ? onBuy : null,
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF8E46DE)),
+            child: Text(busy ? 'Opening…' : 'Buy'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PurchaseSafetyNote extends StatelessWidget {
   const _PurchaseSafetyNote();
 
   @override
   Widget build(BuildContext context) {
     return const Text(
-      'Fame Coins are consumable digital currency for gifting inside Fameverse. Fameverse credits coins only after the server verifies the signed store transaction. Creator earnings and owner reward reserves are separate balances.',
+      'Fame Coins are consumable digital currency for gifting inside Fameverse. Apple purchases are credited only after server-side Apple verification. Stripe purchases are credited only after a signed Stripe webhook confirms payment. Creator earnings and owner reward reserves are separate balances.',
       textAlign: TextAlign.center,
       style: TextStyle(color: Color(0xFF817785), fontSize: 10, height: 1.45),
     );
