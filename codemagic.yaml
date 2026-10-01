@@ -163,12 +163,13 @@ workflows:
           SHELL="lib/features/shell/fameverse_shell_build23.dart"
           PROFILE="lib/features/profile/native_profile_build23.dart"
           HOST_WRAPPER="lib/features/live/stream_owner_host_live_screen.dart"
+          HOST_SURFACE="lib/features/live/stream_host_live_screen.dart"
           LIVE_EXPORT="lib/features/live/stream_live_screen.dart"
 
           grep -Fq "get_my_fameverse_identity" "$SHELL" || { echo "BLOCKED: authoritative owner identity route missing."; exit 1; }
           grep -Fq "Build23OwnerControlCenterScreen" "$SHELL" || { echo "BLOCKED: Owner Control Center route missing."; exit 1; }
           grep -Fq "Owner Control Center" "$PROFILE" || { echo "BLOCKED: Owner Control Center settings label missing."; exit 1; }
-          grep -Fq "owner-host-gift-button" "$HOST_WRAPPER" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
+          grep -Fq "owner-host-gift-button" "$HOST_SURFACE" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
           grep -Fq "record_beta_gift" "$HOST_WRAPPER" || { echo "BLOCKED: owner QA gift RPC path missing."; exit 1; }
           grep -Fq "export 'stream_owner_host_live_screen.dart';" "$LIVE_EXPORT" || { echo "BLOCKED: host Live is not routed through owner gift wrapper."; exit 1; }
 
