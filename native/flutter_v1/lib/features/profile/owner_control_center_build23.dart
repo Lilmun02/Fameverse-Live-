@@ -305,10 +305,10 @@ class _Build23OwnerControlCenterScreenState
   Future<void> _recordSettledReserve() async {
     if (_busy) return;
     final cents = await _askDollars(
-      title: 'Record settled PayPal reserve',
+      title: 'Record Reward Funds',
       body:
-          'Only record money after the real USD has settled in the PayPal Business balance or other business account you are using to fund creator rewards. This does not move money by itself.',
-      action: 'Record reserve',
+          'Enter real business cash that has already settled and that you are intentionally setting aside for Fameverse rewards. This records the amount inside Fameverse; it does not transfer money from PayPal.',
+      action: 'Record funds',
     );
     if (cents == null) return;
     setState(() => _busy = true);
@@ -317,13 +317,13 @@ class _Build23OwnerControlCenterScreenState
         'owner_allocate_reward_reserve',
         params: {
           'p_amount_cents': cents,
-          'p_note': 'Owner recorded settled PayPal reward reserve',
+          'p_note': 'Owner recorded settled reward funds',
         },
       );
-      _message('Reward reserve recorded.');
+      _message('Reward Reserve funds recorded.');
       await _refresh();
     } catch (_) {
-      _message('Could not record that reserve.');
+      _message('Could not record those Reward Reserve funds.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -335,20 +335,20 @@ class _Build23OwnerControlCenterScreenState
     final text = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create cash-backed reward coins'),
+        title: const Text('Create Cash-Backed Fame Coins'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'These are real-liability coins. The backend will refuse to create them unless the recorded reward reserve is large enough.',
+              'Cash-Backed Fame Coins use real money from the Reward Reserve and can create real creator earnings. Promo Fame Coins are separate and do not use this reserve.',
             ),
             const SizedBox(height: 14),
             TextField(
               controller: coinsController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Fame Coins',
+                labelText: 'Cash-Backed Fame Coins',
                 prefixIcon: Icon(Icons.toll_rounded),
               ),
             ),
@@ -370,7 +370,7 @@ class _Build23OwnerControlCenterScreenState
     if (text == null) return;
     final coins = int.tryParse(text.trim()) ?? 0;
     if (coins <= 0) {
-      _message('Enter a valid coin amount.');
+      _message('Enter a valid cash-backed coin amount.');
       return;
     }
     setState(() => _busy = true);
@@ -379,17 +379,17 @@ class _Build23OwnerControlCenterScreenState
         'owner_issue_cash_backed_reward_coins',
         params: {
           'p_coins': coins,
-          'p_note': 'Owner created cash-backed promotional reward coins',
+          'p_note': 'Owner created cash-backed reward coins',
         },
       );
-      _message('Cash-backed reward coins created.');
+      _message('Cash-Backed Fame Coins created.');
       await _refresh();
     } catch (error) {
       final text = error.toString().toLowerCase();
       _message(
         text.contains('insufficient funded cash reward reserve')
-            ? 'Not enough recorded cash reserve for that reward.'
-            : 'Could not create cash-backed reward coins.',
+            ? 'Not enough Reward Reserve funds for that many cash-backed coins.'
+            : 'Could not create Cash-Backed Fame Coins.',
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -519,7 +519,7 @@ class _Build23OwnerControlCenterScreenState
                   ],
                 ),
                 const SizedBox(height: 20),
-                const _Section('MONEY TO PROTECT'),
+                const _Section('REWARD RESERVE & LIABILITIES'),
                 const SizedBox(height: 10),
                 _LiabilityCard(
                   reserveCents: _int(_summary['reward_reserve_cents']),
@@ -531,13 +531,13 @@ class _Build23OwnerControlCenterScreenState
                   ),
                 ),
                 const SizedBox(height: 20),
-                const _Section('YOUR OWNER WALLET'),
+                const _Section('FAME COIN BALANCES'),
                 const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: _Metric(
-                        label: 'Testing / promo coins',
+                        label: 'Promo Fame Coins · no cash value',
                         value: '${_int(_wallet['promo_coins'])}',
                         icon: Icons.science_outlined,
                       ),
@@ -545,7 +545,7 @@ class _Build23OwnerControlCenterScreenState
                     const SizedBox(width: 10),
                     Expanded(
                       child: _Metric(
-                        label: 'Cash-backed reward coins',
+                        label: 'Cash-Backed Fame Coins · real reserve',
                         value: '${_int(_wallet['cash_backed_coins'])}',
                         icon: Icons.attach_money_rounded,
                       ),
@@ -553,14 +553,14 @@ class _Build23OwnerControlCenterScreenState
                   ],
                 ),
                 const SizedBox(height: 20),
-                const _Section('PAYPAL FUNDING & WITHDRAWAL'),
+                const _Section('BUSINESS CASH & REWARD FUNDING'),
                 const SizedBox(height: 10),
                 _Action(
                   key: const Key('owner-open-paypal-funding'),
                   icon: Icons.paypal_outlined,
-                  title: 'Add money in PayPal',
+                  title: 'Open PayPal Business',
                   body:
-                      'Open your PayPal Business balance and fund it from your linked bank or eligible debit card.',
+                      'View the real cash available in your PayPal Business account. PayPal may not show an Add Money option on every account, so Fameverse does not assume that button exists.',
                   label: 'Open PayPal',
                   onTap: _openPayPal,
                 ),
@@ -568,19 +568,19 @@ class _Build23OwnerControlCenterScreenState
                 _Action(
                   key: const Key('owner-record-settled-reserve'),
                   icon: Icons.account_balance_wallet_outlined,
-                  title: 'Record settled reward reserve',
+                  title: 'Record Reward Funds',
                   body:
-                      'After real money has settled, mirror that amount in Fameverse so cash-backed promotional rewards cannot exceed funded cash.',
-                  label: 'Record',
+                      'Record only real business cash you have already set aside for rewards. Example: record $10 and Fameverse shows $10 available in the Reward Reserve. This does not move money.',
+                  label: 'Record funds',
                   onTap: _busy ? null : _recordSettledReserve,
                 ),
                 const SizedBox(height: 10),
                 _Action(
                   key: const Key('owner-issue-cash-reward-coins'),
                   icon: Icons.toll_rounded,
-                  title: 'Create cash-backed reward coins',
+                  title: 'Create Cash-Backed Fame Coins',
                   body:
-                      'Use only when you intentionally want gifts to create real creator earnings.',
+                      'Create coins from the Reward Reserve only when you want those coins to be capable of creating real creator earnings. Promo Fame Coins stay separate.',
                   label: 'Create',
                   onTap: _busy ? null : _issueCashRewardCoins,
                 ),
@@ -781,7 +781,7 @@ class _Hero extends StatelessWidget {
           ),
           SizedBox(height: 7),
           Text(
-            'Testing coins stay fake. Cash-backed rewards stay funded. Creator liabilities stay visible before you move owner money.',
+            'Promo Fame Coins are test-only and have no cash value. Reward Reserve is real business money set aside for rewards. Cash-Backed Fame Coins use that reserve and can create real creator earnings.',
             style: TextStyle(color: Color(0xFFC8BBCB), height: 1.4),
           ),
         ],
@@ -812,7 +812,7 @@ class _LiabilityCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _Line(label: 'Promo reward reserve', value: _money(reserveCents)),
+          _Line(label: 'Reward Reserve available', value: _money(reserveCents)),
           const SizedBox(height: 10),
           _Line(
             label: 'Unspent cash-backed coin value',
