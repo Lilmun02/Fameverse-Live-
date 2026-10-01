@@ -6,6 +6,7 @@ on:
       - integration/sep27-big-update
     paths:
       - scripts/apply-public-coin-store.mjs
+      - scripts/fix-owner-finance-copy.mjs
       - .github/workflows/integration-public-coin-store.yml
 
 permissions:
@@ -24,6 +25,9 @@ jobs:
         with:
           ref: integration/sep27-big-update
           fetch-depth: 0
+
+      - name: Repair owner finance copy
+        run: node scripts/fix-owner-finance-copy.mjs
 
       - name: Apply public Fame Coin store wiring
         run: node scripts/apply-public-coin-store.mjs
