@@ -10,7 +10,7 @@ source = source.replace(
 
 source = source.replace(
   `        expect(screen, contains("'Complete sandbox purchase'"));\n`,
-  `        expect(screen, contains("'Complete purchase'"));\n        expect(screen, contains("sandbox ? 'PAYPAL SANDBOX' : 'PAYPAL LIVE'"));\n        expect(screen, contains("sandbox ? 'Test Fame Coin recharge'"));\n        expect(screen, contains("'Live PayPal environment'"));\n`,
+  `        expect(screen, contains("'Complete purchase'"));\n        expect(screen, contains("sandbox ? 'PAYPAL SANDBOX' : 'PAYPAL LIVE'"));\n        expect(screen, contains("'Test Fame Coin recharge'"));\n        expect(screen, contains("'Live PayPal environment'"));\n`,
 );
 
 if (source.includes("'Complete sandbox purchase'")) {
@@ -21,6 +21,9 @@ if (!source.includes("'PayPal recharge is native, environment-aware, custom, and
 }
 if (!source.includes("sandbox ? 'PAYPAL SANDBOX' : 'PAYPAL LIVE'")) {
   throw new Error('environment-aware PayPal label assertion was not installed');
+}
+if (!source.includes("contains(\"'Test Fame Coin recharge'\")")) {
+  throw new Error('environment-aware PayPal title assertion was not installed');
 }
 
 fs.writeFileSync(path, source);
