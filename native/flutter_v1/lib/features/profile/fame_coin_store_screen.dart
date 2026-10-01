@@ -328,7 +328,10 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
         throw StateError('invalid-stripe-checkout-url');
       }
 
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched) throw StateError('stripe-checkout-launch-failed');
 
       if (!mounted) return;
@@ -342,7 +345,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
       setState(() {
         _stripeBusyPackId = null;
         _awaitingStripeReturn = false;
-        _notice = 'Stripe Checkout could not start. No Fame Coins were charged.';
+        _notice =
+            'Stripe Checkout could not start. No Fame Coins were charged.';
       });
     }
   }
@@ -707,19 +711,27 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                   const Expanded(
                     child: Text(
                       'Stripe Checkout',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                   Container(
                     key: const Key('stripe-environment-badge'),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF2B1A34),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: const Color(0xFF68407B)),
                     ),
                     child: Text(
-                      _stripeEnvironment == 'live' ? 'STRIPE LIVE' : 'STRIPE TEST',
+                      _stripeEnvironment == 'live'
+                          ? 'STRIPE LIVE'
+                          : 'STRIPE TEST',
                       style: const TextStyle(
                         color: Color(0xFFCFA1F2),
                         fontSize: 9,
@@ -747,7 +759,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                 )
               else if (_stripeOffers.isEmpty)
                 const _StripeUnavailableCard(
-                  message: 'Stripe Checkout packs could not be loaded right now.',
+                  message:
+                      'Stripe Checkout packs could not be loaded right now.',
                 )
               else ...[
                 if (!_stripeCheckoutEnabled)
@@ -839,7 +852,11 @@ class _StripeUnavailableCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lock_outline_rounded, color: Color(0xFFC895F5), size: 20),
+          const Icon(
+            Icons.lock_outline_rounded,
+            color: Color(0xFFC895F5),
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -889,7 +906,10 @@ class _StripeOfferCard extends StatelessWidget {
               color: Color(0xFF2D1B39),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.credit_card_rounded, color: Color(0xFFD4A2FF)),
+            child: const Icon(
+              Icons.credit_card_rounded,
+              color: Color(0xFFD4A2FF),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -898,12 +918,18 @@ class _StripeOfferCard extends StatelessWidget {
               children: [
                 Text(
                   offer.label,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${offer.coins} Fame Coins · ${offer.priceLabel}',
-                  style: const TextStyle(color: Color(0xFFA99DAC), fontSize: 11),
+                  style: const TextStyle(
+                    color: Color(0xFFA99DAC),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -912,7 +938,9 @@ class _StripeOfferCard extends StatelessWidget {
           FilledButton(
             key: Key('stripe-buy-${offer.id}'),
             onPressed: enabled && !busy ? onBuy : null,
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF8E46DE)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF8E46DE),
+            ),
             child: Text(busy ? 'Opening…' : 'Buy'),
           ),
         ],
