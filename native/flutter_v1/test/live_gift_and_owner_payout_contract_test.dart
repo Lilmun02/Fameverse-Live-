@@ -88,5 +88,19 @@ void main() {
       expect(owner, contains("Key('owner-payout-approve')"));
       expect(owner, contains("Key('owner-payout-mark-paid')"));
     });
+
+    test('owner action cards are tappable across the entire card surface', () {
+      final owner = File(
+        'lib/features/profile/owner_control_center_build23.dart',
+      ).readAsStringSync();
+      final actionStart = owner.indexOf('class _Action extends StatelessWidget');
+      final noticeStart = owner.indexOf('class _Notice extends StatelessWidget');
+      expect(actionStart, greaterThanOrEqualTo(0));
+      expect(noticeStart, greaterThan(actionStart));
+      final action = owner.substring(actionStart, noticeStart);
+      expect(action, contains('return InkWell('));
+      expect(action, contains('onTap: onTap'));
+      expect(action, contains('borderRadius: BorderRadius.circular(18)'));
+    });
   });
 }
