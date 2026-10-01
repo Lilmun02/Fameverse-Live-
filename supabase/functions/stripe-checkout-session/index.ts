@@ -19,6 +19,13 @@ function stripeEnvironment() {
     : "test";
 }
 
+function secretForEnvironment(environment: string) {
+  const named = environment === "live"
+    ? Deno.env.get("STRIPE_LIVE_SECRET_KEY")
+    : Deno.env.get("STRIPE_TEST_SECRET_KEY");
+  return (named ?? Deno.env.get("STRIPE_SECRET_KEY") ?? "").trim();
+}
+
 function validSecretForEnvironment(secret: string, environment: string) {
   if (environment === "live") return secret.startsWith("sk_live_");
   return secret.startsWith("sk_test_");
@@ -69,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
   const action = String(body.action ?? "config");
   const environment = stripeEnvironment();
-  const secretKey = (Deno.env.get("STRIPE_SECRET_KEY") ?? "").trim();
+  const secretKey = secretForEnvironment(environment);
 
   const packQuery = admin
     .from("coin_recharge_packs")
