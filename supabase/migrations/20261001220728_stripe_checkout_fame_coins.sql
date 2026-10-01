@@ -30,9 +30,9 @@ insert into public.coin_recharge_packs (
   stripe_live_price_id
 )
 values
-  ('stripe-100', '100 Fame Coins', 100, 99, 'USD', true, false, 110, 'price_1ULs5AGeOlZfST4EbpHKcr6j', 'price_1ULs4YKIbh48nm6iNMWTr860'),
-  ('stripe-1000', '1,000 Fame Coins', 1000, 999, 'USD', true, false, 130, 'price_1ULs5EGeOlZfST4E1sqkDTLA', 'price_1ULs4oKIbh48nm6i1P88Rfu3'),
-  ('stripe-5000', '5,000 Fame Coins', 5000, 4999, 'USD', true, false, 150, 'price_1ULs5IGeOlZfST4EZhBlpPQk', 'price_1ULs4sKIbh48nm6iDAaH6nL3')
+  ('stripe-100', '100 Fame Coins', 100, 139, 'USD', true, false, 110, 'price_1ULsXqGeOlZfST4Ee00wiGch', 'price_1ULsYtKIbh48nm6iLEEQhDuV'),
+  ('stripe-1000', '1,000 Fame Coins', 1000, 909, 'USD', true, false, 130, 'price_1ULsXuGeOlZfST4EGJPGeDKe', 'price_1ULsYyKIbh48nm6i6JIkDzT5'),
+  ('stripe-5000', '5,000 Fame Coins', 5000, 4199, 'USD', true, false, 150, 'price_1ULsXzGeOlZfST4EUHiURh4p', 'price_1ULsZ3KIbh48nm6icfbOV3ay')
 on conflict (id) do update set
   label = excluded.label,
   coins = excluded.coins,
