@@ -30,8 +30,52 @@ void main() {
     },
   );
 
+  test('Stripe purchases use hosted Checkout and server-only fulfillment', () {
+    final pubspec = file('pubspec.yaml');
+    final store = file('lib/features/profile/fame_coin_store_screen.dart');
+    final checkout = file(
+      '../../supabase/functions/stripe-checkout-session/index.ts',
+    );
+    final webhook = file('../../supabase/functions/stripe-webhook/index.ts');
+    final migration = file(
+      '../../supabase/migrations/20261001220728_stripe_checkout_fame_coins.sql',
+    );
+
+    expect(pubspec, contains('url_launcher: ^6.3.2'));
+    expect(store, contains("'stripe-checkout-session'"));
+    expect(store, contains("'action': 'config'"));
+    expect(store, contains("'action': 'create'"));
+    expect(store, contains("'pack_id': offer.id"));
+    expect(store, contains('LaunchMode.externalApplication'));
+    expect(store, contains('WidgetsBindingObserver'));
+    expect(store, contains('AppLifecycleState.resumed'));
+    expect(store, contains('STRIPE TEST'));
+    expect(store, contains('STRIPE LIVE'));
+
+    expect(checkout, contains('STRIPE_TEST_SECRET_KEY'));
+    expect(checkout, contains('STRIPE_LIVE_SECRET_KEY'));
+    expect(checkout, contains('mode", "payment"'));
+    expect(checkout, contains('ui_mode", "hosted_page"'));
+    expect(checkout, contains('origin_context", "mobile_app"'));
+    expect(checkout, contains('line_items[0][price]'));
+    expect(checkout, contains('pack_id'));
+    expect(checkout, isNot(contains('amount_cents = Number(body')));
+
+    expect(webhook, contains('Stripe-Signature'));
+    expect(webhook, contains('STRIPE_TEST_WEBHOOK_SECRET'));
+    expect(webhook, contains('STRIPE_LIVE_WEBHOOK_SECRET'));
+    expect(webhook, contains('checkout.session.completed'));
+    expect(webhook, contains('payment_status'));
+    expect(webhook, contains('finalize_coin_recharge'));
+
+    expect(migration, contains("'stripe'::text"));
+    expect(migration, contains("'stripe-100'"));
+    expect(migration, contains("'stripe-1000'"));
+    expect(migration, contains("'stripe-5000'"));
+  });
+
   test(
-    'server purchase ledger is idempotent and verifier is account-bound',
+    'server purchase ledger is idempotent and Apple verifier is account-bound',
     () {
       final migration = file(
         '../../supabase/migrations/20261001_public_fame_coin_store.sql',
