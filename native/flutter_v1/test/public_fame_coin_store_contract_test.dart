@@ -74,6 +74,34 @@ void main() {
     expect(migration, contains("'stripe-5000'"));
   });
 
+  test('Stripe test discount pricing cannot overwrite live pricing', () {
+    final checkout = file(
+      '../../supabase/functions/stripe-checkout-session/index.ts',
+    );
+    final migration = file(
+      '../../supabase/migrations/20261001224000_stripe_environment_specific_discount_pricing.sql',
+    );
+
+    expect(checkout, contains('stripe_test_price_cents'));
+    expect(checkout, contains('stripe_live_price_cents'));
+    expect(checkout, contains('priceForEnvironment(pack, environment)'));
+    expect(checkout, contains('amount_cents: priceCents'));
+    expect(checkout, contains('amount_cents: priceCents'));
+
+    expect(migration, contains('stripe_test_price_cents = 139'));
+    expect(migration, contains('stripe_test_price_cents = 909'));
+    expect(migration, contains('stripe_test_price_cents = 4199'));
+    expect(migration, contains("'price_1ULsXqGeOlZfST4Ee00wiGch'"));
+    expect(migration, contains("'price_1ULsXuGeOlZfST4EGJPGeDKe'"));
+    expect(migration, contains("'price_1ULsXzGeOlZfST4EUHiURh4p'"));
+
+    // Live price objects stay on the previously validated live catalog until
+    // sandbox checkout + webhook + wallet-credit QA passes.
+    expect(migration, contains('stripe_live_price_cents = 99'));
+    expect(migration, contains('stripe_live_price_cents = 999'));
+    expect(migration, contains('stripe_live_price_cents = 4999'));
+  });
+
   test(
     'server purchase ledger is idempotent and Apple verifier is account-bound',
     () {
