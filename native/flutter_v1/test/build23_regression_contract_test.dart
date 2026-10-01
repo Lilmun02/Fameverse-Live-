@@ -66,5 +66,21 @@ void main() {
       expect(studio, contains('get_creator_promotional_earnings_summary'));
       expect(studio, contains('cannot be withdrawn'));
     });
+
+    test('customer coin purchases never live inside Creator Studio', () {
+      final profile = _source(
+        'lib/features/profile/native_profile_build23.dart',
+      );
+      final studio = _source(
+        'lib/features/profile/creator_studio_build23.dart',
+      );
+
+      expect(profile, contains("Key('profile-buy-fame-coins')"));
+      expect(profile, contains('FameCoinStoreScreen('));
+      expect(studio, isNot(contains('NativeRechargeScreen')));
+      expect(studio, isNot(contains('native_recharge_screen.dart')));
+      expect(studio, isNot(contains("Key('build23-owner-recharge')")));
+      expect(studio, isNot(contains('Owner QA coin purchase flow')));
+    });
   });
 }
