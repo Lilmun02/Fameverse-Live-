@@ -25,6 +25,7 @@ function constantTimeEqual(left: string, right: string) {
 }
 
 async function verifyStripeSignature(rawBody: string, header: string, secret: string) {
+  if (!secret) return false;
   const entries = header.split(",").map((part) => part.trim());
   const timestampRaw = entries.find((part) => part.startsWith("t="))?.slice(2) ?? "";
   const signatures = entries
@@ -59,27 +60,46 @@ function objectId(value: unknown) {
   return "";
 }
 
+type WebhookMode = "test" | "live" | "legacy";
+
+async function matchedWebhookMode(rawBody: string, signature: string): Promise<WebhookMode | null> {
+  const candidates: Array<[WebhookMode, string]> = [
+    ["test", (Deno.env.get("STRIPE_TEST_WEBHOOK_SECRET") ?? "").trim()],
+    ["live", (Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET") ?? "").trim()],
+    ["legacy", (Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "").trim()],
+  ];
+  for (const [mode, secret] of candidates) {
+    if (secret && await verifyStripeSignature(rawBody, signature, secret)) return mode;
+  }
+  return null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json(405, { error: "method-not-allowed" });
 
-  const webhookSecret = (Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "").trim();
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!webhookSecret || !supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !serviceRoleKey) {
     return json(503, { error: "stripe-webhook-not-configured" });
   }
 
   const signature = req.headers.get("Stripe-Signature") ?? "";
   const rawBody = await req.text();
-  if (!signature || !(await verifyStripeSignature(rawBody, signature, webhookSecret))) {
-    return json(400, { error: "invalid-stripe-signature" });
-  }
+  const webhookMode = signature ? await matchedWebhookMode(rawBody, signature) : null;
+  if (!webhookMode) return json(400, { error: "invalid-stripe-signature" });
 
   let event: Record<string, unknown>;
   try {
     event = JSON.parse(rawBody) as Record<string, unknown>;
   } catch {
     return json(400, { error: "invalid-json" });
+  }
+
+  if (webhookMode !== "legacy") {
+    const eventIsLive = event.livemode === true;
+    if ((webhookMode === "live") !== eventIsLive) {
+      return json(400, { error: "stripe-webhook-mode-mismatch" });
+    }
   }
 
   const eventType = String(event.type ?? "");
