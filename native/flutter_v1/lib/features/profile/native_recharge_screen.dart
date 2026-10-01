@@ -453,7 +453,10 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   '${sandbox ? 'Sandbox' : 'Live'} pricing · about 100 coins per \$1',
-                  style: const TextStyle(color: Color(0xFFA99CAF), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFFA99CAF),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 GridView.builder(
@@ -561,7 +564,10 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                         sandbox
                             ? 'Finish approval with your PayPal sandbox buyer, return to Fameverse, then complete the order here.'
                             : 'Finish approval in PayPal, return to Fameverse, then complete the order here.',
-                        style: const TextStyle(color: Color(0xFFB9AEC1), height: 1.4),
+                        style: const TextStyle(
+                          color: Color(0xFFB9AEC1),
+                          height: 1.4,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       FilledButton(

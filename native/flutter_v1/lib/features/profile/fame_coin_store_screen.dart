@@ -59,14 +59,6 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
     super.dispose();
   }
 
-  Map<String, dynamic> _firstRow(dynamic raw) {
-    if (raw is List && raw.isNotEmpty && raw.first is Map) {
-      return Map<String, dynamic>.from(raw.first as Map);
-    }
-    if (raw is Map) return Map<String, dynamic>.from(raw);
-    return const {};
-  }
-
   Future<void> _load() async {
     if (!mounted) return;
     setState(() {
@@ -126,12 +118,13 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
       }
 
       final response = await _store.queryProductDetails(coinMap.keys.toSet());
-      final products = response.productDetails
-          .where((product) => coinMap.containsKey(product.id))
-          .toList()
-        ..sort(
-          (a, b) => (coinMap[a.id] ?? 0).compareTo(coinMap[b.id] ?? 0),
-        );
+      final products =
+          response.productDetails
+              .where((product) => coinMap.containsKey(product.id))
+              .toList()
+            ..sort(
+              (a, b) => (coinMap[a.id] ?? 0).compareTo(coinMap[b.id] ?? 0),
+            );
 
       if (!mounted) return;
       setState(() {
@@ -161,7 +154,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
     if (_busyProductId != null || _verifying) return;
     if (!Platform.isIOS) {
       setState(() {
-        _notice = 'This beta build currently supports Apple purchases on iPhone.';
+        _notice =
+            'This beta build currently supports Apple purchases on iPhone.';
       });
       return;
     }
@@ -239,8 +233,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
     if (_verifying) return;
     if (!Platform.isIOS) return;
 
-    final signedTransaction =
-        purchase.verificationData.serverVerificationData.trim();
+    final signedTransaction = purchase.verificationData.serverVerificationData
+        .trim();
     if (signedTransaction.isEmpty) {
       if (mounted) {
         setState(() {
@@ -262,10 +256,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
     try {
       final response = await _client.functions.invoke(
         'iap-purchase',
-        body: {
-          'platform': 'ios',
-          'signed_transaction': signedTransaction,
-        },
+        body: {'platform': 'ios', 'signed_transaction': signedTransaction},
       );
       if (response.data is! Map) {
         throw StateError('invalid-iap-response');
@@ -276,16 +267,16 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
       }
 
       final balance = (result['wallet_balance'] as num?)?.toInt() ?? _balance;
-      final credited = (result['credited_coins'] as num?)?.toInt() ??
+      final credited =
+          (result['credited_coins'] as num?)?.toInt() ??
           (_coinByProduct[purchase.productID] ?? 0);
 
       // Only finish the StoreKit transaction after Fameverse's server has
       // verified Apple's signature and committed the wallet credit.
       if (purchase.pendingCompletePurchase) {
-        await _store.completePurchase(purchase).timeout(
-          const Duration(seconds: 8),
-          onTimeout: () {},
-        );
+        await _store
+            .completePurchase(purchase)
+            .timeout(const Duration(seconds: 8), onTimeout: () {});
       }
 
       if (!mounted) return;
@@ -532,7 +523,10 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen> {
 }
 
 class _StoreUnavailableCard extends StatelessWidget {
-  const _StoreUnavailableCard({required this.missingCount, required this.isIos});
+  const _StoreUnavailableCard({
+    required this.missingCount,
+    required this.isIos,
+  });
 
   final int missingCount;
   final bool isIos;

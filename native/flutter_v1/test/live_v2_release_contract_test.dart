@@ -189,7 +189,7 @@ void main() {
     );
 
     test(
-      'PayPal sandbox recharge is native, custom, and Vercel-free',
+      'PayPal recharge is native, environment-aware, custom, and Vercel-free',
       () async {
         final screen = await File(
           'lib/features/profile/native_recharge_screen.dart',
@@ -209,7 +209,10 @@ void main() {
         expect(screen, contains('mode: LaunchMode.externalApplication'));
         expect(screen, contains("Key('custom-fame-coins-card')"));
         expect(screen, contains("'custom_coins': coins"));
-        expect(screen, contains("'Complete sandbox purchase'"));
+        expect(screen, contains("'Complete purchase'"));
+        expect(screen, contains("sandbox ? 'PAYPAL SANDBOX' : 'PAYPAL LIVE'"));
+        expect(screen, contains("'Test Fame Coin recharge'"));
+        expect(screen, contains("'Live PayPal environment'"));
         expect(studio, contains('if (_isOwner)'));
         expect(studio, contains('NativeRechargeScreen'));
         expect(session, contains('checkout: "native"'));

@@ -6,6 +6,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import '../profile/fame_coin_store_screen.dart';
 import 'native_live_components.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
@@ -294,8 +295,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     if (_walletBalance < total) {
       _showMessage(
         _walletBalance == 0
-            ? 'No beta test balance is available on this account.'
-            : 'Test balance is too low for that gift.',
+            ? 'Your Fame Coin balance is empty.'
+            : 'Your Fame Coin balance is too low for that gift.',
       );
       return false;
     }
@@ -344,9 +345,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (error) {
       final text = error.toString().toLowerCase();
       if (text.contains('insufficient beta coin balance')) {
-        _showMessage('Test balance is too low for that gift.');
+        _showMessage('Your Fame Coin balance is too low for that gift.');
       } else if (text.contains('beta wallet unavailable')) {
-        _showMessage('No beta test balance is available on this account.');
+        _showMessage('Your Fame Coin wallet is unavailable right now.');
       } else if (text.contains('self gifting')) {
         _showMessage('You cannot gift your own live.');
       } else {
@@ -372,17 +373,51 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
   }
 
+  Future<void> _openCoinStore() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FameCoinStoreScreen(
+          userId: widget.identity.id,
+          onBalanceChanged: (balance) {
+            if (!mounted) return;
+            setState(() {
+              _walletBalance = balance;
+              _walletReady = true;
+            });
+          },
+        ),
+      ),
+    );
+    try {
+      final balance = await widget.liveBackend.loadWalletBalance(
+        widget.identity.id,
+      );
+      if (mounted) {
+        setState(() {
+          _walletBalance = balance;
+          _walletReady = true;
+        });
+      }
+    } catch (_) {}
+  }
+
   void _showGiftTray() {
     FocusManager.instance.primaryFocus?.unfocus();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF140D1B),
-      builder: (context) => NativeGiftTray(
+      builder: (sheetContext) => NativeGiftTray(
         coins: _walletBalance,
         canRefill: _canRefill,
         onSend: _sendGift,
         onRefill: _refillWallet,
+        onBuyCoins: () {
+          Navigator.of(sheetContext).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_openCoinStore());
+          });
+        },
       ),
     ).then((_) {
       if (mounted) setState(() {});

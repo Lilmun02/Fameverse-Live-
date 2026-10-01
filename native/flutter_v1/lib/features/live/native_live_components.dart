@@ -388,6 +388,7 @@ class NativeGiftTray extends StatefulWidget {
     required this.canRefill,
     required this.onSend,
     required this.onRefill,
+    this.onBuyCoins,
     this.onExchange,
     super.key,
   });
@@ -396,6 +397,7 @@ class NativeGiftTray extends StatefulWidget {
   final bool canRefill;
   final Future<bool> Function(FvGiftDefinition gift, int quantity) onSend;
   final Future<int> Function() onRefill;
+  final VoidCallback? onBuyCoins;
   final VoidCallback? onExchange;
 
   @override
@@ -778,6 +780,12 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   style: TextStyle(color: Color(0xFFAFA4B6), fontSize: 12),
                 ),
                 const Spacer(),
+                if (widget.onBuyCoins != null)
+                  TextButton(
+                    key: const Key('gift-tray-buy-coins'),
+                    onPressed: _sending ? null : widget.onBuyCoins,
+                    child: const Text('Buy coins'),
+                  ),
                 if (widget.onExchange != null)
                   TextButton(
                     key: const Key('gift-tray-coin-exchange'),

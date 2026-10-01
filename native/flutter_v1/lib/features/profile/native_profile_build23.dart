@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_beta_backend.dart';
+import 'fame_coin_store_screen.dart';
 
 class NativeProfileBuild23Screen extends StatelessWidget {
   const NativeProfileBuild23Screen({
@@ -542,6 +543,20 @@ class _WalletCardState extends State<_WalletCard> {
     }
   }
 
+  Future<void> _openStore() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FameCoinStoreScreen(
+          userId: widget.userId,
+          onBalanceChanged: (balance) {
+            if (mounted) setState(() => _balance = balance);
+          },
+        ),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -582,15 +597,26 @@ class _WalletCardState extends State<_WalletCard> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: _loading ? null : _load,
-            icon: _loading
-                ? const SizedBox(
-                    width: 17,
-                    height: 17,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton.tonal(
+                key: const Key('profile-buy-fame-coins'),
+                onPressed: _loading ? null : _openStore,
+                child: const Text('Buy'),
+              ),
+              IconButton(
+                onPressed: _loading ? null : _load,
+                tooltip: 'Refresh Fame Coins',
+                icon: _loading
+                    ? const SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh_rounded),
+              ),
+            ],
           ),
         ],
       ),

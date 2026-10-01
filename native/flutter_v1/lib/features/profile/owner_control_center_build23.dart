@@ -570,7 +570,7 @@ class _Build23OwnerControlCenterScreenState
                   icon: Icons.account_balance_wallet_outlined,
                   title: 'Record Reward Funds',
                   body:
-                      'Record only real business cash you have already set aside for rewards. Example: record $10 and Fameverse shows $10 available in the Reward Reserve. This does not move money.',
+                      'Record only real business cash you have already set aside for rewards. Example: record \$10 and Fameverse shows \$10 available in the Reward Reserve. This does not move money.',
                   label: 'Record funds',
                   onTap: _busy ? null : _recordSettledReserve,
                 ),
