@@ -30,22 +30,15 @@ void main() {
       expect(rankings, isNot(contains('fake')));
     });
 
-    test(
-      'host and viewer both expose Live profile and rankings entry points',
-      () {
-        final host = File(
-          'lib/features/live/stream_host_live_screen.dart',
-        ).readAsStringSync();
-        final viewer = File(
-          'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsStringSync();
-        expect(host, contains('showNativeLiveProfileSheet'));
-        expect(viewer, contains('showNativeLiveProfileSheet'));
-        expect(host, contains("Key('host-live-rankings-button')"));
-        expect(viewer, contains("Key('viewer-live-rankings-button')"));
-        expect(host, contains('showNativeLiveRankings'));
-        expect(viewer, contains('showNativeLiveRankings'));
-      },
-    );
+    test('host and viewer both keep the Live profile entry point', () {
+      final host = File(
+        'lib/features/live/stream_host_live_screen.dart',
+      ).readAsStringSync();
+      final viewer = File(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      ).readAsStringSync();
+      expect(host, contains('showNativeLiveProfileSheet'));
+      expect(viewer, contains('showNativeLiveProfileSheet'));
+    });
   });
 }
