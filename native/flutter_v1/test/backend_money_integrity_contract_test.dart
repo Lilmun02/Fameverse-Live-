@@ -21,6 +21,28 @@ void main() {
       },
     );
 
+    test('PayPal ambiguous submission stays reserved and is idempotent', () {
+      final process = File(
+        '../../supabase/functions/process-creator-payout/index.ts',
+      ).readAsStringSync();
+      final sync = File(
+        '../../supabase/functions/sync-creator-payout/index.ts',
+      ).readAsStringSync();
+      final retry = File(
+        '../../supabase/migrations/20261004225000_retry_unknown_paypal_submission.sql',
+      ).readAsStringSync();
+
+      expect(process, contains('const senderBatchId = `fv-${payoutId}`;'));
+      expect(process, contains('"PayPal-Request-Id": senderBatchId'));
+      expect(process, contains('provider_status: "SUBMISSION_UNKNOWN"'));
+      expect(process, contains('status: "processing"'));
+      expect(process, isNot(contains('status: "failed",\n      provider_status: "NETWORK_ERROR"')));
+      expect(sync, contains('provider_recovery_failed'));
+      expect(sync, contains('/functions/v1/process-creator-payout'));
+      expect(retry, contains("'SUBMISSION_UNKNOWN', 'SUBMITTING'"));
+      expect(retry, contains('v_request.provider_batch_id is null'));
+    });
+
     test(
       'verification gates require 100 followers and 500k cash-backed coins',
       () {
