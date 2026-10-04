@@ -30,12 +30,12 @@ Audit the currently approved repair areas, especially:
 - Startup/launch regressions, sticky keyboard regressions, profile/settings regressions, and owner-only control privacy.
 - Same-build host/viewer/co-host behavior.
 
-## Gift asset boundary
-The owner is separately comparing gift assets being produced by Manus and Grok. Do not add, replace, redesign, or import new gift artwork/video/audio merely to "improve" the catalog unless the owner explicitly approves the asset. You may repair the existing gift system and its safety/regression behavior.
-
-`Pocket Comet` is retired from the current authoritative catalog and must not be resurrected by stale code or tests.
-
-Current cinematic playback is intentionally muted until approved replacement audio exists. Do not restore robotic/embedded gift audio just to make media audible.
+## Gift ownership boundary
+- Gift artwork, animation, video, audio, timing, transitions, names, and intended presentation belong to the owner-approved asset/source. Do not redesign, mute, re-encode, resize, rename, replace, or otherwise alter a gift's creative presentation unless the owner explicitly instructs that change.
+- System-level gift bug repairs may be made only when they preserve the owner-approved asset and intended presentation exactly as delivered.
+- If the app cannot safely support an owner-approved gift as delivered, report the exact incompatibility instead of silently changing the gift.
+- Do not inspect or modify another agent's in-progress gift implementation unless the owner asks for that specific review or repair.
+- `Pocket Comet` remains retired because the owner explicitly removed it.
 
 ## Required bug workflow
 For every bug, follow the Fameverse law:
