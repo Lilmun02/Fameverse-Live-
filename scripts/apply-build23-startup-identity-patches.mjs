@@ -1,10 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import './apply-payout-provider-wiring.mjs'
+import './apply-verification-moderation-wiring.mjs'
 
 const root = new URL('../', import.meta.url)
 
 async function read(path) {
-  return readFile(new URL(path, root), 'utf8')
+  return readFile(new URL(path, root), 'utf8'
+  )
 }
 
 async function write(path, content) {
