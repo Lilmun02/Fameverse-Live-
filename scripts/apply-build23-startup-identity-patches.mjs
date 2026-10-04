@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
+import './apply-payout-provider-wiring.mjs'
 
 const root = new URL('../', import.meta.url)
 
