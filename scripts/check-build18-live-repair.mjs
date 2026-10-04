@@ -182,20 +182,21 @@ requireText(cashRewardPath, cashReward, 'send_fameverse_cash_reward_gift', 'expl
 requireText(cashRewardPath, cashReward, 'explicit_staff_cash_reward', 'cash-backed rewards must remain auditable')
 
 // Source identity law. A Codemagic trigger may originate elsewhere, but the
-// publishing workflow must detach-checkout the locked Build 23 repair branch,
+// publishing workflow must detach-checkout the locked Build 32 repair branch,
 // record its SHA, and compile that exact SHA into the IPA.
-requireText(codemagicPath, codemagic, 'TARGET_BRANCH="integration/sep27-big-update"', 'TestFlight must target the locked Build 23 repair branch')
+requireText(codemagicPath, codemagic, 'TARGET_BRANCH="integration/sep27-big-update"', 'TestFlight must target the locked Build 32 repair branch')
 requireText(codemagicPath, codemagic, 'git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"', 'TestFlight must checkout the locked repair branch before validation/build')
 requireText(codemagicPath, codemagic, 'FAMEVERSE_SOURCE_SHA=$SOURCE_SHA', 'TestFlight must persist the exact locked repair SHA')
-requireText(codemagicPath, codemagic, 'build23_source_identity.txt', 'TestFlight must publish Build 23 source identity evidence')
-requireText(codemagicPath, codemagic, 'FAMEVERSE_BUILD_FAMILY: "23"', 'TestFlight must identify Build 23')
+requireText(codemagicPath, codemagic, 'build32_source_identity.txt', 'TestFlight must publish Build 32 source identity evidence')
+requireText(codemagicPath, codemagic, 'FAMEVERSE_BUILD_FAMILY: "32"', 'TestFlight must identify Build 32')
+requireText(codemagicPath, codemagic, '--dart-define="FAMEVERSE_BUILD_FAMILY=32"', 'TestFlight must compile the Build 32 family into the candidate')
 requireText(codemagicPath, codemagic, '--dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}"', 'TestFlight must compile the exact locked repair SHA into the candidate')
 
 if (failures.length) {
-  console.error('Build 23 regression protection failed:')
+  console.error('Build 32 regression protection failed:')
   for (const failure of failures) console.error(`- ${failure}`)
   console.error('DO NOT DISTRIBUTE THE NEXT TESTFLIGHT CANDIDATE.')
   process.exit(1)
 }
 
-console.log('Build 23 regression contracts are present. Physical iPhone owner + external tester QA is still required before PASS.')
+console.log('Build 32 regression contracts are present. Physical iPhone owner + external tester QA is still required before PASS.')
