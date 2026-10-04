@@ -70,7 +70,43 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (payoutError) return json({ error: "payout_lookup_failed" }, 500);
   if (!payout) return json({ error: "payout_not_found" }, 404);
-  if (!payout.provider_batch_id) return json({ error: "provider_batch_missing" }, 409);
+
+  let providerBatchId = payout.provider_batch_id?.toString() ?? "";
+
+  if (!providerBatchId) {
+    const recoverable = payout.status === "processing" &&
+      ["SUBMISSION_UNKNOWN", "SUBMITTING"].includes(
+        String(payout.provider_status ?? "").toUpperCase(),
+      );
+    if (!recoverable) return json({ error: "provider_batch_missing" }, 409);
+
+    // The process function uses the same deterministic sender_batch_id and
+    // PayPal-Request-Id, so recovery cannot intentionally create a second payout.
+    const recoveryResponse = await fetch(
+      `${supabaseUrl}/functions/v1/process-creator-payout`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          apikey: anonKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          payout_id: payoutId,
+          expected_environment: paypalEnv,
+        }),
+      },
+    );
+    const recoveryJson = await recoveryResponse.json().catch(() => ({}));
+    if (!recoveryResponse.ok || recoveryJson?.ok !== true) {
+      return json({
+        error: "provider_recovery_failed",
+        detail: recoveryJson?.error ?? "unknown_recovery_error",
+      }, 502);
+    }
+    providerBatchId = recoveryJson?.provider_batch_id?.toString() ?? "";
+    if (!providerBatchId) return json({ error: "provider_batch_missing_after_recovery" }, 502);
+  }
 
   const baseUrl = paypalEnv === "live"
     ? "https://api-m.paypal.com"
@@ -89,7 +125,7 @@ Deno.serve(async (req: Request) => {
   if (!tokenResponse.ok || !tokenJson.access_token) return json({ error: "paypal_auth_failed" }, 502);
 
   const statusResponse = await fetch(
-    `${baseUrl}/v1/payments/payouts/${payout.provider_batch_id}?page=1&page_size=100&total_required=true`,
+    `${baseUrl}/v1/payments/payouts/${providerBatchId}?page=1&page_size=100&total_required=true`,
     { headers: { Authorization: `Bearer ${tokenJson.access_token}` } },
   );
   const statusJson = await statusResponse.json();
@@ -114,9 +150,11 @@ Deno.serve(async (req: Request) => {
   const { error: providerUpdateError } = await admin
     .from("creator_payout_requests")
     .update({
+      provider_batch_id: providerBatchId,
       provider_item_id: providerItemId,
       provider_status: itemStatus,
       provider_status_updated_at: now,
+      external_reference: providerBatchId,
     })
     .eq("id", payoutId);
   if (providerUpdateError) return json({ error: "provider_status_update_failed" }, 500);
@@ -128,7 +166,7 @@ Deno.serve(async (req: Request) => {
       p_moderation_note: fameverseStatus === "failed"
         ? `PayPal status: ${itemStatus}`
         : null,
-      p_external_reference: payout.provider_batch_id,
+      p_external_reference: providerBatchId,
     });
     if (reviewError) return json({ error: "fameverse_status_update_failed", detail: reviewError.message }, 500);
   }
@@ -140,6 +178,7 @@ Deno.serve(async (req: Request) => {
     provider_status: itemStatus,
     provider_batch_status: batchStatus,
     provider_item_id: providerItemId,
+    provider_batch_id: providerBatchId,
     environment: paypalEnv,
   });
 });
