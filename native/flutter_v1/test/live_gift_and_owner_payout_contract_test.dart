@@ -78,15 +78,19 @@ void main() {
       },
     );
 
-    test('owner payout review controls call the owner moderation backend', () {
+    test('owner payout review submits and syncs through PayPal provider functions', () {
       final owner = File(
         'lib/features/profile/owner_control_center_build23.dart',
       ).readAsStringSync();
       expect(owner, contains('get_creator_payout_moderation_queue'));
       expect(owner, contains('review_creator_payout'));
-      expect(owner, contains('begin_creator_payout_processing'));
+      expect(owner, contains("'process-creator-payout'"));
+      expect(owner, contains("'sync-creator-payout'"));
+      expect(owner, contains("'expected_environment': 'sandbox'"));
       expect(owner, contains("Key('owner-payout-approve')"));
-      expect(owner, contains("Key('owner-payout-mark-paid')"));
+      expect(owner, contains("Text('Send with PayPal sandbox')"));
+      expect(owner, contains("Key('owner-payout-sync-provider')"));
+      expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
     });
 
     test('owner action cards are tappable across the entire card surface', () {
