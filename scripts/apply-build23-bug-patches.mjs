@@ -173,6 +173,67 @@ let changed = false
   }
 }
 
+// PATCH 7 — Co-host camera flip gets the same anti-spam serialization as host Live.
+{
+  const path = 'native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart'
+  let source = await read(path)
+
+  if (!source.includes('bool _cohostFlipBusy = false;')) {
+    source = replaceExact(
+      source,
+      '  bool _cohostCameraEnabled = true;\n  bool _cohostMicEnabled = true;',
+      '  bool _cohostCameraEnabled = true;\n  bool _cohostFlipBusy = false;\n  bool _cohostMicEnabled = true;',
+      'cohost flip busy state',
+    )
+    changed = true
+  }
+
+  if (!source.includes('_cohostFlipBusy) {')) {
+    source = replaceExact(
+      source,
+      `  Future<void> _flipCohostCamera() async {\n    if (!_selfIsCohost || !_cohostCameraEnabled || _call == null) return;\n    try {\n      fvRequireSuccess(await _call!.flipCamera(), 'Camera flip failed');\n    } catch (_) {\n      if (mounted) _showMessage('Camera flip failed.');\n    }\n  }`,
+      `  Future<void> _flipCohostCamera() async {\n    final call = _call;\n    if (!_selfIsCohost ||\n        !_cohostCameraEnabled ||\n        call == null ||\n        _cohostFlipBusy) {\n      return;\n    }\n\n    if (mounted) {\n      setState(() => _cohostFlipBusy = true);\n    } else {\n      _cohostFlipBusy = true;\n    }\n\n    try {\n      fvRequireSuccess(await call.flipCamera(), 'Camera flip failed');\n    } catch (_) {\n      if (mounted) _showMessage('Camera flip failed.');\n    } finally {\n      if (mounted) {\n        setState(() => _cohostFlipBusy = false);\n      } else {\n        _cohostFlipBusy = false;\n      }\n    }\n  }`,
+      'cohost flip serialized operation',
+    )
+    changed = true
+  }
+
+  if (!source.includes('_cohostCameraEnabled && !_cohostFlipBusy')) {
+    source = replaceExact(
+      source,
+      `                      onPressed: _cohostCameraEnabled\n                          ? () {\n                              Navigator.of(context).pop();\n                              unawaited(_flipCohostCamera());\n                            }\n                          : null,`,
+      `                      onPressed: _cohostCameraEnabled && !_cohostFlipBusy\n                          ? () {\n                              Navigator.of(context).pop();\n                              unawaited(_flipCohostCamera());\n                            }\n                          : null,`,
+      'cohost flip button disabled while flip is running',
+    )
+    changed = true
+  }
+
+  await write(path, source)
+}
+
+// PATCH 8 — The Fame Coins profile card itself opens the public coin store.
+{
+  const path = 'native/flutter_v1/lib/features/profile/native_profile_build23.dart'
+  let source = await read(path)
+
+  if (!source.includes("Key('profile-fame-coins-card')")) {
+    source = replaceExact(
+      source,
+      `  @override\n  Widget build(BuildContext context) {\n    return Container(\n      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),`,
+      `  @override\n  Widget build(BuildContext context) {\n    return GestureDetector(\n      key: const Key('profile-fame-coins-card'),\n      behavior: HitTestBehavior.opaque,\n      onTap: _loading ? null : _openStore,\n      child: Container(\n        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),`,
+      'profile Fame Coins whole-card tap',
+    )
+    source = replaceExact(
+      source,
+      `          ),\n        ],\n      ),\n    );\n  }\n}\n\nclass _Build23SettingsScreen extends StatelessWidget {`,
+      `          ),\n        ],\n      ),\n      ),\n    );\n  }\n}\n\nclass _Build23SettingsScreen extends StatelessWidget {`,
+      'profile Fame Coins whole-card wrapper close',
+    )
+    changed = true
+    await write(path, source)
+  }
+}
+
 console.log(
   changed
     ? '[build23-patch] Applied exact bug patches; formatter will persist them.'
