@@ -41,7 +41,7 @@ void main() {
       ).readAsStringSync();
       expect(host, contains('showNativeLiveProfileSheet'));
       expect(viewer, contains('showNativeLiveProfileSheet'));
-      expect(host, contains("Key('host-live-rankings-button')"));
+      expect(host, contains("Key('host-live-rankings-left')"));
       expect(viewer, contains("Key('viewer-live-rankings-button')"));
       expect(host, contains('showNativeLiveRankings'));
       expect(viewer, contains('showNativeLiveRankings'));
