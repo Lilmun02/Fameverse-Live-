@@ -941,9 +941,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                       overflow: TextOverflow.fade,
                                       softWrap: false,
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w900,
-                                        letterSpacing: .2,
+                                        letterSpacing: .1,
                                       ),
                                     ),
                                   ),
@@ -959,8 +959,40 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                                 softWrap: false,
                                 style: const TextStyle(
                                   color: Color(0xFFD6CADC),
-                                  fontSize: 11,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  key: const Key('host-live-rankings-left'),
+                                  onPressed: () => unawaited(
+                                    showNativeLiveRankings(context),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFFFFC75A),
+                                    minimumSize: Size.zero,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 1,
+                                      vertical: 1,
+                                    ),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.emoji_events_rounded,
+                                    size: 12,
+                                  ),
+                                  label: const Text(
+                                    'Rankings',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -981,25 +1013,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           )
                         else
                           _LiveStatsPill(viewerCount: 0, fameTaps: _fameTaps),
-                        const SizedBox(width: 4),
-                        IconButton(
-                          key: const Key('host-live-rankings-button'),
-                          onPressed: () =>
-                              unawaited(showNativeLiveRankings(context)),
-                          constraints: const BoxConstraints.tightFor(
-                            width: 32,
-                            height: 32,
-                          ),
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(
-                            Icons.emoji_events_rounded,
-                            size: 17,
-                            color: Color(0xFFFFC75A),
-                          ),
-                          tooltip: 'Rankings',
-                        ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 6),
                         FilledButton(
                           key: const Key('native-end-live'),
                           onPressed: _ending ? null : _endLive,
