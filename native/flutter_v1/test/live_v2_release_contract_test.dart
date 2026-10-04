@@ -28,7 +28,7 @@ void main() {
             isNotEmpty,
             reason: '${gift.id} needs a label.',
           );
-          if (gift.cinematic && gift.id != 'pocket-comet') {
+          if (gift.cinematic) {
             expect(
               gift.videoUrl,
               isNotNull,
@@ -46,7 +46,7 @@ void main() {
         expect(fvGiftById('welcome-to-fameverse'), isNotNull);
         expect(fvGiftById('ember-dragon'), isNotNull);
         expect(fvGiftById('celestial-phoenix'), isNotNull);
-        expect(fvGiftById('pocket-comet'), isNotNull);
+        expect(fvGiftById('pocket-comet'), isNull);
       },
     );
 
