@@ -32,7 +32,7 @@ void main() {
         '../../supabase/migrations/20261004225000_retry_unknown_paypal_submission.sql',
       ).readAsStringSync();
 
-      expect(process, contains('const senderBatchId = `fv-${payoutId}`;'));
+      expect(process, contains(r'const senderBatchId = `fv-${payoutId}`;'));
       expect(process, contains('"PayPal-Request-Id": senderBatchId'));
       expect(process, contains('provider_status: "SUBMISSION_UNKNOWN"'));
       expect(process, contains('status: "processing"'));
