@@ -109,5 +109,30 @@ void main() {
       expect(stripe, contains('managed_payments[enabled]'));
       expect(stripe, contains('"false"'));
     });
+
+    test('robotic cinematic audio is disabled and Pocket Comet stays retired', () {
+      final backend = File(
+        'lib/data/fameverse_live_backend.dart',
+      ).readAsStringSync();
+      final live = File(
+        'lib/features/live/native_live_components.dart',
+      ).readAsStringSync();
+      final poster = File(
+        'lib/features/live/native_gift_visual.dart',
+      ).readAsStringSync();
+      final migration = File(
+        '../../supabase/migrations/20261004204000_retire_pocket_comet_gift.sql',
+      ).readAsStringSync();
+
+      expect(backend, isNot(contains("id: 'pocket-comet'")));
+      expect(live, contains('setVolume(0)'));
+      expect(live, isNot(contains('setVolume(1)')));
+      expect(live, isNot(contains('NativePocketCometGift')));
+      expect(live, isNot(contains('pocket-comet')));
+      expect(poster, isNot(contains('PocketComet')));
+      expect(poster, isNot(contains('pocket-comet')));
+      expect(migration, contains("where id = 'pocket-comet'"));
+      expect(migration, contains('active = false'));
+    });
   });
 }
