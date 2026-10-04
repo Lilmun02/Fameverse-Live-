@@ -182,7 +182,6 @@ Deno.serve(async (req: Request) => {
   form.set("client_reference_id", user.id);
   form.set("success_url", `${returnBase}?status=success&session_id={CHECKOUT_SESSION_ID}`);
   form.set("cancel_url", `${returnBase}?status=cancelled`);
-  form.set("expires_at", String(Math.floor(Date.now() / 1000) + 30 * 60));
   form.set("submit_type", "pay");
   form.set("locale", "auto");
   form.set("metadata[recharge_id]", recharge.id);
