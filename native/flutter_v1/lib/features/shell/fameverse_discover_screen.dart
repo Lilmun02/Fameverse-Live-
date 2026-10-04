@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/fameverse_backend.dart';
+import '../live/native_live_rankings.dart';
 
 /// Discover is the intentional exploration surface.
 ///
@@ -209,6 +210,8 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            const _DiscoverFameboardCard(),
             const SizedBox(height: 28),
             if (widget.loading &&
                 widget.rooms.isEmpty &&
@@ -293,6 +296,98 @@ class _FameverseDiscoverScreenState extends State<FameverseDiscoverScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DiscoverFameboardCard extends StatelessWidget {
+  const _DiscoverFameboardCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const Key('discover-fameboard-card'),
+        onTap: () => showNativeLiveRankings(context),
+        borderRadius: BorderRadius.circular(22),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFF5B3970)),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF321846), Color(0xFF191020), Color(0xFF100B14)],
+            ),
+          ),
+          child: const Row(
+            children: [
+              _DiscoverFameboardMark(),
+              SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'FAMEBOARD',
+                      style: TextStyle(
+                        color: Color(0xFFC88BFF),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Who is moving Fameverse?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Explore Supporters, Pulse and Creators across 24H and 7D windows.',
+                      style: TextStyle(
+                        color: Color(0xFFA99DAE),
+                        fontSize: 10,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Color(0xFFC697EB),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DiscoverFameboardMark extends StatelessWidget {
+  const _DiscoverFameboardMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFA853FF), Color(0xFF5A2BCD)],
+        ),
+      ),
+      child: const Icon(Icons.leaderboard_rounded),
     );
   }
 }

@@ -4,31 +4,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Build 32 release contract', () {
-    test('Fameboard uses authoritative windowed rankings and original terminology', () {
-      final rankings = File(
-        'lib/features/live/native_live_rankings.dart',
-      ).readAsStringSync();
+    test(
+      'Fameboard uses authoritative windowed rankings and original terminology',
+      () {
+        final rankings = File(
+          'lib/features/live/native_live_rankings.dart',
+        ).readAsStringSync();
 
-      for (final marker in <String>[
-        "'get_fameverse_rankings_v2'",
-        "'p_window': _window",
-        "('24h', '24H')",
-        "('7d', '7D')",
-        "('supporters', 'Supporters'",
-        "('pulse', 'Pulse'",
-        "('creators', 'Creators'",
-        "Key('fameboard-first-spotlight')",
-      ]) {
-        expect(rankings, contains(marker));
-      }
-      for (final rejected in <String>[
-        'Daily Ranking',
-        'Weekly Ranking',
-        'Ranking history',
-      ]) {
-        expect(rankings, isNot(contains(rejected)));
-      }
-    });
+        for (final marker in <String>[
+          "'get_fameverse_rankings_v2'",
+          "'p_window': _window",
+          "('24h', '24H')",
+          "('7d', '7D')",
+          "('supporters', 'Supporters'",
+          "('pulse', 'Pulse'",
+          "('creators', 'Creators'",
+          "Key('fameboard-first-spotlight')",
+        ]) {
+          expect(rankings, contains(marker));
+        }
+        for (final rejected in <String>[
+          'Daily Ranking',
+          'Weekly Ranking',
+          'Ranking history',
+        ]) {
+          expect(rankings, isNot(contains(rejected)));
+        }
+      },
+    );
 
     test('Discover opens the same Fameboard used in Live', () {
       final discover = File(
@@ -49,18 +52,21 @@ void main() {
       expect(viewer, contains('showNativeLiveRankings(context)'));
     });
 
-    test('real payout provider wiring cannot regress to database-only processing', () {
-      final owner = File(
-        'lib/features/profile/owner_control_center_build23.dart',
-      ).readAsStringSync();
+    test(
+      'real payout provider wiring cannot regress to database-only processing',
+      () {
+        final owner = File(
+          'lib/features/profile/owner_control_center_build23.dart',
+        ).readAsStringSync();
 
-      expect(owner, contains("'process-creator-payout'"));
-      expect(owner, contains("'sync-creator-payout'"));
-      expect(owner, contains("'expected_environment': 'sandbox'"));
-      expect(owner, contains("Text('Send with PayPal sandbox')"));
-      expect(owner, contains("Key('owner-payout-sync-provider')"));
-      expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
-    });
+        expect(owner, contains("'process-creator-payout'"));
+        expect(owner, contains("'sync-creator-payout'"));
+        expect(owner, contains("'expected_environment': 'sandbox'"));
+        expect(owner, contains("Text('Send with PayPal sandbox')"));
+        expect(owner, contains("Key('owner-payout-sync-provider')"));
+        expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
+      },
+    );
 
     test('owner verification review controls remain wired', () {
       final owner = File(
