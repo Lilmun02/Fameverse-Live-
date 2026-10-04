@@ -44,25 +44,28 @@ class _NativePocketCometGiftState extends State<NativePocketCometGift>
                 painter: _PocketCometPainter(progress: _controller.value),
               ),
               Positioned(
-                left: 20,
-                right: 20,
+                left: 28,
+                right: 28,
                 bottom: 128,
                 child: Column(
                   children: [
                     Text(
                       '${widget.sender} sent Pocket Comet',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .1,
                         shadows: [Shadow(blurRadius: 12, color: Colors.black)],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 7),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 7,
+                        horizontal: 12,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
                         color: const Color(0x8C080A12),
@@ -72,9 +75,9 @@ class _NativePocketCometGiftState extends State<NativePocketCometGift>
                         'FAMEVERSE LIVE',
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 11,
-                          letterSpacing: 1.4,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 9,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ),
