@@ -98,10 +98,10 @@ void main() {
     );
     require(
       releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
-          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "23"') &&
-          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=23') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32') &&
           !releaseSection.contains('TARGET_BRANCH="build18/live-repair"'),
-      'TestFlight Build 23 must package the repaired integration branch, never the old Build 18 source.',
+      'TestFlight Build 32 must package the repaired integration branch, never the old Build 18 source.',
     );
 
     final usesEnvironmentPublishing =
@@ -142,7 +142,7 @@ void main() {
     app.contains('fameverse_shell_build23.dart') &&
         app.contains('FameverseBuild23Shell') &&
         !app.contains('FameverseBuild16Shell'),
-    'Build 23 startup must route the current product shell instead of silently launching Build 16.',
+    'Current startup must route the Build 23 product shell implementation instead of silently launching Build 16.',
   );
   require(
     app.contains('startup_update_service.dart') &&
@@ -215,7 +215,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, Build 23 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
+      '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
     );
   }
 }
