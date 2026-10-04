@@ -175,6 +175,7 @@ Deno.serve(async (req: Request) => {
   form.set("mode", "payment");
   form.set("ui_mode", "hosted_page");
   form.set("origin_context", "mobile_app");
+  form.set("managed_payments[enabled]", "false");
   form.set("payment_method_types[0]", "card");
   form.set("line_items[0][price]", stripePriceId);
   form.set("line_items[0][quantity]", "1");
