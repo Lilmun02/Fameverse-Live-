@@ -16,15 +16,18 @@ void main() {
       expect(viewer, contains('_cohostCameraEnabled && !_cohostFlipBusy'));
     });
 
-    test('Fame Coins profile card opens the store across the whole card', () async {
-      final profile = await File(
-        'lib/features/profile/native_profile_build23.dart',
-      ).readAsString();
+    test(
+      'Fame Coins profile card opens the store across the whole card',
+      () async {
+        final profile = await File(
+          'lib/features/profile/native_profile_build23.dart',
+        ).readAsString();
 
-      expect(profile, contains("Key('profile-fame-coins-card')"));
-      expect(profile, contains('onTap: _loading ? null : _openStore'));
-      expect(profile, contains("Key('profile-buy-fame-coins')"));
-      expect(profile, contains("tooltip: 'Refresh Fame Coins'"));
-    });
+        expect(profile, contains("Key('profile-fame-coins-card')"));
+        expect(profile, contains('onTap: _loading ? null : _openStore'));
+        expect(profile, contains("Key('profile-buy-fame-coins')"));
+        expect(profile, contains("tooltip: 'Refresh Fame Coins'"));
+      },
+    );
   });
 }

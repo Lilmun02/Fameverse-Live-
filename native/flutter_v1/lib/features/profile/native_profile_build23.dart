@@ -559,66 +559,71 @@ class _WalletCardState extends State<_WalletCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF5C3470)),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF271334), Color(0xFF151019)],
+    return GestureDetector(
+      key: const Key('profile-fame-coins-card'),
+      behavior: HitTestBehavior.opaque,
+      onTap: _loading ? null : _openStore,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFF5C3470)),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF271334), Color(0xFF151019)],
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.toll_rounded, color: Color(0xFFD7A5FF)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Fame Coins',
-                  style: TextStyle(fontWeight: FontWeight.w900),
-                ),
-                Text(
-                  _loading && _balance == null
-                      ? 'Loading…'
-                      : '${_balance ?? 0}',
-                  style: const TextStyle(
-                    color: Color(0xFFE2BCFF),
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900,
+        child: Row(
+          children: [
+            const Icon(Icons.toll_rounded, color: Color(0xFFD7A5FF)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Fame Coins',
+                    style: TextStyle(fontWeight: FontWeight.w900),
                   ),
+                  Text(
+                    _loading && _balance == null
+                        ? 'Loading…'
+                        : '${_balance ?? 0}',
+                    style: const TextStyle(
+                      color: Color(0xFFE2BCFF),
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const Text(
+                    'Gifting balance. Creator cash earnings remain separate.',
+                    style: TextStyle(color: Color(0xFF9F92A4), fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FilledButton.tonal(
+                  key: const Key('profile-buy-fame-coins'),
+                  onPressed: _loading ? null : _openStore,
+                  child: const Text('Buy'),
                 ),
-                const Text(
-                  'Gifting balance. Creator cash earnings remain separate.',
-                  style: TextStyle(color: Color(0xFF9F92A4), fontSize: 10),
+                IconButton(
+                  onPressed: _loading ? null : _load,
+                  tooltip: 'Refresh Fame Coins',
+                  icon: _loading
+                      ? const SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh_rounded),
                 ),
               ],
             ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FilledButton.tonal(
-                key: const Key('profile-buy-fame-coins'),
-                onPressed: _loading ? null : _openStore,
-                child: const Text('Buy'),
-              ),
-              IconButton(
-                onPressed: _loading ? null : _load,
-                tooltip: 'Refresh Fame Coins',
-                icon: _loading
-                    ? const SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.refresh_rounded),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

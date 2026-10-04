@@ -55,6 +55,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   bool _following = false;
   bool _followBusy = false;
   bool _cohostCameraEnabled = true;
+  bool _cohostFlipBusy = false;
   bool _cohostMicEnabled = true;
   int _walletBalance = 0;
   int _gifterLevel = 1;
@@ -706,11 +707,30 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _flipCohostCamera() async {
-    if (!_selfIsCohost || !_cohostCameraEnabled || _call == null) return;
+    final call = _call;
+    if (!_selfIsCohost ||
+        !_cohostCameraEnabled ||
+        call == null ||
+        _cohostFlipBusy) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _cohostFlipBusy = true);
+    } else {
+      _cohostFlipBusy = true;
+    }
+
     try {
-      fvRequireSuccess(await _call!.flipCamera(), 'Camera flip failed');
+      fvRequireSuccess(await call.flipCamera(), 'Camera flip failed');
     } catch (_) {
       if (mounted) _showMessage('Camera flip failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _cohostFlipBusy = false);
+      } else {
+        _cohostFlipBusy = false;
+      }
     }
   }
 
@@ -859,7 +879,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                     FvRoundLiveButton(
                       icon: Icons.cameraswitch_rounded,
                       label: 'Flip',
-                      onPressed: _cohostCameraEnabled
+                      onPressed: _cohostCameraEnabled && !_cohostFlipBusy
                           ? () {
                               Navigator.of(context).pop();
                               unawaited(_flipCohostCamera());
