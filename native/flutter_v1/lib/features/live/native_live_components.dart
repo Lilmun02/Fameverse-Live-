@@ -6,7 +6,6 @@ import 'package:video_player/video_player.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_gift_visual.dart';
-import 'native_pocket_comet_gift.dart';
 
 class FvLiveChatMessage {
   const FvLiveChatMessage({
@@ -118,7 +117,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   }
 
   Duration _staticDuration(FvGiftDefinition gift) {
-    if (gift.id == 'pocket-comet') return const Duration(milliseconds: 4300);
     if (gift.cinematic) return const Duration(milliseconds: 3200);
     if (gift.cost >= 100) return const Duration(milliseconds: 3000);
     return const Duration(milliseconds: 1900);
@@ -139,7 +137,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
 
     if (_loadedUrl == url && _controller != null) {
       await _controller!.seekTo(Duration.zero);
-      await _controller!.setVolume(1);
+      await _controller!.setVolume(0);
       await _controller!.play();
       final rawMs = _controller!.value.duration.inMilliseconds + 350;
       final safeMs = rawMs.clamp(1500, 15000).toInt();
@@ -154,7 +152,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     try {
       await next.initialize();
       await next.setLooping(false);
-      await next.setVolume(1);
+      await next.setVolume(0);
       await next.play();
       final previous = _controller;
       _controller = next;
@@ -275,33 +273,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
 
     if (!playback.gift.cinematic) {
       return _largeNativeGift(context, playback);
-    }
-
-    if (playback.gift.id == 'pocket-comet') {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          NativePocketCometGift(sender: playback.sender),
-          if (playback.comboTotal > 1 || playback.quantity > 1)
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 92,
-              child: Text(
-                playback.comboTotal > 1
-                    ? 'COMBO ×${playback.comboIndex}'
-                    : '×${playback.quantity}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFE7A2),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  shadows: [Shadow(blurRadius: 10, color: Colors.black)],
-                ),
-              ),
-            ),
-        ],
-      );
     }
 
     final controller = _controller;
