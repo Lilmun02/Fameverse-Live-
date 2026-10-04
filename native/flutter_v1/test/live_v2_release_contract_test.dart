@@ -1,11 +1,11 @@
-// Release-blocking regression contract for the Build 23 Live repair candidate.
+// Release-blocking regression contract for the Build 32 Live repair candidate.
 import 'dart:io';
 
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Build 23 Live repair contract', () {
+  group('Build 32 Live repair contract', () {
     test(
       'gift catalog is unique, priced, and cinematic assets are intentional',
       () {
@@ -229,7 +229,7 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is source-locked to Build 23', () async {
+    test('TestFlight candidate is source-locked to Build 32', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
       expect(
@@ -241,8 +241,9 @@ void main() {
         contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
       );
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
-      expect(codemagic, contains('build23_source_identity.txt'));
-      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "23"'));
+      expect(codemagic, contains('build32_source_identity.txt'));
+      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
+      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'));
       expect(
         codemagic,
         contains(
