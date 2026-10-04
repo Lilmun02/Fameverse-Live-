@@ -46,7 +46,7 @@ void main() {
 
       expect(discover, contains("Key('discover-fameboard-card')"));
       expect(discover, contains('showNativeLiveRankings(context)'));
-      expect(host, contains("Key('host-live-rankings-button')"));
+      expect(host, contains("Key('host-live-rankings-left')"));
       expect(host, contains('showNativeLiveRankings(context)'));
       expect(viewer, contains("Key('viewer-live-rankings-button')"));
       expect(viewer, contains('showNativeLiveRankings(context)'));
