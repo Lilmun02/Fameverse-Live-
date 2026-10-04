@@ -234,6 +234,35 @@ let changed = false
   }
 }
 
+// PATCH 9 — Host rankings belong under creator info, never beside End; compact creator text keeps the name readable.
+{
+  const path = 'native/flutter_v1/lib/features/live/stream_host_live_screen.dart'
+  let source = await read(path)
+
+  if (!source.includes("key: const Key('host-live-rankings-left')")) {
+    source = replaceExact(
+      source,
+      `                                      style: const TextStyle(\n                                        fontSize: 15,\n                                        fontWeight: FontWeight.w900,\n                                        letterSpacing: .2,\n                                      ),`,
+      `                                      style: const TextStyle(\n                                        fontSize: 12,\n                                        fontWeight: FontWeight.w900,\n                                        letterSpacing: .1,\n                                      ),`,
+      'compact host live creator name',
+    )
+    source = replaceExact(
+      source,
+      `                                style: const TextStyle(\n                                  color: Color(0xFFD6CADC),\n                                  fontSize: 11,\n                                  fontWeight: FontWeight.w600,\n                                ),\n                              ),\n                            ],`,
+      `                                style: const TextStyle(\n                                  color: Color(0xFFD6CADC),\n                                  fontSize: 9.5,\n                                  fontWeight: FontWeight.w600,\n                                ),\n                              ),\n                              const SizedBox(height: 3),\n                              Align(\n                                alignment: Alignment.centerLeft,\n                                child: TextButton.icon(\n                                  key: const Key('host-live-rankings-left'),\n                                  onPressed: () => unawaited(\n                                    showNativeLiveRankings(context),\n                                  ),\n                                  style: TextButton.styleFrom(\n                                    foregroundColor: const Color(0xFFFFC75A),\n                                    minimumSize: Size.zero,\n                                    padding: const EdgeInsets.symmetric(\n                                      horizontal: 1,\n                                      vertical: 1,\n                                    ),\n                                    tapTargetSize:\n                                        MaterialTapTargetSize.shrinkWrap,\n                                    visualDensity: VisualDensity.compact,\n                                  ),\n                                  icon: const Icon(\n                                    Icons.emoji_events_rounded,\n                                    size: 12,\n                                  ),\n                                  label: const Text(\n                                    'Rankings',\n                                    style: TextStyle(\n                                      fontSize: 9,\n                                      fontWeight: FontWeight.w800,\n                                    ),\n                                  ),\n                                ),\n                              ),\n                            ],`,
+      'move host rankings under creator info',
+    )
+    source = replaceExact(
+      source,
+      `                        const SizedBox(width: 4),\n                        IconButton(\n                          key: const Key('host-live-rankings-button'),\n                          onPressed: () =>\n                              unawaited(showNativeLiveRankings(context)),\n                          constraints: const BoxConstraints.tightFor(\n                            width: 32,\n                            height: 32,\n                          ),\n                          padding: EdgeInsets.zero,\n                          visualDensity: VisualDensity.compact,\n                          icon: const Icon(\n                            Icons.emoji_events_rounded,\n                            size: 17,\n                            color: Color(0xFFFFC75A),\n                          ),\n                          tooltip: 'Rankings',\n                        ),\n                        const SizedBox(width: 4),`,
+      `                        const SizedBox(width: 6),`,
+      'remove rankings from beside End',
+    )
+    changed = true
+    await write(path, source)
+  }
+}
+
 console.log(
   changed
     ? '[build23-patch] Applied exact bug patches; formatter will persist them.'
