@@ -23,7 +23,7 @@ function replaceOnce(content, before, after, label) {
 
 let changed = false
 
-// GIFT PATCH 1 — Retire Pocket Comet from the native gift catalog.
+// GIFT PATCH 1 — Pocket Comet was explicitly retired by the owner.
 {
   const path = 'native/flutter_v1/lib/data/fameverse_live_backend.dart'
   let source = await read(path)
@@ -38,9 +38,10 @@ let changed = false
   }
 }
 
-// GIFT PATCH 2 — Cinematic gift MP4s keep their visuals but ship muted until
-// approved, non-robotic sound assets are available. Do not synthesize or fake
-// replacement audio.
+// GIFT PATCH 2 — Preserve approved cinematic presentation. A previous Build 32
+// patch globally muted cinematic MP4 audio without explicit owner approval.
+// Restore the original player volume behavior; future asset audio changes must
+// come from explicit owner approval, not this stabilization patch.
 {
   const path = 'native/flutter_v1/lib/features/live/native_live_components.dart'
   let source = await read(path)
@@ -65,22 +66,22 @@ let changed = false
     changed = true
   }
 
-  if (source.includes('await _controller!.setVolume(1);')) {
+  if (source.includes('await _controller!.setVolume(0);')) {
     source = replaceOnce(
       source,
-      'await _controller!.setVolume(1);',
       'await _controller!.setVolume(0);',
-      'mute replayed cinematic gift audio',
+      'await _controller!.setVolume(1);',
+      'restore replayed cinematic gift audio',
     )
     changed = true
   }
 
-  if (source.includes('await next.setVolume(1);')) {
+  if (source.includes('await next.setVolume(0);')) {
     source = replaceOnce(
       source,
-      'await next.setVolume(1);',
       'await next.setVolume(0);',
-      'mute initialized cinematic gift audio',
+      'await next.setVolume(1);',
+      'restore initialized cinematic gift audio',
     )
     changed = true
   }
@@ -96,9 +97,6 @@ let changed = false
     changed = true
   }
 
-  if (source.includes('setVolume(1)')) {
-    throw new Error('[build32-gift-polish] unmuted cinematic gift audio remains')
-  }
   if (source.includes('pocket-comet') || source.includes('NativePocketCometGift')) {
     throw new Error('[build32-gift-polish] Pocket Comet remains in live components')
   }
@@ -133,6 +131,6 @@ let changed = false
 
 console.log(
   changed
-    ? '[build32-gift-polish] Applied gift audio cleanup and Pocket Comet retirement.'
-    : '[build32-gift-polish] Build 32 gift polish already present.',
+    ? '[build32-gift-polish] Applied owner-authorized Pocket Comet retirement and restored cinematic asset presentation.'
+    : '[build32-gift-polish] Build 32 gift state already matches owner-approved boundaries.',
 )
