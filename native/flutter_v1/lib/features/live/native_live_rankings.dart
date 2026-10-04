@@ -21,10 +21,7 @@ class NativeLiveRankingsSheet extends StatefulWidget {
 }
 
 class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
-  static const _windows = <(String, String)>[
-    ('24h', '24H'),
-    ('7d', '7D'),
-  ];
+  static const _windows = <(String, String)>[('24h', '24H'), ('7d', '7D')];
   static const _kinds = <(String, String, IconData)>[
     ('supporters', 'Supporters', Icons.card_giftcard_rounded),
     ('pulse', 'Pulse', Icons.bolt_rounded),
@@ -59,18 +56,21 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
           'p_limit': 50,
         },
       );
-      final rows = (data as List? ?? const []).map((raw) {
-        final row = Map<String, dynamic>.from(raw as Map);
-        return _RankingEntry(
-          position: (row['rank_position'] as num?)?.toInt() ?? 0,
-          userId: row['user_id']?.toString() ?? '',
-          username: row['username'] as String?,
-          displayName: (row['display_name'] as String?) ?? 'Fameverse Creator',
-          avatarUrl: row['avatar_url'] as String?,
-          score: (row['score'] as num?)?.toInt() ?? 0,
-          secondary: (row['secondary'] as num?)?.toInt() ?? 0,
-        );
-      }).toList(growable: false);
+      final rows = (data as List? ?? const [])
+          .map((raw) {
+            final row = Map<String, dynamic>.from(raw as Map);
+            return _RankingEntry(
+              position: (row['rank_position'] as num?)?.toInt() ?? 0,
+              userId: row['user_id']?.toString() ?? '',
+              username: row['username'] as String?,
+              displayName:
+                  (row['display_name'] as String?) ?? 'Fameverse Creator',
+              avatarUrl: row['avatar_url'] as String?,
+              score: (row['score'] as num?)?.toInt() ?? 0,
+              secondary: (row['secondary'] as num?)?.toInt() ?? 0,
+            );
+          })
+          .toList(growable: false);
       if (!mounted) return;
       setState(() {
         _rows = rows;
@@ -360,9 +360,7 @@ class _KindButton extends StatelessWidget {
           color: selected ? const Color(0xFF261631) : const Color(0xFF151018),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected
-                ? const Color(0xFFA65BEC)
-                : const Color(0xFF302437),
+            color: selected ? const Color(0xFFA65BEC) : const Color(0xFF302437),
           ),
         ),
         child: Row(
@@ -516,23 +514,35 @@ class _FirstSpotlight extends StatelessWidget {
                   entry.displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 if (entry.username?.isNotEmpty == true)
                   Text(
                     '@${entry.username}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xFFA99DAE), fontSize: 10),
+                    style: const TextStyle(
+                      color: Color(0xFFA99DAE),
+                      fontSize: 10,
+                    ),
                   ),
                 const SizedBox(height: 8),
                 Text(
                   scoreCopy,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 Text(
                   secondaryCopy,
-                  style: const TextStyle(color: Color(0xFF9F92A5), fontSize: 10),
+                  style: const TextStyle(
+                    color: Color(0xFF9F92A5),
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
@@ -569,7 +579,11 @@ class _RunnerSpotlight extends StatelessWidget {
         children: [
           Row(
             children: [
-              _Avatar(entry: entry, radius: 23, border: const Color(0xFF6E557A)),
+              _Avatar(
+                entry: entry,
+                radius: 23,
+                border: const Color(0xFF6E557A),
+              ),
               const Spacer(),
               Text(
                 '#${entry.position}',
@@ -651,14 +665,20 @@ class _RankingRow extends StatelessWidget {
                   entry.displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 if (entry.username?.isNotEmpty == true)
                   Text(
                     '@${entry.username}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xFF8F8395), fontSize: 9),
+                    style: const TextStyle(
+                      color: Color(0xFF8F8395),
+                      fontSize: 9,
+                    ),
                   ),
               ],
             ),
@@ -669,7 +689,10 @@ class _RankingRow extends StatelessWidget {
             children: [
               Text(
                 scoreCopy,
-                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               Text(
                 secondaryCopy,
@@ -684,7 +707,11 @@ class _RankingRow extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.entry, required this.radius, required this.border});
+  const _Avatar({
+    required this.entry,
+    required this.radius,
+    required this.border,
+  });
 
   final _RankingEntry entry;
   final double radius;
@@ -695,7 +722,10 @@ class _Avatar extends StatelessWidget {
     final avatarUrl = entry.avatarUrl?.trim();
     return Container(
       padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: border)),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: border),
+      ),
       child: CircleAvatar(
         radius: radius,
         foregroundImage: avatarUrl != null && avatarUrl.isNotEmpty
