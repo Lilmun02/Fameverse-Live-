@@ -100,11 +100,12 @@ Deno.serve(async (req: Request) => {
   const itemStatus = String(item?.transaction_status ?? batchStatus).toUpperCase();
   const providerItemId = item?.payout_item_id ?? null;
 
+  // Fameverse only leaves processing for terminal provider states. Temporary
+  // PayPal states such as UNCLAIMED/HELD/ONHOLD stay processing so the owner can
+  // sync the same payout again instead of losing it from the active review UI.
   let fameverseStatus = "processing";
   if (itemStatus === "SUCCESS") {
     fameverseStatus = "paid";
-  } else if (["UNCLAIMED", "HELD", "ONHOLD"].includes(itemStatus)) {
-    fameverseStatus = "held";
   } else if (["FAILED", "RETURNED", "BLOCKED", "REFUNDED", "DENIED"].includes(itemStatus)) {
     fameverseStatus = "failed";
   }
