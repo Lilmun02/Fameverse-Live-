@@ -96,6 +96,17 @@ void main() {
       },
     );
 
+    test('owner can review pending creator verification before payout QA', () {
+      final owner = File(
+        'lib/features/profile/owner_control_center_build23.dart',
+      ).readAsStringSync();
+      expect(owner, contains('get_creator_verification_moderation_queue'));
+      expect(owner, contains('review_creator_verification'));
+      expect(owner, contains("Key('owner-verification-approve')"));
+      expect(owner, contains("Key('owner-verification-needs-info')"));
+      expect(owner, contains("Key('owner-verification-reject')"));
+    });
+
     test('owner action cards are tappable across the entire card surface', () {
       final owner = File(
         'lib/features/profile/owner_control_center_build23.dart',
