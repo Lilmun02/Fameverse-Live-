@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Native Live profile and rankings contract', () {
+  group('Native Live profile and Fameboard contract', () {
     test('earned gifter badge stays tied to real gifting progression', () {
       final profile = File(
         'lib/features/live/native_live_profile_sheet.dart',
@@ -18,19 +18,21 @@ void main() {
       expect(profile, contains('loadViewerIdentityStats'));
     });
 
-    test('rankings use the authoritative backend instead of placeholders', () {
+    test('Fameboard uses the authoritative windowed backend', () {
       final rankings = File(
         'lib/features/live/native_live_rankings.dart',
       ).readAsStringSync();
-      expect(rankings, contains("'get_fameverse_rankings'"));
-      expect(rankings, contains("('gifters', 'Gifters')"));
-      expect(rankings, contains("('tappers', 'Tappers')"));
-      expect(rankings, contains("('creators', 'Creators')"));
-      expect(rankings, contains("'p_limit': 20"));
+      expect(rankings, contains("'get_fameverse_rankings_v2'"));
+      expect(rankings, contains("('supporters', 'Supporters'"));
+      expect(rankings, contains("('pulse', 'Pulse'"));
+      expect(rankings, contains("('creators', 'Creators'"));
+      expect(rankings, contains("('24h', '24H')"));
+      expect(rankings, contains("('7d', '7D')"));
+      expect(rankings, contains("'p_limit': 50"));
       expect(rankings, isNot(contains('fake')));
     });
 
-    test('host and viewer both keep the Live profile entry point', () {
+    test('host and viewer keep Live profile and Fameboard entry points', () {
       final host = File(
         'lib/features/live/stream_host_live_screen.dart',
       ).readAsStringSync();
@@ -39,6 +41,10 @@ void main() {
       ).readAsStringSync();
       expect(host, contains('showNativeLiveProfileSheet'));
       expect(viewer, contains('showNativeLiveProfileSheet'));
+      expect(host, contains("Key('host-live-rankings-button')"));
+      expect(viewer, contains("Key('viewer-live-rankings-button')"));
+      expect(host, contains('showNativeLiveRankings'));
+      expect(viewer, contains('showNativeLiveRankings'));
     });
   });
 }
