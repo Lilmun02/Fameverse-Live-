@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import './apply-payout-provider-wiring.mjs'
 import './apply-verification-moderation-wiring.mjs'
+import './apply-build32-rankings.mjs'
 
 const root = new URL('../', import.meta.url)
 
