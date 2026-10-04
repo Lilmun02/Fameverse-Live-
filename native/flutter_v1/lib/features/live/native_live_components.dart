@@ -137,7 +137,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
 
     if (_loadedUrl == url && _controller != null) {
       await _controller!.seekTo(Duration.zero);
-      await _controller!.setVolume(0);
+      await _controller!.setVolume(1);
       await _controller!.play();
       final rawMs = _controller!.value.duration.inMilliseconds + 350;
       final safeMs = rawMs.clamp(1500, 15000).toInt();
@@ -152,7 +152,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     try {
       await next.initialize();
       await next.setLooping(false);
-      await next.setVolume(0);
+      await next.setVolume(1);
       await next.play();
       final previous = _controller;
       _controller = next;
