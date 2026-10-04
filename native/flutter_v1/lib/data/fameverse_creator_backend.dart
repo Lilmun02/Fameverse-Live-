@@ -59,6 +59,49 @@ class FvCreatorPayoutSummary {
   );
 }
 
+class FvCreatorVerificationProgress {
+  const FvCreatorVerificationProgress({
+    required this.verificationStatus,
+    required this.followerCount,
+    required this.followerRequirement,
+    required this.eligibleReceivedCoins,
+    required this.receivedCoinsRequirement,
+    required this.eligible,
+  });
+
+  final String verificationStatus;
+  final int followerCount;
+  final int followerRequirement;
+  final int eligibleReceivedCoins;
+  final int receivedCoinsRequirement;
+  final bool eligible;
+
+  bool get isVerified => verificationStatus == 'verified';
+  bool get isPending => verificationStatus == 'pending';
+
+  factory FvCreatorVerificationProgress.fromMap(Map<String, dynamic> row) {
+    return FvCreatorVerificationProgress(
+      verificationStatus:
+          row['verification_status']?.toString().trim().toLowerCase() ??
+          'unverified',
+      followerCount: _intValue(row['follower_count']),
+      followerRequirement: _intValue(row['follower_requirement']),
+      eligibleReceivedCoins: _intValue(row['eligible_received_coins']),
+      receivedCoinsRequirement: _intValue(row['received_coins_requirement']),
+      eligible: row['eligible'] == true,
+    );
+  }
+
+  static const empty = FvCreatorVerificationProgress(
+    verificationStatus: 'unverified',
+    followerCount: 0,
+    followerRequirement: 100,
+    eligibleReceivedCoins: 0,
+    receivedCoinsRequirement: 500000,
+    eligible: false,
+  );
+}
+
 class FvCreatorPayoutRequest {
   const FvCreatorPayoutRequest({
     required this.id,
@@ -244,6 +287,13 @@ class SupabaseFameverseCreatorBackend {
       params: {'p_limit': limit},
     );
     return _rows(response).map(FvCreatorPayoutRequest.fromMap).toList();
+  }
+
+  Future<FvCreatorVerificationProgress> loadVerificationProgress() async {
+    final response = await _client.rpc('get_creator_verification_progress');
+    final rows = _rows(response);
+    if (rows.isEmpty) return FvCreatorVerificationProgress.empty;
+    return FvCreatorVerificationProgress.fromMap(rows.first);
   }
 
   Future<String> requestVerification() async {
