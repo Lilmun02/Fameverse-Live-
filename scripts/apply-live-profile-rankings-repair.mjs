@@ -11,7 +11,7 @@ const rankings = read('native/flutter_v1/lib/features/live/native_live_rankings.
 const discover = read('native/flutter_v1/lib/features/shell/fameverse_discover_screen.dart')
 
 for (const [label, source, markers] of [
-  ['host', host, ['showNativeLiveProfileSheet', "Key('host-live-rankings-button')", 'showNativeLiveRankings']],
+  ['host', host, ['showNativeLiveProfileSheet', "Key('host-live-rankings-left')", 'showNativeLiveRankings']],
   ['viewer', viewer, ['showNativeLiveProfileSheet', "Key('viewer-live-rankings-button')", 'showNativeLiveRankings']],
   ['Fameboard', rankings, ["'get_fameverse_rankings_v2'", "('supporters', 'Supporters'", "('pulse', 'Pulse'", "('24h', '24H')", "('7d', '7D')"]],
   ['Discover', discover, ["Key('discover-fameboard-card')", 'showNativeLiveRankings(context)']],
