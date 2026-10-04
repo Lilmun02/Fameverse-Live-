@@ -56,8 +56,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
           position: (row['rank_position'] as num?)?.toInt() ?? 0,
           userId: row['user_id']?.toString() ?? '',
           username: row['username'] as String?,
-          displayName:
-              (row['display_name'] as String?) ?? 'Fameverse Creator',
+          displayName: (row['display_name'] as String?) ?? 'Fameverse Creator',
           avatarUrl: row['avatar_url'] as String?,
           score: (row['score'] as num?)?.toInt() ?? 0,
           secondary: (row['secondary'] as num?)?.toInt() ?? 0,
