@@ -36,7 +36,12 @@ void main() {
       expect(process, contains('"PayPal-Request-Id": senderBatchId'));
       expect(process, contains('provider_status: "SUBMISSION_UNKNOWN"'));
       expect(process, contains('status: "processing"'));
-      expect(process, isNot(contains('status: "failed",\n      provider_status: "NETWORK_ERROR"')));
+      expect(
+        process,
+        isNot(
+          contains('status: "failed",\n      provider_status: "NETWORK_ERROR"'),
+        ),
+      );
       expect(sync, contains('provider_recovery_failed'));
       expect(sync, contains('/functions/v1/process-creator-payout'));
       expect(retry, contains("'SUBMISSION_UNKNOWN', 'SUBMITTING'"));
