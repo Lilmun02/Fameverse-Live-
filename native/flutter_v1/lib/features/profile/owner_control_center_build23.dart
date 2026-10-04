@@ -20,6 +20,7 @@ class _Build23OwnerControlCenterScreenState
   Map<String, dynamic> _summary = const {};
   Map<String, dynamic> _wallet = const {};
   List<Map<String, dynamic>> _payouts = const [];
+  List<Map<String, dynamic>> _verificationQueue = const [];
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -65,12 +66,17 @@ class _Build23OwnerControlCenterScreenState
           'get_creator_payout_moderation_queue',
           params: const {'p_limit': 50},
         ),
+        _client.rpc(
+          'get_creator_verification_moderation_queue',
+          params: const {'p_limit': 50},
+        ),
       ]);
       if (!mounted) return;
       setState(() {
         _summary = _firstRow(results[0]);
         _wallet = _firstRow(results[1]);
         _payouts = _rows(results[2]);
+        _verificationQueue = _rows(results[3]);
         _loading = false;
       });
     } catch (_) {
@@ -205,6 +211,36 @@ class _Build23OwnerControlCenterScreenState
     noteController.dispose();
     referenceController.dispose();
     return result;
+  }
+
+  Future<void> _reviewVerification(
+    Map<String, dynamic> request,
+    String status,
+  ) async {
+    if (_busy) return;
+    final userId = request['user_id']?.toString();
+    if (userId == null || userId.isEmpty) return;
+    setState(() => _busy = true);
+    try {
+      await _client.rpc(
+        'review_creator_verification',
+        params: {
+          'p_user_id': userId,
+          'p_status': status,
+          'p_public_note': status == 'verified'
+              ? 'Creator verification approved by Fameverse review.'
+              : status == 'needs_info'
+              ? 'More information is required before verification can be approved.'
+              : 'Verification request was not approved.',
+        },
+      );
+      _message('Verification updated to ${status.replaceAll('_', ' ')}.');
+      await _refresh();
+    } catch (_) {
+      _message('Could not update creator verification.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _reviewPayout(Map<String, dynamic> payout, String status) async {
@@ -478,6 +514,32 @@ class _Build23OwnerControlCenterScreenState
                   body: _error!,
                 )
               else ...[
+                const _Section('VERIFICATION REVIEW'),
+                const SizedBox(height: 10),
+                if (_verificationQueue.isEmpty)
+                  const _Notice(
+                    icon: Icons.verified_user_outlined,
+                    title: 'No verification requests waiting',
+                    body:
+                        'Pending creator verification requests will appear here for owner review.',
+                  )
+                else
+                  ..._verificationQueue.map(
+                    (request) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _VerificationReviewCard(
+                        request: request,
+                        busy: _busy,
+                        onApprove: () =>
+                            _reviewVerification(request, 'verified'),
+                        onNeedsInfo: () =>
+                            _reviewVerification(request, 'needs_info'),
+                        onReject: () =>
+                            _reviewVerification(request, 'rejected'),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
                 const _Section('PAYOUT REVIEW'),
                 const SizedBox(height: 10),
                 if (_payouts.isEmpty)
@@ -639,6 +701,78 @@ class _Build23OwnerControlCenterScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _VerificationReviewCard extends StatelessWidget {
+  const _VerificationReviewCard({
+    required this.request,
+    required this.busy,
+    required this.onApprove,
+    required this.onNeedsInfo,
+    required this.onReject,
+  });
+
+  final Map<String, dynamic> request;
+  final bool busy;
+  final VoidCallback onApprove;
+  final VoidCallback onNeedsInfo;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName =
+        request['display_name']?.toString() ?? 'Fameverse Creator';
+    final username = request['username']?.toString();
+    final status = request['status']?.toString() ?? 'pending';
+    final userId = request['user_id']?.toString() ?? 'unknown';
+    return Container(
+      key: Key('owner-verification-$userId'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17111B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF4A3553)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            displayName,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
+          if (username != null && username.isNotEmpty)
+            Text(
+              '@$username',
+              style: const TextStyle(color: Color(0xFFA89CAE)),
+            ),
+          const SizedBox(height: 8),
+          Chip(label: Text(status.replaceAll('_', ' '))),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton(
+                key: const Key('owner-verification-approve'),
+                onPressed: busy ? null : onApprove,
+                child: const Text('Verify'),
+              ),
+              FilledButton.tonal(
+                key: const Key('owner-verification-needs-info'),
+                onPressed: busy ? null : onNeedsInfo,
+                child: const Text('Needs info'),
+              ),
+              TextButton(
+                key: const Key('owner-verification-reject'),
+                onPressed: busy ? null : onReject,
+                child: const Text('Reject'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
