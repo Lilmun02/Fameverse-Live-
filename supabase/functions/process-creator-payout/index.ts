@@ -14,13 +14,22 @@ function json(body: unknown, status = 200) {
 }
 
 function payoutBatchIdFromLinks(value: unknown): string | null {
-  const links = value && typeof value === "object" && Array.isArray((value as { links?: unknown }).links)
-    ? (value as { links: Array<{ href?: unknown }> }).links
-    : [];
-  for (const link of links) {
-    const href = typeof link?.href === "string" ? link.href : "";
-    const match = href.match(/\/v1\/payments\/payouts\/([^/?#]+)/i);
-    if (match?.[1]) return match[1];
+  if (typeof value === "string") {
+    const match = value.match(/\/v1\/payments\/payouts\/([^/?#]+)/i);
+    return match?.[1] ?? null;
+  }
+  if (Array.isArray(value)) {
+    for (const nested of value) {
+      const batchId = payoutBatchIdFromLinks(nested);
+      if (batchId) return batchId;
+    }
+    return null;
+  }
+  if (value && typeof value === "object") {
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+      const batchId = payoutBatchIdFromLinks(nested);
+      if (batchId) return batchId;
+    }
   }
   return null;
 }
@@ -171,18 +180,25 @@ Deno.serve(async (req: Request) => {
     let batchStatus = payoutJson?.batch_header?.batch_status ?? "PENDING";
 
     if (!payoutResponse.ok) {
+      const providerErrorName = typeof payoutJson?.name === "string"
+        ? payoutJson.name.toUpperCase()
+        : "";
       const duplicateBatchId = payoutBatchIdFromLinks(payoutJson);
       if (duplicateBatchId) {
         batchId = duplicateBatchId;
         batchStatus = "PENDING";
-      } else if (payoutResponse.status >= 500) {
-        // Ambiguous provider result: keep funds reserved. Never release the
-        // balance as failed when PayPal may already have accepted the batch.
+      } else if (
+        providerErrorName === "DUPLICATE_BATCH_ID" || payoutResponse.status >= 500
+      ) {
+        // Duplicate and 5xx responses can mean PayPal already accepted this
+        // deterministic batch. Never release the reserved creator balance.
         await admin.from("creator_payout_requests").update({
           status: "processing",
           provider_status: "SUBMISSION_UNKNOWN",
           provider_status_updated_at: new Date().toISOString(),
-          moderation_note: "PayPal submission result is unknown. Keep payout reserved and investigate before retrying outside the idempotent provider flow.",
+          moderation_note: providerErrorName === "DUPLICATE_BATCH_ID"
+            ? "PayPal reported a duplicate deterministic batch without a recoverable batch ID. Keep payout reserved and recover through the idempotent provider flow."
+            : "PayPal submission result is unknown. Keep payout reserved and investigate before retrying outside the idempotent provider flow.",
         }).eq("id", payoutId);
         return json({ error: "paypal_submission_unknown" }, 502);
       } else {
