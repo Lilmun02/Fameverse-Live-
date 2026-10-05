@@ -128,7 +128,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
   );
 
   Future<void> _startCustomPurchase(int coins) => _startOrder(
-    packLabel: '$coins Fame Coins',
+    packLabel: '$coins Fame Stones',
     payload: <String, dynamic>{'pack_id': _customPackId, 'custom_coins': coins},
   );
 
@@ -170,7 +170,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
       final text = error.toString().toLowerCase();
       setState(() {
         _error = text.contains('custom')
-            ? 'Choose a custom amount between $_customMinCoins and $_customMaxCoins Fame Coins.'
+            ? 'Choose a custom amount between $_customMinCoins and $_customMaxCoins Fame Stones.'
             : text.contains('paypal')
             ? 'PayPal $_paypalMode could not start this purchase.'
             : 'Could not start the $_paypalMode recharge.';
@@ -208,7 +208,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                     children: [
                       const Expanded(
                         child: Text(
-                          'Custom Fame Coins',
+                          'Custom Fame Stones',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
@@ -223,7 +223,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Choose $_customMinCoins–$_customMaxCoins coins. ${_sandbox ? 'Sandbox' : 'Live'} rate: about 100 Fame Coins per \$1.',
+                    'Choose $_customMinCoins–$_customMaxCoins coins. ${_sandbox ? 'Sandbox' : 'Live'} rate: about 100 Fame Stones per \$1.',
                     style: const TextStyle(
                       color: Color(0xFFB9AEC1),
                       height: 1.4,
@@ -237,7 +237,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(
-                      labelText: 'Fame Coins',
+                      labelText: 'Fame Stones',
                       prefixIcon: Icon(Icons.toll_rounded),
                     ),
                     onChanged: (value) {
@@ -285,7 +285,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '$coins Fame Coins',
+                            '$coins Fame Stones',
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
@@ -356,8 +356,8 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
           SnackBar(
             content: Text(
               balance == null
-                  ? 'PayPal $_paypalMode completed. $coins Fame Coins credited.'
-                  : 'PayPal $_paypalMode completed. $coins Fame Coins credited · balance $balance.',
+                  ? 'PayPal $_paypalMode completed. $coins Fame Stones credited.'
+                  : 'PayPal $_paypalMode completed. $coins Fame Stones credited · balance $balance.',
             ),
           ),
         );
@@ -381,7 +381,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
       backgroundColor: const Color(0xFF0C0810),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C0810),
-        title: const Text('Recharge Fame Coins'),
+        title: const Text('Recharge Fame Stones'),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -411,7 +411,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       sandbox
-                          ? 'Test Fame Coin recharge'
+                          ? 'Test Fame Stone recharge'
                           : 'Live PayPal environment',
                       style: const TextStyle(
                         fontSize: 22,
@@ -447,7 +447,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                 const Text('No owner QA recharge packs are active.')
               else ...[
                 const Text(
-                  'Get Fame Coins',
+                  'Get Fame Stones',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
@@ -520,7 +520,7 @@ class _NativeRechargeScreenState extends State<NativeRechargeScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '$_customMinCoins–$_customMaxCoins Fame Coins',
+                                    '$_customMinCoins–$_customMaxCoins Fame Stones',
                                     style: const TextStyle(
                                       color: Color(0xFFB8ACBF),
                                       fontSize: 12,
@@ -659,7 +659,7 @@ class _RechargePack {
   factory _RechargePack.fromMap(Map<String, dynamic> map) {
     return _RechargePack(
       id: map['id']?.toString() ?? '',
-      label: map['label']?.toString() ?? 'Fame Coin Pack',
+      label: map['label']?.toString() ?? 'Fame Stone Pack',
       coins: (map['coins'] as num?)?.toInt() ?? 0,
       priceCents: (map['price_cents'] as num?)?.toInt() ?? 0,
     );

@@ -223,7 +223,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isOwner ? 'Owner Creator Studio' : 'Creator Studio',
+                          isOwner ? 'Owner Studio' : 'Creator Studio',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
@@ -581,7 +581,7 @@ class _WalletCardState extends State<_WalletCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Fame Coins',
+                    'Fame Stones',
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   Text(
@@ -611,7 +611,7 @@ class _WalletCardState extends State<_WalletCard> {
                 ),
                 IconButton(
                   onPressed: _loading ? null : _load,
-                  tooltip: 'Refresh Fame Coins',
+                  tooltip: 'Refresh Fame Stones',
                   icon: _loading
                       ? const SizedBox(
                           width: 17,
@@ -757,9 +757,9 @@ class _Build23SettingsScreen extends StatelessWidget {
               title: 'CREATOR',
               children: [
                 _RowItem(
-                  label: isOwner ? 'Owner Control Center' : 'Creator Studio',
+                  label: isOwner ? 'Owner Studio' : 'Creator Studio',
                   value: isOwner
-                      ? 'Premium tools, earnings and promo QA'
+                      ? 'Moderation, payouts, platform finance and your creator account'
                       : 'Earnings, payouts and creator tools',
                   icon: Icons.workspace_premium_outlined,
                   onTap: onCreatorStudio,

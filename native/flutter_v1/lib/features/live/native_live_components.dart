@@ -747,7 +747,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
             Row(
               children: [
                 const Text(
-                  'Fame Coin balance',
+                  'Fame Stone balance',
                   style: TextStyle(color: Color(0xFFAFA4B6), fontSize: 12),
                 ),
                 const Spacer(),

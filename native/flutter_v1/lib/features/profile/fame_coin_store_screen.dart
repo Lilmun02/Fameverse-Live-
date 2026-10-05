@@ -142,7 +142,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
           _missingProductIds = coinMap.keys.toSet();
           _loading = false;
           _notice =
-              'Google Play Fame Coin purchases are not enabled in this beta build yet.';
+              'Google Play Fame Stone purchases are not enabled in this beta build yet.';
         });
         return;
       }
@@ -180,10 +180,10 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
         _missingProductIds = response.notFoundIDs.toSet();
         _loading = false;
         if (response.error != null) {
-          _notice = 'The App Store could not load every Fame Coin pack.';
+          _notice = 'The App Store could not load every Fame Stone pack.';
         } else if (products.isEmpty && coinMap.isNotEmpty) {
           _notice =
-              'Fame Coin packs are not available from App Store Connect yet.';
+              'Fame Stone packs are not available from App Store Connect yet.';
         }
       });
     } catch (_) {
@@ -225,7 +225,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
           offers.add(
             _StripeOffer(
               id: id,
-              label: label.isEmpty ? '$coins Fame Coins' : label,
+              label: label.isEmpty ? '$coins Fame Stones' : label,
               coins: coins,
               priceCents: priceCents,
               currency: currency,
@@ -338,7 +338,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
       setState(() {
         _awaitingStripeReturn = true;
         _notice =
-            'Stripe Checkout opened in your browser. Fame Coins are credited only after Stripe confirms payment with Fameverse.';
+            'Stripe Checkout opened in your browser. Fame Stones are credited only after Stripe confirms payment with Fameverse.';
       });
     } catch (_) {
       if (!mounted) return;
@@ -346,7 +346,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
         _stripeBusyPackId = null;
         _awaitingStripeReturn = false;
         _notice =
-            'Stripe Checkout could not start. No Fame Coins were charged.';
+            'Stripe Checkout could not start. No Fame Stones were charged.';
       });
     }
   }
@@ -366,8 +366,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
         _balance = balance;
         _stripeBusyPackId = null;
         _notice = balance > previousBalance
-            ? '${balance - previousBalance} Fame Coins added through Stripe. Balance: $balance.'
-            : 'Stripe payment confirmation is still processing. Pull down to refresh your Fame Coin balance.';
+            ? '${balance - previousBalance} Fame Stones added through Stripe. Balance: $balance.'
+            : 'Stripe payment confirmation is still processing. Pull down to refresh your Fame Stone balance.';
       });
     } catch (_) {
       if (!mounted) return;
@@ -412,7 +412,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
             setState(() {
               _busyProductId = null;
               _verifying = false;
-              _notice = 'Purchase canceled. No Fame Coins were charged.';
+              _notice = 'Purchase canceled. No Fame Stones were charged.';
             });
           }
           break;
@@ -477,8 +477,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
         _busyProductId = null;
         _verifying = false;
         _notice = result['already_completed'] == true
-            ? 'This Apple purchase was already credited. Balance: $balance Fame Coins.'
-            : '$credited Fame Coins added. Balance: $balance.';
+            ? 'This Apple purchase was already credited. Balance: $balance Fame Stones.'
+            : '$credited Fame Stones added. Balance: $balance.';
       });
     } catch (_) {
       if (!mounted) return;
@@ -503,7 +503,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
       backgroundColor: const Color(0xFF0C0810),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C0810),
-        title: const Text('Buy Fame Coins'),
+        title: const Text('Buy Fame Stones'),
         actions: [
           IconButton(
             onPressed: _loading || _verifying || _stripeLoading
@@ -553,7 +553,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Your Fame Coins',
+                            'Your Fame Stones',
                             style: TextStyle(
                               color: Color(0xFFBDAFC2),
                               fontSize: 11,
@@ -680,7 +680,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                             ),
                           ),
                           const Text(
-                            'Fame Coins',
+                            'Fame Stones',
                             style: TextStyle(
                               color: Color(0xFFA99DAC),
                               fontSize: 11,
@@ -818,9 +818,9 @@ class _StoreUnavailableCard extends StatelessWidget {
             child: Text(
               isIos
                   ? missingCount > 0
-                        ? 'The Fame Coin store is wired, but these packs are not available from App Store Connect yet. No charge can occur until Apple returns an active product.'
+                        ? 'The Fame Stone store is wired, but these packs are not available from App Store Connect yet. No charge can occur until Apple returns an active product.'
                         : 'The App Store is unavailable right now. Pull down to retry.'
-                  : 'Google Play Fame Coin purchases are not enabled in this beta build yet.',
+                  : 'Google Play Fame Stone purchases are not enabled in this beta build yet.',
               style: const TextStyle(
                 color: Color(0xFFB8ACBC),
                 fontSize: 12,
@@ -925,7 +925,7 @@ class _StripeOfferCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${offer.coins} Fame Coins · ${offer.priceLabel}',
+                  '${offer.coins} Fame Stones · ${offer.priceLabel}',
                   style: const TextStyle(
                     color: Color(0xFFA99DAC),
                     fontSize: 11,
@@ -955,7 +955,7 @@ class _PurchaseSafetyNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Text(
-      'Fame Coins are consumable digital currency for gifting inside Fameverse. Apple purchases are credited only after server-side Apple verification. Stripe purchases are credited only after a signed Stripe webhook confirms payment. Creator earnings and owner reward reserves are separate balances.',
+      'Fame Stones are consumable digital currency for gifting inside Fameverse. Apple purchases are credited only after server-side Apple verification. Stripe purchases are credited only after a signed Stripe webhook confirms payment. Creator earnings and owner reward reserves are separate balances.',
       textAlign: TextAlign.center,
       style: TextStyle(color: Color(0xFF817785), fontSize: 10, height: 1.45),
     );

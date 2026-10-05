@@ -63,7 +63,7 @@ class _Build23OwnerControlCenterScreenState
         _client.rpc('get_owner_finance_control_summary'),
         _client.rpc('get_my_coin_funding_breakdown'),
         _client.rpc(
-          'get_creator_payout_moderation_queue',
+          'get_creator_payout_moderation_queue_v2',
           params: const {'p_limit': 50},
         ),
         _client.rpc(
@@ -323,8 +323,11 @@ class _Build23OwnerControlCenterScreenState
           ? 'PayPal sandbox authentication failed.'
           : text.contains('paypal_payout_failed')
           ? 'PayPal rejected the sandbox payout.'
+          : text.contains('paypal_submission_unknown') ||
+                text.contains('paypal_batch_id_missing')
+          ? 'PayPal submission is still unresolved. The creator funds remain reserved; use Recover PayPal submission again after refresh.'
           : text.contains('payout_not_processable')
-          ? 'This payout is not approved for processing.'
+          ? 'This payout is not approved for processing or recovery.'
           : 'Provider submission failed.';
       _message(code);
       await _refresh();
@@ -406,20 +409,20 @@ class _Build23OwnerControlCenterScreenState
     final text = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create Cash-Backed Fame Coins'),
+        title: const Text('Create Cash-Backed Fame Stones'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Cash-Backed Fame Coins use real money from the Reward Reserve and can create real creator earnings. Promo Fame Coins are separate and do not use this reserve.',
+              'Cash-Backed Fame Stones use real money from the Reward Reserve and can create real creator earnings. Promo Fame Stones are separate and do not use this reserve.',
             ),
             const SizedBox(height: 14),
             TextField(
               controller: coinsController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Cash-Backed Fame Coins',
+                labelText: 'Cash-Backed Fame Stones',
                 prefixIcon: Icon(Icons.toll_rounded),
               ),
             ),
@@ -453,14 +456,14 @@ class _Build23OwnerControlCenterScreenState
           'p_note': 'Owner created cash-backed reward coins',
         },
       );
-      _message('Cash-Backed Fame Coins created.');
+      _message('Cash-Backed Fame Stones created.');
       await _refresh();
     } catch (error) {
       final text = error.toString().toLowerCase();
       _message(
         text.contains('insufficient funded cash reward reserve')
             ? 'Not enough Reward Reserve funds for that many cash-backed coins.'
-            : 'Could not create Cash-Backed Fame Coins.',
+            : 'Could not create Cash-Backed Fame Stones.',
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -474,7 +477,7 @@ class _Build23OwnerControlCenterScreenState
       backgroundColor: const Color(0xFF0C0810),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C0810),
-        title: const Text('Owner Control Center'),
+        title: const Text('Owner Studio'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _refresh,
@@ -494,9 +497,9 @@ class _Build23OwnerControlCenterScreenState
                 _Action(
                   key: const Key('owner-open-personal-creator-studio'),
                   icon: Icons.workspace_premium_rounded,
-                  title: 'Creator earnings & payout',
+                  title: 'My Creator Account',
                   body:
-                      'Open your personal creator earnings, verification, PayPal payout method and payout history.',
+                      'Your creator earnings, verification progress, PayPal payout method and payout history live here. Owner moderation stays in Owner Studio.',
                   label: 'Open',
                   onTap: widget.onOpenCreatorStudio,
                 ),
@@ -514,7 +517,7 @@ class _Build23OwnerControlCenterScreenState
                   body: _error!,
                 )
               else ...[
-                const _Section('VERIFICATION REVIEW'),
+                const _Section('CREATOR VERIFICATION'),
                 const SizedBox(height: 10),
                 if (_verificationQueue.isEmpty)
                   const _Notice(
@@ -540,7 +543,7 @@ class _Build23OwnerControlCenterScreenState
                     ),
                   ),
                 const SizedBox(height: 20),
-                const _Section('PAYOUT REVIEW'),
+                const _Section('CREATOR PAYOUTS'),
                 const SizedBox(height: 10),
                 if (_payouts.isEmpty)
                   const _Notice(
@@ -565,7 +568,7 @@ class _Build23OwnerControlCenterScreenState
                     ),
                   ),
                 const SizedBox(height: 20),
-                const _Section('BUSINESS MONEY'),
+                const _Section('PLATFORM FINANCES'),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -627,13 +630,13 @@ class _Build23OwnerControlCenterScreenState
                   ),
                 ),
                 const SizedBox(height: 20),
-                const _Section('FAME COIN BALANCES'),
+                const _Section('FAME STONE BALANCES'),
                 const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: _Metric(
-                        label: 'Promo Fame Coins · no cash value',
+                        label: 'Promo Fame Stones · no cash value',
                         value: '${_int(_wallet['promo_coins'])}',
                         icon: Icons.science_outlined,
                       ),
@@ -641,7 +644,7 @@ class _Build23OwnerControlCenterScreenState
                     const SizedBox(width: 10),
                     Expanded(
                       child: _Metric(
-                        label: 'Cash-Backed Fame Coins · real reserve',
+                        label: 'Cash-Backed Fame Stones · real reserve',
                         value: '${_int(_wallet['cash_backed_coins'])}',
                         icon: Icons.attach_money_rounded,
                       ),
@@ -649,7 +652,7 @@ class _Build23OwnerControlCenterScreenState
                   ],
                 ),
                 const SizedBox(height: 20),
-                const _Section('BUSINESS CASH & REWARD FUNDING'),
+                const _Section('REWARD FUNDING & OWNER BANKING'),
                 const SizedBox(height: 10),
                 _Action(
                   key: const Key('owner-open-paypal-funding'),
@@ -674,9 +677,9 @@ class _Build23OwnerControlCenterScreenState
                 _Action(
                   key: const Key('owner-issue-cash-reward-coins'),
                   icon: Icons.toll_rounded,
-                  title: 'Create Cash-Backed Fame Coins',
+                  title: 'Create Cash-Backed Fame Stones',
                   body:
-                      'Create coins from the Reward Reserve only when you want those coins to be capable of creating real creator earnings. Promo Fame Coins stay separate.',
+                      'Create coins from the Reward Reserve only when you want those coins to be capable of creating real creator earnings. Promo Fame Stones stay separate.',
                   label: 'Create',
                   onTap: _busy ? null : _issueCashRewardCoins,
                 ),
@@ -805,6 +808,13 @@ class _PayoutCard extends StatelessWidget {
     final verification =
         payout['verification_status']?.toString() ?? 'unverified';
     final amount = _money((payout['amount_cents'] as num?)?.toInt() ?? 0);
+    final providerStatus = payout['provider_status']?.toString() ?? '';
+    final providerBatchId = payout['provider_batch_id']?.toString() ?? '';
+    final needsProviderRecovery =
+        status == 'processing' &&
+        providerBatchId.isEmpty &&
+        (providerStatus == 'SUBMISSION_UNKNOWN' ||
+            providerStatus == 'SUBMITTING');
     return Container(
       key: Key('owner-payout-${payout['payout_id']}'),
       padding: const EdgeInsets.all(16),
@@ -854,6 +864,10 @@ class _PayoutCard extends StatelessWidget {
             children: [
               Chip(label: Text(status.replaceAll('_', ' '))),
               Chip(label: Text('Verification: $verification')),
+              if (providerStatus.isNotEmpty)
+                Chip(
+                  label: Text('PayPal: ${providerStatus.replaceAll('_', ' ')}'),
+                ),
             ],
           ),
           if ((payout['moderation_note']?.toString() ?? '').isNotEmpty) ...[
@@ -890,6 +904,13 @@ class _PayoutCard extends StatelessWidget {
               onPressed: busy ? null : onProcess,
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text('Send with PayPal sandbox'),
+            )
+          else if (status == 'processing' && needsProviderRecovery)
+            FilledButton.icon(
+              key: const Key('owner-payout-recover-provider'),
+              onPressed: busy ? null : onProcess,
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Recover PayPal submission'),
             )
           else if (status == 'processing')
             FilledButton.icon(
@@ -937,7 +958,7 @@ class _Hero extends StatelessWidget {
           ),
           SizedBox(height: 7),
           Text(
-            'Promo Fame Coins are test-only and have no cash value. Reward Reserve is real business money set aside for rewards. Cash-Backed Fame Coins use that reserve and can create real creator earnings.',
+            'Promo Fame Stones are test-only and have no cash value. Reward Reserve is real business money set aside for rewards. Cash-Backed Fame Stones use that reserve and can create real creator earnings.',
             style: TextStyle(color: Color(0xFFC8BBCB), height: 1.4),
           ),
         ],

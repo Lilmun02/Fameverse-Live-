@@ -263,7 +263,7 @@ class _Build23CreatorStudioScreenState
       backgroundColor: const Color(0xFF0C0810),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C0810),
-        title: Text(widget.isOwner ? 'Owner Creator Studio' : 'Creator Studio'),
+        title: Text(widget.isOwner ? 'My Creator Account' : 'Creator Studio'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _refresh,
@@ -697,7 +697,7 @@ class _VerificationCard extends StatelessWidget {
           const SizedBox(height: 14),
           _VerificationProgressLine(
             key: const Key('creator-verification-coins-progress'),
-            label: 'Eligible Fame Coins received',
+            label: 'Eligible Fame Stones received',
             value: progress.eligibleReceivedCoins,
             requirement: progress.receivedCoinsRequirement,
           ),

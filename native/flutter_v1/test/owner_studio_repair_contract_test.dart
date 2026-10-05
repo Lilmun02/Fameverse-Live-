@@ -42,7 +42,10 @@ void main() {
       expect(owner, contains('creator funds remain reserved'));
       expect(migration, contains('provider_status text'));
       expect(migration, contains('provider_batch_id text'));
-      expect(migration, contains("'pending_review', 'approved', 'processing', 'held'"));
+      expect(
+        migration,
+        contains("'pending_review', 'approved', 'processing', 'held'"),
+      );
     });
 
     test('buyer and creator-facing currency copy is Fame Stones', () {
