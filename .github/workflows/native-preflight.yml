@@ -58,6 +58,10 @@ jobs:
         working-directory: .
         run: node scripts/apply-build23-startup-identity-patches.mjs
 
+      - name: Apply Owner Studio and payout recovery repair
+        working-directory: .
+        run: node scripts/apply-owner-studio-repair.mjs
+
       - name: Enforce Fameverse native foundation law
         run: dart run tool/check_native_contract.dart
 
