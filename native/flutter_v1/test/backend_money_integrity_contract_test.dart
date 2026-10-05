@@ -48,26 +48,31 @@ void main() {
       expect(retry, contains('v_request.provider_batch_id is null'));
     });
 
-    test('PayPal duplicate batch recovery scans nested provider links safely', () {
-      final process = File(
-        '../../supabase/functions/process-creator-payout/index.ts',
-      ).readAsStringSync();
+    test(
+      'PayPal duplicate batch recovery scans nested provider links safely',
+      () {
+        final process = File(
+          '../../supabase/functions/process-creator-payout/index.ts',
+        ).readAsStringSync();
 
-      expect(
-        process,
-        contains('Object.values(value as Record<string, unknown>)'),
-      );
-      expect(process, contains('providerErrorName === "DUPLICATE_BATCH_ID"'));
-      expect(process, contains('const duplicateBatchId = payoutBatchIdFromLinks'));
-      expect(
-        process,
-        contains('provider_status: "SUBMISSION_UNKNOWN"'),
-      );
-      expect(
-        process,
-        contains('Keep payout reserved and recover through the idempotent provider flow.'),
-      );
-    });
+        expect(
+          process,
+          contains('Object.values(value as Record<string, unknown>)'),
+        );
+        expect(process, contains('providerErrorName === "DUPLICATE_BATCH_ID"'));
+        expect(
+          process,
+          contains('const duplicateBatchId = payoutBatchIdFromLinks'),
+        );
+        expect(process, contains('provider_status: "SUBMISSION_UNKNOWN"'));
+        expect(
+          process,
+          contains(
+            'Keep payout reserved and recover through the idempotent provider flow.',
+          ),
+        );
+      },
+    );
 
     test('unknown PayPal submission cannot be manually released or paid', () {
       final guard = File(
