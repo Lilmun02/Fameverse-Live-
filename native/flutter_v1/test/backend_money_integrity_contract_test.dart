@@ -48,6 +48,23 @@ void main() {
       expect(retry, contains('v_request.provider_batch_id is null'));
     });
 
+    test('unknown PayPal submission cannot be manually released or paid', () {
+      final guard = File(
+        '../../supabase/migrations/20261005190000_protect_unknown_paypal_submission.sql',
+      ).readAsStringSync();
+
+      expect(guard, contains("p_status = 'failed'"));
+      expect(guard, contains("'SUBMISSION_UNKNOWN'"));
+      expect(guard, contains("'SUBMITTING'"));
+      expect(guard, contains('PayPal provider failure confirmation required'));
+      expect(guard, contains("p_status = 'paid'"));
+      expect(guard, contains("v_provider_status <> 'SUCCESS'"));
+      expect(guard, contains('PayPal SUCCESS confirmation required'));
+      expect(guard, contains("set status = 'processing'"));
+      expect(guard, contains("provider_status = 'SUBMISSION_UNKNOWN'"));
+      expect(guard, contains("where status = 'failed'"));
+    });
+
     test(
       'verification gates require 100 followers and 500k cash-backed coins',
       () {
