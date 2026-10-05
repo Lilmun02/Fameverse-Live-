@@ -75,7 +75,7 @@ class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
 
       final durationMs = next.value.duration.inMilliseconds;
       if (durationMs > 0) {
-        final previewMs = (durationMs * .22).round().clamp(250, 2200);
+        final previewMs = (durationMs * .22).round().clamp(250, 2200).toInt();
         await next.seekTo(Duration(milliseconds: previewMs));
       }
       await next.pause();
