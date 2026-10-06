@@ -116,9 +116,12 @@ class _Build23CreatorStudioScreenState
         );
       }
       _loading = false;
-      _error = failures.isEmpty
-          ? null
-          : 'Some Creator Studio data could not refresh: ${failures.join(', ')}.';
+      if (failures.isEmpty) {
+        _error = null;
+      } else {
+        _error = 'Some Creator Studio data could not refresh: '
+            '${failures.join(', ')}.';
+      }
     });
   }
 
@@ -686,6 +689,26 @@ class _VerificationCard extends StatelessWidget {
       'suspended' => 'Suspended',
       _ => 'Not submitted',
     };
+    var statusMessage =
+        'Complete both requirements below to unlock the verification request.';
+    if (verified) {
+      statusMessage = 'Your creator account is verified.';
+    } else if (pending) {
+      statusMessage =
+          'Verification is processing in Fameverse review. '
+          'You do not need to submit it again.';
+    } else if (needsInfo) {
+      statusMessage =
+          'Fameverse needs more information before verification can be approved.';
+    } else if (rejected) {
+      statusMessage =
+          'The last verification request was not approved. '
+          'You can submit again after the requirements are met.';
+    }
+    final statusTimeText = statusTime == null
+        ? ''
+        : '${pending ? 'Submitted' : 'Updated'} '
+              '${_creatorStatusTime(statusTime)}';
 
     return Container(
       key: const Key('creator-verification-center'),
@@ -722,15 +745,7 @@ class _VerificationCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            verified
-                ? 'Your creator account is verified.'
-                : pending
-                ? 'Verification is processing in Fameverse review. You do not need to submit it again.'
-                : needsInfo
-                ? 'Fameverse needs more information before verification can be approved.'
-                : rejected
-                ? 'The last verification request was not approved. You can submit again after the requirements are met.'
-                : 'Complete both requirements below to unlock the verification request.',
+            statusMessage,
             style: const TextStyle(
               color: Color(0xFFB8ACBC),
               fontSize: 12,
@@ -745,7 +760,7 @@ class _VerificationCard extends StatelessWidget {
           if (statusTime != null) ...[
             const SizedBox(height: 6),
             Text(
-              '${pending ? 'Submitted' : 'Updated'} ${_creatorStatusTime(statusTime)}',
+              statusTimeText,
               key: const Key('creator-verification-status-time'),
               style: const TextStyle(
                 color: Color(0xFF96899C),
@@ -988,15 +1003,22 @@ class _PayoutTile extends StatelessWidget {
     final missingProviderBatch =
         processing && (request.providerBatchId ?? '').trim().isEmpty;
     final statusText = request.status.replaceAll('_', ' ');
-    final providerText = !processing
+    var providerText = '';
+    if (processing &&
+        missingProviderBatch &&
+        (providerStatus == 'SUBMISSION_UNKNOWN' ||
+            providerStatus == 'SUBMITTING')) {
+      providerText =
+          'PayPal submission is being recovered. Funds remain reserved.';
+    } else if (processing && providerStatus.isNotEmpty) {
+      providerText = 'PayPal: ${providerStatus.replaceAll('_', ' ')}';
+    } else if (processing) {
+      providerText = 'PayPal processing is waiting for a provider update.';
+    }
+    final providerStatusTime = request.providerStatusUpdatedAt;
+    final providerStatusTimeText = providerStatusTime == null
         ? ''
-        : missingProviderBatch &&
-              (providerStatus == 'SUBMISSION_UNKNOWN' ||
-                  providerStatus == 'SUBMITTING')
-        ? 'PayPal submission is being recovered. Funds remain reserved.'
-        : providerStatus.isNotEmpty
-        ? 'PayPal: ${providerStatus.replaceAll('_', ' ')}'
-        : 'PayPal processing is waiting for a provider update.';
+        : 'Provider update ${_creatorStatusTime(providerStatusTime)}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -1043,7 +1065,7 @@ class _PayoutTile extends StatelessWidget {
                     if (request.providerStatusUpdatedAt != null) ...[
                       const SizedBox(height: 3),
                       Text(
-                        'Provider update ${_creatorStatusTime(request.providerStatusUpdatedAt)}',
+                        providerStatusTimeText,
                         key: const Key('creator-payout-provider-status-time'),
                         style: const TextStyle(
                           color: Color(0xFF96899C),
