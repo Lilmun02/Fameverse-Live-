@@ -164,6 +164,7 @@ Deno.serve(async (req: Request) => {
       amount_cents: priceCents,
       currency: pack.currency,
       coins: pack.coins,
+      environment,
       status: "created",
     })
     .select("id")
