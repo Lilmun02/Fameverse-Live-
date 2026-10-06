@@ -6,7 +6,7 @@ void main() {
   String file(String path) => File(path).readAsStringSync();
 
   test(
-    'public Fame Stone store is wired to Apple IAP and server verification',
+    'public Fame Coin store is wired to Apple IAP and server verification',
     () {
       final pubspec = file('pubspec.yaml');
       final store = file('lib/features/profile/fame_coin_store_screen.dart');
@@ -26,7 +26,7 @@ void main() {
       expect(profile, contains('FameCoinStoreScreen('));
       expect(tray, contains("Key('gift-tray-buy-coins')"));
       expect(viewer, contains('onBuyCoins: ()'));
-      expect(viewer, contains('Your Fame Stone balance is empty.'));
+      expect(viewer, contains('Your Fame Coin balance is empty.'));
     },
   );
 
