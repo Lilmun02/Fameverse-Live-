@@ -20,7 +20,10 @@ import '../profile/native_profile_build23.dart';
 import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
+import 'build23_shell_account_service.dart';
 import 'fameverse_home_build23.dart';
+
+part 'fameverse_shell_build23_view.part.dart';
 
 class FameverseBuild23Shell extends StatefulWidget {
   const FameverseBuild23Shell({
@@ -49,6 +52,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   SupabaseFameverseBetaBackend? _betaBackend;
   SupabaseFameverseStoryBackend? _storyBackend;
   SupabaseFameverseCreatorBackend? _creatorBackend;
+  late final FvBuild23ShellAccountService _accountService;
 
   int _tab = 0;
   bool _loading = true;
@@ -68,6 +72,10 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   @override
   void initState() {
     super.initState();
+    _accountService = FvBuild23ShellAccountService(
+      backend: widget.backend,
+      identityId: widget.identity.id,
+    );
     unawaited(_refreshAll());
     unawaited(_refreshBeta());
     unawaited(_refreshStories());
@@ -94,51 +102,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   Future<({FvProfile profile, String? role})?>
-  _loadAuthoritativeAccount() async {
-    final expectedId = widget.identity.id;
-    try {
-      final raw = await Supabase.instance.client.rpc(
-        'get_my_fameverse_identity',
-      );
-      Map<String, dynamic>? row;
-      if (raw is List && raw.isNotEmpty && raw.first is Map) {
-        row = Map<String, dynamic>.from(raw.first as Map);
-      } else if (raw is Map) {
-        row = Map<String, dynamic>.from(raw);
-      }
-      if (row == null) return null;
-
-      final userId = (row['user_id'] as String?)?.trim() ?? '';
-      if (userId != expectedId) {
-        throw StateError('current-account-mismatch');
-      }
-      final username = (row['username'] as String?)?.trim();
-      final displayName = (row['display_name'] as String?)?.trim();
-      final role = (row['role'] as String?)?.trim().toLowerCase();
-      final profile = FvProfile(
-        id: userId,
-        displayName: displayName == null || displayName.isEmpty
-            ? (username?.isNotEmpty == true ? username! : 'Fameverse User')
-            : displayName,
-        username: username == null || username.isEmpty ? null : username,
-        bio: (row['bio'] as String?) ?? '',
-        avatarUrl: row['avatar_url'] as String?,
-        createdAt: null,
-      );
-      return (profile: profile, role: role);
-    } catch (_) {
-      final liveIdentity = widget.backend.currentIdentity;
-      if (liveIdentity == null || liveIdentity.id != expectedId) return null;
-      final results = await Future.wait<dynamic>([
-        widget.backend.loadProfile(expectedId),
-        widget.backend.loadAccountRole(expectedId),
-      ]);
-      final profile = results[0] as FvProfile?;
-      if (profile == null) return null;
-      final role = (results[1] as String?)?.trim().toLowerCase();
-      return (profile: profile, role: role);
-    }
-  }
+  _loadAuthoritativeAccount() => _accountService.load();
 
   Future<void> _refreshRole() async {
     try {
@@ -498,89 +462,34 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
           createdAt: null,
         );
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _tab,
-        children: [
-          FameverseHomeBuild23Screen(
-            profile: profile,
-            network: _network,
-            creators: _creators,
-            rooms: _rooms,
-            stories: _stories,
-            loading: _loading,
-            error: _error,
-            onRefresh: _refreshAll,
-            onOpenProfile: () => _setTab(3),
-            onOpenDiscover: () => _setTab(1),
-            onOpenStories: () => unawaited(_openStories(profile)),
-            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
-            onToggleFollow: _toggleFollow,
-            onCreatorSelected: _openPublicProfile,
-            followBusy: _followBusy,
-          ),
-          FameverseDiscoverScreen(
-            profile: profile,
-            network: _network,
-            creators: _creators,
-            rooms: _rooms,
-            loading: _loading,
-            onRefresh: _refreshAll,
-            onToggleFollow: _toggleFollow,
-            onCreatorSelected: _openPublicProfile,
-            followBusy: _followBusy,
-            onOpenProfile: () => _setTab(3),
-            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
-          ),
-          NativeCameraScreen(
-            liveBackend: widget.liveBackend,
-            identity: widget.identity,
-            profile: profile,
-            onLiveEnded: _refreshAll,
-          ),
-          NativeProfileBuild23Screen(
-            profile: profile,
-            identity: widget.identity,
-            network: _network,
-            isOwner: _isOwner,
-            betaStatus: _betaStatus,
-            avatarBusy: _avatarBusy,
-            onChangePhoto: _pickProfilePhoto,
-            onEdit: () => _openEdit(profile),
-            onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
-            onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
-            onPolicies: _openPolicies,
-            onSignOut: widget.backend.signOut,
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        key: const Key('fameverse-bottom-nav'),
-        selectedIndex: _tab,
-        onDestinationSelected: _setTab,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore_rounded),
-            label: 'Discover',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.videocam_outlined),
-            selectedIcon: Icon(Icons.videocam_rounded),
-            label: 'Live',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
-      ),
+    return _Build23ShellView(
+      tab: _tab,
+      profile: profile,
+      identity: widget.identity,
+      backend: widget.backend,
+      liveBackend: widget.liveBackend,
+      network: _network,
+      creators: _creators,
+      rooms: _rooms,
+      stories: _stories,
+      loading: _loading,
+      error: _error,
+      isOwner: _isOwner,
+      betaStatus: _betaStatus,
+      avatarBusy: _avatarBusy,
+      followBusy: _followBusy,
+      onRefresh: _refreshAll,
+      onSetTab: _setTab,
+      onOpenStories: () => unawaited(_openStories(profile)),
+      onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
+      onToggleFollow: _toggleFollow,
+      onCreatorSelected: _openPublicProfile,
+      onChangePhoto: _pickProfilePhoto,
+      onEdit: () => _openEdit(profile),
+      onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
+      onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
+      onPolicies: _openPolicies,
+      onSignOut: widget.backend.signOut,
     );
   }
 }
