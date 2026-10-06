@@ -198,4 +198,95 @@ Future<int?> askDollars({
     }
   }
 
+
+  Future<void> grantTesterQaPayoutBalance() async {
+    if (_busy) return;
+    final usernameController = TextEditingController();
+    final amountController = TextEditingController(text: '25.00');
+    final result = await showDialog<(String, int)>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Grant QA Payout Balance'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'This creates sandbox-only test earnings. It never adds real creator earnings or withdrawable live cash.',
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              key: const Key('owner-qa-payout-username'),
+              controller: usernameController,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Tester username',
+                prefixText: '@',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              key: const Key('owner-qa-payout-dollars'),
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'QA payout balance',
+                prefixText: r'$ ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final username = usernameController.text.trim();
+              final dollars = double.tryParse(amountController.text.trim());
+              final cents = dollars == null ? 0 : (dollars * 100).round();
+              Navigator.of(context).pop((username, cents));
+            },
+            child: const Text('Grant QA balance'),
+          ),
+        ],
+      ),
+    );
+    usernameController.dispose();
+    amountController.dispose();
+    if (result == null) return;
+
+    final username = result.$1.replaceFirst(RegExp(r'^@'), '').trim();
+    final cents = result.$2;
+    if (username.length < 3 || cents < 100 || cents > 100000) {
+      _message('Enter a valid tester username and QA amount.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final raw = await _client.rpc(
+        'owner_grant_creator_qa_earnings',
+        params: {'p_username': username, 'p_amount_cents': cents},
+      );
+      final row = _firstRow(raw);
+      final available = _int(row['qa_available_cents']);
+      _message(
+        '@$username now has ${_money(available)} of sandbox QA payout balance.',
+      );
+      await _refresh();
+    } catch (error) {
+      final value = error.toString().toLowerCase();
+      _message(
+        value.contains('tester profile not found')
+            ? 'Tester username was not found.'
+            : 'Could not grant QA payout balance.',
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
 }
