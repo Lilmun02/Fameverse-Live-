@@ -267,7 +267,11 @@ Future<void> _loadFollowState() async {
     }
   }
 
-  Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
+  Future<bool> _sendGift(
+    FvGiftDefinition gift,
+    int quantity,
+    String fundingMode,
+  ) async {
     if (_giftSending) return false;
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_walletReady) {
@@ -297,6 +301,7 @@ Future<void> _loadFollowState() async {
         roomId: widget.room.id,
         giftId: gift.id,
         quantity: quantity,
+        fundingMode: fundingMode,
       );
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
       final message = FvLiveChatMessage(
@@ -343,7 +348,12 @@ Future<void> _loadFollowState() async {
       return true;
     } catch (error) {
       final text = error.toString().toLowerCase();
-      if (text.contains('insufficient beta coin balance')) {
+      if (text.contains('insufficient real fame coins')) {
+        _showMessage('Your Real Coin balance is too low for that gift.');
+      } else if (text.contains('insufficient test fame coins') ||
+          text.contains('insufficient promotional')) {
+        _showMessage('Your Test Coin balance is too low for that gift.');
+      } else if (text.contains('insufficient beta coin balance')) {
         _showMessage('Your Fame Coin balance is too low for that gift.');
       } else if (text.contains('beta wallet unavailable')) {
         _showMessage('Your Fame Coin wallet is unavailable right now.');
