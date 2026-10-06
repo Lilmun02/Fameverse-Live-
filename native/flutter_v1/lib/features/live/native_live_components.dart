@@ -86,6 +86,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   String? _loadedUrl;
   Timer? _finishTimer;
   bool _reportedFinished = false;
+  bool _videoLoading = false;
+  bool _videoFailed = false;
+  int _videoLoadEpoch = 0;
 
   @override
   void initState() {
@@ -123,57 +126,97 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   }
 
   Future<void> _syncVideo() async {
+    final epoch = ++_videoLoadEpoch;
     final gift = widget.playback.gift;
-    final url = gift.videoUrl;
-    if (url == null || url.isEmpty) {
+    final url = gift.videoUrl?.trim() ?? '';
+
+    if (!gift.cinematic || url.isEmpty) {
       final previous = _controller;
       _controller = null;
       _loadedUrl = null;
+      _videoLoading = false;
+      _videoFailed = gift.cinematic;
       if (previous != null) await previous.dispose();
       _scheduleFinish(_staticDuration(gift));
       if (mounted) setState(() {});
       return;
     }
 
-    if (_loadedUrl == url && _controller != null) {
+    if (_loadedUrl == url &&
+        _controller != null &&
+        _controller!.value.isInitialized) {
+      _videoLoading = false;
+      _videoFailed = false;
       await _controller!.seekTo(Duration.zero);
       await _controller!.setVolume(1);
       await _controller!.play();
       final rawMs = _controller!.value.duration.inMilliseconds + 350;
       final safeMs = rawMs.clamp(1500, 15000).toInt();
       _scheduleFinish(Duration(milliseconds: safeMs));
+      if (mounted) setState(() {});
       return;
     }
 
-    final next = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-    );
-    try {
-      await next.initialize();
-      await next.setLooping(false);
-      await next.setVolume(1);
-      await next.play();
-      final previous = _controller;
-      _controller = next;
-      _loadedUrl = url;
-      if (previous != null) await previous.dispose();
-      final rawMs = next.value.duration.inMilliseconds + 350;
-      final safeMs = rawMs.clamp(1500, 15000).toInt();
-      _scheduleFinish(Duration(milliseconds: safeMs));
-      if (mounted) setState(() {});
-    } catch (_) {
-      await next.dispose();
-      if (!mounted) return;
-      _controller = null;
-      _loadedUrl = null;
-      _scheduleFinish(const Duration(milliseconds: 3200));
-      setState(() {});
+    _videoLoading = true;
+    _videoFailed = false;
+    if (mounted) setState(() {});
+
+    final previous = _controller;
+    _controller = null;
+    _loadedUrl = null;
+    if (previous != null) await previous.dispose();
+
+    Object? lastError;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final next = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+      try {
+        await next.initialize().timeout(const Duration(seconds: 10));
+        if (!mounted || epoch != _videoLoadEpoch) {
+          await next.dispose();
+          return;
+        }
+        await next.setLooping(false);
+        await next.setVolume(1);
+        await next.seekTo(Duration.zero);
+        await next.play();
+        _controller = next;
+        _loadedUrl = url;
+        _videoLoading = false;
+        _videoFailed = false;
+        final rawMs = next.value.duration.inMilliseconds + 350;
+        final safeMs = rawMs.clamp(1500, 15000).toInt();
+        _scheduleFinish(Duration(milliseconds: safeMs));
+        setState(() {});
+        return;
+      } catch (error) {
+        lastError = error;
+        await next.dispose();
+        if (!mounted || epoch != _videoLoadEpoch) return;
+        if (attempt == 0) {
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+        }
+      }
     }
+
+    if (!mounted || epoch != _videoLoadEpoch) return;
+    _videoLoading = false;
+    _videoFailed = true;
+    _controller = null;
+    _loadedUrl = null;
+    _scheduleFinish(const Duration(milliseconds: 4500));
+    setState(() {});
+    assert(() {
+      debugPrint('Premium gift video failed for ${gift.id}: $lastError');
+      return true;
+    }());
   }
 
   @override
   void dispose() {
+    _videoLoadEpoch++;
     _finishTimer?.cancel();
     final controller = _controller;
     _controller = null;
@@ -349,7 +392,64 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       );
     }
 
-    return _largeNativeGift(context, playback);
+    final size = MediaQuery.sizeOf(context);
+    return IgnorePointer(
+      child: Center(
+        child: Container(
+          key: Key(
+            _videoFailed
+                ? 'cinematic-gift-media-failed-${playback.gift.id}'
+                : 'cinematic-gift-media-loading-${playback.gift.id}',
+          ),
+          width: size.width * .90,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          decoration: BoxDecoration(
+            color: const Color(0xE617101F),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0x665F37A1)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_videoLoading)
+                const SizedBox.square(
+                  dimension: 30,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                )
+              else
+                const Icon(
+                  Icons.movie_filter_outlined,
+                  color: Color(0xFFB98CFF),
+                  size: 34,
+                ),
+              const SizedBox(height: 12),
+              Text(
+                _videoFailed
+                    ? '${playback.gift.label} media could not load'
+                    : 'Loading ${playback.gift.label}…',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _videoFailed
+                    ? 'The premium gift was recorded, but Fameverse will not replace its animation with an emoji.'
+                    : 'Preparing the original premium gift animation.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFB9ACBE),
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -58,34 +58,52 @@ class _Build23OwnerControlCenterScreenState
         _error = null;
       });
     }
+    dynamic summaryResult;
+    dynamic walletResult;
+    dynamic payoutResult;
+    dynamic verificationResult;
+    final failures = <String>[];
+
     try {
-      final results = await Future.wait<dynamic>([
-        _client.rpc('get_owner_finance_control_summary'),
-        _client.rpc('get_my_coin_funding_breakdown'),
-        _client.rpc(
-          'get_creator_payout_moderation_queue_v2',
-          params: const {'p_limit': 50},
-        ),
-        _client.rpc(
-          'get_creator_verification_moderation_queue',
-          params: const {'p_limit': 50},
-        ),
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _summary = _firstRow(results[0]);
-        _wallet = _firstRow(results[1]);
-        _payouts = _rows(results[2]);
-        _verificationQueue = _rows(results[3]);
-        _loading = false;
-      });
+      summaryResult = await _client.rpc('get_owner_finance_control_summary');
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'Owner finance controls could not refresh right now.';
-      });
+      failures.add('finance summary');
     }
+    try {
+      walletResult = await _client.rpc('get_my_coin_funding_breakdown');
+    } catch (_) {
+      failures.add('coin balances');
+    }
+    try {
+      payoutResult = await _client.rpc(
+        'get_creator_payout_moderation_queue_v2',
+        params: const {'p_limit': 50},
+      );
+    } catch (_) {
+      failures.add('payout review');
+    }
+    try {
+      verificationResult = await _client.rpc(
+        'get_creator_verification_moderation_queue',
+        params: const {'p_limit': 50},
+      );
+    } catch (_) {
+      failures.add('verification review');
+    }
+
+    if (!mounted) return;
+    setState(() {
+      if (summaryResult != null) _summary = _firstRow(summaryResult);
+      if (walletResult != null) _wallet = _firstRow(walletResult);
+      if (payoutResult != null) _payouts = _rows(payoutResult);
+      if (verificationResult != null) {
+        _verificationQueue = _rows(verificationResult);
+      }
+      _loading = false;
+      _error = failures.isEmpty
+          ? null
+          : 'Some owner data could not refresh: ${failures.join(', ')}.';
+    });
   }
 
   void _message(String value) {
@@ -753,6 +771,13 @@ class _VerificationReviewCard extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           Chip(label: Text(status.replaceAll('_', ' '))),
+          if ((request['public_note']?.toString() ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              request['public_note'].toString().trim(),
+              style: const TextStyle(color: Color(0xFFB8ACBC), fontSize: 11),
+            ),
+          ],
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,

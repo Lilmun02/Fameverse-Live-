@@ -67,6 +67,10 @@ class FvCreatorVerificationProgress {
     required this.eligibleReceivedCoins,
     required this.receivedCoinsRequirement,
     required this.eligible,
+    required this.requestedAt,
+    required this.reviewedAt,
+    required this.publicNote,
+    required this.updatedAt,
   });
 
   final String verificationStatus;
@@ -75,9 +79,14 @@ class FvCreatorVerificationProgress {
   final int eligibleReceivedCoins;
   final int receivedCoinsRequirement;
   final bool eligible;
+  final DateTime? requestedAt;
+  final DateTime? reviewedAt;
+  final String? publicNote;
+  final DateTime? updatedAt;
 
   bool get isVerified => verificationStatus == 'verified';
   bool get isPending => verificationStatus == 'pending';
+  bool get needsInfo => verificationStatus == 'needs_info';
 
   factory FvCreatorVerificationProgress.fromMap(Map<String, dynamic> row) {
     return FvCreatorVerificationProgress(
@@ -89,6 +98,10 @@ class FvCreatorVerificationProgress {
       eligibleReceivedCoins: _intValue(row['eligible_received_coins']),
       receivedCoinsRequirement: _intValue(row['received_coins_requirement']),
       eligible: row['eligible'] == true,
+      requestedAt: _dateValue(row['requested_at']),
+      reviewedAt: _dateValue(row['reviewed_at']),
+      publicNote: row['public_note']?.toString(),
+      updatedAt: _dateValue(row['updated_at']),
     );
   }
 
@@ -99,6 +112,10 @@ class FvCreatorVerificationProgress {
     eligibleReceivedCoins: 0,
     receivedCoinsRequirement: 500000,
     eligible: false,
+    requestedAt: null,
+    reviewedAt: null,
+    publicNote: null,
+    updatedAt: null,
   );
 }
 
@@ -112,6 +129,9 @@ class FvCreatorPayoutRequest {
     required this.paidAt,
     required this.moderationNote,
     required this.externalReference,
+    required this.providerStatus,
+    required this.providerBatchId,
+    required this.providerStatusUpdatedAt,
   });
 
   final String id;
@@ -122,6 +142,9 @@ class FvCreatorPayoutRequest {
   final DateTime? paidAt;
   final String? moderationNote;
   final String? externalReference;
+  final String? providerStatus;
+  final String? providerBatchId;
+  final DateTime? providerStatusUpdatedAt;
 
   factory FvCreatorPayoutRequest.fromMap(Map<String, dynamic> row) {
     return FvCreatorPayoutRequest(
@@ -131,8 +154,11 @@ class FvCreatorPayoutRequest {
       requestedAt: _dateValue(row['requested_at']),
       reviewedAt: _dateValue(row['reviewed_at']),
       paidAt: _dateValue(row['paid_at']),
-      moderationNote: row['moderation_note'] as String?,
-      externalReference: row['external_reference'] as String?,
+      moderationNote: row['moderation_note']?.toString(),
+      externalReference: row['external_reference']?.toString(),
+      providerStatus: row['provider_status']?.toString(),
+      providerBatchId: row['provider_batch_id']?.toString(),
+      providerStatusUpdatedAt: _dateValue(row['provider_status_updated_at']),
     );
   }
 }

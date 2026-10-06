@@ -296,8 +296,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     if (_walletBalance < total) {
       _showMessage(
         _walletBalance == 0
-            ? 'Your Fame Stone balance is empty.'
-            : 'Your Fame Stone balance is too low for that gift.',
+            ? 'Your Fame Coin balance is empty.'
+            : 'Your Fame Coin balance is too low for that gift.',
       );
       return false;
     }
@@ -346,9 +346,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (error) {
       final text = error.toString().toLowerCase();
       if (text.contains('insufficient beta coin balance')) {
-        _showMessage('Your Fame Stone balance is too low for that gift.');
+        _showMessage('Your Fame Coin balance is too low for that gift.');
       } else if (text.contains('beta wallet unavailable')) {
-        _showMessage('Your Fame Stone wallet is unavailable right now.');
+        _showMessage('Your Fame Coin wallet is unavailable right now.');
       } else if (text.contains('self gifting')) {
         _showMessage('You cannot gift your own live.');
       } else {

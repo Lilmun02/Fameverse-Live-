@@ -48,6 +48,34 @@ void main() {
       );
     });
 
+
+    test('payout processing and verification review state stay visible', () {
+      final creator = File(
+        'lib/features/profile/creator_studio_build23.dart',
+      ).readAsStringSync();
+      final backend = File(
+        'lib/data/fameverse_creator_backend.dart',
+      ).readAsStringSync();
+      final owner = File(
+        'lib/features/profile/owner_control_center_build23.dart',
+      ).readAsStringSync();
+      final migration = File(
+        '../../supabase/migrations/20261006023500_build32_payout_verification_observability.sql',
+      ).readAsStringSync();
+
+      expect(backend, contains('providerStatusUpdatedAt'));
+      expect(backend, contains("row['provider_status']"));
+      expect(backend, contains("row['public_note']"));
+      expect(creator, contains("Key('creator-payout-provider-status')"));
+      expect(creator, contains('Funds remain reserved'));
+      expect(creator, contains("Key('creator-verification-status')"));
+      expect(creator, contains('Verification is processing in Fameverse review'));
+      expect(owner, contains('Some owner data could not refresh'));
+      expect(owner, contains('verificationResult'));
+      expect(migration, contains('provider_status_updated_at timestamptz'));
+      expect(migration, contains('public_note text'));
+    });
+
     test('buyer and creator-facing currency copy is Fame Coins', () {
       final creator = File(
         'lib/features/profile/creator_studio_build23.dart',

@@ -639,7 +639,17 @@ class _VerificationCard extends StatelessWidget {
         : progress.verificationStatus;
     final verified = status == 'verified';
     final pending = status == 'pending';
+    final needsInfo = status == 'needs_info';
+    final rejected = status == 'rejected';
     final canRequest = progress.eligible && !busy && !pending && !verified;
+    final statusLabel = switch (status) {
+      'verified' => 'Verified',
+      'pending' => 'Under review',
+      'needs_info' => 'Needs information',
+      'rejected' => 'Not approved',
+      'suspended' => 'Suspended',
+      _ => 'Not submitted',
+    };
 
     return Container(
       key: const Key('creator-verification-center'),
@@ -679,7 +689,11 @@ class _VerificationCard extends StatelessWidget {
             verified
                 ? 'Your creator account is verified.'
                 : pending
-                ? 'Application submitted and waiting for review.'
+                ? 'Verification is processing in Fameverse review. You do not need to submit it again.'
+                : needsInfo
+                ? 'Fameverse needs more information before verification can be approved.'
+                : rejected
+                ? 'The last verification request was not approved. You can submit again after the requirements are met.'
                 : 'Complete both requirements below to unlock the verification request.',
             style: const TextStyle(
               color: Color(0xFFB8ACBC),
@@ -687,6 +701,23 @@ class _VerificationCard extends StatelessWidget {
               height: 1.4,
             ),
           ),
+          const SizedBox(height: 10),
+          Chip(
+            key: const Key('creator-verification-status'),
+            label: Text(statusLabel),
+          ),
+          if ((progress.publicNote ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              progress.publicNote!.trim(),
+              key: const Key('creator-verification-review-note'),
+              style: const TextStyle(
+                color: Color(0xFFC7B8CD),
+                fontSize: 11,
+                height: 1.35,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           _VerificationProgressLine(
             key: const Key('creator-verification-followers-progress'),
@@ -717,7 +748,13 @@ class _VerificationCard extends StatelessWidget {
               child: FilledButton(
                 key: const Key('creator-verification-request'),
                 onPressed: canRequest ? onRequest : null,
-                child: Text(pending ? 'Under review' : 'Request verification'),
+                child: Text(
+                  pending
+                      ? 'Under review'
+                      : needsInfo
+                      ? 'Resubmit verification'
+                      : 'Request verification',
+                ),
               ),
             ),
           ],
@@ -899,6 +936,21 @@ class _PayoutTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final providerStatus = (request.providerStatus ?? '').trim().toUpperCase();
+    final processing = request.status == 'processing';
+    final missingProviderBatch =
+        processing && (request.providerBatchId ?? '').trim().isEmpty;
+    final statusText = request.status.replaceAll('_', ' ');
+    final providerText = !processing
+        ? ''
+        : missingProviderBatch &&
+              (providerStatus == 'SUBMISSION_UNKNOWN' ||
+                  providerStatus == 'SUBMITTING')
+        ? 'PayPal submission is being recovered. Funds remain reserved.'
+        : providerStatus.isNotEmpty
+        ? 'PayPal: ${providerStatus.replaceAll('_', ' ')}'
+        : 'PayPal processing is waiting for a provider update.';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Container(
@@ -922,12 +974,37 @@ class _PayoutTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    request.status.replaceAll('_', ' '),
+                    statusText,
+                    key: const Key('creator-payout-status'),
                     style: const TextStyle(
                       color: Color(0xFFA99DAD),
                       fontSize: 11,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  if (providerText.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      providerText,
+                      key: const Key('creator-payout-provider-status'),
+                      style: const TextStyle(
+                        color: Color(0xFFC7B8CD),
+                        fontSize: 10,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                  if ((request.moderationNote ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      request.moderationNote!.trim(),
+                      style: const TextStyle(
+                        color: Color(0xFF96899C),
+                        fontSize: 10,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
