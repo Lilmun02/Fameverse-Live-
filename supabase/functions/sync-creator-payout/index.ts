@@ -65,11 +65,34 @@ Deno.serve(async (req: Request) => {
 
   const { data: payout, error: payoutError } = await admin
     .from("creator_payout_requests")
-    .select("id, status, provider_batch_id, provider_status")
+    .select(
+      "id, status, provider_batch_id, provider_status, payout_environment, is_qa",
+    )
     .eq("id", payoutId)
     .maybeSingle();
   if (payoutError) return json({ error: "payout_lookup_failed" }, 500);
   if (!payout) return json({ error: "payout_not_found" }, 404);
+
+  const requestEnvironment = String(
+    payout.payout_environment ?? "live",
+  ).toLowerCase();
+  if (!["sandbox", "live"].includes(requestEnvironment)) {
+    return json({ error: "invalid_payout_environment" }, 409);
+  }
+  if (expectedEnvironment && expectedEnvironment !== requestEnvironment) {
+    return json({
+      error: "payout_environment_mismatch",
+      expected_environment: expectedEnvironment,
+      request_environment: requestEnvironment,
+    }, 409);
+  }
+  if (paypalEnv !== requestEnvironment) {
+    return json({
+      error: "paypal_environment_mismatch",
+      request_environment: requestEnvironment,
+      configured_environment: paypalEnv,
+    }, 409);
+  }
 
   let providerBatchId = payout.provider_batch_id?.toString() ?? "";
 
@@ -179,6 +202,7 @@ Deno.serve(async (req: Request) => {
     provider_batch_status: batchStatus,
     provider_item_id: providerItemId,
     provider_batch_id: providerBatchId,
-    environment: paypalEnv,
+    environment: requestEnvironment,
+    is_qa: payout.is_qa === true,
   });
 });
