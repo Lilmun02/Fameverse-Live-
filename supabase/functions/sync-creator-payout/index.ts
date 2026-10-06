@@ -20,9 +20,9 @@ Deno.serve(async (req: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const paypalClientId = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
-  const paypalClientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET") ?? "";
-  const paypalEnv = (
+  const legacyPaypalClientId = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
+  const legacyPaypalClientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET") ?? "";
+  const legacyPaypalEnv = (
     Deno.env.get("PAYPAL_ENV") ?? Deno.env.get("PAYPAL_ENVIRONMENT") ?? "sandbox"
   ).toLowerCase();
 
@@ -86,12 +86,29 @@ Deno.serve(async (req: Request) => {
       request_environment: requestEnvironment,
     }, 409);
   }
-  if (paypalEnv !== requestEnvironment) {
+  const paypalClientId = requestEnvironment === "live"
+    ? (
+      Deno.env.get("PAYPAL_LIVE_CLIENT_ID") ??
+      (legacyPaypalEnv === "live" ? legacyPaypalClientId : "")
+    )
+    : (
+      Deno.env.get("PAYPAL_SANDBOX_CLIENT_ID") ??
+      (legacyPaypalEnv === "sandbox" ? legacyPaypalClientId : "")
+    );
+  const paypalClientSecret = requestEnvironment === "live"
+    ? (
+      Deno.env.get("PAYPAL_LIVE_CLIENT_SECRET") ??
+      (legacyPaypalEnv === "live" ? legacyPaypalClientSecret : "")
+    )
+    : (
+      Deno.env.get("PAYPAL_SANDBOX_CLIENT_SECRET") ??
+      (legacyPaypalEnv === "sandbox" ? legacyPaypalClientSecret : "")
+    );
+  if (!paypalClientId || !paypalClientSecret) {
     return json({
-      error: "paypal_environment_mismatch",
-      request_environment: requestEnvironment,
-      configured_environment: paypalEnv,
-    }, 409);
+      error: "paypal_credentials_missing",
+      environment: requestEnvironment,
+    }, 503);
   }
 
   let providerBatchId = payout.provider_batch_id?.toString() ?? "";
@@ -131,7 +148,7 @@ Deno.serve(async (req: Request) => {
     if (!providerBatchId) return json({ error: "provider_batch_missing_after_recovery" }, 502);
   }
 
-  const baseUrl = paypalEnv === "live"
+  const baseUrl = requestEnvironment === "live"
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
