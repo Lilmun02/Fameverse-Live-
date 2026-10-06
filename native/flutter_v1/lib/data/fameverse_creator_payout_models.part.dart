@@ -61,6 +61,8 @@ class FvCreatorPayoutRequest {
     required this.providerStatus,
     required this.providerBatchId,
     required this.providerStatusUpdatedAt,
+    required this.payoutEnvironment,
+    required this.isQa,
   });
 
   final String id;
@@ -74,6 +76,8 @@ class FvCreatorPayoutRequest {
   final String? providerStatus;
   final String? providerBatchId;
   final DateTime? providerStatusUpdatedAt;
+  final String payoutEnvironment;
+  final bool isQa;
 
   factory FvCreatorPayoutRequest.fromMap(Map<String, dynamic> row) {
     return FvCreatorPayoutRequest(
@@ -88,6 +92,11 @@ class FvCreatorPayoutRequest {
       providerStatus: row['provider_status']?.toString(),
       providerBatchId: row['provider_batch_id']?.toString(),
       providerStatusUpdatedAt: _dateValue(row['provider_status_updated_at']),
+      payoutEnvironment:
+          row['payout_environment']?.toString().toLowerCase() == 'sandbox'
+          ? 'sandbox'
+          : 'live',
+      isQa: row['is_qa'] == true,
     );
   }
 }
@@ -137,20 +146,65 @@ class FvPayoutModerationItem {
 class FvCreatorPayoutMethod {
   const FvCreatorPayoutMethod({
     required this.provider,
-    required this.recipientEmail,
+    required this.liveRecipientEmail,
+    required this.sandboxRecipientEmail,
     required this.enabled,
   });
 
   final String provider;
-  final String recipientEmail;
+  final String liveRecipientEmail;
+  final String sandboxRecipientEmail;
   final bool enabled;
+
+  String get recipientEmail => liveRecipientEmail;
 
   factory FvCreatorPayoutMethod.fromMap(Map<String, dynamic> row) {
     return FvCreatorPayoutMethod(
       provider: row['provider']?.toString() ?? 'paypal',
-      recipientEmail: row['recipient_email']?.toString() ?? '',
+      liveRecipientEmail:
+          row['live_recipient_email']?.toString() ??
+          row['recipient_email']?.toString() ??
+          '',
+      sandboxRecipientEmail:
+          row['sandbox_recipient_email']?.toString() ?? '',
       enabled: row['enabled'] == true,
     );
   }
+}
+
+class FvCreatorQaPayoutSummary {
+  const FvCreatorQaPayoutSummary({
+    required this.availableCents,
+    required this.reservedCents,
+    required this.withdrawableCents,
+    required this.paidCents,
+    required this.minimumPayoutCents,
+  });
+
+  final int availableCents;
+  final int reservedCents;
+  final int withdrawableCents;
+  final int paidCents;
+  final int minimumPayoutCents;
+
+  bool get canRequestPayout => withdrawableCents >= minimumPayoutCents;
+
+  factory FvCreatorQaPayoutSummary.fromMap(Map<String, dynamic> row) {
+    return FvCreatorQaPayoutSummary(
+      availableCents: _intValue(row['qa_available_cents']),
+      reservedCents: _intValue(row['qa_reserved_cents']),
+      withdrawableCents: _intValue(row['qa_withdrawable_cents']),
+      paidCents: _intValue(row['qa_paid_cents']),
+      minimumPayoutCents: _intValue(row['minimum_qa_payout_cents']),
+    );
+  }
+
+  static const empty = FvCreatorQaPayoutSummary(
+    availableCents: 0,
+    reservedCents: 0,
+    withdrawableCents: 0,
+    paidCents: 0,
+    minimumPayoutCents: 100,
+  );
 }
 
