@@ -193,6 +193,18 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }
 
   @override
+  Future<FvCoinFundingBreakdown> loadCoinFundingBreakdown() async {
+    final data = await _client.rpc('get_my_coin_funding_breakdown');
+    final row = _firstRpcRow(data);
+    if (row.isEmpty) return FvCoinFundingBreakdown.empty;
+    return FvCoinFundingBreakdown(
+      realCoins: (row['cash_backed_coins'] as num?)?.toInt() ?? 0,
+      testCoins: (row['promo_coins'] as num?)?.toInt() ?? 0,
+      totalCoins: (row['total_balance'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
   Future<int> refillBetaWallet() async {
     final data = await _client.rpc(
       'refill_beta_wallet',
@@ -245,6 +257,10 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
       giftCount: (row['gift_count'] as num?)?.toInt() ?? 0,
       level: (row['level'] as num?)?.toInt() ?? 1,
       walletBalance: (row['wallet_balance'] as num?)?.toInt() ?? 0,
+      realCoinsSpent: (row['cash_backed_coins_spent'] as num?)?.toInt() ?? 0,
+      testCoinsSpent: (row['promo_coins_spent'] as num?)?.toInt() ?? 0,
+      creatorEarningMicros:
+          (row['creator_earning_micros'] as num?)?.toInt() ?? 0,
     );
   }
 
