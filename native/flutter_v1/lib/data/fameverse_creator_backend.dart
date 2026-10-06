@@ -143,7 +143,9 @@ class SupabaseFameverseCreatorBackend {
     );
     final rows = _rows(response);
     if (rows.isEmpty) throw Exception('Payout method was not saved.');
-    return FvCreatorPayoutMethod.fromMap(rows.first);
+    final method = await loadPayoutMethod();
+    if (method == null) throw Exception('Payout method was not saved.');
+    return method;
   }
 
   Future<FvCreatorPayoutMethod> setSandboxPayoutMethod({
@@ -155,7 +157,11 @@ class SupabaseFameverseCreatorBackend {
     );
     final rows = _rows(response);
     if (rows.isEmpty) throw Exception('Sandbox payout method was not saved.');
-    return FvCreatorPayoutMethod.fromMap(rows.first);
+    final method = await loadPayoutMethod();
+    if (method == null) {
+      throw Exception('Sandbox payout method was not saved.');
+    }
+    return method;
   }
 
   Future<FvCreatorQaPayoutSummary> loadQaPayoutSummary() async {
