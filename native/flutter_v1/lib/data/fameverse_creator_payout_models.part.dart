@@ -161,10 +161,7 @@ class FvCreatorPayoutMethod {
   factory FvCreatorPayoutMethod.fromMap(Map<String, dynamic> row) {
     return FvCreatorPayoutMethod(
       provider: row['provider']?.toString() ?? 'paypal',
-      liveRecipientEmail:
-          row['live_recipient_email']?.toString() ??
-          row['recipient_email']?.toString() ??
-          '',
+      liveRecipientEmail: row['live_recipient_email']?.toString() ?? '',
       sandboxRecipientEmail:
           row['sandbox_recipient_email']?.toString() ?? '',
       enabled: row['enabled'] == true,
