@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_beta_backend.dart';
+import '../badges/gifter_profile_section.dart';
 import 'fame_coin_store_screen.dart';
 
 class NativeProfileBuild23Screen extends StatelessWidget {
@@ -175,6 +176,8 @@ class NativeProfileBuild23Screen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _WalletCard(userId: identity.id),
+          const SizedBox(height: 16),
+          FvGifterProfileSection(userId: profile.id),
           const SizedBox(height: 16),
           Row(
             children: [
