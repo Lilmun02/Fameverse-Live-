@@ -125,4 +125,147 @@ Future<void> _editPayoutMethod() async {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  Future<void> _editSandboxPayoutMethod() async {
+    if (_busy) return;
+    final controller = TextEditingController(
+      text: _payoutMethod?.sandboxRecipientEmail ?? '',
+    );
+    final email = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sandbox PayPal email'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'QA payouts use PayPal Sandbox only. This email is separate from your real payout email.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('build23-paypal-sandbox-email'),
+              controller: controller,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              textCapitalization: TextCapitalization.none,
+              decoration: const InputDecoration(
+                labelText: 'Sandbox recipient email',
+                prefixIcon: Icon(Icons.science_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Save test email'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (email == null) return;
+    final at = email.indexOf('@');
+    if (at <= 0 || !email.substring(at + 1).contains('.')) {
+      _message('Enter a valid sandbox PayPal email address.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      await widget.backend.setSandboxPayoutMethod(recipientEmail: email);
+      _message('Sandbox payout recipient saved.');
+      await _refresh();
+    } catch (_) {
+      _message('Could not save the sandbox payout recipient.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _requestQaPayout() async {
+    if (!_qaSummary.canRequestPayout || _busy) return;
+    final controller = TextEditingController(
+      text: (_qaSummary.withdrawableCents / 100).toStringAsFixed(2),
+    );
+    final text = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request QA payout'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Test balance: ${_money(_qaSummary.withdrawableCents)}',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This request is sandbox-only and has no real cash value.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('build23-qa-payout-amount'),
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Test amount (USD)',
+                prefixText: r'$ ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Submit QA request'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (text == null) return;
+    final dollars = double.tryParse(text.trim());
+    final cents = dollars == null ? 0 : (dollars * 100).round();
+    if (cents < _qaSummary.minimumPayoutCents) {
+      _message(
+        'Minimum QA payout is ${_money(_qaSummary.minimumPayoutCents)}.',
+      );
+      return;
+    }
+    if (cents > _qaSummary.withdrawableCents) {
+      _message('That amount is higher than your QA balance.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      await widget.backend.requestQaPayout(cents);
+      _message('Sandbox QA payout submitted for review.');
+      await _refresh();
+    } catch (error) {
+      final value = error.toString().toLowerCase();
+      _message(
+        value.contains('sandbox payout email')
+            ? 'Add your sandbox PayPal email first.'
+            : value.contains('insufficient qa')
+            ? 'Your QA payout balance is too low.'
+            : 'Could not submit the QA payout request.',
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
 }
