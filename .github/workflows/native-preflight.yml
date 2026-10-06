@@ -50,7 +50,10 @@ jobs:
         run: dart run tool/check_native_contract.dart
 
       - name: Enforce deterministic Dart formatting
-        run: dart format --output=none --set-exit-if-changed lib test tool
+        run: |
+          dart format lib test tool
+          git diff -- lib/features/profile/creator_studio_build23.dart test/live_gift_and_owner_payout_contract_test.dart
+          exit 1
 
       - name: Static analysis
         run: flutter analyze
