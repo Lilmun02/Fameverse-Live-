@@ -324,10 +324,10 @@ class _Build23OwnerControlCenterScreenState
 
   Future<void> _issueCashRewardCoins() async {
     if (_busy) return;
-    final coinsController = TextEditingController();
-    final text = await showDialog<String>(
+    var rawCoins = '';
+    final coins = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Create Cash-Backed Fame Coins'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -338,8 +338,10 @@ class _Build23OwnerControlCenterScreenState
             ),
             const SizedBox(height: 14),
             TextField(
-              controller: coinsController,
+              key: const Key('owner-cash-backed-coins-amount'),
               keyboardType: TextInputType.number,
+              autofocus: true,
+              onChanged: (value) => rawCoins = value,
               decoration: const InputDecoration(
                 labelText: 'Cash-Backed Fame Coins',
                 prefixIcon: Icon(Icons.toll_rounded),
@@ -349,23 +351,25 @@ class _Build23OwnerControlCenterScreenState
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(coinsController.text),
+            onPressed: () {
+              final value = int.tryParse(rawCoins.trim()) ?? 0;
+              Navigator.of(dialogContext).pop(value);
+            },
             child: const Text('Create'),
           ),
         ],
       ),
     );
-    coinsController.dispose();
-    if (text == null) return;
-    final coins = int.tryParse(text.trim()) ?? 0;
+    if (coins == null) return;
     if (coins <= 0) {
       _message('Enter a valid cash-backed coin amount.');
       return;
     }
+
     setState(() => _busy = true);
     try {
       await _client.rpc(
