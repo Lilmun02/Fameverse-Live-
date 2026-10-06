@@ -241,13 +241,15 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
     required String roomId,
     required String giftId,
     required int quantity,
+    required String fundingMode,
   }) async {
     final data = await _client.rpc(
-      'send_fameverse_gift',
+      'send_fameverse_gift_v2',
       params: {
         'p_room_id': roomId,
         'p_gift_id': giftId,
         'p_quantity': quantity,
+        'p_funding_mode': fundingMode,
       },
     );
     final row = _firstRpcRow(data);
