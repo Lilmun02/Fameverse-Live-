@@ -201,21 +201,21 @@ void main() {
     test(
       'recorded gifts do not become failed sends when broadcast sync hiccups',
       () {
-      final backend = File(
-        'lib/data/fameverse_live_backend.dart',
-      ).readAsStringSync();
-      final viewer = File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
-      final ownerHost = File(
-        'lib/features/live/stream_owner_host_live_screen.dart',
-      ).readAsStringSync();
+        final backend = File(
+          'lib/data/fameverse_live_backend.dart',
+        ).readAsStringSync();
+        final viewer = File(
+          'lib/features/live/stream_viewer_live_screen.dart',
+        ).readAsStringSync();
+        final ownerHost = File(
+          'lib/features/live/stream_owner_host_live_screen.dart',
+        ).readAsStringSync();
 
-      expect(
-        backend,
-        contains('RealtimeChannelConfig(ack: true, self: false)'),
-      );
-      expect(viewer, contains('_broadcastGiftReceipt'));
+        expect(
+          backend,
+          contains('RealtimeChannelConfig(ack: true, self: false)'),
+        );
+        expect(viewer, contains('_broadcastGiftReceipt'));
         expect(
           viewer,
           contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
