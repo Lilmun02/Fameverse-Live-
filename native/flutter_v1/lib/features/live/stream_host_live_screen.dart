@@ -80,7 +80,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         userToken: widget.credentials.userToken,
         options: StreamVideoOptions(
           autoConnect: false,
-          audioConfigurationPolicy: const AudioConfigurationPolicy.broadcaster(),
+          audioConfigurationPolicy:
+              const AudioConfigurationPolicy.broadcaster(),
         ),
       );
       fvRequireSuccess(
