@@ -32,9 +32,10 @@ void main() {
     test(
       'pre-live setup has no wishlist and clears title after End Live',
       () async {
-        final camera = await File(
-          'lib/features/live/native_camera_screen.dart',
-        ).readAsString();
+        final camera = [
+          File('lib/features/live/native_camera_screen.dart').readAsStringSync(),
+          File('lib/features/live/native_camera_summary.part.dart').readAsStringSync(),
+        ].join('\n');
 
         expect(camera, isNot(contains('Wishlist gifts')));
         expect(camera, isNot(contains('_wishlist')));
@@ -54,9 +55,10 @@ void main() {
         final pricing = await File(
           '../../supabase/migrations/20260926_owner_qa_coin_pricing_v2.sql',
         ).readAsString();
-        final recharge = await File(
-          'lib/features/profile/native_recharge_screen.dart',
-        ).readAsString();
+        final recharge = [
+          File('lib/features/profile/native_recharge_screen.dart').readAsStringSync(),
+          File('lib/features/profile/native_recharge_view.part.dart').readAsStringSync(),
+        ].join('\n');
         final api = await File(
           '../../supabase/functions/recharge/index.ts',
         ).readAsString();
