@@ -64,6 +64,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   bool _cohostFlipBusy = false;
   bool _cohostMicEnabled = true;
   int _walletBalance = 0;
+  int _realCoins = 0;
+  int _testCoins = 0;
   int _gifterLevel = 1;
   int _fameTaps = 0;
   int _localTapCount = 0;
