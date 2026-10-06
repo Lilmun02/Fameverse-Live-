@@ -151,7 +151,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       await _controller!.setVolume(1);
       await _controller!.play();
       final rawMs = _controller!.value.duration.inMilliseconds + 350;
-      final safeMs = rawMs.clamp(1500, 15000).toInt();
+      final safeMs = rawMs.clamp(1500, 60000).toInt();
       _scheduleFinish(Duration(milliseconds: safeMs));
       if (mounted) setState(() {});
       return;
@@ -187,7 +187,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         _videoLoading = false;
         _videoFailed = false;
         final rawMs = next.value.duration.inMilliseconds + 350;
-        final safeMs = rawMs.clamp(1500, 15000).toInt();
+        final safeMs = rawMs.clamp(1500, 60000).toInt();
         _scheduleFinish(Duration(milliseconds: safeMs));
         setState(() {});
         return;
@@ -270,39 +270,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                   ),
                 ),
               ),
-              Positioned(
-                left: 18,
-                right: 18,
-                bottom: 20,
-                child: Column(
-                  children: [
-                    Text(
-                      playback.gift.label,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: premium ? 22 : 18,
-                        fontWeight: FontWeight.w900,
-                        shadows: const [
-                          Shadow(color: Colors.black, blurRadius: 8),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${playback.sender}${playback.visualCountLabel}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFFD8CBE0),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 8)],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -325,67 +292,20 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         child: Center(
           child: SizedBox(
             key: Key('cinematic-gift-presentation-${playback.gift.id}'),
-            width: size.width * .96,
-            height: size.height * .58,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    clipBehavior: Clip.hardEdge,
-                    child: SizedBox(
-                      width: controller.value.size.width <= 0
-                          ? size.width
-                          : controller.value.size.width,
-                      height: controller.value.size.height <= 0
-                          ? size.height * .58
-                          : controller.value.size.height,
-                      child: VideoPlayer(controller),
-                    ),
-                  ),
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Color(0xB0000000)],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 20,
-                  child: Column(
-                    children: [
-                      Text(
-                        playback.gift.label,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          shadows: [Shadow(blurRadius: 8, color: Colors.black)],
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${playback.sender}${playback.visualCountLabel}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFFD9CEDF),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          shadows: [Shadow(blurRadius: 8, color: Colors.black)],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            width: size.width,
+            height: size.height * .76,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              clipBehavior: Clip.none,
+              child: SizedBox(
+                width: controller.value.size.width <= 0
+                    ? size.width
+                    : controller.value.size.width,
+                height: controller.value.size.height <= 0
+                    ? size.height * .76
+                    : controller.value.size.height,
+                child: VideoPlayer(controller),
+              ),
             ),
           ),
         ),
@@ -425,8 +345,8 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
               const SizedBox(height: 12),
               Text(
                 _videoFailed
-                    ? '${playback.gift.label} media could not load'
-                    : 'Loading ${playback.gift.label}…',
+                    ? 'Premium gift media could not load'
+                    : 'Loading premium gift…',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,
