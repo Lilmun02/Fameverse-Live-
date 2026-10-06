@@ -91,19 +91,13 @@ void main() {
           'lib/features/live/native_live_components.dart',
         ).readAsStringSync();
 
-        expect(
-          tray,
-          contains('for (var attempt = 0; attempt < 2; attempt++)'),
-        );
+        expect(tray, contains('for (var attempt = 0; attempt < 2; attempt++)'));
         expect(tray, contains("timeout(const Duration(seconds: 10))"));
         expect(
           tray,
           contains('Preparing the original premium gift animation.'),
         );
-        expect(
-          tray,
-          contains('will not replace its animation with an emoji'),
-        );
+        expect(tray, contains('will not replace its animation with an emoji'));
         expect(tray, contains('cinematic-gift-media-failed-'));
         expect(tray, contains('cinematic-gift-media-loading-'));
       },

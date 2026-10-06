@@ -119,7 +119,8 @@ class _Build23CreatorStudioScreenState
       if (failures.isEmpty) {
         _error = null;
       } else {
-        _error = 'Some Creator Studio data could not refresh: '
+        _error =
+            'Some Creator Studio data could not refresh: '
             '${failures.join(', ')}.';
       }
     });
@@ -762,10 +763,7 @@ class _VerificationCard extends StatelessWidget {
             Text(
               statusTimeText,
               key: const Key('creator-verification-status-time'),
-              style: const TextStyle(
-                color: Color(0xFF96899C),
-                fontSize: 10,
-              ),
+              style: const TextStyle(color: Color(0xFF96899C), fontSize: 10),
             ),
           ],
           if ((progress.publicNote ?? '').trim().isNotEmpty) ...[
