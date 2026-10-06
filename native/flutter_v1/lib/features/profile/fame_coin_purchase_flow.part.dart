@@ -92,10 +92,26 @@ Future<void> handlePurchases(List<PurchaseDetails> purchases) async {
             .timeout(const Duration(seconds: 8), onTimeout: () {});
       }
 
+      final fundingRaw = await _client.rpc('get_my_coin_funding_breakdown');
+      final fundingRows = fundingRaw is List
+          ? fundingRaw.whereType<Map>().map(Map<String, dynamic>.from).toList()
+          : <Map<String, dynamic>>[];
+      final funding = fundingRows.isEmpty
+          ? const <String, dynamic>{}
+          : fundingRows.first;
+      final realCoins =
+          (funding['cash_backed_coins'] as num?)?.toInt() ?? _realCoins;
+      final testCoins =
+          (funding['promo_coins'] as num?)?.toInt() ?? _testCoins;
+      final totalCoins =
+          (funding['total_balance'] as num?)?.toInt() ?? balance;
+
       if (!mounted) return;
-      widget.onBalanceChanged?.call(balance);
+      widget.onBalanceChanged?.call(totalCoins);
       setState(() {
-        _balance = balance;
+        _balance = totalCoins;
+        _realCoins = realCoins;
+        _testCoins = testCoins;
         _busyProductId = null;
         _verifying = false;
         _notice = result['already_completed'] == true
