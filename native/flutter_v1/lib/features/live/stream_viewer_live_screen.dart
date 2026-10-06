@@ -110,7 +110,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           image: widget.viewerProfile.avatarUrl,
         ),
         userToken: credentials.userToken,
-        options: StreamVideoOptions(autoConnect: false),
+        options: StreamVideoOptions(
+          autoConnect: false,
+          audioConfigurationPolicy: const AudioConfigurationPolicy.viewer(),
+        ),
       );
       fvRequireSuccess(
         await client.connect(registerPushDevice: false),
@@ -121,6 +124,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         id: credentials.callId,
       );
       _call = call;
+      fvRequireSuccess(
+        call.setAudioBitrateProfile(SfuAudioBitrateProfile.voiceHighQuality),
+        'Could not configure high-quality live audio',
+      );
       fvRequireSuccess(
         await call.join(
           connectOptions: CallConnectOptions(
@@ -149,22 +156,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         onGift: _receiveGift,
         onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
       );
-      final results = await Future.wait<dynamic>([
-        widget.liveBackend.loadWalletBalance(widget.identity.id),
-        widget.liveBackend.loadGifterStats(widget.identity.id),
-        widget.backend.loadAccountRole(widget.identity.id),
-        widget.liveBackend.loadTapTotal(widget.room.id),
-      ]);
-      _walletBalance = results[0] as int;
-      final stats = results[1] as FvGifterStats;
-      _gifterLevel = stats.level;
-      _accountRole = results[2] as String?;
-      _fameTaps = results[3] as int;
       _walletReady = true;
       _tapFlushTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) {
         _flushTapBuffer();
       });
       if (mounted) setState(() => _connecting = false);
+      unawaited(_hydrateViewerState());
     } catch (error) {
       await _disposeTransport();
       if (!mounted) return;
@@ -173,6 +170,39 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _error = 'Could not join this live. ${fvFriendlyError(error)}';
       });
     }
+  }
+
+  Future<void> _hydrateViewerState() async {
+    try {
+      final balance = await widget.liveBackend.loadWalletBalance(
+        widget.identity.id,
+      );
+      if (mounted) {
+        setState(() {
+          _walletBalance = balance;
+          _walletReady = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _walletReady = true);
+    }
+
+    try {
+      final stats = await widget.liveBackend.loadGifterStats(
+        widget.identity.id,
+      );
+      if (mounted) setState(() => _gifterLevel = stats.level);
+    } catch (_) {}
+
+    try {
+      final role = await widget.backend.loadAccountRole(widget.identity.id);
+      if (mounted) setState(() => _accountRole = role);
+    } catch (_) {}
+
+    try {
+      final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
+      if (mounted) setState(() => _fameTaps = taps);
+    } catch (_) {}
   }
 
   void _receiveComment(Map<String, dynamic> payload) {
