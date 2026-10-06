@@ -60,18 +60,39 @@ void main() {
   final startupUpdater = read('lib/data/startup_update_service.dart');
   final camera = read('lib/features/live/native_camera_screen.dart');
   final liveExports = read('lib/features/live/stream_live_screen.dart');
-  final hostLive = read('lib/features/live/stream_host_live_screen.dart');
-  final viewerLive = read('lib/features/live/stream_viewer_live_screen.dart');
+  final hostLive = [
+    read('lib/features/live/stream_host_live_screen.dart'),
+    read('lib/features/live/stream_host_session.part.dart'),
+    read('lib/features/live/stream_host_cohost.part.dart'),
+    read('lib/features/live/stream_host_sheets.part.dart'),
+    read('lib/features/live/stream_host_view.part.dart'),
+  ].join('\n');
+  final viewerLive = [
+    read('lib/features/live/stream_viewer_live_screen.dart'),
+    read('lib/features/live/stream_viewer_session.part.dart'),
+    read('lib/features/live/stream_viewer_interactions.part.dart'),
+    read('lib/features/live/stream_viewer_sheets.part.dart'),
+    read('lib/features/live/stream_viewer_view.part.dart'),
+  ].join('\n');
   final liveMedia = '$liveExports\n$hostLive\n$viewerLive';
   final shell = read('lib/features/shell/fameverse_shell.dart');
   final build23Shell = read('lib/features/shell/fameverse_shell_build23.dart');
-  final build23Home = read('lib/features/shell/fameverse_home_build23.dart');
-  final build23Profile = read(
-    'lib/features/profile/native_profile_build23.dart',
-  );
-  final build23Studio = read(
-    'lib/features/profile/creator_studio_build23.dart',
-  );
+  final build23Home = [
+    read('lib/features/shell/fameverse_home_build23.dart'),
+    read('lib/features/shell/fameverse_home_build23_feed.part.dart'),
+    read('lib/features/shell/fameverse_home_build23_cards.part.dart'),
+  ].join('\n');
+  final build23Profile = [
+    read('lib/features/profile/native_profile_build23.dart'),
+    read('lib/features/profile/native_profile_build23_identity.part.dart'),
+    read('lib/features/profile/native_profile_build23_settings.part.dart'),
+  ].join('\n');
+  final build23Studio = [
+    read('lib/features/profile/creator_studio_build23.dart'),
+    read('lib/features/profile/creator_studio_build23_summary.part.dart'),
+    read('lib/features/profile/creator_studio_build23_verification.part.dart'),
+    read('lib/features/profile/creator_studio_build23_payout.part.dart'),
+  ].join('\n');
   final pubspec = read('pubspec.yaml');
   final test = read('test/app_smoke_test.dart');
 
