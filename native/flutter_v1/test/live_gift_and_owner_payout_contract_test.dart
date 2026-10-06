@@ -134,10 +134,7 @@ void main() {
       expect(overlay, contains('fit: BoxFit.contain'));
       expect(preview, contains('fit: BoxFit.contain'));
       expect(overlay, contains('rawMs.clamp(1500, 60000).toInt()'));
-      expect(
-        overlay,
-        isNot(contains("width: size.width * .96")),
-      );
+      expect(overlay, isNot(contains("width: size.width * .96")));
       final cinematicStart = overlay.indexOf(
         "key: Key('cinematic-gift-presentation-",
       );
@@ -201,7 +198,9 @@ void main() {
       expect(viewer.toLowerCase(), isNot(contains('safari')));
     });
 
-    test('recorded gifts do not become failed sends when broadcast sync hiccups', () {
+    test(
+      'recorded gifts do not become failed sends when broadcast sync hiccups',
+      () {
       final backend = File(
         'lib/data/fameverse_live_backend.dart',
       ).readAsStringSync();
@@ -217,13 +216,17 @@ void main() {
         contains('RealtimeChannelConfig(ack: true, self: false)'),
       );
       expect(viewer, contains('_broadcastGiftReceipt'));
-      expect(viewer, contains('for (var attempt = 0; attempt < 3; attempt += 1)'));
-      expect(ownerHost, contains('_broadcastQaGiftReceipt'));
-      expect(
-        ownerHost,
-        contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
-      );
-    });
+        expect(
+          viewer,
+          contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
+        );
+        expect(ownerHost, contains('_broadcastQaGiftReceipt'));
+        expect(
+          ownerHost,
+          contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
+        );
+      },
+    );
 
     test(
       'owner payout review submits and syncs through PayPal provider functions',
