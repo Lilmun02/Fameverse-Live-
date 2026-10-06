@@ -36,6 +36,24 @@ class FvGiftDefinition {
   String get symbol => activityEmoji ?? emoji ?? '✦';
 }
 
+class FvCoinFundingBreakdown {
+  const FvCoinFundingBreakdown({
+    required this.realCoins,
+    required this.testCoins,
+    required this.totalCoins,
+  });
+
+  final int realCoins;
+  final int testCoins;
+  final int totalCoins;
+
+  static const empty = FvCoinFundingBreakdown(
+    realCoins: 0,
+    testCoins: 0,
+    totalCoins: 0,
+  );
+}
+
 class FvGifterStats {
   const FvGifterStats({
     required this.totalCoinsSent,
@@ -56,12 +74,18 @@ class FvGiftSendResult {
     required this.giftCount,
     required this.level,
     required this.walletBalance,
+    required this.realCoinsSpent,
+    required this.testCoinsSpent,
+    required this.creatorEarningMicros,
   });
 
   final int totalCoinsSent;
   final int giftCount;
   final int level;
   final int walletBalance;
+  final int realCoinsSpent;
+  final int testCoinsSpent;
+  final int creatorEarningMicros;
 }
 
 class FvTapBatchResult {
