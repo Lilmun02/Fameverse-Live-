@@ -6,9 +6,13 @@ void main() {
   test(
     'Pro Live remains a read-only 10 percent teaser in this candidate',
     () async {
-      final studio = await File(
-        'lib/features/profile/creator_studio_screen.dart',
-      ).readAsString();
+      final studio = [
+        File('lib/features/profile/creator_studio_screen.dart').readAsStringSync(),
+        File('lib/features/profile/creator_studio_header.part.dart').readAsStringSync(),
+        File('lib/features/profile/creator_studio_badges.part.dart').readAsStringSync(),
+        File('lib/features/profile/creator_studio_payout.part.dart').readAsStringSync(),
+        File('lib/features/profile/creator_studio_history.part.dart').readAsStringSync(),
+      ].join('\n');
       final roadmap = await File(
         '../../docs/PRO_LIVE_ACHIEVEMENTS_ROADMAP.md',
       ).readAsString();
