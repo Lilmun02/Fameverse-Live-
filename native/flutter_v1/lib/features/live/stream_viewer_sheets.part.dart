@@ -259,4 +259,58 @@ void _showProfileSheet() {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
+
+Future<void> _openCoinStore() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FameCoinStoreScreen(
+          userId: widget.identity.id,
+          onBalanceChanged: (balance) {
+            if (!mounted) return;
+            setState(() {
+              _walletBalance = balance;
+              _walletReady = true;
+            });
+          },
+        ),
+      ),
+    );
+    try {
+      final funding = await widget.liveBackend.loadCoinFundingBreakdown();
+      if (mounted) {
+        setState(() {
+          _walletBalance = funding.totalCoins;
+          _realCoins = funding.realCoins;
+          _testCoins = funding.testCoins;
+          _walletReady = true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _showGiftTray() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF140D1B),
+      builder: (sheetContext) => NativeGiftTray(
+        coins: _walletBalance,
+        realCoins: _realCoins,
+        testCoins: _testCoins,
+        canRefill: _canRefill,
+        onSend: _sendGift,
+        onRefill: _refillWallet,
+        onBuyCoins: () {
+          Navigator.of(sheetContext).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_openCoinStore());
+          });
+        },
+      ),
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
 }
