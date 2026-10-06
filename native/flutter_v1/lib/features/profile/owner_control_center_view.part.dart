@@ -197,6 +197,19 @@ extension _OwnerControlCenterView on _Build23OwnerControlCenterScreenState {
                 ),
                 const SizedBox(height: 10),
                 _Action(
+                  key: const Key('owner-grant-qa-payout-balance'),
+                  icon: Icons.payments_outlined,
+                  title: 'Grant Tester QA Payout Balance',
+                  body:
+                      'Add sandbox-only test earnings so a tester can exercise payout setup, request, review and PayPal Sandbox processing without receiving real money.',
+                  label: 'Grant',
+                  onTap: _busy
+                      ? null
+                      : () => _OwnerControlDialogs(this)
+                            .grantTesterQaPayoutBalance(),
+                ),
+                const SizedBox(height: 10),
+                _Action(
                   key: const Key('owner-open-paypal-funding'),
                   icon: Icons.paypal_outlined,
                   title: 'Open PayPal Business',
