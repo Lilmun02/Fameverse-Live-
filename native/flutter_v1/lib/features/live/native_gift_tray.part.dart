@@ -3,6 +3,8 @@ part of 'native_live_components.dart';
 class NativeGiftTray extends StatefulWidget {
   const NativeGiftTray({
     required this.coins,
+    required this.realCoins,
+    required this.testCoins,
     required this.canRefill,
     required this.onSend,
     required this.onRefill,
@@ -12,9 +14,11 @@ class NativeGiftTray extends StatefulWidget {
   });
 
   final int coins;
+  final int realCoins;
+  final int testCoins;
   final bool canRefill;
   final Future<bool> Function(FvGiftDefinition gift, int quantity) onSend;
-  final Future<int> Function() onRefill;
+  final Future<FvCoinFundingBreakdown> Function() onRefill;
   final VoidCallback? onBuyCoins;
   final VoidCallback? onExchange;
 
@@ -47,6 +51,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
   bool _sending = false;
   bool _refilling = false;
   late int _coins;
+  late int _realCoins;
+  late int _testCoins;
 
   bool _matchesCategory(FvGiftDefinition gift, String category) {
     switch (category) {
@@ -87,6 +93,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
   void initState() {
     super.initState();
     _coins = widget.coins;
+    _realCoins = widget.realCoins;
+    _testCoins = widget.testCoins;
   }
 
   @override
@@ -94,6 +102,12 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.coins != widget.coins && widget.coins != _coins) {
       _coins = widget.coins;
+    }
+    if (oldWidget.realCoins != widget.realCoins) {
+      _realCoins = widget.realCoins;
+    }
+    if (oldWidget.testCoins != widget.testCoins) {
+      _testCoins = widget.testCoins;
     }
   }
 
@@ -115,129 +129,18 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     setState(() => _refilling = true);
     try {
       final balance = await widget.onRefill();
-      if (mounted) setState(() => _coins = balance);
+      if (mounted) {
+        setState(() {
+          _coins = balance.totalCoins;
+          _realCoins = balance.realCoins;
+          _testCoins = balance.testCoins;
+        });
+      }
     } finally {
       if (mounted) setState(() => _refilling = false);
     }
   }
 
-  Future<void> _customAmount() async {
-    var quantity = 1;
-    final accepted = await showModalBottomSheet<int>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF17101F),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            void setQuantity(int value) {
-              setModalState(() => quantity = value.clamp(1, 100000));
-            }
-
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  16,
-                  20,
-                  20 + MediaQuery.viewInsetsOf(context).bottom,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        NativeGiftTrayVisual(gift: _selected, size: 50),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            _selected.label,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        IconButton.filledTonal(
-                          onPressed: () => setQuantity(quantity - 1),
-                          icon: const Icon(Icons.remove),
-                        ),
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: '$quantity',
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Quantity',
-                            ),
-                            onChanged: (value) {
-                              final parsed = int.tryParse(value);
-                              if (parsed != null) setQuantity(parsed);
-                            },
-                          ),
-                        ),
-                        IconButton.filledTonal(
-                          onPressed: () => setQuantity(quantity + 1),
-                          icon: const Icon(Icons.add),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      children: [5, 10, 25, 50]
-                          .map(
-                            (value) => ActionChip(
-                              label: Text('×$value'),
-                              onPressed: () => setQuantity(value),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const Text('Total cost'),
-                        const Spacer(),
-                        Text(
-                          '🪙 ${_selected.cost * quantity}',
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () => Navigator.of(context).pop(quantity),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                      ),
-                      child: Text('Send ×$quantity'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-    if (accepted != null && mounted) await _send(accepted);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +183,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   ],
                 ),
                 const Spacer(),
-                Chip(label: Text('🪙 $_coins')),
+                Flexible(
+                  child: _GiftFundingBalance(
+                    realCoins: _realCoins,
+                    testCoins: _testCoins,
+                    totalCoins: _coins,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -384,7 +293,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   ),
                 ),
                 TextButton(
-                  onPressed: _sending ? null : _customAmount,
+                  onPressed: _sending ? null : _GiftCustomAmount(this).customAmount,
                   child: const Text('Custom'),
                 ),
                 FilledButton(
@@ -399,8 +308,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
             Row(
               children: [
                 const Text(
-                  'Fame Coin balance',
-                  style: TextStyle(color: Color(0xFFAFA4B6), fontSize: 12),
+                  'Real Coins can create creator earnings · Test Coins cannot',
+                  style: TextStyle(color: Color(0xFFAFA4B6), fontSize: 10),
                 ),
                 const Spacer(),
                 if (widget.onBuyCoins != null)
