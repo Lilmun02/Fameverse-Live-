@@ -116,7 +116,7 @@ class _NativeGiftTrayVisualState extends State<NativeGiftTrayVisual> {
         child: SizedBox.square(
           dimension: widget.size,
           child: FittedBox(
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             clipBehavior: Clip.hardEdge,
             child: SizedBox(
               width: videoSize.width <= 0 ? widget.size : videoSize.width,
