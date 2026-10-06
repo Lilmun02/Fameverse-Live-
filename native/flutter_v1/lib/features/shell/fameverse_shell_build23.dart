@@ -43,13 +43,6 @@ class FameverseBuild23Shell extends StatefulWidget {
 }
 
 class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
-  static const _emptyNetwork = FvFollowNetwork(
-    followers: [],
-    following: [],
-    followerIds: {},
-    followingIds: {},
-  );
-
   SupabaseFameverseBetaBackend? _betaBackend;
   SupabaseFameverseStoryBackend? _storyBackend;
   SupabaseFameverseCreatorBackend? _creatorBackend;
@@ -64,7 +57,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   String? _error;
   String? _accountRole;
   FvProfile? _profile;
-  FvFollowNetwork _network = _emptyNetwork;
+  FvFollowNetwork _network = fvBuild23EmptyNetwork;
   List<FvCreator> _creators = const [];
   List<FvLiveRoom> _rooms = const [];
   List<FvCreatorStory> _stories = const [];

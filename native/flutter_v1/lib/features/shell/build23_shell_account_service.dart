@@ -2,6 +2,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 
+const fvBuild23EmptyNetwork = FvFollowNetwork(
+  followers: [],
+  following: [],
+  followerIds: {},
+  followingIds: {},
+);
+
 class FvBuild23ShellAccountService {
   const FvBuild23ShellAccountService({
     required this.backend,
