@@ -103,6 +103,31 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
+  Future<void> _broadcastQaGiftReceipt(
+    Map<String, dynamic> payload,
+  ) async {
+    final activity = _qaActivity;
+    if (activity == null) {
+      if (mounted) _message('Gift recorded. Live animation sync is reconnecting.');
+      return;
+    }
+
+    for (var attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await activity.send('gift', payload);
+        return;
+      } catch (_) {
+        if (attempt < 2) {
+          await Future<void>.delayed(
+            Duration(milliseconds: 180 * (attempt + 1)),
+          );
+        }
+      }
+    }
+
+    if (mounted) _message('Gift recorded. Live animation sync is reconnecting.');
+  }
+
   Future<bool> _sendQaGift(FvGiftDefinition gift, int quantity) async {
     if (!_qaGiftAllowed || _giftBusy) return false;
     if (quantity < 1 || quantity > 100000) {
@@ -140,7 +165,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       }
       _enqueueQaGift(playback);
 
-      await _qaActivity?.send('gift', <String, dynamic>{
+      await _broadcastQaGiftReceipt(<String, dynamic>{
         'id': eventId,
         'sender': widget.room.host.displayName,
         'senderId': widget.identity.id,
