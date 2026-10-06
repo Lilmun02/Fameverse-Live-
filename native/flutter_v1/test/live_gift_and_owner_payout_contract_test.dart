@@ -123,6 +123,103 @@ void main() {
       },
     );
 
+    test('cinematic gifts render the entire asset with no title overlay', () {
+      final overlay = File(
+        'lib/features/live/native_live_components.dart',
+      ).readAsStringSync();
+      final preview = File(
+        'lib/features/live/native_gift_visual.dart',
+      ).readAsStringSync();
+
+      expect(overlay, contains('fit: BoxFit.contain'));
+      expect(preview, contains('fit: BoxFit.contain'));
+      expect(overlay, contains('rawMs.clamp(1500, 60000).toInt()'));
+      expect(
+        overlay,
+        isNot(contains("width: size.width * .96")),
+      );
+      final cinematicStart = overlay.indexOf(
+        "key: Key('cinematic-gift-presentation-",
+      );
+      final loadingStart = overlay.indexOf(
+        "key: Key(",
+        cinematicStart + 1,
+      );
+      expect(cinematicStart, greaterThanOrEqualTo(0));
+      expect(loadingStart, greaterThan(cinematicStart));
+      final cinematic = overlay.substring(cinematicStart, loadingStart);
+      expect(cinematic, isNot(contains('playback.gift.label')));
+      expect(cinematic, isNot(contains('playback.sender')));
+    });
+
+    test('native live controls survive optional data refresh failures', () {
+      final host = File(
+        'lib/features/live/stream_host_live_screen.dart',
+      ).readAsStringSync();
+      final viewer = File(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      ).readAsStringSync();
+
+      expect(viewer, isNot(contains('Future.wait<dynamic>([')));
+      expect(viewer, contains('unawaited(_hydrateViewerState())'));
+      expect(viewer, contains('_walletReady = true;'));
+      expect(host, contains("setState(() => _connecting = false)"));
+      expect(host, contains('loadGifterStats'));
+      expect(host, contains('loadTapTotal'));
+    });
+
+    test('native livestream audio uses high quality voice configuration', () {
+      final host = File(
+        'lib/features/live/stream_host_live_screen.dart',
+      ).readAsStringSync();
+      final viewer = File(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      ).readAsStringSync();
+
+      expect(
+        host,
+        contains('SfuAudioBitrateProfile.voiceHighQuality'),
+      );
+      expect(
+        host,
+        contains('AudioConfigurationPolicy.broadcaster()'),
+      );
+      expect(
+        viewer,
+        contains('SfuAudioBitrateProfile.voiceHighQuality'),
+      );
+      expect(
+        viewer,
+        contains('AudioConfigurationPolicy.viewer()'),
+      );
+      expect(host.toLowerCase(), isNot(contains('safari')));
+      expect(viewer.toLowerCase(), isNot(contains('safari')));
+    });
+
+    test('recorded gifts do not become failed sends when broadcast sync hiccups', () {
+      final backend = File(
+        'lib/data/fameverse_live_backend.dart',
+      ).readAsStringSync();
+      final viewer = File(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      ).readAsStringSync();
+      final ownerHost = File(
+        'lib/features/live/stream_owner_host_live_screen.dart',
+      ).readAsStringSync();
+
+      expect(
+        backend,
+        contains('RealtimeChannelConfig(ack: true, self: false)'),
+      );
+      expect(viewer, contains('_broadcastGiftReceipt'));
+      expect(viewer, contains('for (var attempt = 0; attempt < 3; attempt += 1)'));
+      expect(ownerHost, contains('_broadcastQaGiftReceipt'));
+      expect(
+        ownerHost,
+        contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
+      );
+    });
+
     test(
       'owner payout review submits and syncs through PayPal provider functions',
       () {
