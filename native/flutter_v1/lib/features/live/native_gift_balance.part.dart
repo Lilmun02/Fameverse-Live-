@@ -42,6 +42,58 @@ class _GiftFundingBalance extends StatelessWidget {
   }
 }
 
+class _GiftFundingModeSelector extends StatelessWidget {
+  const _GiftFundingModeSelector({
+    required this.realCoins,
+    required this.testCoins,
+    required this.mode,
+    required this.onChanged,
+  });
+
+  final int realCoins;
+  final int testCoins;
+  final String mode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final canReal = realCoins > 0;
+    final canTest = testCoins > 0;
+    if (!canReal || !canTest) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          canTest ? 'Using Test Coins · no real payout value' : 'Using Real Coins · creator earnings apply',
+          key: Key(canTest ? 'gift-funding-mode-test' : 'gift-funding-mode-real'),
+          style: const TextStyle(
+            color: Color(0xFFB9ACBF),
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+    }
+
+    return SegmentedButton<String>(
+      key: const Key('gift-funding-mode-selector'),
+      segments: const [
+        ButtonSegment<String>(
+          value: 'test',
+          label: Text('Test Coins'),
+          icon: Icon(Icons.science_outlined),
+        ),
+        ButtonSegment<String>(
+          value: 'real',
+          label: Text('Real Coins'),
+          icon: Icon(Icons.attach_money_rounded),
+        ),
+      ],
+      selected: {mode},
+      onSelectionChanged: (value) => onChanged(value.first),
+    );
+  }
+}
+
 class _FundingChip extends StatelessWidget {
   const _FundingChip({
     required this.label,
