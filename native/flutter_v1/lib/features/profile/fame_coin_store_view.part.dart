@@ -146,9 +146,12 @@ extension _FameCoinStoreView on _FameCoinStoreScreenState {
                 ),
               ],
               const SizedBox(height: 22),
-              const Text(
-                'Purchased packs add Real Coins. Test Coins are QA-only and never create real creator payout liability.',
-                style: TextStyle(
+              Text(
+                Platform.isIOS
+                    ? 'TestFlight and Apple Sandbox purchases add Test Coins. App Store production purchases add Real Coins.'
+                    : 'Purchased packs add Real Coins. Test Coins are QA-only and never create real creator payout liability.',
+                key: const Key('fame-coin-purchase-funding-note'),
+                style: const TextStyle(
                   color: Color(0xFFB7A9BC),
                   fontSize: 11,
                   height: 1.35,
@@ -243,6 +246,7 @@ extension _FameCoinStoreView on _FameCoinStoreScreenState {
                     );
                   },
                 ),
+              if (!Platform.isIOS) ...[
               const SizedBox(height: 28),
               Row(
                 children: [
@@ -320,6 +324,7 @@ extension _FameCoinStoreView on _FameCoinStoreScreenState {
                 ],
               ],
               const SizedBox(height: 8),
+              ],
               const _PurchaseSafetyNote(),
             ],
           ),
