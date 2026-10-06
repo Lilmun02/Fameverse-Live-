@@ -160,7 +160,7 @@ extension _OwnerControlCenterView on _Build23OwnerControlCenterScreenState {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const _Section('FAME STONE BALANCES'),
+                const _Section('FAME COIN BALANCES'),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -183,6 +183,18 @@ extension _OwnerControlCenterView on _Build23OwnerControlCenterScreenState {
                 ),
                 const SizedBox(height: 20),
                 const _Section('REWARD FUNDING & OWNER BANKING'),
+                const SizedBox(height: 10),
+                _Action(
+                  key: const Key('owner-grant-tester-test-coins'),
+                  icon: Icons.science_outlined,
+                  title: 'Grant Tester Test Coins',
+                  body:
+                      'Give a tester non-cash Test Coins for gifts, levels, badges and battle QA. Test Coins can never create real creator earnings.',
+                  label: 'Grant',
+                  onTap: _busy
+                      ? null
+                      : () => _OwnerControlDialogs(this).grantTesterCoins(),
+                ),
                 const SizedBox(height: 10),
                 _Action(
                   key: const Key('owner-open-paypal-funding'),
