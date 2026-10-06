@@ -6,11 +6,13 @@ on:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - repair/native-file-law-badge-parity
   pull_request:
     branches:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - repair/native-file-law-badge-parity
   workflow_dispatch:
 
 permissions:
