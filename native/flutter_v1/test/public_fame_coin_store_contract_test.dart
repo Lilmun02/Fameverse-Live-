@@ -9,10 +9,22 @@ void main() {
     'public Fame Coin store is wired to Apple IAP and server verification',
     () {
       final pubspec = file('pubspec.yaml');
-      final store = file('lib/features/profile/fame_coin_store_screen.dart');
+      final store = [
+        file('lib/features/profile/fame_coin_store_screen.dart'),
+        file('lib/features/profile/fame_coin_purchase_flow.part.dart'),
+        file('lib/features/profile/fame_coin_store_view.part.dart'),
+      ].join('\n');
       final profile = file('lib/features/profile/native_profile_build23.dart');
-      final tray = file('lib/features/live/native_live_components.dart');
-      final viewer = file('lib/features/live/stream_viewer_live_screen.dart');
+      final tray = [
+        file('lib/features/live/native_live_components.dart'),
+        file('lib/features/live/native_gift_tray.part.dart'),
+        file('lib/features/live/native_gift_balance.part.dart'),
+      ].join('\n');
+      final viewer = [
+        file('lib/features/live/stream_viewer_live_screen.dart'),
+        file('lib/features/live/stream_viewer_session.part.dart'),
+        file('lib/features/live/stream_viewer_view.part.dart'),
+      ].join('\n');
 
       expect(pubspec, contains('in_app_purchase: ^3.3.1'));
       expect(store, contains('InAppPurchase.instance'));
@@ -32,7 +44,11 @@ void main() {
 
   test('Stripe purchases use hosted Checkout and server-only fulfillment', () {
     final pubspec = file('pubspec.yaml');
-    final store = file('lib/features/profile/fame_coin_store_screen.dart');
+    final store = [
+      file('lib/features/profile/fame_coin_store_screen.dart'),
+      file('lib/features/profile/fame_coin_purchase_flow.part.dart'),
+      file('lib/features/profile/fame_coin_store_view.part.dart'),
+    ].join('\n');
     final checkout = file(
       '../../supabase/functions/stripe-checkout-session/index.ts',
     );
@@ -86,7 +102,9 @@ void main() {
     expect(checkout, contains('stripe_live_price_cents'));
     expect(checkout, contains('priceForEnvironment(pack, environment)'));
     expect(checkout, contains('amount_cents: priceCents'));
-    expect(checkout, contains('amount_cents: priceCents'));
+    expect(checkout, contains('environment,'));
+    expect(webhook, contains('eventEnvironment'));
+    expect(webhook, contains('stripe-recharge-environment-mismatch'));
 
     expect(migration, contains('stripe_test_price_cents = 139'));
     expect(migration, contains('stripe_test_price_cents = 909'));
