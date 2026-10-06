@@ -159,14 +159,22 @@ class _StripeOfferCard extends StatelessWidget {
 }
 
 class _PurchaseSafetyNote extends StatelessWidget {
-  const _PurchaseSafetyNote();
+  const _PurchaseSafetyNote({required this.isIos});
+
+  final bool isIos;
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
-      'Fame Coins are consumable digital currency for gifting inside Fameverse. Apple purchases are credited only after server-side Apple verification. Stripe purchases are credited only after a signed Stripe webhook confirms payment. Creator earnings and owner reward reserves are separate balances.',
+    return Text(
+      isIos
+          ? 'Fame Coins are consumable digital currency for gifting inside Fameverse. Apple purchases are credited only after Fameverse verifies Apple’s signed transaction on the server.'
+          : 'Fame Coins are consumable digital currency for gifting inside Fameverse. Stripe purchases are credited only after a signed Stripe webhook confirms payment.',
       textAlign: TextAlign.center,
-      style: TextStyle(color: Color(0xFF817785), fontSize: 10, height: 1.45),
+      style: const TextStyle(
+        color: Color(0xFF817785),
+        fontSize: 10,
+        height: 1.45,
+      ),
     );
   }
 }
