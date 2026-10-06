@@ -181,7 +181,7 @@ Future<int?> askDollars({
         'owner_grant_test_coins',
         params: {'p_username': username, 'p_amount': amount},
       );
-      final row = _firstRpcRow(raw);
+      final row = _firstRow(raw);
       final total = _int(row['total_balance']);
       final test = _int(row['test_coins']);
       _message('@$username now has $test Test Coins · $total total.');
