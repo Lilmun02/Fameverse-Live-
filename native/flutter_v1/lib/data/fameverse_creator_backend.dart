@@ -125,7 +125,7 @@ class SupabaseFameverseCreatorBackend {
   }
 
   Future<FvCreatorPayoutMethod?> loadPayoutMethod() async {
-    final response = await _client.rpc('get_creator_payout_method');
+    final response = await _client.rpc('get_creator_payout_method_v2');
     final rows = _rows(response);
     if (rows.isEmpty) return null;
     return FvCreatorPayoutMethod.fromMap(rows.first);
@@ -146,6 +146,25 @@ class SupabaseFameverseCreatorBackend {
     return FvCreatorPayoutMethod.fromMap(rows.first);
   }
 
+  Future<FvCreatorPayoutMethod> setSandboxPayoutMethod({
+    required String recipientEmail,
+  }) async {
+    final response = await _client.rpc(
+      'set_creator_sandbox_payout_method',
+      params: {'p_recipient_email': recipientEmail.trim()},
+    );
+    final rows = _rows(response);
+    if (rows.isEmpty) throw Exception('Sandbox payout method was not saved.');
+    return FvCreatorPayoutMethod.fromMap(rows.first);
+  }
+
+  Future<FvCreatorQaPayoutSummary> loadQaPayoutSummary() async {
+    final response = await _client.rpc('get_creator_qa_payout_summary');
+    final rows = _rows(response);
+    if (rows.isEmpty) return FvCreatorQaPayoutSummary.empty;
+    return FvCreatorQaPayoutSummary.fromMap(rows.first);
+  }
+
   Future<FvCreatorPayoutSummary> loadPayoutSummary() async {
     final response = await _client.rpc('get_creator_payout_summary');
     final rows = _rows(response);
@@ -157,7 +176,7 @@ class SupabaseFameverseCreatorBackend {
     int limit = 20,
   }) async {
     final response = await _client.rpc(
-      'get_creator_payout_requests',
+      'get_creator_payout_requests_v2',
       params: {'p_limit': limit},
     );
     return _rows(response).map(FvCreatorPayoutRequest.fromMap).toList();
@@ -182,6 +201,16 @@ class SupabaseFameverseCreatorBackend {
     );
     final rows = _rows(response);
     if (rows.isEmpty) throw Exception('Payout request was not created.');
+    return FvCreatorPayoutRequest.fromMap(rows.first);
+  }
+
+  Future<FvCreatorPayoutRequest> requestQaPayout(int amountCents) async {
+    final response = await _client.rpc(
+      'request_creator_qa_payout',
+      params: {'p_amount_cents': amountCents},
+    );
+    final rows = _rows(response);
+    if (rows.isEmpty) throw Exception('QA payout request was not created.');
     return FvCreatorPayoutRequest.fromMap(rows.first);
   }
 
