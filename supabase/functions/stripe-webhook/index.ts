@@ -160,7 +160,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: order, error: orderError } = await admin
     .from("coin_recharge_orders")
-    .select("id,user_id,provider,provider_order_id,status")
+    .select("id,user_id,provider,provider_order_id,status,environment")
     .eq("id", rechargeId)
     .maybeSingle();
   if (orderError || !order) return json(404, { error: "stripe-recharge-order-not-found" });
@@ -169,6 +169,15 @@ Deno.serve(async (req: Request) => {
   }
   if (order.provider_order_id && order.provider_order_id !== sessionId) {
     return json(409, { error: "stripe-session-mismatch" });
+  }
+
+  const eventEnvironment = event.livemode === true ? "live" : "test";
+  if (String(order.environment ?? "live") !== eventEnvironment) {
+    return json(409, {
+      error: "stripe-recharge-environment-mismatch",
+      order_environment: order.environment,
+      event_environment: eventEnvironment,
+    });
   }
 
   const { data: finalized, error: finalizeError } = await admin.rpc(
