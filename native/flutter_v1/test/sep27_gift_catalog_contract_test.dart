@@ -63,7 +63,7 @@ void main() {
       expect(components, contains("Key('native-gift-presentation-"));
       expect(components, contains("Key('cinematic-gift-presentation-"));
       expect(components, contains('VideoPlayer(controller)'));
-      expect(components, contains('BoxFit.cover'));
+      expect(components, contains('BoxFit.contain'));
     },
   );
 }
