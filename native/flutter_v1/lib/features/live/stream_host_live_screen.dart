@@ -78,7 +78,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           image: widget.room.host.avatarUrl,
         ),
         userToken: widget.credentials.userToken,
-        options: StreamVideoOptions(autoConnect: false),
+        options: StreamVideoOptions(
+          autoConnect: false,
+          audioConfigurationPolicy: const AudioConfigurationPolicy.broadcaster(),
+        ),
       );
       fvRequireSuccess(
         await client.connect(registerPushDevice: false),
@@ -97,6 +100,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           ],
         ),
         'Could not create the livestream',
+      );
+      fvRequireSuccess(
+        call.setAudioBitrateProfile(SfuAudioBitrateProfile.voiceHighQuality),
+        'Could not configure high-quality live audio',
       );
       fvRequireSuccess(
         await call.join(
@@ -118,13 +125,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
       );
 
-      final stats = await widget.liveBackend.loadGifterStats(
-        widget.identity.id,
-      );
-      final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
-      _gifterLevel = stats.level;
-      _fameTaps = taps;
-
       _heartbeat = Timer.periodic(const Duration(seconds: 15), (_) {
         unawaited(
           widget.liveBackend.heartbeatLiveRoom(
@@ -139,6 +139,18 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       );
 
       if (mounted) setState(() => _connecting = false);
+
+      try {
+        final stats = await widget.liveBackend.loadGifterStats(
+          widget.identity.id,
+        );
+        if (mounted) setState(() => _gifterLevel = stats.level);
+      } catch (_) {}
+
+      try {
+        final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
+        if (mounted) setState(() => _fameTaps = taps);
+      } catch (_) {}
     } catch (error) {
       await _markRoomEnded();
       await _disposeTransport();
