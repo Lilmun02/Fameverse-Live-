@@ -134,7 +134,7 @@ void main() {
         expect(viewer, contains('await call.setCameraEnabled(enabled: true)'));
         expect(
           backend,
-          contains('RealtimeChannelConfig(ack: false, self: false)'),
+          contains('RealtimeChannelConfig(ack: true, self: false)'),
         );
       },
     );
