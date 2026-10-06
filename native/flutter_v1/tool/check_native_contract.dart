@@ -9,7 +9,42 @@ void require(bool condition, String message) {
 
 String read(String path) => File(path).readAsStringSync();
 
+const int maxNativeSourceLines = 450;
+
+void enforceNativeSourceLineLaw() {
+  final sourceRoot = Directory('lib');
+  final violations = <String>[];
+
+  for (final entity in sourceRoot.listSync(recursive: true)) {
+    if (entity is! File || !entity.path.endsWith('.dart')) continue;
+    if (entity.path.endsWith('.g.dart') || entity.path.endsWith('.freezed.dart')) {
+      continue;
+    }
+
+    final content = entity.readAsStringSync();
+    final lineCount = content.isEmpty ? 0 : content.split(RegExp(r'\r?\n')).length;
+    if (lineCount > maxNativeSourceLines) {
+      violations.add('${entity.path}: $lineCount lines');
+    }
+  }
+
+  if (violations.isEmpty) return;
+
+  stderr.writeln(
+    '[native-foundation-law] Native source limit exceeded '
+    '($maxNativeSourceLines lines max):',
+  );
+  for (final violation in violations) {
+    stderr.writeln('[native-foundation-law] - $violation');
+  }
+  stderr.writeln(
+    '[native-foundation-law] Split the affected responsibility before merge.',
+  );
+  exitCode = 1;
+}
+
 void main() {
+  enforceNativeSourceLineLaw();
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
@@ -215,7 +250,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
+      '[native-foundation-law] file law, constitution, Build 32 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
     );
   }
 }
