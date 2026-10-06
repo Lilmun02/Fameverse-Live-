@@ -20,6 +20,7 @@ import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'build23_shell_account_service.dart';
+import 'build23_shell_navigation.dart';
 import 'build23_shell_profile_service.dart';
 import 'fameverse_home_build23.dart';
 
@@ -54,6 +55,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   SupabaseFameverseCreatorBackend? _creatorBackend;
   late final FvBuild23ShellAccountService _accountService;
   late final FvBuild23ShellProfileService _profileService;
+  final _navigation = const FvBuild23ShellNavigation();
 
   int _tab = 0;
   bool _loading = true;
@@ -213,7 +215,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       if (mounted) setState(() => _network = network);
       await _recordBetaMission('follow_creator');
     } catch (_) {
-      _message('Could not update that connection.');
+      _navigation.message(context, 'Could not update that connection.');
     } finally {
       if (mounted) setState(() => _followBusy = false);
     }
@@ -233,11 +235,11 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       if (!mounted) return;
       setState(() => _profile = profile);
       Navigator.of(context).pop();
-      _message('Profile saved');
+      _navigation.message(context, 'Profile saved');
       await _recordBetaMission('complete_profile');
     } catch (error) {
       final text = error.toString();
-      _message(
+      _navigation.message(context, 
         text.contains('23505')
             ? 'That username is already taken'
             : text.contains('at least 3')
@@ -254,44 +256,18 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       final profile = await _profileService.pickAndUploadPhoto();
       if (profile == null || !mounted) return;
       setState(() => _profile = profile);
-      _message('Profile photo updated');
+      _navigation.message(context, 'Profile photo updated');
       await _recordBetaMission('complete_profile');
     } catch (_) {
-      _message('Could not update profile photo.');
+      _navigation.message(context, 'Could not update profile photo.');
     } finally {
       if (mounted) setState(() => _avatarBusy = false);
     }
   }
 
-  void _message(String value) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(value)));
-  }
-
-  void _openPolicies() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(builder: (context) => const FameversePolicyScreen()),
-    );
-  }
-
-  void _openEdit(FvProfile profile) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (context) => FameverseEditProfileScreen(
-          profile: profile,
-          avatarBusy: _avatarBusy,
-          onChangePhoto: _pickProfilePhoto,
-          onSave: _saveProfile,
-        ),
-      ),
-    );
-  }
-
   void _openPersonalCreatorStudio(FvProfile profile) {
     if (!_ensureSupplementalBackends()) {
-      _message('Creator Studio is reconnecting.');
+      _navigation.message(context, 'Creator Studio is reconnecting.');
       return;
     }
     Navigator.of(context).push<void>(
@@ -308,14 +284,14 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
 
   Future<void> _openCreatorStudio(FvProfile profile) async {
     if (!_ensureSupplementalBackends()) {
-      _message('Creator Studio is reconnecting.');
+      _navigation.message(context, 'Creator Studio is reconnecting.');
       return;
     }
 
     final account = await _loadAuthoritativeAccount();
     if (!mounted) return;
     if (account == null || account.profile.id != widget.identity.id) {
-      _message('Your account session changed. Refreshing Fameverse.');
+      _navigation.message(context, 'Your account session changed. Refreshing Fameverse.');
       await _refreshAll();
       return;
     }
@@ -342,7 +318,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
 
   Future<void> _openStories(FvProfile profile) async {
     if (!_ensureSupplementalBackends()) {
-      _message('Stories are reconnecting.');
+      _navigation.message(context, 'Stories are reconnecting.');
       return;
     }
     await Navigator.of(context).push<void>(
@@ -463,10 +439,16 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       onToggleFollow: _toggleFollow,
       onCreatorSelected: _openPublicProfile,
       onChangePhoto: _pickProfilePhoto,
-      onEdit: () => _openEdit(profile),
+      onEdit: () => _navigation.openEdit(
+        context,
+        profile: profile,
+        avatarBusy: _avatarBusy,
+        onChangePhoto: _pickProfilePhoto,
+        onSave: _saveProfile,
+      ),
       onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
       onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
-      onPolicies: _openPolicies,
+      onPolicies: () => _navigation.openPolicies(context),
       onSignOut: widget.backend.signOut,
     );
   }
