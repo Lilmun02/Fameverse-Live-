@@ -370,16 +370,25 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
   Future<void> _refreshWalletAfterStripe() async {
     final previousBalance = _balance;
     try {
-      final wallet = await _client
-          .from('beta_coin_wallets')
-          .select('balance')
-          .eq('user_id', widget.userId)
-          .maybeSingle();
-      final balance = (wallet?['balance'] as num?)?.toInt() ?? previousBalance;
+      final fundingRaw = await _client.rpc('get_my_coin_funding_breakdown');
+      final fundingRows = fundingRaw is List
+          ? fundingRaw.whereType<Map>().map(Map<String, dynamic>.from).toList()
+          : <Map<String, dynamic>>[];
+      final funding = fundingRows.isEmpty
+          ? const <String, dynamic>{}
+          : fundingRows.first;
+      final balance =
+          (funding['total_balance'] as num?)?.toInt() ?? previousBalance;
+      final realCoins =
+          (funding['cash_backed_coins'] as num?)?.toInt() ?? _realCoins;
+      final testCoins =
+          (funding['promo_coins'] as num?)?.toInt() ?? _testCoins;
       if (!mounted) return;
       if (balance != previousBalance) widget.onBalanceChanged?.call(balance);
       setState(() {
         _balance = balance;
+        _realCoins = realCoins;
+        _testCoins = testCoins;
         _stripeBusyPackId = null;
         _notice = balance > previousBalance
             ? '${balance - previousBalance} Fame Coins added through Stripe. Balance: $balance.'
