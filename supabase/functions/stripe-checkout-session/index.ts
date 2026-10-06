@@ -177,7 +177,6 @@ Deno.serve(async (req: Request) => {
   form.set("ui_mode", "hosted_page");
   form.set("origin_context", "mobile_app");
   form.set("managed_payments[enabled]", "false");
-  form.set("payment_method_types[0]", "card");
   form.set("line_items[0][price]", stripePriceId);
   form.set("line_items[0][quantity]", "1");
   form.set("client_reference_id", user.id);
@@ -208,6 +207,13 @@ Deno.serve(async (req: Request) => {
     const sessionId = String(session?.id ?? "");
     const checkoutUrl = String(session?.url ?? "");
     if (!stripeResponse.ok || !sessionId || !checkoutUrl) {
+      console.error("Stripe Checkout Session creation failed", {
+        status: stripeResponse.status,
+        type: session?.error?.type,
+        code: session?.error?.code,
+        param: session?.error?.param,
+        message: session?.error?.message,
+      });
       await admin
         .from("coin_recharge_orders")
         .update({ status: "failed", updated_at: new Date().toISOString() })
