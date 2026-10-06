@@ -18,7 +18,7 @@ void main() {
       expect(visual, contains('if (widget.gift.cinematic)'));
       expect(
         visual,
-        contains("Key('gift-preview-unavailable-${widget.gift.id}')"),
+        contains(r"Key('gift-preview-unavailable-${widget.gift.id}')"),
       );
 
       final cinematicBlockStart = visual.indexOf('Widget _cinematicPreview()');
