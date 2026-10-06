@@ -53,6 +53,10 @@ void main() {
   final app = read('lib/app/fameverse_app.dart');
   final backend = read('lib/data/fameverse_backend.dart');
   final liveBackend = read('lib/data/fameverse_live_backend.dart');
+  final liveBackendImpl = read('lib/data/fameverse_live_supabase_backend.dart');
+  final liveGiftCatalog = read('lib/data/fameverse_gift_catalog.dart');
+  final liveGiftCore = read('lib/data/fameverse_gift_catalog_core.dart');
+  final liveGiftPremium = read('lib/data/fameverse_gift_catalog_premium.dart');
   final startupUpdater = read('lib/data/startup_update_service.dart');
   final camera = read('lib/features/live/native_camera_screen.dart');
   final liveExports = read('lib/features/live/stream_live_screen.dart');
@@ -232,9 +236,12 @@ void main() {
         liveMedia.contains('StreamCallType.liveStream()') &&
         liveMedia.contains('setMicrophoneEnabled') &&
         liveMedia.contains('NativeViewerLiveScreen') &&
-        liveBackend.contains("'stream-token'") &&
-        liveBackend.contains("from('live_rooms')") &&
-        !liveBackend.contains("'livekit-token'") &&
+        liveBackendImpl.contains("'stream-token'") &&
+        liveBackendImpl.contains("from('live_rooms')") &&
+        !liveBackendImpl.contains("'livekit-token'") &&
+        liveGiftCatalog.contains('fvGiftCatalog') &&
+        liveGiftCore.contains("id: 'rose'") &&
+        liveGiftPremium.contains("id: 'abyssal-leviathan'") &&
         !liveMedia.contains('package:livekit_client'),
     'Native Live migration must use approved Stream Video transport with Supabase-authoritative rooms and an active host camera flip.',
   );
