@@ -154,7 +154,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
-  Future<bool> _sendQaGift(FvGiftDefinition gift, int quantity) async {
+  Future<bool> _sendQaGift(
+    FvGiftDefinition gift,
+    int quantity,
+    String fundingMode,
+  ) async {
     if (!_qaGiftAllowed || _giftBusy) return false;
     if (quantity < 1 || quantity > 100000) {
       _message('Gift amount must be between 1 and 100,000.');
