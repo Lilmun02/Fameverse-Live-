@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+String _files(List<String> paths) =>
+    paths.map((path) => File(path).readAsStringSync()).join('\\n');
+
 void main() {
   group('Build 32 Live repair contract', () {
     test(
@@ -53,12 +56,22 @@ void main() {
     test(
       'host and viewer use approved square cohost stage and keyed gift playback',
       () async {
-        final host = await File(
+        final host = _files([
           'lib/features/live/stream_host_live_screen.dart',
-        ).readAsString();
-        final viewer = await File(
+          'lib/features/live/stream_host_session.part.dart',
+          'lib/features/live/stream_host_cohost.part.dart',
+          'lib/features/live/stream_host_sheets.part.dart',
+          'lib/features/live/stream_host_view.part.dart',
+          'lib/features/live/stream_host_widgets.part.dart',
+        ]);
+        final viewer = _files([
           'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsString();
+          'lib/features/live/stream_viewer_session.part.dart',
+          'lib/features/live/stream_viewer_interactions.part.dart',
+          'lib/features/live/stream_viewer_sheets.part.dart',
+          'lib/features/live/stream_viewer_view.part.dart',
+          'lib/features/live/stream_viewer_widgets.part.dart',
+        ]);
         final stage = await File(
           'lib/features/live/native_live_stage.dart',
         ).readAsString();
@@ -95,9 +108,13 @@ void main() {
     test(
       'custom send keeps real gift visual and 100000 quantity ceiling',
       () async {
-        final components = await File(
+        final components = _files([
           'lib/features/live/native_live_components.dart',
-        ).readAsString();
+          'lib/features/live/native_gift_tray.part.dart',
+          'lib/features/live/native_gift_balance.part.dart',
+          'lib/features/live/native_gift_custom_amount.part.dart',
+          'lib/features/live/native_gift_overlay.part.dart',
+        ]);
 
         expect(
           components,
@@ -111,15 +128,26 @@ void main() {
     test(
       'viewer cannot publish media before cohost permission and realtime does not self-echo',
       () async {
-        final viewer = await File(
+        final viewer = _files([
           'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsString();
-        final host = await File(
+          'lib/features/live/stream_viewer_session.part.dart',
+          'lib/features/live/stream_viewer_interactions.part.dart',
+          'lib/features/live/stream_viewer_sheets.part.dart',
+          'lib/features/live/stream_viewer_view.part.dart',
+          'lib/features/live/stream_viewer_widgets.part.dart',
+        ]);
+        final host = _files([
           'lib/features/live/stream_host_live_screen.dart',
-        ).readAsString();
-        final backend = await File(
-          'lib/data/fameverse_live_backend.dart',
-        ).readAsString();
+          'lib/features/live/stream_host_session.part.dart',
+          'lib/features/live/stream_host_cohost.part.dart',
+          'lib/features/live/stream_host_sheets.part.dart',
+          'lib/features/live/stream_host_view.part.dart',
+          'lib/features/live/stream_host_widgets.part.dart',
+        ]);
+        final backend = _files([
+          'lib/data/fameverse_live_contract.dart',
+          'lib/data/fameverse_live_supabase_backend.dart',
+        ]);
 
         expect(viewer, contains('camera: TrackOption.disabled()'));
         expect(viewer, contains('microphone: TrackOption.disabled()'));
@@ -166,12 +194,22 @@ void main() {
     test(
       'chat and composer match the approved V2 readability contract',
       () async {
-        final host = await File(
+        final host = _files([
           'lib/features/live/stream_host_live_screen.dart',
-        ).readAsString();
-        final viewer = await File(
+          'lib/features/live/stream_host_session.part.dart',
+          'lib/features/live/stream_host_cohost.part.dart',
+          'lib/features/live/stream_host_sheets.part.dart',
+          'lib/features/live/stream_host_view.part.dart',
+          'lib/features/live/stream_host_widgets.part.dart',
+        ]);
+        final viewer = _files([
           'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsString();
+          'lib/features/live/stream_viewer_session.part.dart',
+          'lib/features/live/stream_viewer_interactions.part.dart',
+          'lib/features/live/stream_viewer_sheets.part.dart',
+          'lib/features/live/stream_viewer_view.part.dart',
+          'lib/features/live/stream_viewer_widgets.part.dart',
+        ]);
         final shared = await File(
           'lib/features/live/stream_live_shared.dart',
         ).readAsString();
@@ -191,12 +229,17 @@ void main() {
     test(
       'PayPal recharge is native, environment-aware, custom, and Vercel-free',
       () async {
-        final screen = await File(
+        final screen = _files([
           'lib/features/profile/native_recharge_screen.dart',
-        ).readAsString();
-        final studio = await File(
+          'lib/features/profile/native_recharge_view.part.dart',
+        ]);
+        final studio = _files([
           'lib/features/profile/creator_studio_screen.dart',
-        ).readAsString();
+          'lib/features/profile/creator_studio_header.part.dart',
+          'lib/features/profile/creator_studio_badges.part.dart',
+          'lib/features/profile/creator_studio_payout.part.dart',
+          'lib/features/profile/creator_studio_history.part.dart',
+        ]);
         final session = await File(
           '../../supabase/functions/recharge-session/index.ts',
         ).readAsString();
@@ -266,11 +309,13 @@ void main() {
       expect(viewer, contains("Key('viewer-gift-button')"));
       expect(viewer, isNot(contains("if (_canRefill) ...[")));
       expect(viewer, contains('canRefill: _canRefill'));
+      expect(viewer, contains('realCoins: _realCoins'));
+      expect(viewer, contains('testCoins: _testCoins'));
       expect(viewer, contains('widget.room.host.handle'));
       expect(viewer, contains('state.liveEndedAt != null'));
       expect(viewer, contains('class _TapBurstParticle'));
       expect(viewer, isNot(contains("fvGiftById('rose')")));
-      expect(components, contains('Future<int> Function() onRefill'));
+      expect(components, contains('Future<FvCoinFundingBreakdown> Function() onRefill'));
       expect(components, contains("Key('native-gift-presentation-"));
       expect(components, contains("Key('cinematic-gift-presentation-"));
       expect(components, contains('onFinished'));
