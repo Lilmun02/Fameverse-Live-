@@ -48,7 +48,7 @@ void main() {
       );
     });
 
-    test('buyer and creator-facing currency copy is Fame Stones', () {
+    test('buyer and creator-facing currency copy is Fame Coins', () {
       final creator = File(
         'lib/features/profile/creator_studio_build23.dart',
       ).readAsStringSync();
@@ -62,10 +62,10 @@ void main() {
         'lib/features/live/native_live_components.dart',
       ).readAsStringSync();
 
-      expect(creator, contains('Fame Stones'));
-      expect(owner, contains('Fame Stones'));
-      expect(store, contains('Fame Stones'));
-      expect(giftTray, contains('Fame Stones'));
+      expect(creator, contains('Fame Coins'));
+      expect(owner, contains('Fame Coins'));
+      expect(store, contains('Fame Coins'));
+      expect(giftTray, contains('Fame Coin balance'));
     });
   });
 }

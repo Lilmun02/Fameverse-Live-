@@ -409,20 +409,20 @@ class _Build23OwnerControlCenterScreenState
     final text = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Create Cash-Backed Fame Stones'),
+        title: const Text('Create Cash-Backed Fame Coins'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Cash-Backed Fame Stones use real money from the Reward Reserve and can create real creator earnings. Promo Fame Stones are separate and do not use this reserve.',
+              'Cash-Backed Fame Coins use real money from the Reward Reserve and can create real creator earnings. Promo Fame Coins are separate and do not use this reserve.',
             ),
             const SizedBox(height: 14),
             TextField(
               controller: coinsController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Cash-Backed Fame Stones',
+                labelText: 'Cash-Backed Fame Coins',
                 prefixIcon: Icon(Icons.toll_rounded),
               ),
             ),
@@ -456,14 +456,14 @@ class _Build23OwnerControlCenterScreenState
           'p_note': 'Owner created cash-backed reward coins',
         },
       );
-      _message('Cash-Backed Fame Stones created.');
+      _message('Cash-Backed Fame Coins created.');
       await _refresh();
     } catch (error) {
       final text = error.toString().toLowerCase();
       _message(
         text.contains('insufficient funded cash reward reserve')
             ? 'Not enough Reward Reserve funds for that many cash-backed coins.'
-            : 'Could not create Cash-Backed Fame Stones.',
+            : 'Could not create Cash-Backed Fame Coins.',
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -636,7 +636,7 @@ class _Build23OwnerControlCenterScreenState
                   children: [
                     Expanded(
                       child: _Metric(
-                        label: 'Promo Fame Stones · no cash value',
+                        label: 'Promo Fame Coins · no cash value',
                         value: '${_int(_wallet['promo_coins'])}',
                         icon: Icons.science_outlined,
                       ),
@@ -644,7 +644,7 @@ class _Build23OwnerControlCenterScreenState
                     const SizedBox(width: 10),
                     Expanded(
                       child: _Metric(
-                        label: 'Cash-Backed Fame Stones · real reserve',
+                        label: 'Cash-Backed Fame Coins · real reserve',
                         value: '${_int(_wallet['cash_backed_coins'])}',
                         icon: Icons.attach_money_rounded,
                       ),
@@ -677,9 +677,9 @@ class _Build23OwnerControlCenterScreenState
                 _Action(
                   key: const Key('owner-issue-cash-reward-coins'),
                   icon: Icons.toll_rounded,
-                  title: 'Create Cash-Backed Fame Stones',
+                  title: 'Create Cash-Backed Fame Coins',
                   body:
-                      'Create coins from the Reward Reserve only when you want those coins to be capable of creating real creator earnings. Promo Fame Stones stay separate.',
+                      'Create coins from the Reward Reserve only when you want those coins to be capable of creating real creator earnings. Promo Fame Coins stay separate.',
                   label: 'Create',
                   onTap: _busy ? null : _issueCashRewardCoins,
                 ),
@@ -958,7 +958,7 @@ class _Hero extends StatelessWidget {
           ),
           SizedBox(height: 7),
           Text(
-            'Promo Fame Stones are test-only and have no cash value. Reward Reserve is real business money set aside for rewards. Cash-Backed Fame Stones use that reserve and can create real creator earnings.',
+            'Promo Fame Coins are test-only and have no cash value. Reward Reserve is real business money set aside for rewards. Cash-Backed Fame Coins use that reserve and can create real creator earnings.',
             style: TextStyle(color: Color(0xFFC8BBCB), height: 1.4),
           ),
         ],

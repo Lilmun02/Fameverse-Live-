@@ -91,7 +91,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
               decoration: const InputDecoration(
                 labelText: 'Amount',
                 prefixText: r'$ ',
-                helperText: r'$1.00 = 100 Fame Stones',
+                helperText: r'$1.00 = 100 Fame Coins',
               ),
             ),
           ],
@@ -139,7 +139,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
               value: '-${_money(amountCents)}',
             ),
             const SizedBox(height: 8),
-            _ConfirmRow(label: 'Fame Stones', value: '+$amountCents'),
+            _ConfirmRow(label: 'Fame Coins', value: '+$amountCents'),
             const Divider(height: 28),
             _ConfirmRow(
               label: 'Earnings after',
@@ -147,7 +147,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'This exchange is one-way. Fame Stones cannot be converted back into Creator Earnings or cashed out.',
+              'This exchange is one-way. Fame Coins cannot be converted back into Creator Earnings or cashed out.',
               style: TextStyle(color: Color(0xFFB8ACBF), height: 1.4),
             ),
           ],
@@ -176,7 +176,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
       setState(() {
         _coinBalance = result.fameCoinBalance;
       });
-      _message('${result.coinsCredited} Fame Stones added.');
+      _message('${result.coinsCredited} Fame Coins added.');
       await _refresh();
     } catch (error) {
       final text = error.toString().toLowerCase();
@@ -238,7 +238,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _Balance(
-                        label: 'Fame Stones',
+                        label: 'Fame Coins',
                         value: '$_coinBalance',
                         icon: Icons.toll_rounded,
                       ),
@@ -252,7 +252,7 @@ class _CoinExchangeScreenState extends State<CoinExchangeScreen> {
                 ),
                 const SizedBox(height: 5),
                 const Text(
-                  r'$1.00 of Available Creator Earnings becomes 100 Fame Stones. There is no second creator split.',
+                  r'$1.00 of Available Creator Earnings becomes 100 Fame Coins. There is no second creator split.',
                   style: TextStyle(color: Color(0xFFAFA3B6), height: 1.4),
                 ),
                 const SizedBox(height: 14),
@@ -329,12 +329,12 @@ class _ExchangeHero extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            'Turn earnings into Fame Stones',
+            'Turn earnings into Fame Coins',
             style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900),
           ),
           SizedBox(height: 7),
           Text(
-            'Use Available Creator Earnings to get spendable Fame Stones for gifting. Pending or payout-reserved earnings cannot be exchanged.',
+            'Use Available Creator Earnings to get spendable Fame Coins for gifting. Pending or payout-reserved earnings cannot be exchanged.',
             style: TextStyle(color: Color(0xFFBDB1C5), height: 1.4),
           ),
         ],
@@ -417,7 +417,7 @@ class _HistoryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_money(item.amountCents)} → ${item.coinsCredited} Fame Stones',
+                  '${_money(item.amountCents)} → ${item.coinsCredited} Fame Coins',
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 3),

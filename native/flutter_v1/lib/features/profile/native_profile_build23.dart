@@ -581,7 +581,7 @@ class _WalletCardState extends State<_WalletCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Fame Stones',
+                    'Fame Coins',
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   Text(
@@ -611,7 +611,7 @@ class _WalletCardState extends State<_WalletCard> {
                 ),
                 IconButton(
                   onPressed: _loading ? null : _load,
-                  tooltip: 'Refresh Fame Stones',
+                  tooltip: 'Refresh Fame Coins',
                   icon: _loading
                       ? const SizedBox(
                           width: 17,

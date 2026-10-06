@@ -697,7 +697,7 @@ class _VerificationCard extends StatelessWidget {
           const SizedBox(height: 14),
           _VerificationProgressLine(
             key: const Key('creator-verification-coins-progress'),
-            label: 'Eligible Fame Stones received',
+            label: 'Eligible Fame Coins received',
             value: progress.eligibleReceivedCoins,
             requirement: progress.receivedCoinsRequirement,
           ),

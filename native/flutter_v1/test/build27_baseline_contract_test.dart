@@ -14,7 +14,7 @@ void main() {
 
       expect(shell, contains('get_my_fameverse_identity'));
       expect(shell, contains('Build23OwnerControlCenterScreen'));
-      expect(profile, contains('Owner Control Center'));
+      expect(profile, contains('Owner Studio'));
     });
 
     test('owner host gift tray stays on host Live', () {
