@@ -95,17 +95,29 @@ Future<void> _loadFollowState() async {
 
   Future<void> _hydrateViewerState() async {
     try {
-      final balance = await widget.liveBackend.loadWalletBalance(
-        widget.identity.id,
-      );
+      final funding = await widget.liveBackend.loadCoinFundingBreakdown();
       if (mounted) {
         setState(() {
-          _walletBalance = balance;
+          _walletBalance = funding.totalCoins;
+          _realCoins = funding.realCoins;
+          _testCoins = funding.testCoins;
           _walletReady = true;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _walletReady = true);
+      try {
+        final balance = await widget.liveBackend.loadWalletBalance(
+          widget.identity.id,
+        );
+        if (mounted) {
+          setState(() {
+            _walletBalance = balance;
+            _walletReady = true;
+          });
+        }
+      } catch (_) {
+        if (mounted) setState(() => _walletReady = true);
+      }
     }
 
     try {
@@ -300,6 +312,14 @@ Future<void> _loadFollowState() async {
       if (mounted) {
         setState(() {
           _walletBalance = result.walletBalance;
+          _realCoins = (_realCoins - result.realCoinsSpent).clamp(
+            0,
+            result.walletBalance,
+          );
+          _testCoins = (_testCoins - result.testCoinsSpent).clamp(
+            0,
+            result.walletBalance,
+          );
           _gifterLevel = result.level;
           _chat.add(message);
         });
@@ -338,17 +358,34 @@ Future<void> _loadFollowState() async {
     }
   }
 
-  Future<int> _refillWallet() async {
-    if (!_canRefill) return _walletBalance;
+  Future<FvCoinFundingBreakdown> _refillWallet() async {
+    if (!_canRefill) {
+      return FvCoinFundingBreakdown(
+        realCoins: _realCoins,
+        testCoins: _testCoins,
+        totalCoins: _walletBalance,
+      );
+    }
     try {
-      final balance = await widget.liveBackend.refillBetaWallet();
-      if (mounted) setState(() => _walletBalance = balance);
-      return balance;
+      await widget.liveBackend.refillBetaWallet();
+      final funding = await widget.liveBackend.loadCoinFundingBreakdown();
+      if (mounted) {
+        setState(() {
+          _walletBalance = funding.totalCoins;
+          _realCoins = funding.realCoins;
+          _testCoins = funding.testCoins;
+        });
+      }
+      return funding;
     } catch (_) {
       if (mounted) {
         _showMessage('Test-coin refill is limited to owner/admin accounts.');
       }
-      return _walletBalance;
+      return FvCoinFundingBreakdown(
+        realCoins: _realCoins,
+        testCoins: _testCoins,
+        totalCoins: _walletBalance,
+      );
     }
   }
 
@@ -368,12 +405,12 @@ Future<void> _loadFollowState() async {
       ),
     );
     try {
-      final balance = await widget.liveBackend.loadWalletBalance(
-        widget.identity.id,
-      );
+      final funding = await widget.liveBackend.loadCoinFundingBreakdown();
       if (mounted) {
         setState(() {
-          _walletBalance = balance;
+          _walletBalance = funding.totalCoins;
+          _realCoins = funding.realCoins;
+          _testCoins = funding.testCoins;
           _walletReady = true;
         });
       }
@@ -388,6 +425,8 @@ Future<void> _loadFollowState() async {
       backgroundColor: const Color(0xFF140D1B),
       builder: (sheetContext) => NativeGiftTray(
         coins: _walletBalance,
+        realCoins: _realCoins,
+        testCoins: _testCoins,
         canRefill: _canRefill,
         onSend: _sendGift,
         onRefill: _refillWallet,
