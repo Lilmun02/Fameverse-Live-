@@ -83,10 +83,32 @@ Deno.serve(async (req: Request) => {
   if (!payoutId) return json({ error: "payout_id_required" }, 400);
 
   const expectedEnvironment = payload?.expected_environment?.trim().toLowerCase();
-  if (expectedEnvironment && expectedEnvironment !== paypalEnv) {
+
+  const { data: payoutMeta, error: payoutMetaError } = await admin
+    .from("creator_payout_requests")
+    .select("payout_environment, is_qa")
+    .eq("id", payoutId)
+    .maybeSingle();
+  if (payoutMetaError) return json({ error: "payout_lookup_failed" }, 500);
+  if (!payoutMeta) return json({ error: "payout_not_found" }, 404);
+
+  const requestEnvironment = String(
+    payoutMeta.payout_environment ?? "live",
+  ).toLowerCase();
+  if (!["sandbox", "live"].includes(requestEnvironment)) {
+    return json({ error: "invalid_payout_environment" }, 409);
+  }
+  if (expectedEnvironment && expectedEnvironment !== requestEnvironment) {
+    return json({
+      error: "payout_environment_mismatch",
+      expected_environment: expectedEnvironment,
+      request_environment: requestEnvironment,
+    }, 409);
+  }
+  if (paypalEnv !== requestEnvironment) {
     return json({
       error: "paypal_environment_mismatch",
-      expected_environment: expectedEnvironment,
+      request_environment: requestEnvironment,
       configured_environment: paypalEnv,
     }, 409);
   }
@@ -235,7 +257,8 @@ Deno.serve(async (req: Request) => {
       ok: true,
       payout_id: payoutId,
       provider: "paypal",
-      environment: paypalEnv,
+      environment: requestEnvironment,
+      is_qa: payoutMeta.is_qa === true,
       provider_batch_id: batchId,
       provider_status: batchStatus,
     });
