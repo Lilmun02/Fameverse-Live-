@@ -493,7 +493,7 @@ const fvGiftCatalog = <FvGiftDefinition>[
     category: 'fameverse',
     activityEmoji: '🐋',
     videoUrl:
-        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/5f7cc621-ffd0-4edd-b585-56ec76a0907e.mp4',
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/ee94db8e-08fe-4028-a641-47e8b0dc3b89.mp4',
     cinematic: true,
   ),
 ];
