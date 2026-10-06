@@ -16,11 +16,69 @@ class _PayoutMethodCard extends StatelessWidget {
     final email = method?.recipientEmail.trim() ?? '';
     return _ActionCard(
       icon: Icons.paypal_outlined,
-      title: 'PayPal payout method',
-      subtitle: email.isEmpty ? 'No payout email saved' : email,
+      title: 'Live PayPal payout method',
+      subtitle: email.isEmpty ? 'No live payout email saved' : email,
       trailing: TextButton(
         onPressed: busy ? null : onEdit,
         child: Text(email.isEmpty ? 'Add' : 'Edit'),
+      ),
+    );
+  }
+}
+
+class _SandboxPayoutMethodCard extends StatelessWidget {
+  const _SandboxPayoutMethodCard({
+    required this.method,
+    required this.busy,
+    required this.onEdit,
+  });
+
+  final FvCreatorPayoutMethod? method;
+  final bool busy;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final email = method?.sandboxRecipientEmail.trim() ?? '';
+    return _ActionCard(
+      icon: Icons.science_outlined,
+      title: 'QA Sandbox payout recipient',
+      subtitle: email.isEmpty
+          ? 'No sandbox recipient saved'
+          : '$email · test only',
+      trailing: TextButton(
+        onPressed: busy ? null : onEdit,
+        child: Text(email.isEmpty ? 'Add' : 'Edit'),
+      ),
+    );
+  }
+}
+
+class _QaPayoutCard extends StatelessWidget {
+  const _QaPayoutCard({
+    required this.summary,
+    required this.hasMethod,
+    required this.busy,
+    required this.onRequest,
+  });
+
+  final FvCreatorQaPayoutSummary summary;
+  final bool hasMethod;
+  final bool busy;
+  final VoidCallback onRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    final canRequest = summary.canRequestPayout && hasMethod && !busy;
+    return _ActionCard(
+      icon: Icons.science_rounded,
+      title: 'QA payout test balance',
+      subtitle:
+          'Sandbox only · available ${_money(summary.withdrawableCents)} · no real cash value',
+      trailing: FilledButton.tonal(
+        key: const Key('build23-request-qa-payout'),
+        onPressed: canRequest ? onRequest : null,
+        child: const Text('Test payout'),
       ),
     );
   }
@@ -117,6 +175,7 @@ class _PayoutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final providerStatus = (request.providerStatus ?? '').trim().toUpperCase();
     final processing = request.status == 'processing';
+    final lane = request.isQa ? 'QA · SANDBOX' : 'REAL · LIVE';
     final missingProviderBatch =
         processing && (request.providerBatchId ?? '').trim().isEmpty;
     final statusText = request.status.replaceAll('_', ' ');
@@ -157,6 +216,22 @@ class _PayoutTile extends StatelessWidget {
                   Text(
                     _money(request.amountCents),
                     style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    lane,
+                    key: Key(
+                      request.isQa
+                          ? 'creator-payout-qa-lane'
+                          : 'creator-payout-live-lane',
+                    ),
+                    style: TextStyle(
+                      color: request.isQa
+                          ? const Color(0xFFB99AE1)
+                          : const Color(0xFF9ADFB5),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
