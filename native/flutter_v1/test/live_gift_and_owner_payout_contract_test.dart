@@ -3,11 +3,48 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  String files(List<String> paths) =>
+      paths.map((path) => File(path).readAsStringSync()).join('\n');
+
+  final liveComponents = () => files([
+        'lib/features/live/native_live_components.dart',
+        'lib/features/live/native_gift_tray.part.dart',
+        'lib/features/live/native_gift_balance.part.dart',
+        'lib/features/live/native_gift_custom_amount.part.dart',
+        'lib/features/live/native_gift_overlay.part.dart',
+      ]);
+  final host = () => files([
+        'lib/features/live/stream_host_live_screen.dart',
+        'lib/features/live/stream_host_session.part.dart',
+        'lib/features/live/stream_host_cohost.part.dart',
+        'lib/features/live/stream_host_sheets.part.dart',
+        'lib/features/live/stream_host_view.part.dart',
+        'lib/features/live/stream_host_widgets.part.dart',
+      ]);
+  final viewer = () => files([
+        'lib/features/live/stream_viewer_live_screen.dart',
+        'lib/features/live/stream_viewer_session.part.dart',
+        'lib/features/live/stream_viewer_interactions.part.dart',
+        'lib/features/live/stream_viewer_sheets.part.dart',
+        'lib/features/live/stream_viewer_view.part.dart',
+        'lib/features/live/stream_viewer_widgets.part.dart',
+      ]);
+  final owner = () => files([
+        'lib/features/profile/owner_control_center_build23.dart',
+        'lib/features/profile/owner_control_center_dialogs.part.dart',
+        'lib/features/profile/owner_control_center_view.part.dart',
+        'lib/features/profile/owner_control_center_review_cards.part.dart',
+        'lib/features/profile/owner_control_center_widgets.part.dart',
+      ]);
+  final giftCatalog = () => files([
+        'lib/data/fameverse_gift_catalog.dart',
+        'lib/data/fameverse_gift_catalog_core.dart',
+        'lib/data/fameverse_gift_catalog_premium.dart',
+      ]);
+
   group('Live gifting and owner payout repair', () {
     test('gift tray stays reduced to five human-sized categories', () {
-      final tray = File(
-        'lib/features/live/native_live_components.dart',
-      ).readAsStringSync();
+      final tray = liveComponents();
       for (final value in <String>[
         "('trending', 'Trending')",
         "('support', 'Support')",
@@ -21,25 +58,32 @@ void main() {
       expect(tray, isNot(contains("('sports', 'Sports')")));
       expect(
         tray,
-        contains('final sent = await widget.onSend(gift, quantity);'),
+        contains('widget.onSend(gift, quantity, _fundingMode)'),
       );
       expect(tray, contains('if (sent) {'));
       expect(tray, contains('setState(() => _sending = false);'));
     });
 
+    test('gift tray visibly separates Real Coins and Test Coins', () {
+      final tray = liveComponents();
+      expect(tray, contains("Key('gift-real-coin-balance')"));
+      expect(tray, contains("Key('gift-test-coin-balance')"));
+      expect(tray, contains("Key('gift-funding-mode-selector')"));
+      expect(tray, contains("value: 'test'"));
+      expect(tray, contains("value: 'real'"));
+      expect(tray, contains('Test Coins · no real payout value'));
+      expect(tray, contains('Real Coins · creator earnings apply'));
+    });
+
     test('100 coin Fame Burst is client-visible and server-authoritative', () {
-      final backend = File(
-        'lib/data/fameverse_live_backend.dart',
-      ).readAsStringSync();
+      final backend = giftCatalog();
       expect(backend, contains("id: 'fame-burst'"));
       expect(backend, contains("label: 'Fame Burst'"));
       expect(backend, contains('cost: 100'));
     });
 
     test('Abyssal Leviathan stays wired as the 5000 coin cinematic gift', () {
-      final backend = File(
-        'lib/data/fameverse_live_backend.dart',
-      ).readAsStringSync();
+      final backend = giftCatalog();
       expect(backend, contains("id: 'abyssal-leviathan'"));
       expect(backend, contains("label: 'Abyssal Leviathan'"));
       expect(backend, contains('cost: 5000'));
@@ -57,76 +101,58 @@ void main() {
     });
 
     test('viewer gifting is not owner-refill gated', () {
-      final viewer = File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
-      expect(viewer, contains("Key('viewer-gift-button')"));
-      expect(viewer, isNot(contains("if (_canRefill) ...[")));
-      expect(viewer, contains('canRefill: _canRefill'));
+      final source = viewer();
+      expect(source, contains("Key('viewer-gift-button')"));
+      expect(source, isNot(contains("if (_canRefill) ...[")));
+      expect(source, contains('canRefill: _canRefill'));
+      expect(source, contains('realCoins: _realCoins'));
+      expect(source, contains('testCoins: _testCoins'));
     });
 
     test(
       'host owner gift control lives in the composer and wrapper has no floater',
       () {
-        final host = File(
-          'lib/features/live/stream_host_live_screen.dart',
-        ).readAsStringSync();
+        final hostSource = host();
         final wrapper = File(
           'lib/features/live/stream_owner_host_live_screen.dart',
         ).readAsStringSync();
-        expect(host, contains("Key('owner-host-gift-button')"));
-        expect(host, contains('onGiftPressed'));
+        expect(hostSource, contains("Key('owner-host-gift-button')"));
+        expect(hostSource, contains('onGiftPressed'));
         expect(wrapper, contains('onGiftPressed: _qaGiftAllowed'));
-        expect(
-          wrapper,
-          isNot(contains('bottom: MediaQuery.paddingOf(context).bottom + 78')),
-        );
+        expect(wrapper, contains('realCoins: 0'));
+        expect(wrapper, isNot(contains('bottom: MediaQuery.paddingOf(context).bottom + 78')));
       },
     );
 
     test(
       'gift playback is completion-driven instead of fixed 6.8 second chopping',
       () {
-        final tray = File(
-          'lib/features/live/native_live_components.dart',
-        ).readAsStringSync();
-        final host = File(
-          'lib/features/live/stream_host_live_screen.dart',
-        ).readAsStringSync();
-        final viewer = File(
-          'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsStringSync();
-        expect(tray, contains('onFinished'));
-        expect(host, contains('onFinished: _playNextGift'));
-        expect(viewer, contains('onFinished: _playNextGift'));
-        expect(host, isNot(contains('6800')));
-        expect(viewer, isNot(contains('6800')));
+        final overlay = liveComponents();
+        final hostSource = host();
+        final viewerSource = viewer();
+        expect(overlay, contains('onFinished'));
+        expect(hostSource, contains('onFinished: _playNextGift'));
+        expect(viewerSource, contains('onFinished: _playNextGift'));
+        expect(hostSource, isNot(contains('6800')));
+        expect(viewerSource, isNot(contains('6800')));
       },
     );
 
     test(
       'cinematic gifts retry real media and never fake-fallback to emoji',
       () {
-        final tray = File(
-          'lib/features/live/native_live_components.dart',
-        ).readAsStringSync();
-
-        expect(tray, contains('for (var attempt = 0; attempt < 2; attempt++)'));
-        expect(tray, contains("timeout(const Duration(seconds: 10))"));
-        expect(
-          tray,
-          contains('Preparing the original premium gift animation.'),
-        );
-        expect(tray, contains('will not replace its animation with an emoji'));
-        expect(tray, contains('cinematic-gift-media-failed-'));
-        expect(tray, contains('cinematic-gift-media-loading-'));
+        final overlay = liveComponents();
+        expect(overlay, contains('for (var attempt = 0; attempt < 2; attempt++)'));
+        expect(overlay, contains('timeout(const Duration(seconds: 10))'));
+        expect(overlay, contains('Preparing the original premium gift animation.'));
+        expect(overlay, contains('will not replace its animation with an emoji'));
+        expect(overlay, contains('cinematic-gift-media-failed-'));
+        expect(overlay, contains('cinematic-gift-media-loading-'));
       },
     );
 
     test('cinematic gifts render the entire asset with no title overlay', () {
-      final overlay = File(
-        'lib/features/live/native_live_components.dart',
-      ).readAsStringSync();
+      final overlay = liveComponents();
       final preview = File(
         'lib/features/live/native_gift_visual.dart',
       ).readAsStringSync();
@@ -134,7 +160,7 @@ void main() {
       expect(overlay, contains('fit: BoxFit.contain'));
       expect(preview, contains('fit: BoxFit.contain'));
       expect(overlay, contains('rawMs.clamp(1500, 60000).toInt()'));
-      expect(overlay, isNot(contains("width: size.width * .96")));
+      expect(overlay, isNot(contains('width: size.width * .96')));
       final cinematicStart = overlay.indexOf(
         "key: Key('cinematic-gift-presentation-",
       );
@@ -147,114 +173,84 @@ void main() {
     });
 
     test('native live controls survive optional data refresh failures', () {
-      final host = File(
-        'lib/features/live/stream_host_live_screen.dart',
-      ).readAsStringSync();
-      final viewer = File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
+      final hostSource = host();
+      final viewerSource = viewer();
       final ownerHost = File(
         'lib/features/live/stream_owner_host_live_screen.dart',
       ).readAsStringSync();
 
-      expect(viewer, isNot(contains('Future.wait<dynamic>([')));
-      expect(viewer, contains('unawaited(_hydrateViewerState())'));
-      expect(viewer, contains('_walletReady = true;'));
+      expect(viewerSource, isNot(contains('Future.wait<dynamic>([')));
+      expect(viewerSource, contains('unawaited(_hydrateViewerState())'));
+      expect(viewerSource, contains('_walletReady = true;'));
       expect(ownerHost, isNot(contains('Future.wait<dynamic>([')));
       expect(ownerHost, contains('setState(() => _qaGiftAllowed = true)'));
-      expect(host, contains("setState(() => _connecting = false)"));
-      expect(host, contains('loadGifterStats'));
-      expect(host, contains('loadTapTotal'));
+      expect(hostSource, contains('setState(() => _connecting = false)'));
+      expect(hostSource, contains('loadGifterStats'));
+      expect(hostSource, contains('loadTapTotal'));
     });
 
     test('native livestream audio uses high quality voice configuration', () {
-      final host = File(
-        'lib/features/live/stream_host_live_screen.dart',
-      ).readAsStringSync();
-      final viewer = File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
+      final hostSource = host();
+      final viewerSource = viewer();
 
-      expect(host, contains('SfuAudioBitrateProfile.voiceHighQuality'));
-      expect(host, contains('AudioConfigurationPolicy.broadcaster()'));
-      expect(viewer, contains('SfuAudioBitrateProfile.voiceHighQuality'));
-      expect(viewer, contains('AudioConfigurationPolicy.viewer()'));
-      expect(host.toLowerCase(), isNot(contains('safari')));
-      expect(viewer.toLowerCase(), isNot(contains('safari')));
+      expect(hostSource, contains('SfuAudioBitrateProfile.voiceHighQuality'));
+      expect(hostSource, contains('AudioConfigurationPolicy.broadcaster()'));
+      expect(viewerSource, contains('SfuAudioBitrateProfile.voiceHighQuality'));
+      expect(viewerSource, contains('AudioConfigurationPolicy.viewer()'));
+      expect(hostSource.toLowerCase(), isNot(contains('safari')));
+      expect(viewerSource.toLowerCase(), isNot(contains('safari')));
     });
 
     test(
       'recorded gifts do not become failed sends when broadcast sync hiccups',
       () {
-        final backend = File(
-          'lib/data/fameverse_live_backend.dart',
+        final liveContract = File(
+          'lib/data/fameverse_live_contract.dart',
         ).readAsStringSync();
-        final viewer = File(
-          'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsStringSync();
+        final viewerSource = viewer();
         final ownerHost = File(
           'lib/features/live/stream_owner_host_live_screen.dart',
         ).readAsStringSync();
 
-        expect(
-          backend,
-          contains('RealtimeChannelConfig(ack: true, self: false)'),
-        );
-        expect(viewer, contains('_broadcastGiftReceipt'));
-        expect(
-          viewer,
-          contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
-        );
+        expect(liveContract, contains('RealtimeChannelConfig(ack: true, self: false)'));
+        expect(viewerSource, contains('_broadcastGiftReceipt'));
+        expect(viewerSource, contains('for (var attempt = 0; attempt < 3; attempt += 1)'));
         expect(ownerHost, contains('_broadcastQaGiftReceipt'));
-        expect(
-          ownerHost,
-          contains('for (var attempt = 0; attempt < 3; attempt += 1)'),
-        );
+        expect(ownerHost, contains('for (var attempt = 0; attempt < 3; attempt += 1)'));
       },
     );
 
-    test(
-      'owner payout review submits and syncs through PayPal provider functions',
-      () {
-        final owner = File(
-          'lib/features/profile/owner_control_center_build23.dart',
-        ).readAsStringSync();
-        expect(owner, contains('get_creator_payout_moderation_queue'));
-        expect(owner, contains('review_creator_payout'));
-        expect(owner, contains("'process-creator-payout'"));
-        expect(owner, contains("'sync-creator-payout'"));
-        expect(owner, contains("'expected_environment': 'sandbox'"));
-        expect(owner, contains("Key('owner-payout-approve')"));
-        expect(owner, contains("Text('Send with PayPal sandbox')"));
-        expect(owner, contains("Key('owner-payout-sync-provider')"));
-        expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
-      },
-    );
+    test('owner payout review routes QA and real lanes separately', () {
+      final source = owner();
+      expect(source, contains('get_creator_payout_moderation_queue_v3'));
+      expect(source, contains('review_creator_payout'));
+      expect(source, contains("'process-creator-payout'"));
+      expect(source, contains("'sync-creator-payout'"));
+      expect(source, contains("payout['payout_environment']"));
+      expect(source, contains("'expected_environment': environment"));
+      expect(source, contains('QA · SANDBOX'));
+      expect(source, contains('REAL · LIVE'));
+      expect(source, contains("Key('owner-payout-approve')"));
+      expect(source, contains("Key('owner-payout-sync-provider')"));
+      expect(source, isNot(contains("Key('owner-payout-mark-paid')")));
+    });
 
     test('owner can review pending creator verification before payout QA', () {
-      final owner = File(
-        'lib/features/profile/owner_control_center_build23.dart',
-      ).readAsStringSync();
-      expect(owner, contains('get_creator_verification_moderation_queue'));
-      expect(owner, contains('review_creator_verification'));
-      expect(owner, contains("Key('owner-verification-approve')"));
-      expect(owner, contains("Key('owner-verification-needs-info')"));
-      expect(owner, contains("Key('owner-verification-reject')"));
+      final source = owner();
+      expect(source, contains('get_creator_verification_moderation_queue'));
+      expect(source, contains('review_creator_verification'));
+      expect(source, contains("Key('owner-verification-approve')"));
+      expect(source, contains("Key('owner-verification-needs-info')"));
+      expect(source, contains("Key('owner-verification-reject')"));
     });
 
     test('owner action cards are tappable across the entire card surface', () {
-      final owner = File(
-        'lib/features/profile/owner_control_center_build23.dart',
-      ).readAsStringSync();
-      final actionStart = owner.indexOf(
-        'class _Action extends StatelessWidget',
-      );
-      final noticeStart = owner.indexOf(
-        'class _Notice extends StatelessWidget',
-      );
+      final source = owner();
+      final actionStart = source.indexOf('class _Action extends StatelessWidget');
+      final noticeStart = source.indexOf('class _Notice extends StatelessWidget');
       expect(actionStart, greaterThanOrEqualTo(0));
       expect(noticeStart, greaterThan(actionStart));
-      final action = owner.substring(actionStart, noticeStart);
+      final action = source.substring(actionStart, noticeStart);
       expect(action, contains('return InkWell('));
       expect(action, contains('onTap: onTap'));
       expect(action, contains('borderRadius: BorderRadius.circular(18)'));
