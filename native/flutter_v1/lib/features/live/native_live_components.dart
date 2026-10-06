@@ -554,8 +554,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     if (_sending) return;
     final gift = _selected;
     setState(() => _sending = true);
-    Navigator.of(context).pop();
-    await widget.onSend(gift, quantity);
+    final sent = await widget.onSend(gift, quantity);
+    if (!mounted) return;
+    if (sent) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() => _sending = false);
   }
 
   Future<void> _refill() async {
