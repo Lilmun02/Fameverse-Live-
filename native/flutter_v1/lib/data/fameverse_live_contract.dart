@@ -50,6 +50,7 @@ abstract class FameverseLiveBackend {
     required FvLiveDraft draft,
   });
   Future<int> loadWalletBalance(String userId);
+  Future<FvCoinFundingBreakdown> loadCoinFundingBreakdown();
   Future<int> refillBetaWallet();
   Future<FvGifterStats> loadGifterStats(String userId);
   Future<FvGiftSendResult> recordGift({
