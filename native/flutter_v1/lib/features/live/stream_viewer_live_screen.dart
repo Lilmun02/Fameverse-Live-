@@ -307,6 +307,33 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
   }
 
+  Future<void> _broadcastGiftReceipt(Map<String, dynamic> payload) async {
+    final activity = _activity;
+    if (activity == null) {
+      if (mounted) {
+        _showMessage('Gift sent. Live animation sync is reconnecting.');
+      }
+      return;
+    }
+
+    for (var attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await activity.send('gift', payload);
+        return;
+      } catch (_) {
+        if (attempt < 2) {
+          await Future<void>.delayed(
+            Duration(milliseconds: 180 * (attempt + 1)),
+          );
+        }
+      }
+    }
+
+    if (mounted) {
+      _showMessage('Gift sent. Live animation sync is reconnecting.');
+    }
+  }
+
   Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
     if (_giftSending) return false;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -356,7 +383,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           _chat.add(message);
         });
       }
-      await _activity?.send('gift', {
+      _enqueueGift(
+        FvGiftPlayback(
+          gift: gift,
+          quantity: quantity,
+          sender: widget.viewerProfile.displayName,
+        ),
+      );
+      await _broadcastGiftReceipt(<String, dynamic>{
         'id': eventId,
         'sender': widget.viewerProfile.displayName,
         'senderId': widget.identity.id,
@@ -365,13 +399,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         'quantity': quantity,
         'totalCoins': total,
       });
-      _enqueueGift(
-        FvGiftPlayback(
-          gift: gift,
-          quantity: quantity,
-          sender: widget.viewerProfile.displayName,
-        ),
-      );
       return true;
     } catch (error) {
       final text = error.toString().toLowerCase();
