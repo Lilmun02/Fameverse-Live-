@@ -1093,7 +1093,7 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }) {
     final channel = _client.channel(
       'live-activity:$roomId',
-      opts: const RealtimeChannelConfig(ack: false, self: false),
+      opts: const RealtimeChannelConfig(ack: true, self: false),
     );
     if (onComment != null) {
       channel.onBroadcast(
