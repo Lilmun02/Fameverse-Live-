@@ -37,6 +37,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   bool _qaGiftAllowed = false;
   bool _giftBusy = false;
   int _walletBalance = 0;
+  int _testCoins = 0;
   int _gifterLevel = 1;
   int _giftSerial = 0;
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
@@ -76,10 +77,13 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       setState(() => _qaGiftAllowed = true);
 
       try {
-        final balance = await widget.liveBackend.loadWalletBalance(
-          widget.identity.id,
-        );
-        if (mounted) setState(() => _walletBalance = balance);
+        final funding = await widget.liveBackend.loadCoinFundingBreakdown();
+        if (mounted) {
+          setState(() {
+            _walletBalance = funding.totalCoins;
+            _testCoins = funding.testCoins;
+          });
+        }
       } catch (_) {}
 
       try {
@@ -93,17 +97,33 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
-  Future<int> _refillQaWallet() async {
-    if (!_qaGiftAllowed) return _walletBalance;
+  Future<FvCoinFundingBreakdown> _refillQaWallet() async {
+    if (!_qaGiftAllowed) {
+      return FvCoinFundingBreakdown(
+        realCoins: 0,
+        testCoins: _testCoins,
+        totalCoins: _walletBalance,
+      );
+    }
     try {
-      final balance = await widget.liveBackend.refillBetaWallet();
-      if (mounted) setState(() => _walletBalance = balance);
-      return balance;
+      await widget.liveBackend.refillBetaWallet();
+      final funding = await widget.liveBackend.loadCoinFundingBreakdown();
+      if (mounted) {
+        setState(() {
+          _walletBalance = funding.totalCoins;
+          _testCoins = funding.testCoins;
+        });
+      }
+      return funding;
     } catch (_) {
       if (mounted) {
         _message('Test-coin refill is limited to owner/admin accounts.');
       }
-      return _walletBalance;
+      return FvCoinFundingBreakdown(
+        realCoins: 0,
+        testCoins: _testCoins,
+        totalCoins: _walletBalance,
+      );
     }
   }
 
@@ -229,6 +249,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       backgroundColor: const Color(0xFF140D1B),
       builder: (context) => NativeGiftTray(
         coins: _walletBalance,
+        realCoins: 0,
+        testCoins: _testCoins,
         canRefill: true,
         onSend: _sendQaGift,
         onRefill: _refillQaWallet,
