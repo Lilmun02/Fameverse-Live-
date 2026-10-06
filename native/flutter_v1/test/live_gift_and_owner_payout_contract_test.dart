@@ -159,10 +159,15 @@ void main() {
       final viewer = File(
         'lib/features/live/stream_viewer_live_screen.dart',
       ).readAsStringSync();
+      final ownerHost = File(
+        'lib/features/live/stream_owner_host_live_screen.dart',
+      ).readAsStringSync();
 
       expect(viewer, isNot(contains('Future.wait<dynamic>([')));
       expect(viewer, contains('unawaited(_hydrateViewerState())'));
       expect(viewer, contains('_walletReady = true;'));
+      expect(ownerHost, isNot(contains('Future.wait<dynamic>([')));
+      expect(ownerHost, contains('setState(() => _qaGiftAllowed = true)'));
       expect(host, contains("setState(() => _connecting = false)"));
       expect(host, contains('loadGifterStats'));
       expect(host, contains('loadTapTotal'));
