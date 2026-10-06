@@ -486,6 +486,16 @@ const fvGiftCatalog = <FvGiftDefinition>[
         'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/e4da59e7-2d55-4ee2-b546-cae61cf56de3.mp4',
     cinematic: true,
   ),
+  FvGiftDefinition(
+    id: 'abyssal-leviathan',
+    label: 'Abyssal Leviathan',
+    cost: 5000,
+    category: 'fameverse',
+    activityEmoji: '🐋',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/5f7cc621-ffd0-4edd-b585-56ec76a0907e.mp4',
+    cinematic: true,
+  ),
 ];
 
 FvGiftDefinition? fvGiftById(String? id) {

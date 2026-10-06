@@ -36,6 +36,21 @@ void main() {
       expect(backend, contains('cost: 100'));
     });
 
+    test('Abyssal Leviathan stays wired as the 5000 coin cinematic gift', () {
+      final backend = File(
+        'lib/data/fameverse_live_backend.dart',
+      ).readAsStringSync();
+      expect(backend, contains("id: 'abyssal-leviathan'"));
+      expect(backend, contains("label: 'Abyssal Leviathan'"));
+      expect(backend, contains('cost: 5000'));
+      expect(backend, contains('https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/5f7cc621-ffd0-4edd-b585-56ec76a0907e.mp4'));
+      final start = backend.indexOf("id: 'abyssal-leviathan'");
+      final end = backend.indexOf('),', start);
+      expect(start, greaterThanOrEqualTo(0));
+      expect(end, greaterThan(start));
+      expect(backend.substring(start, end), contains('cinematic: true'));
+    });
+
     test('viewer gifting is not owner-refill gated', () {
       final viewer = File(
         'lib/features/live/stream_viewer_live_screen.dart',
