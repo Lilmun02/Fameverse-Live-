@@ -43,7 +43,12 @@ void main() {
       expect(backend, contains("id: 'abyssal-leviathan'"));
       expect(backend, contains("label: 'Abyssal Leviathan'"));
       expect(backend, contains('cost: 5000'));
-      expect(backend, contains('https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/5f7cc621-ffd0-4edd-b585-56ec76a0907e.mp4'));
+      expect(
+        backend,
+        contains(
+          'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/5f7cc621-ffd0-4edd-b585-56ec76a0907e.mp4',
+        ),
+      );
       final start = backend.indexOf("id: 'abyssal-leviathan'");
       final end = backend.indexOf('),', start);
       expect(start, greaterThanOrEqualTo(0));
