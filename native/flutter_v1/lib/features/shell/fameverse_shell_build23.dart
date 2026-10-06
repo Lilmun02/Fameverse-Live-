@@ -428,7 +428,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       onRefresh: _refreshAll,
       onSetTab: _setTab,
       onOpenStories: () => unawaited(_openStories(profile)),
-      onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
+      onRoomSelected: (room) => _openRoom(room, profile),
       onToggleFollow: _toggleFollow,
       onCreatorSelected: _openPublicProfile,
       onChangePhoto: _pickProfilePhoto,
