@@ -138,10 +138,7 @@ void main() {
       final cinematicStart = overlay.indexOf(
         "key: Key('cinematic-gift-presentation-",
       );
-      final loadingStart = overlay.indexOf(
-        "key: Key(",
-        cinematicStart + 1,
-      );
+      final loadingStart = overlay.indexOf("key: Key(", cinematicStart + 1);
       expect(cinematicStart, greaterThanOrEqualTo(0));
       expect(loadingStart, greaterThan(cinematicStart));
       final cinematic = overlay.substring(cinematicStart, loadingStart);
@@ -178,22 +175,10 @@ void main() {
         'lib/features/live/stream_viewer_live_screen.dart',
       ).readAsStringSync();
 
-      expect(
-        host,
-        contains('SfuAudioBitrateProfile.voiceHighQuality'),
-      );
-      expect(
-        host,
-        contains('AudioConfigurationPolicy.broadcaster()'),
-      );
-      expect(
-        viewer,
-        contains('SfuAudioBitrateProfile.voiceHighQuality'),
-      );
-      expect(
-        viewer,
-        contains('AudioConfigurationPolicy.viewer()'),
-      );
+      expect(host, contains('SfuAudioBitrateProfile.voiceHighQuality'));
+      expect(host, contains('AudioConfigurationPolicy.broadcaster()'));
+      expect(viewer, contains('SfuAudioBitrateProfile.voiceHighQuality'));
+      expect(viewer, contains('AudioConfigurationPolicy.viewer()'));
       expect(host.toLowerCase(), isNot(contains('safari')));
       expect(viewer.toLowerCase(), isNot(contains('safari')));
     });
