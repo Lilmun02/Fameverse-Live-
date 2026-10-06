@@ -46,44 +46,11 @@ jobs:
       - name: Resolve Flutter packages
         run: flutter pub get
 
-      - name: Apply Build 23 internal bug patches
-        working-directory: .
-        run: node scripts/apply-build23-bug-patches.mjs
-
-      - name: Apply Build 32 gift polish
-        working-directory: .
-        run: node scripts/apply-build32-gift-polish.mjs
-
-      - name: Apply Build 23 startup and identity patches
-        working-directory: .
-        run: node scripts/apply-build23-startup-identity-patches.mjs
-
-      - name: Apply Owner Studio and payout recovery repair
-        working-directory: .
-        run: node scripts/apply-owner-studio-repair.mjs
-
       - name: Enforce Fameverse native foundation law
         run: dart run tool/check_native_contract.dart
 
-      - name: Enforce Build 23 regression law
-        working-directory: .
-        run: node scripts/check-build18-live-repair.mjs
-
-      - name: Apply and commit deterministic Dart formatting
-        run: |
-          set -euo pipefail
-          dart format lib test tool
-          if ! git diff --quiet -- lib test tool; then
-            git config user.name "Fameverse Build 23 QA"
-            git config user.email "actions@users.noreply.github.com"
-            git add lib test tool
-            git commit -m "fix(build23): persist verified internal bug patches"
-            TARGET_BRANCH="${{ github.head_ref || github.ref_name }}"
-            git push origin "HEAD:refs/heads/${TARGET_BRANCH}"
-            echo "Build 23 source changed and was committed. A fresh run must validate the persisted patch."
-          else
-            echo "Dart formatting and Build 23 patch state already clean."
-          fi
+      - name: Enforce deterministic Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
 
       - name: Static analysis
         run: flutter analyze

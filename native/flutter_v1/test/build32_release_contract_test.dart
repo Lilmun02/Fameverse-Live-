@@ -80,7 +80,7 @@ void main() {
       expect(owner, contains("Key('owner-verification-reject')"));
     });
 
-    test('camera spam and Fame Coins touch fixes remain locked', () {
+    test('camera spam and Fame Stones touch fixes remain locked', () {
       final host = File(
         'lib/features/live/stream_host_live_screen.dart',
       ).readAsStringSync();

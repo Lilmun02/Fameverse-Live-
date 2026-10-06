@@ -47,7 +47,7 @@ void main() {
     expect(sql, contains('No reserve means no hidden liability'));
   });
 
-  test('gift visuals never use paused cinematic frames as thumbnails', () {
+  test('cinematic gift tray uses the real gift media instead of an emoji stand-in', () {
     final visual = File(
       'lib/features/live/native_gift_visual.dart',
     ).readAsStringSync();
@@ -55,7 +55,9 @@ void main() {
       'lib/features/live/native_live_components.dart',
     ).readAsStringSync();
 
-    expect(visual, contains('deterministic poster'));
+    expect(visual, contains('VideoPlayerController.networkUrl'));
+    expect(visual, contains('await next.seekTo'));
+    expect(visual, contains('VideoPlayer(controller)'));
     expect(components, contains("Key('native-gift-presentation-"));
     expect(components, contains("Key('cinematic-gift-presentation-"));
     expect(components, contains('VideoPlayer(controller)'));

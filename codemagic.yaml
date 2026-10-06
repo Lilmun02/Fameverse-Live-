@@ -169,22 +169,27 @@ workflows:
           HOST_SURFACE="lib/features/live/stream_host_live_screen.dart"
           VIEWER_SURFACE="lib/features/live/stream_viewer_live_screen.dart"
           LIVE_COMPONENTS="lib/features/live/native_live_components.dart"
+          GIFT_VISUAL="lib/features/live/native_gift_visual.dart"
           LIVE_EXPORT="lib/features/live/stream_live_screen.dart"
           STRIPE="../../supabase/functions/stripe-checkout-session/index.ts"
 
           grep -Fq "get_my_fameverse_identity" "$SHELL" || { echo "BLOCKED: authoritative owner identity route missing."; exit 1; }
           grep -Fq "Build23OwnerControlCenterScreen" "$SHELL" || { echo "BLOCKED: Owner Control Center route missing."; exit 1; }
-          grep -Fq "Owner Control Center" "$PROFILE" || { echo "BLOCKED: Owner Control Center settings label missing."; exit 1; }
+          grep -Fq "Owner Studio" "$PROFILE" || { echo "BLOCKED: current Owner Studio settings label missing."; exit 1; }
           grep -Fq "profile-fame-coins-card" "$PROFILE" || { echo "BLOCKED: full Fame Coins card tap fix missing."; exit 1; }
           grep -Fq "owner-host-gift-button" "$HOST_SURFACE" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
           grep -Fq "bool _flipCameraBusy = false;" "$HOST_SURFACE" || { echo "BLOCKED: host camera anti-spam repair missing."; exit 1; }
           grep -Fq "bool _cohostFlipBusy = false;" "$VIEWER_SURFACE" || { echo "BLOCKED: co-host camera anti-spam repair missing."; exit 1; }
           grep -Fq "record_beta_gift" "$HOST_WRAPPER" || { echo "BLOCKED: owner QA gift RPC path missing."; exit 1; }
           grep -Fq "onFinished" "$LIVE_COMPONENTS" || { echo "BLOCKED: completion-driven gift playback missing."; exit 1; }
+          grep -Fq "VideoPlayerController.networkUrl" "$GIFT_VISUAL" || { echo "BLOCKED: cinematic gift tray still lacks real media previews."; exit 1; }
+          grep -Fq "VideoPlayer(controller)" "$GIFT_VISUAL" || { echo "BLOCKED: cinematic gift tray is not rendering its real media frame."; exit 1; }
           grep -Fq "export 'stream_owner_host_live_screen.dart';" "$LIVE_EXPORT" || { echo "BLOCKED: host Live is not routed through owner gift wrapper."; exit 1; }
 
           grep -Fq "process-creator-payout" "$OWNER" || { echo "BLOCKED: PayPal payout submission wiring missing."; exit 1; }
           grep -Fq "sync-creator-payout" "$OWNER" || { echo "BLOCKED: PayPal payout sync wiring missing."; exit 1; }
+          grep -Fq "get_creator_payout_moderation_queue_v2" "$OWNER" || { echo "BLOCKED: current payout recovery queue missing."; exit 1; }
+          grep -Fq "owner-payout-recover-provider" "$OWNER" || { echo "BLOCKED: ambiguous PayPal recovery action missing."; exit 1; }
           grep -Fq "get_creator_verification_moderation_queue" "$OWNER" || { echo "BLOCKED: owner verification queue missing."; exit 1; }
           grep -Fq "review_creator_verification" "$OWNER" || { echo "BLOCKED: owner verification moderation action missing."; exit 1; }
 
@@ -199,14 +204,14 @@ workflows:
           grep -Fq "managed_payments[enabled]" "$STRIPE" || { echo "BLOCKED: Stripe hosted checkout Managed Payments repair missing."; exit 1; }
 
           printf '%s\n' \
-            "owner_control_center=verified" \
+            "owner_studio=verified" \
             "payout_provider_submission=verified" \
             "payout_provider_sync=verified" \
             "verification_moderation=verified" \
             "host_camera_antispam=verified" \
             "cohost_camera_antispam=verified" \
             "gift_playback_completion=verified" \
-            "fame_coins_card_touch=verified" \
+            "fame_stones_card_touch=verified" \
             "fameboard_live=verified" \
             "fameboard_discover=verified" \
             "stripe_hosted_checkout_repair=verified" \

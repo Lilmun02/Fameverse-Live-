@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Build 23 startup and owner identity regressions stay locked', () {
+  test('current startup and owner identity regressions stay locked', () {
     final app = File('lib/app/fameverse_app.dart').readAsStringSync();
     final shell = File(
       'lib/features/shell/fameverse_shell_build23.dart',
@@ -47,7 +47,7 @@ void main() {
       shell,
       contains('get_my_fameverse_identity'),
       reason:
-          'Build 23 shell must actually consume the authoritative identity RPC.',
+          'Current shell must actually consume the authoritative identity RPC.',
     );
     expect(
       shell,
@@ -63,8 +63,8 @@ void main() {
     );
     expect(
       profile,
-      contains("label: isOwner ? 'Owner Control Center' : 'Creator Studio'"),
-      reason: 'Owner Settings must visibly expose Owner Control Center.',
+      contains("label: isOwner ? 'Owner Studio' : 'Creator Studio'"),
+      reason: 'Owner Settings must visibly expose Owner Studio.',
     );
   });
 }
