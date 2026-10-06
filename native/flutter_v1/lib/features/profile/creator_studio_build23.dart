@@ -147,6 +147,7 @@ class _Build23CreatorStudioScreenState
   }
 
   Future<void> _requestVerification() async {
+    if (widget.isOwner) return;
     if (_busy || _summary.isVerified || !_verificationProgress.eligible) {
       if (!_summary.isVerified && !_verificationProgress.eligible) {
         _message('Complete both verification requirements first.');
@@ -282,6 +283,7 @@ class _Build23CreatorStudioScreenState
                 const _SectionLabel('PAYOUT SETUP'),
                 const SizedBox(height: 10),
                 _VerificationCard(
+                  isOwner: widget.isOwner,
                   summary: _summary,
                   progress: _verificationProgress,
                   busy: _busy,
