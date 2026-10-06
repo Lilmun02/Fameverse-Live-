@@ -325,7 +325,7 @@ extension _FameCoinStoreView on _FameCoinStoreScreenState {
               ],
               const SizedBox(height: 8),
               ],
-              const _PurchaseSafetyNote(),
+              _PurchaseSafetyNote(isIos: Platform.isIOS),
             ],
           ),
         ),
