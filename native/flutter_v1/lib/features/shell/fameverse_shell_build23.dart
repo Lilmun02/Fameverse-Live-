@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
@@ -21,6 +20,7 @@ import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'build23_shell_account_service.dart';
+import 'build23_shell_profile_service.dart';
 import 'fameverse_home_build23.dart';
 
 part 'fameverse_shell_build23_view.part.dart';
@@ -53,6 +53,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   SupabaseFameverseStoryBackend? _storyBackend;
   SupabaseFameverseCreatorBackend? _creatorBackend;
   late final FvBuild23ShellAccountService _accountService;
+  late final FvBuild23ShellProfileService _profileService;
 
   int _tab = 0;
   bool _loading = true;
@@ -75,6 +76,10 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     _accountService = FvBuild23ShellAccountService(
       backend: widget.backend,
       identityId: widget.identity.id,
+    );
+    _profileService = FvBuild23ShellProfileService(
+      backend: widget.backend,
+      userId: widget.identity.id,
     );
     unawaited(_refreshAll());
     unawaited(_refreshBeta());
@@ -220,8 +225,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     required String bio,
   }) async {
     try {
-      final profile = await widget.backend.saveProfile(
-        userId: widget.identity.id,
+      final profile = await _profileService.save(
         displayName: displayName,
         username: username,
         bio: bio,
@@ -243,38 +247,12 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     }
   }
 
-  String _avatarExtension(String name) {
-    final lower = name.toLowerCase();
-    if (lower.endsWith('.png')) return 'png';
-    if (lower.endsWith('.webp')) return 'webp';
-    return 'jpg';
-  }
-
-  String _avatarContentType(String extension) => switch (extension) {
-    'png' => 'image/png',
-    'webp' => 'image/webp',
-    _ => 'image/jpeg',
-  };
-
   Future<void> _pickProfilePhoto() async {
     if (_avatarBusy) return;
     setState(() => _avatarBusy = true);
     try {
-      final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-        maxWidth: 1600,
-      );
-      if (picked == null) return;
-      final bytes = await picked.readAsBytes();
-      final extension = _avatarExtension(picked.name);
-      final profile = await widget.backend.uploadProfileAvatar(
-        userId: widget.identity.id,
-        bytes: bytes,
-        extension: extension,
-        contentType: _avatarContentType(extension),
-      );
-      if (!mounted) return;
+      final profile = await _profileService.pickAndUploadPhoto();
+      if (profile == null || !mounted) return;
       setState(() => _profile = profile);
       _message('Profile photo updated');
       await _recordBetaMission('complete_profile');
