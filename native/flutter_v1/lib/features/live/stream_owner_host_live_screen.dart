@@ -69,21 +69,25 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       final allowed = role == 'owner' || role == 'admin';
       if (!allowed) return;
 
-      final results = await Future.wait<dynamic>([
-        widget.liveBackend.loadWalletBalance(widget.identity.id),
-        widget.liveBackend.loadGifterStats(widget.identity.id),
-      ]);
-      final stats = results[1] as FvGifterStats;
       if (!mounted) return;
-
       _qaActivity ??= widget.liveBackend.openLiveActivity(
         roomId: widget.room.id,
       );
-      setState(() {
-        _qaGiftAllowed = true;
-        _walletBalance = results[0] as int;
-        _gifterLevel = stats.level;
-      });
+      setState(() => _qaGiftAllowed = true);
+
+      try {
+        final balance = await widget.liveBackend.loadWalletBalance(
+          widget.identity.id,
+        );
+        if (mounted) setState(() => _walletBalance = balance);
+      } catch (_) {}
+
+      try {
+        final stats = await widget.liveBackend.loadGifterStats(
+          widget.identity.id,
+        );
+        if (mounted) setState(() => _gifterLevel = stats.level);
+      } catch (_) {}
     } catch (_) {
       // Fail closed. A role lookup failure must never expose owner QA controls.
     }
