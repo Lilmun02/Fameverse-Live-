@@ -107,6 +107,17 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
   }
 
   Future<void> _refreshAll() async {
+    if (Platform.isIOS) {
+      if (mounted) {
+        setState(() {
+          _stripeLoading = false;
+          _stripeOffers = const [];
+          _stripeCheckoutEnabled = false;
+        });
+      }
+      await _load();
+      return;
+    }
     await Future.wait<void>([_load(), _loadStripeConfig()]);
   }
 
@@ -212,7 +223,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
   }
 
   Future<void> _loadStripeConfig() async {
-    if (!mounted) return;
+    if (!mounted || Platform.isIOS) return;
     setState(() => _stripeLoading = true);
 
     try {
