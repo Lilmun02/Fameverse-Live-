@@ -57,6 +57,7 @@ abstract class FameverseLiveBackend {
     required String roomId,
     required String giftId,
     required int quantity,
+    required String fundingMode,
   });
   Future<int> loadTapTotal(String roomId);
   Future<FvTapBatchResult> recordTapBatch({
