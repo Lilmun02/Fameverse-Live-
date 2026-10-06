@@ -2,47 +2,53 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+String _files(List<String> paths) =>
+    paths.map((path) => File(path).readAsStringSync()).join('\n');
+
 void main() {
   group('Build 32 release contract', () {
-    test(
-      'Fameboard uses authoritative windowed rankings and original terminology',
-      () {
-        final rankings = File(
-          'lib/features/live/native_live_rankings.dart',
-        ).readAsStringSync();
+    test('Fameboard uses authoritative windowed rankings and original terminology', () {
+      final rankings = _files([
+        'lib/features/live/native_live_rankings.dart',
+        'lib/features/live/native_live_rankings_board.part.dart',
+        'lib/features/live/native_live_rankings_rows.part.dart',
+      ]);
 
-        for (final marker in <String>[
-          "'get_fameverse_rankings_v2'",
-          "'p_window': _window",
-          "('24h', '24H')",
-          "('7d', '7D')",
-          "('supporters', 'Supporters'",
-          "('pulse', 'Pulse'",
-          "('creators', 'Creators'",
-          "Key('fameboard-first-spotlight')",
-        ]) {
-          expect(rankings, contains(marker));
-        }
-        for (final rejected in <String>[
-          'Daily Ranking',
-          'Weekly Ranking',
-          'Ranking history',
-        ]) {
-          expect(rankings, isNot(contains(rejected)));
-        }
-      },
-    );
+      for (final marker in <String>[
+        "'get_fameverse_rankings_v2'",
+        "'p_window': _window",
+        "('24h', '24H')",
+        "('7d', '7D')",
+        "('supporters', 'Supporters'",
+        "('pulse', 'Pulse'",
+        "('creators', 'Creators'",
+        "Key('fameboard-first-spotlight')",
+      ]) {
+        expect(rankings, contains(marker));
+      }
+      for (final rejected in <String>[
+        'Daily Ranking',
+        'Weekly Ranking',
+        'Ranking history',
+      ]) {
+        expect(rankings, isNot(contains(rejected)));
+      }
+    });
 
     test('Discover opens the same Fameboard used in Live', () {
-      final discover = File(
+      final discover = _files([
         'lib/features/shell/fameverse_discover_screen.dart',
-      ).readAsStringSync();
-      final host = File(
+        'lib/features/shell/fameverse_discover_featured.part.dart',
+        'lib/features/shell/fameverse_discover_results.part.dart',
+      ]);
+      final host = _files([
         'lib/features/live/stream_host_live_screen.dart',
-      ).readAsStringSync();
-      final viewer = File(
+        'lib/features/live/stream_host_view.part.dart',
+      ]);
+      final viewer = _files([
         'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
+        'lib/features/live/stream_viewer_view.part.dart',
+      ]);
 
       expect(discover, contains("Key('discover-fameboard-card')"));
       expect(discover, contains('showNativeLiveRankings(context)'));
@@ -52,26 +58,26 @@ void main() {
       expect(viewer, contains('showNativeLiveRankings(context)'));
     });
 
-    test(
-      'real payout provider wiring cannot regress to database-only processing',
-      () {
-        final owner = File(
-          'lib/features/profile/owner_control_center_build23.dart',
-        ).readAsStringSync();
+    test('real payout provider wiring cannot regress to database-only processing', () {
+      final owner = _files([
+        'lib/features/profile/owner_control_center_build23.dart',
+        'lib/features/profile/owner_control_center_review_cards.part.dart',
+      ]);
 
-        expect(owner, contains("'process-creator-payout'"));
-        expect(owner, contains("'sync-creator-payout'"));
-        expect(owner, contains("'expected_environment': 'sandbox'"));
-        expect(owner, contains("Text('Send with PayPal sandbox')"));
-        expect(owner, contains("Key('owner-payout-sync-provider')"));
-        expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
-      },
-    );
+      expect(owner, contains("'process-creator-payout'"));
+      expect(owner, contains("'sync-creator-payout'"));
+      expect(owner, contains("'expected_environment': environment"));
+      expect(owner, contains('QA · SANDBOX'));
+      expect(owner, contains('REAL · LIVE'));
+      expect(owner, contains("Key('owner-payout-sync-provider')"));
+      expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
+    });
 
     test('owner verification review controls remain wired', () {
-      final owner = File(
+      final owner = _files([
         'lib/features/profile/owner_control_center_build23.dart',
-      ).readAsStringSync();
+        'lib/features/profile/owner_control_center_review_cards.part.dart',
+      ]);
 
       expect(owner, contains("'get_creator_verification_moderation_queue'"));
       expect(owner, contains("'review_creator_verification'"));
@@ -80,16 +86,20 @@ void main() {
       expect(owner, contains("Key('owner-verification-reject')"));
     });
 
-    test('camera spam and Fame Stones touch fixes remain locked', () {
-      final host = File(
+    test('camera spam and Fame Coins touch fixes remain locked', () {
+      final host = _files([
         'lib/features/live/stream_host_live_screen.dart',
-      ).readAsStringSync();
-      final viewer = File(
+        'lib/features/live/stream_host_session.part.dart',
+        'lib/features/live/stream_host_view.part.dart',
+      ]);
+      final viewer = _files([
         'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
-      final profile = File(
+        'lib/features/live/stream_viewer_interactions.part.dart',
+      ]);
+      final profile = _files([
         'lib/features/profile/native_profile_build23.dart',
-      ).readAsStringSync();
+        'lib/features/profile/native_profile_build23_identity.part.dart',
+      ]);
 
       expect(host, contains('bool _flipCameraBusy = false;'));
       expect(viewer, contains('bool _cohostFlipBusy = false;'));
@@ -98,9 +108,10 @@ void main() {
     });
 
     test('gift playback and Stripe hosted checkout repairs remain locked', () {
-      final live = File(
+      final live = _files([
         'lib/features/live/native_live_components.dart',
-      ).readAsStringSync();
+        'lib/features/live/native_gift_overlay.part.dart',
+      ]);
       final stripe = File(
         '../../supabase/functions/stripe-checkout-session/index.ts',
       ).readAsStringSync();
@@ -108,15 +119,20 @@ void main() {
       expect(live, contains('onFinished'));
       expect(stripe, contains('managed_payments[enabled]'));
       expect(stripe, contains('"false"'));
+      expect(stripe, contains('environment,'));
     });
 
     test('Pocket Comet stays retired without overriding other gift assets', () {
-      final backend = File(
-        'lib/data/fameverse_live_backend.dart',
-      ).readAsStringSync();
-      final live = File(
+      final backend = _files([
+        'lib/data/fameverse_gift_catalog.dart',
+        'lib/data/fameverse_gift_catalog_core.dart',
+        'lib/data/fameverse_gift_catalog_premium.dart',
+      ]);
+      final live = _files([
         'lib/features/live/native_live_components.dart',
-      ).readAsStringSync();
+        'lib/features/live/native_gift_overlay.part.dart',
+        'lib/features/live/native_gift_tray.part.dart',
+      ]);
       final poster = File(
         'lib/features/live/native_gift_visual.dart',
       ).readAsStringSync();
