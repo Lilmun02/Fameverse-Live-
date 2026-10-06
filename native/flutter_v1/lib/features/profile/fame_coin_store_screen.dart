@@ -63,6 +63,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
   String? _stripeBusyPackId;
   String? _notice;
   int _balance = 0;
+  int _realCoins = 0;
+  int _testCoins = 0;
   Map<String, int> _coinByProduct = const {};
   List<ProductDetails> _products = const [];
   Set<String> _missingProductIds = const {};
@@ -129,18 +131,24 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
             row['product_id'].toString(): (row['coins'] as num?)?.toInt() ?? 0,
       }..removeWhere((_, coins) => coins <= 0);
 
-      final wallet = await _client
-          .from('beta_coin_wallets')
-          .select('balance')
-          .eq('user_id', widget.userId)
-          .maybeSingle();
-      final balance = (wallet?['balance'] as num?)?.toInt() ?? 0;
+      final fundingRaw = await _client.rpc('get_my_coin_funding_breakdown');
+      final fundingRows = fundingRaw is List
+          ? fundingRaw.whereType<Map>().map(Map<String, dynamic>.from).toList()
+          : <Map<String, dynamic>>[];
+      final funding = fundingRows.isEmpty
+          ? const <String, dynamic>{}
+          : fundingRows.first;
+      final realCoins = (funding['cash_backed_coins'] as num?)?.toInt() ?? 0;
+      final testCoins = (funding['promo_coins'] as num?)?.toInt() ?? 0;
+      final balance = (funding['total_balance'] as num?)?.toInt() ?? 0;
 
       if (!Platform.isIOS) {
         if (!mounted) return;
         setState(() {
           _coinByProduct = coinMap;
           _balance = balance;
+          _realCoins = realCoins;
+          _testCoins = testCoins;
           _storeAvailable = false;
           _products = const [];
           _missingProductIds = coinMap.keys.toSet();
@@ -157,6 +165,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
         setState(() {
           _coinByProduct = coinMap;
           _balance = balance;
+          _realCoins = realCoins;
+          _testCoins = testCoins;
           _storeAvailable = false;
           _products = const [];
           _missingProductIds = coinMap.keys.toSet();
@@ -179,6 +189,8 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
       setState(() {
         _coinByProduct = coinMap;
         _balance = balance;
+        _realCoins = realCoins;
+        _testCoins = testCoins;
         _storeAvailable = true;
         _products = products;
         _missingProductIds = response.notFoundIDs.toSet();
