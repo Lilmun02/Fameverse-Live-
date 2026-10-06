@@ -81,7 +81,7 @@ class _Build23OwnerControlCenterScreenState
     }
     try {
       payoutResult = await _client.rpc(
-        'get_creator_payout_moderation_queue_v2',
+        'get_creator_payout_moderation_queue_v3',
         params: const {'p_limit': 50},
       );
     } catch (_) {
@@ -206,11 +206,15 @@ class _Build23OwnerControlCenterScreenState
     if (_busy) return;
     final payoutId = payout['payout_id']?.toString();
     if (payoutId == null || payoutId.isEmpty) return;
+    final environment =
+        payout['payout_environment']?.toString().toLowerCase() == 'live'
+        ? 'live'
+        : 'sandbox';
     setState(() => _busy = true);
     try {
       final response = await _client.functions.invoke(
         'process-creator-payout',
-        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
+        body: {'payout_id': payoutId, 'expected_environment': environment},
       );
       final data = response.data is Map
           ? Map<String, dynamic>.from(response.data as Map)
@@ -222,14 +226,14 @@ class _Build23OwnerControlCenterScreenState
         throw StateError(code);
       }
       final providerStatus = data['provider_status']?.toString() ?? 'PENDING';
-      _message('PayPal sandbox payout submitted: $providerStatus.');
+      _message('PayPal $environment payout submitted: $providerStatus.');
       await _refresh();
     } catch (error) {
       final text = error.toString();
       final code = text.contains('paypal_credentials_missing')
           ? 'PayPal sandbox credentials are not configured.'
           : text.contains('paypal_environment_mismatch')
-          ? 'PayPal payout environment does not match sandbox QA.'
+          ? 'PayPal payout environment does not match this request.'
           : text.contains('paypal_auth_failed')
           ? 'PayPal sandbox authentication failed.'
           : text.contains('paypal_payout_failed')
@@ -251,11 +255,15 @@ class _Build23OwnerControlCenterScreenState
     if (_busy) return;
     final payoutId = payout['payout_id']?.toString();
     if (payoutId == null || payoutId.isEmpty) return;
+    final environment =
+        payout['payout_environment']?.toString().toLowerCase() == 'live'
+        ? 'live'
+        : 'sandbox';
     setState(() => _busy = true);
     try {
       final response = await _client.functions.invoke(
         'sync-creator-payout',
-        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
+        body: {'payout_id': payoutId, 'expected_environment': environment},
       );
       final data = response.data is Map
           ? Map<String, dynamic>.from(response.data as Map)
