@@ -65,12 +65,37 @@ extension _FameCoinStoreView on _FameCoinStoreScreenState {
                             ),
                           ),
                           Text(
-                            '$_balance',
+                            '$_balance total',
                             key: const Key('public-fame-coin-balance'),
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w900,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                'Real Coins: $_realCoins',
+                                key: const Key('store-real-coin-balance'),
+                                style: const TextStyle(
+                                  color: Color(0xFFE1C4F5),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                'Test Coins: $_testCoins',
+                                key: const Key('store-test-coin-balance'),
+                                style: const TextStyle(
+                                  color: Color(0xFF9F94A4),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -121,6 +146,15 @@ extension _FameCoinStoreView on _FameCoinStoreScreenState {
                 ),
               ],
               const SizedBox(height: 22),
+              const Text(
+                'Purchased packs add Real Coins. Test Coins are QA-only and never create real creator payout liability.',
+                style: TextStyle(
+                  color: Color(0xFFB7A9BC),
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 18),
               const Text(
                 'App Store packs',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
