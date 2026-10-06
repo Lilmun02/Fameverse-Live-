@@ -17,7 +17,12 @@ class NativeGiftTray extends StatefulWidget {
   final int realCoins;
   final int testCoins;
   final bool canRefill;
-  final Future<bool> Function(FvGiftDefinition gift, int quantity) onSend;
+  final Future<bool> Function(
+    FvGiftDefinition gift,
+    int quantity,
+    String fundingMode,
+  )
+  onSend;
   final Future<FvCoinFundingBreakdown> Function() onRefill;
   final VoidCallback? onBuyCoins;
   final VoidCallback? onExchange;
@@ -53,6 +58,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
   late int _coins;
   late int _realCoins;
   late int _testCoins;
+  late String _fundingMode;
 
   bool _matchesCategory(FvGiftDefinition gift, String category) {
     switch (category) {
@@ -95,6 +101,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     _coins = widget.coins;
     _realCoins = widget.realCoins;
     _testCoins = widget.testCoins;
+    _fundingMode = widget.testCoins > 0 ? 'test' : 'real';
   }
 
   @override
@@ -115,7 +122,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     if (_sending) return;
     final gift = _selected;
     setState(() => _sending = true);
-    final sent = await widget.onSend(gift, quantity);
+    final sent = await widget.onSend(gift, quantity, _fundingMode);
     if (!mounted) return;
     if (sent) {
       Navigator.of(context).pop();
@@ -191,6 +198,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            _GiftFundingModeSelector(
+              realCoins: _realCoins,
+              testCoins: _testCoins,
+              mode: _fundingMode,
+              onChanged: (mode) => setState(() => _fundingMode = mode),
             ),
             const SizedBox(height: 8),
             SizedBox(
