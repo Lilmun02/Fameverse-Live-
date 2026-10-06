@@ -48,7 +48,6 @@ void main() {
       );
     });
 
-
     test('payout processing and verification review state stay visible', () {
       final creator = File(
         'lib/features/profile/creator_studio_build23.dart',
@@ -69,7 +68,10 @@ void main() {
       expect(creator, contains("Key('creator-payout-provider-status')"));
       expect(creator, contains('Funds remain reserved'));
       expect(creator, contains("Key('creator-verification-status')"));
-      expect(creator, contains('Verification is processing in Fameverse review'));
+      expect(
+        creator,
+        contains('Verification is processing in Fameverse review'),
+      );
       expect(owner, contains('Some owner data could not refresh'));
       expect(owner, contains('verificationResult'));
       expect(migration, contains('provider_status_updated_at timestamptz'));
