@@ -59,7 +59,8 @@ requireText(studioPath, studio, 'if (_isOwner)', 'owner QA recharge must remain 
 requireText(studioPath, studio, 'NativeRechargeScreen', 'Creator Studio must open the native PayPal recharge screen')
 requireText(rechargeScreenPath, rechargeScreen, 'class NativeRechargeScreen', 'native PayPal recharge screen is missing')
 requireText(rechargeScreenPath, rechargeScreen, 'LaunchMode.externalApplication', 'PayPal approval must open through the external PayPal/browser flow')
-requireText(rechargeScreenPath, rechargeScreen, "'Complete sandbox purchase'", 'native PayPal capture step is missing')
+requireText(rechargeScreenPath, rechargeScreen, '_capturePurchase', 'native PayPal capture handler is missing')
+requireText(rechargeScreenPath, rechargeScreen, "'Complete purchase'", 'native PayPal capture action is missing')
 
 // Database law: RETURNS TABLE output names must never be referenced ambiguously.
 requireText(payoutFixPath, payoutFix, 'verification_request.status', 'verification status must be qualified')
