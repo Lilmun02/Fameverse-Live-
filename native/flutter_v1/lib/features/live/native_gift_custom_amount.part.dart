@@ -1,15 +1,15 @@
 part of 'native_live_components.dart';
 
 extension _GiftCustomAmount on _NativeGiftTrayState {
-Future<void> customAmount() async {
+  Future<void> customAmount() async {
     var quantity = 1;
     final accepted = await showModalBottomSheet<int>(
-      state.context: state.context,
+      context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF17101F),
-      builder: (state.context) {
+      builder: (sheetContext) {
         return StatefulBuilder(
-          builder: (state.context, setModalState) {
+          builder: (sheetContext, setModalState) {
             void setQuantity(int value) {
               setModalState(() => quantity = value.clamp(1, 100000));
             }
@@ -20,7 +20,7 @@ Future<void> customAmount() async {
                   20,
                   16,
                   20,
-                  20 + MediaQuery.viewInsetsOf(state.context).bottom,
+                  20 + MediaQuery.viewInsetsOf(sheetContext).bottom,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -37,11 +37,11 @@ Future<void> customAmount() async {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        NativeGiftTrayVisual(gift: state._selected, size: 50),
+                        NativeGiftTrayVisual(gift: _selected, size: 50),
                         const SizedBox(width: 10),
                         Flexible(
                           child: Text(
-                            state._selected.label,
+                            _selected.label,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
@@ -95,14 +95,14 @@ Future<void> customAmount() async {
                         const Text('Total cost'),
                         const Spacer(),
                         Text(
-                          '🪙 ${state._selected.cost * quantity}',
+                          '🪙 ${_selected.cost * quantity}',
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: () => Navigator.of(state.context).pop(quantity),
+                      onPressed: () => Navigator.of(sheetContext).pop(quantity),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                       ),
@@ -116,6 +116,6 @@ Future<void> customAmount() async {
         );
       },
     );
-    if (accepted != null && state.mounted) await state._send(accepted);
+    if (accepted != null && mounted) await _send(accepted);
   }
 }
