@@ -81,9 +81,9 @@ void main() {
     test(
       'cinematic gifts retry real media and never fake-fallback to emoji',
       () {
-      final tray = File(
-        'lib/features/live/native_live_components.dart',
-      ).readAsStringSync();
+        final tray = File(
+          'lib/features/live/native_live_components.dart',
+        ).readAsStringSync();
 
         expect(
           tray,
