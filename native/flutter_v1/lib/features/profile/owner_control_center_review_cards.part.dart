@@ -108,6 +108,12 @@ class _PayoutCard extends StatelessWidget {
     final amount = _money((payout['amount_cents'] as num?)?.toInt() ?? 0);
     final providerStatus = payout['provider_status']?.toString() ?? '';
     final providerBatchId = payout['provider_batch_id']?.toString() ?? '';
+    final environment =
+        payout['payout_environment']?.toString().toLowerCase() == 'live'
+        ? 'live'
+        : 'sandbox';
+    final isQa = payout['is_qa'] == true;
+    final laneLabel = isQa ? 'QA · SANDBOX' : 'REAL · LIVE';
     final needsProviderRecovery =
         status == 'processing' &&
         providerBatchId.isEmpty &&
@@ -160,8 +166,12 @@ class _PayoutCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              Chip(
+                key: Key(isQa ? 'owner-payout-qa-lane' : 'owner-payout-live-lane'),
+                label: Text(laneLabel),
+              ),
               Chip(label: Text(status.replaceAll('_', ' '))),
-              Chip(label: Text('Verification: $verification')),
+              if (!isQa) Chip(label: Text('Verification: $verification')),
               if (providerStatus.isNotEmpty)
                 Chip(
                   label: Text('PayPal: ${providerStatus.replaceAll('_', ' ')}'),
@@ -201,7 +211,7 @@ class _PayoutCard extends StatelessWidget {
               key: const Key('owner-payout-begin-processing'),
               onPressed: busy ? null : onProcess,
               icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Send with PayPal sandbox'),
+              label: Text('Send with PayPal $environment'),
             )
           else if (status == 'processing' && needsProviderRecovery)
             FilledButton.icon(
