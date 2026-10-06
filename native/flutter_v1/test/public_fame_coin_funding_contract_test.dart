@@ -3,28 +3,31 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('paid App Store Fame Coins enter the cash-backed funding bucket', () {
+  test('verified store purchases preserve real versus test funding', () {
     final migration = File(
-      '../../supabase/migrations/20261001_public_fame_coin_store_funding_provenance.sql',
+      '../../supabase/migrations/20261006212000_enforce_real_test_purchase_funding.sql',
     ).readAsStringSync();
 
     expect(migration, contains('finalize_fame_coin_store_purchase'));
-    expect(migration, contains('public._credit_fame_coins('));
-    expect(migration, contains('v_product.coins,'));
-    expect(migration, contains("'purchase',"));
+    expect(migration, contains("v_environment='sandbox'"));
     expect(
       migration,
-      contains("'store:' || v_platform || ':' || p_transaction_id"),
+      contains(
+        "p_user_id,0,v_product.coins,'store_purchase_test'",
+      ),
+      reason: 'Apple Sandbox purchases must create Test Coins only.',
     );
     expect(
       migration,
-      contains('to service_role'),
-      reason: 'Only the verified server path may finalize paid purchases.',
+      contains(
+        "p_user_id,v_product.coins,0,'store_purchase_real'",
+      ),
+      reason: 'Apple Production purchases must create Real Coins.',
     );
-    expect(
-      migration,
-      contains('from public, anon, authenticated'),
-      reason: 'Clients must never mint paid coins directly.',
-    );
+    expect(migration, contains('environment text not null default'));
+    expect(migration, contains("'recharge_test'"));
+    expect(migration, contains("'recharge_real'"));
+    expect(migration, contains("'refund_test'"));
+    expect(migration, contains("'refund_real'"));
   });
 }
