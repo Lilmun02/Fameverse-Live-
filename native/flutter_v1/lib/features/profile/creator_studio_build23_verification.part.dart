@@ -2,12 +2,14 @@ part of 'creator_studio_build23.dart';
 
 class _VerificationCard extends StatelessWidget {
   const _VerificationCard({
+    required this.isOwner,
     required this.summary,
     required this.progress,
     required this.busy,
     required this.onRequest,
   });
 
+  final bool isOwner;
   final FvCreatorPayoutSummary summary;
   final FvCreatorVerificationProgress progress;
   final bool busy;
@@ -15,6 +17,45 @@ class _VerificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isOwner) {
+      return Container(
+        key: const Key('owner-verification-bypass'),
+        padding: const EdgeInsets.all(17),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF6F4A2A)),
+          color: const Color(0xFF17111B),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.verified_rounded, color: Color(0xFFFFCE78)),
+            SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Owner access',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    'Creator verification requirements do not apply to the Fameverse Owner.',
+                    style: TextStyle(
+                      color: Color(0xFFB8ACBC),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final status = progress.verificationStatus.isEmpty
         ? summary.verificationStatus
         : progress.verificationStatus;
