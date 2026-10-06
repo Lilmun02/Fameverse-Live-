@@ -317,14 +317,12 @@ Future<void> _loadFollowState() async {
       if (mounted) {
         setState(() {
           _walletBalance = result.walletBalance;
-          _realCoins = (_realCoins - result.realCoinsSpent).clamp(
-            0,
-            result.walletBalance,
-          );
-          _testCoins = (_testCoins - result.testCoinsSpent).clamp(
-            0,
-            result.walletBalance,
-          );
+          _realCoins = (_realCoins - result.realCoinsSpent)
+              .clamp(0, result.walletBalance)
+              .toInt();
+          _testCoins = (_testCoins - result.testCoinsSpent)
+              .clamp(0, result.walletBalance)
+              .toInt();
           _gifterLevel = result.level;
           _chat.add(message);
         });
