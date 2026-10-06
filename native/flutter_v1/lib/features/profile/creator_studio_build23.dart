@@ -62,38 +62,64 @@ class _Build23CreatorStudioScreenState
         _error = null;
       });
     }
+
+    FvCreatorPayoutSummary? summary;
+    List<FvCreatorPayoutRequest>? requests;
+    FvCreatorPayoutMethod? payoutMethod;
+    FvCreatorVerificationProgress? verificationProgress;
+    dynamic promoResult;
+    var payoutMethodLoaded = false;
+    final failures = <String>[];
+
     try {
-      final results = await Future.wait<dynamic>([
-        widget.backend.loadPayoutSummary(),
-        widget.backend.listPayoutRequests(),
-        widget.backend.loadPayoutMethod(),
-        Supabase.instance.client.rpc(
-          'get_creator_promotional_earnings_summary',
-        ),
-        widget.backend.loadVerificationProgress(),
-      ]);
-      final promoRows = _rows(results[3]);
-      if (!mounted) return;
-      setState(() {
-        _summary = results[0] as FvCreatorPayoutSummary;
-        _requests = results[1] as List<FvCreatorPayoutRequest>;
-        _payoutMethod = results[2] as FvCreatorPayoutMethod?;
-        _verificationProgress = results[4] as FvCreatorVerificationProgress;
-        if (promoRows.isNotEmpty) {
-          _promoGrossCoins = _intValue(promoRows.first['promo_gross_coins']);
-          _promoCreatorEquivalentCents = _intValue(
-            promoRows.first['creator_promo_equivalent_cents'],
-          );
-        }
-        _loading = false;
-      });
+      summary = await widget.backend.loadPayoutSummary();
     } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'Creator Studio could not refresh right now.';
-      });
+      failures.add('earnings summary');
     }
+    try {
+      requests = await widget.backend.listPayoutRequests();
+    } catch (_) {
+      failures.add('payout history');
+    }
+    try {
+      payoutMethod = await widget.backend.loadPayoutMethod();
+      payoutMethodLoaded = true;
+    } catch (_) {
+      failures.add('payout method');
+    }
+    try {
+      promoResult = await Supabase.instance.client.rpc(
+        'get_creator_promotional_earnings_summary',
+      );
+    } catch (_) {
+      failures.add('promotional earnings');
+    }
+    try {
+      verificationProgress = await widget.backend.loadVerificationProgress();
+    } catch (_) {
+      failures.add('verification progress');
+    }
+
+    final promoRows = _rows(promoResult);
+    if (!mounted) return;
+    setState(() {
+      if (summary != null) _summary = summary;
+      if (requests != null) _requests = requests;
+      if (payoutMethodLoaded) _payoutMethod = payoutMethod;
+      if (verificationProgress != null) {
+        _verificationProgress = verificationProgress;
+      }
+      if (promoRows.isNotEmpty) {
+        _promoGrossCoins = _intValue(promoRows.first['promo_gross_coins']);
+        _promoCreatorEquivalentCents = _intValue(
+          promoRows.first['creator_promo_equivalent_cents'],
+        );
+      }
+      _loading = false;
+      _error = failures.isEmpty
+          ? null
+          : 'Some Creator Studio data could not refresh: ${failures.join(', ')}.';
+    });
   }
 
   void _message(String value) {
@@ -619,6 +645,14 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
+String _creatorStatusTime(DateTime? value) {
+  if (value == null) return '';
+  final local = value.toLocal();
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '${local.month}/${local.day}/${local.year} $hour:$minute';
+}
+
 class _VerificationCard extends StatelessWidget {
   const _VerificationCard({
     required this.summary,
@@ -642,6 +676,8 @@ class _VerificationCard extends StatelessWidget {
     final needsInfo = status == 'needs_info';
     final rejected = status == 'rejected';
     final canRequest = progress.eligible && !busy && !pending && !verified;
+    final statusTime =
+        progress.reviewedAt ?? progress.requestedAt ?? progress.updatedAt;
     final statusLabel = switch (status) {
       'verified' => 'Verified',
       'pending' => 'Under review',
@@ -706,6 +742,17 @@ class _VerificationCard extends StatelessWidget {
             key: const Key('creator-verification-status'),
             label: Text(statusLabel),
           ),
+          if (statusTime != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              '${pending ? 'Submitted' : 'Updated'} ${_creatorStatusTime(statusTime)}',
+              key: const Key('creator-verification-status-time'),
+              style: const TextStyle(
+                color: Color(0xFF96899C),
+                fontSize: 10,
+              ),
+            ),
+          ],
           if ((progress.publicNote ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
@@ -993,6 +1040,17 @@ class _PayoutTile extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
+                    if (request.providerStatusUpdatedAt != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        'Provider update ${_creatorStatusTime(request.providerStatusUpdatedAt)}',
+                        key: const Key('creator-payout-provider-status-time'),
+                        style: const TextStyle(
+                          color: Color(0xFF96899C),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
                   ],
                   if ((request.moderationNote ?? '').trim().isNotEmpty) ...[
                     const SizedBox(height: 4),
