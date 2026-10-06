@@ -157,7 +157,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Future<bool> _sendQaGift(
     FvGiftDefinition gift,
     int quantity,
-    String fundingMode,
+    String _fundingMode,
   ) async {
     if (!_qaGiftAllowed || _giftBusy) return false;
     if (quantity < 1 || quantity > 100000) {
@@ -190,6 +190,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) {
         setState(() {
           _walletBalance = nextBalance;
+          _testCoins = (_testCoins - (gift.cost * quantity))
+              .clamp(0, nextBalance)
+              .toInt();
           _gifterLevel = nextLevel;
         });
       }
