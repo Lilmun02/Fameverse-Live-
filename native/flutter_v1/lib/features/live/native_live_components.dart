@@ -8,6 +8,7 @@ import '../../data/fameverse_live_backend.dart';
 import 'native_gift_visual.dart';
 part 'native_gift_overlay.part.dart';
 part 'native_gift_tray.part.dart';
+part 'native_gift_balance.part.dart';
 part 'native_profile_avatar.part.dart';
 
 
