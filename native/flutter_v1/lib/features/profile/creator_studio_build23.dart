@@ -34,6 +34,7 @@ class _Build23CreatorStudioScreenState
   bool _busy = false;
   String? _error;
   FvCreatorPayoutSummary _summary = FvCreatorPayoutSummary.empty;
+  FvCreatorQaPayoutSummary _qaSummary = FvCreatorQaPayoutSummary.empty;
   FvCreatorVerificationProgress _verificationProgress =
       FvCreatorVerificationProgress.empty;
   FvCreatorPayoutMethod? _payoutMethod;
@@ -69,6 +70,7 @@ class _Build23CreatorStudioScreenState
     }
 
     FvCreatorPayoutSummary? summary;
+    FvCreatorQaPayoutSummary? qaSummary;
     List<FvCreatorPayoutRequest>? requests;
     FvCreatorPayoutMethod? payoutMethod;
     FvCreatorVerificationProgress? verificationProgress;
@@ -80,6 +82,11 @@ class _Build23CreatorStudioScreenState
       summary = await widget.backend.loadPayoutSummary();
     } catch (_) {
       failures.add('earnings summary');
+    }
+    try {
+      qaSummary = await widget.backend.loadQaPayoutSummary();
+    } catch (_) {
+      failures.add('QA payout summary');
     }
     try {
       requests = await widget.backend.listPayoutRequests();
@@ -109,6 +116,7 @@ class _Build23CreatorStudioScreenState
     if (!mounted) return;
     setState(() {
       if (summary != null) _summary = summary;
+      if (qaSummary != null) _qaSummary = qaSummary;
       if (requests != null) _requests = requests;
       if (payoutMethodLoaded) _payoutMethod = payoutMethod;
       if (verificationProgress != null) {
@@ -255,6 +263,21 @@ class _Build23CreatorStudioScreenState
                   grossCoins: _promoGrossCoins,
                   creatorEquivalentCents: _promoCreatorEquivalentCents,
                 ),
+                const SizedBox(height: 10),
+                _SandboxPayoutMethodCard(
+                  method: _payoutMethod,
+                  busy: _busy,
+                  onEdit: _editSandboxPayoutMethod,
+                ),
+                const SizedBox(height: 10),
+                _QaPayoutCard(
+                  summary: _qaSummary,
+                  hasMethod:
+                      (_payoutMethod?.sandboxRecipientEmail.trim().isNotEmpty ??
+                          false),
+                  busy: _busy,
+                  onRequest: _requestQaPayout,
+                ),
                 const SizedBox(height: 26),
                 const _SectionLabel('PAYOUT SETUP'),
                 const SizedBox(height: 10),
@@ -273,7 +296,10 @@ class _Build23CreatorStudioScreenState
                 const SizedBox(height: 10),
                 _PayoutCard(
                   summary: _summary,
-                  hasMethod: _payoutMethod?.enabled == true,
+                  hasMethod:
+                      _payoutMethod?.enabled == true &&
+                      (_payoutMethod?.liveRecipientEmail.trim().isNotEmpty ??
+                          false),
                   busy: _busy,
                   onRequest: _requestPayout,
                 ),
