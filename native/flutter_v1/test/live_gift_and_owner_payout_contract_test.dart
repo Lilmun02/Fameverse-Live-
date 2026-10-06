@@ -19,6 +19,9 @@ void main() {
       }
       expect(tray, isNot(contains("('classic', 'Classic')")));
       expect(tray, isNot(contains("('sports', 'Sports')")));
+      expect(tray, contains('final sent = await widget.onSend(gift, quantity);'));
+      expect(tray, contains('if (sent) {'));
+      expect(tray, contains('setState(() => _sending = false);'));
     });
 
     test('100 coin Fame Burst is client-visible and server-authoritative', () {
