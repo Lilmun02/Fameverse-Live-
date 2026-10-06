@@ -107,12 +107,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
-  Future<void> _broadcastQaGiftReceipt(
-    Map<String, dynamic> payload,
-  ) async {
+  Future<void> _broadcastQaGiftReceipt(Map<String, dynamic> payload) async {
     final activity = _qaActivity;
     if (activity == null) {
-      if (mounted) _message('Gift recorded. Live animation sync is reconnecting.');
+      if (mounted) {
+        _message('Gift recorded. Live animation sync is reconnecting.');
+      }
       return;
     }
 
@@ -129,7 +129,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       }
     }
 
-    if (mounted) _message('Gift recorded. Live animation sync is reconnecting.');
+    if (mounted) {
+      _message('Gift recorded. Live animation sync is reconnecting.');
+    }
   }
 
   Future<bool> _sendQaGift(FvGiftDefinition gift, int quantity) async {
