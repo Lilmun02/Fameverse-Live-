@@ -112,4 +112,90 @@ Future<int?> askDollars({
     referenceController.dispose();
     return result;
   }
+
+  Future<void> grantTesterCoins() async {
+    if (_busy) return;
+    final usernameController = TextEditingController();
+    final amountController = TextEditingController(text: '10000');
+    final result = await showDialog<(String, int)>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Grant Tester Test Coins'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Test Coins can test gifts, levels and badges but create no real creator payout liability.',
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              key: const Key('owner-test-coin-username'),
+              controller: usernameController,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Tester username',
+                prefixText: '@',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              key: const Key('owner-test-coin-amount'),
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Test Coins',
+                helperText: 'Default: 10,000 Test Coins',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final username = usernameController.text.trim();
+              final amount = int.tryParse(amountController.text.trim()) ?? 0;
+              Navigator.of(context).pop((username, amount));
+            },
+            child: const Text('Grant'),
+          ),
+        ],
+      ),
+    );
+    usernameController.dispose();
+    amountController.dispose();
+    if (result == null) return;
+    final username = result.$1.replaceFirst(RegExp(r'^@'), '').trim();
+    final amount = result.$2;
+    if (username.length < 3 || amount < 1 || amount > 1000000) {
+      _message('Enter a valid tester username and Test Coin amount.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final raw = await _client.rpc(
+        'owner_grant_test_coins',
+        params: {'p_username': username, 'p_amount': amount},
+      );
+      final row = _firstRpcRow(raw);
+      final total = _int(row['total_balance']);
+      final test = _int(row['test_coins']);
+      _message('@$username now has $test Test Coins · $total total.');
+      await _refresh();
+    } catch (error) {
+      final value = error.toString().toLowerCase();
+      _message(
+        value.contains('tester profile not found')
+            ? 'Tester username was not found.'
+            : 'Could not grant Test Coins.',
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
 }
