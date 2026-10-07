@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
 
+/// Creator-facing business surface.
+///
+/// External beta law: internal owner QA, moderation controls, and one-tap
+/// verification shortcuts must never appear in the tester-facing UI.
 class CreatorStudioScreen extends StatefulWidget {
   const CreatorStudioScreen({
     required this.backend,
@@ -24,13 +27,8 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
   bool _loading = true;
   bool _busy = false;
   String? _error;
-  String? _role;
   FvCreatorPayoutSummary _summary = FvCreatorPayoutSummary.empty;
   List<FvCreatorPayoutRequest> _requests = const [];
-  List<FvVerificationModerationItem> _verificationQueue = const [];
-  List<FvPayoutModerationItem> _payoutQueue = const [];
-
-  bool get _isOwner => _role == 'owner';
 
   @override
   void initState() {
@@ -46,22 +44,14 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
       });
     }
     try {
-      final role = await widget.backend.loadRole(widget.identity.id);
-      final summary = await widget.backend.loadPayoutSummary();
-      final requests = await widget.backend.listPayoutRequests();
-      var verificationQueue = const <FvVerificationModerationItem>[];
-      var payoutQueue = const <FvPayoutModerationItem>[];
-      if (role == 'owner') {
-        verificationQueue = await widget.backend.listVerificationQueue();
-        payoutQueue = await widget.backend.listPayoutQueue();
-      }
+      final results = await Future.wait<dynamic>([
+        widget.backend.loadPayoutSummary(),
+        widget.backend.listPayoutRequests(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _role = role;
-        _summary = summary;
-        _requests = requests;
-        _verificationQueue = verificationQueue;
-        _payoutQueue = payoutQueue;
+        _summary = results[0] as FvCreatorPayoutSummary;
+        _requests = results[1] as List<FvCreatorPayoutRequest>;
         _loading = false;
       });
     } catch (_) {
@@ -80,21 +70,8 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
       ..showSnackBar(SnackBar(content: Text(value)));
   }
 
-  Future<void> _requestVerification() async {
-    if (_busy) return;
-    setState(() => _busy = true);
-    try {
-      await widget.backend.requestVerification();
-      _message('Verification request sent for Fameverse review.');
-      await _refresh();
-    } catch (_) {
-      _message('Could not request verification right now.');
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
   Future<void> _openPayoutRequest() async {
+    if (!_summary.canRequestPayout || _busy) return;
     final controller = TextEditingController(
       text: (_summary.withdrawableCents / 100).toStringAsFixed(2),
     );
@@ -112,7 +89,7 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              r'Minimum payout is $25.00. Every request goes through Fameverse review before money is released.',
+              r'Minimum payout is $25.00. Requests remain pending until Fameverse review is complete.',
               style: TextStyle(color: Color(0xFFB5A9BE), height: 1.35),
             ),
             const SizedBox(height: 16),
@@ -163,12 +140,12 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
     } catch (error) {
       final text = error.toString().toLowerCase();
       _message(
-        text.contains('verification')
-            ? 'Verification is required before requesting a payout.'
+        text.contains('verification') || text.contains('eligibility')
+            ? 'Complete payout setup before requesting a payout.'
             : text.contains('minimum')
             ? r'Minimum payout is $25.00.'
             : text.contains('payout method')
-            ? 'Add a PayPal payout email before requesting a payout.'
+            ? 'Add a payout method before requesting a payout.'
             : 'Could not submit payout request.',
       );
     } finally {
@@ -176,88 +153,13 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
     }
   }
 
-  Future<void> _reviewVerification(
-    FvVerificationModerationItem item,
-    String status,
-  ) async {
-    if (_busy) return;
-    setState(() => _busy = true);
-    try {
-      await widget.backend.reviewVerification(
-        userId: item.userId,
-        status: status,
-      );
-      _message('Verification updated to ${_label(status)}.');
-      await _refresh();
-    } catch (_) {
-      _message('Could not update verification.');
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _reviewPayout(FvPayoutModerationItem item, String status) async {
-    if (_busy) return;
-    String? reference;
-    if (status == 'paid') {
-      final controller = TextEditingController();
-      reference = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Mark payout paid'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'External payment reference',
-              hintText: 'PayPal / processor reference',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Mark paid'),
-            ),
-          ],
-        ),
-      );
-      controller.dispose();
-      if (reference == null) return;
-    }
-
-    setState(() => _busy = true);
-    try {
-      await widget.backend.reviewPayout(
-        payoutId: item.payoutId,
-        status: status,
-        externalReference: reference,
-      );
-      _message('Payout updated to ${_label(status)}.');
-      await _refresh();
-    } catch (_) {
-      _message('Could not update payout review.');
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  void _openSandboxQa() {
-    Navigator.of(context)
-        .push<void>(
-          MaterialPageRoute(
-            builder: (context) => const _OwnerPayoutSandboxQaScreen(),
-          ),
-        )
-        .then((_) => _refresh());
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('creator-studio-screen'),
+      backgroundColor: const Color(0xFF0C0810),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF0C0810),
         title: const Text('Creator Studio'),
         actions: [
           IconButton(
@@ -271,11 +173,10 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
         child: RefreshIndicator(
           onRefresh: _refresh,
           child: ListView(
-            key: const Key('creator-studio-screen'),
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 40),
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 42),
             children: [
-              _StudioHero(profile: widget.profile),
-              const SizedBox(height: 18),
+              const _StudioHero(),
+              const SizedBox(height: 22),
               if (_loading)
                 const _StudioLoading()
               else if (_error != null)
@@ -326,12 +227,10 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                _VerificationCard(
-                  status: _summary.verificationStatus,
-                  busy: _busy,
-                  onRequest: _requestVerification,
-                ),
+                const SizedBox(height: 26),
+                const _SectionLabel('PAYOUT SETUP'),
+                const SizedBox(height: 10),
+                _PayoutEligibilityCard(status: _summary.verificationStatus),
                 const SizedBox(height: 12),
                 _PayoutCard(
                   summary: _summary,
@@ -346,35 +245,10 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
                     icon: Icons.receipt_long_outlined,
                     title: 'No payout requests yet',
                     body:
-                        r'When verified creator earnings reach $25, requests and their review status will appear here.',
+                        'Payout requests and their review status will appear here when payout setup is complete.',
                   )
                 else
                   ..._requests.map((item) => _PayoutRequestTile(item: item)),
-                if (_isOwner) ...[
-                  const SizedBox(height: 32),
-                  const _SectionLabel('OWNER QA'),
-                  const SizedBox(height: 10),
-                  _OwnerSandboxCard(onTap: _openSandboxQa),
-                  const SizedBox(height: 32),
-                  const _SectionLabel('OWNER MODERATION'),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'No payout can reach Paid until Fameverse moderation reviews the creator and the payout request.',
-                    style: TextStyle(color: Color(0xFFB6AABE), height: 1.35),
-                  ),
-                  const SizedBox(height: 14),
-                  _OwnerVerificationQueue(
-                    items: _verificationQueue,
-                    busy: _busy,
-                    onReview: _reviewVerification,
-                  ),
-                  const SizedBox(height: 14),
-                  _OwnerPayoutQueue(
-                    items: _payoutQueue,
-                    busy: _busy,
-                    onReview: _reviewPayout,
-                  ),
-                ],
               ],
             ],
           ),
@@ -384,306 +258,8 @@ class _CreatorStudioScreenState extends State<CreatorStudioScreen> {
   }
 }
 
-class _OwnerPayoutSandboxQaScreen extends StatefulWidget {
-  const _OwnerPayoutSandboxQaScreen();
-
-  @override
-  State<_OwnerPayoutSandboxQaScreen> createState() =>
-      _OwnerPayoutSandboxQaScreenState();
-}
-
-class _OwnerPayoutSandboxQaScreenState
-    extends State<_OwnerPayoutSandboxQaScreen> {
-  final _email = TextEditingController();
-  bool _busy = false;
-  String _status = 'Ready for owner-only payout QA.';
-  String? _latestPayoutId;
-
-  SupabaseClient get _client => Supabase.instance.client;
-
-  @override
-  void dispose() {
-    _email.dispose();
-    super.dispose();
-  }
-
-  Future<void> _run(String label, Future<void> Function() action) async {
-    if (_busy) return;
-    setState(() {
-      _busy = true;
-      _status = '$label…';
-    });
-    try {
-      await action();
-      if (mounted) setState(() => _status = '$label ✓');
-    } catch (error) {
-      if (!mounted) return;
-      final text = error.toString();
-      setState(() => _status = '$label failed: $text');
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _savePayPal() async {
-    final email = _email.text.trim();
-    if (!email.contains('@')) {
-      setState(
-        () => _status = 'Enter the PayPal sandbox recipient email first.',
-      );
-      return;
-    }
-    await _run('Save PayPal sandbox recipient', () async {
-      await _client.rpc(
-        'set_creator_payout_method',
-        params: {'p_provider': 'paypal', 'p_recipient_email': email},
-      );
-    });
-  }
-
-  Future<void> _requestAndVerify() async {
-    await _run('Verify owner QA account', () async {
-      await _client.rpc('request_creator_verification');
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) throw Exception('No authenticated Fameverse user.');
-      await _client.rpc(
-        'review_creator_verification',
-        params: {
-          'p_user_id': userId,
-          'p_status': 'verified',
-          'p_public_note': 'Owner sandbox payout QA verification',
-        },
-      );
-    });
-  }
-
-  Future<void> _grantQaEarnings() async {
-    await _run(r'Grant $25 sandbox earnings', () async {
-      await _client.rpc(
-        'grant_owner_payout_test_earnings',
-        params: {'p_amount_cents': 2500},
-      );
-    });
-  }
-
-  Future<void> _createAndApprovePayout() async {
-    await _run(r'Create + approve $25 payout', () async {
-      final response = await _client.rpc(
-        'request_creator_payout',
-        params: {'p_amount_cents': 2500},
-      );
-      if (response is! List || response.isEmpty || response.first is! Map) {
-        throw Exception('Payout request was not created.');
-      }
-      final row = Map<String, dynamic>.from(response.first as Map);
-      final payoutId = row['payout_id']?.toString();
-      if (payoutId == null || payoutId.isEmpty) {
-        throw Exception('Payout ID missing.');
-      }
-      await _client.rpc(
-        'review_creator_payout',
-        params: {
-          'p_payout_id': payoutId,
-          'p_status': 'approved',
-          'p_moderation_note': 'Owner sandbox payout QA approval',
-          'p_external_reference': null,
-        },
-      );
-      _latestPayoutId = payoutId;
-    });
-  }
-
-  Future<void> _sendSandboxPayout() async {
-    final payoutId = _latestPayoutId;
-    if (payoutId == null) {
-      setState(() => _status = r'Create + approve the $25 payout first.');
-      return;
-    }
-    await _run('Send PayPal sandbox payout', () async {
-      final response = await _client.functions.invoke(
-        'process-creator-payout',
-        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
-      );
-      final data = response.data;
-      if (data is Map && data['error'] != null) {
-        throw Exception(data['error']);
-      }
-    });
-  }
-
-  Future<void> _syncSandboxPayout() async {
-    final payoutId = _latestPayoutId;
-    if (payoutId == null) {
-      setState(() => _status = 'No sandbox payout has been created yet.');
-      return;
-    }
-    await _run('Sync PayPal sandbox status', () async {
-      final response = await _client.functions.invoke(
-        'sync-creator-payout',
-        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
-      );
-      final data = response.data;
-      if (data is Map && data['error'] != null) {
-        throw Exception(data['error']);
-      }
-      if (data is Map) {
-        final provider = data['provider_status']?.toString() ?? 'unknown';
-        final fameverse = data['fameverse_status']?.toString() ?? 'unknown';
-        if (mounted) {
-          setState(() {
-            _status = 'PayPal: $provider · Fameverse: $fameverse ✓';
-          });
-        }
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Payout Sandbox QA')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 40),
-          children: [
-            const _StudioInfoCard(
-              icon: Icons.science_outlined,
-              title: 'Sandbox only',
-              body:
-                  'This owner-only console requires PayPal sandbox credentials. Every payout call requires the backend to confirm the configured PayPal environment is sandbox before money is submitted.',
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'PayPal sandbox recipient email',
-                hintText: 'sandbox-personal@example.com',
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.tonal(
-              onPressed: _busy ? null : _savePayPal,
-              child: const Text('1. Save sandbox PayPal recipient'),
-            ),
-            const SizedBox(height: 8),
-            FilledButton.tonal(
-              onPressed: _busy ? null : _requestAndVerify,
-              child: const Text('2. Verify owner QA account'),
-            ),
-            const SizedBox(height: 8),
-            FilledButton.tonal(
-              onPressed: _busy ? null : _grantQaEarnings,
-              child: const Text(r'3. Add $25 QA earnings'),
-            ),
-            const SizedBox(height: 8),
-            FilledButton.tonal(
-              onPressed: _busy ? null : _createAndApprovePayout,
-              child: const Text(r'4. Create + approve $25 payout'),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: _busy ? null : _sendSandboxPayout,
-              child: const Text('5. Send with PayPal Sandbox'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton(
-              onPressed: _busy ? null : _syncSandboxPayout,
-              child: const Text('6. Sync payout status'),
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: _studioPanel(),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_busy)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 12, top: 2),
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  else
-                    const Padding(
-                      padding: EdgeInsets.only(right: 12),
-                      child: Icon(Icons.terminal_rounded, size: 20),
-                    ),
-                  Expanded(
-                    child: Text(_status, style: const TextStyle(height: 1.4)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'QA credits are synthetic creator earnings and do not define the future gift-to-cash conversion. Public payout verification will be stricter than this owner-only sandbox shortcut.',
-              style: TextStyle(
-                color: Color(0xFF9F93A8),
-                fontSize: 12,
-                height: 1.45,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OwnerSandboxCard extends StatelessWidget {
-  const _OwnerSandboxCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      key: const Key('open-payout-sandbox-qa'),
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Ink(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1427),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF674383)),
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.science_outlined, color: Color(0xFFC99BFF)),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payout Sandbox QA',
-                    style: TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  SizedBox(height: 3),
-                  Text(
-                    r'Test verification → $25 earnings → payout → PayPal Sandbox.',
-                    style: TextStyle(color: Color(0xFFB6AABE), fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right_rounded),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _StudioHero extends StatelessWidget {
-  const _StudioHero({required this.profile});
-
-  final FvProfile profile;
+  const _StudioHero();
 
   @override
   Widget build(BuildContext context) {
@@ -691,17 +267,17 @@ class _StudioHero extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF5A3973)),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF4B236D), Color(0xFF1D1029), Color(0xFF110B17)],
+          colors: [Color(0xFF482164), Color(0xFF21112D), Color(0xFF110B17)],
         ),
-        border: Border.all(color: const Color(0xFF68408A)),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'FAMEVERSE CREATOR',
             style: TextStyle(
               color: Color(0xFFD6B7FF),
@@ -710,17 +286,15 @@ class _StudioHero extends StatelessWidget {
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 9),
           Text(
             'Build. Earn. Grow.',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
-            '${profile.displayName}, your creator business lives here.',
-            style: const TextStyle(color: Color(0xFFC4B8CC)),
+            'Manage creator earnings and payout setup without mixing account verification or internal QA into your public profile.',
+            style: TextStyle(color: Color(0xFFC4B8CC), height: 1.4),
           ),
         ],
       ),
@@ -728,67 +302,70 @@ class _StudioHero extends StatelessWidget {
   }
 }
 
-class _VerificationCard extends StatelessWidget {
-  const _VerificationCard({
-    required this.status,
-    required this.busy,
-    required this.onRequest,
-  });
+class _PayoutEligibilityCard extends StatelessWidget {
+  const _PayoutEligibilityCard({required this.status});
 
   final String status;
-  final bool busy;
-  final VoidCallback onRequest;
 
   @override
   Widget build(BuildContext context) {
-    final verified = status == 'verified';
-    final pending = status == 'pending';
-    final blocked = status == 'suspended';
-    final canRequest = !verified && !pending && !blocked;
+    final normalized = status.trim().toLowerCase();
+    final title = switch (normalized) {
+      'verified' => 'Payout eligibility approved',
+      'pending' => 'Payout setup under review',
+      'needs_info' => 'Payout setup needs information',
+      'rejected' => 'Payout setup not approved',
+      'suspended' => 'Payout access suspended',
+      _ => 'Payout setup not started',
+    };
+    final body = switch (normalized) {
+      'verified' =>
+        'Your creator payout eligibility is approved. This is separate from any public profile verification badge.',
+      'pending' =>
+        'Your payout eligibility is being reviewed. This review is separate from public account verification.',
+      'needs_info' =>
+        'Fameverse needs additional payout information. The external beta does not collect that information on this screen yet.',
+      'rejected' =>
+        'Payout eligibility was not approved. A future payout setup flow will show the required next steps.',
+      'suspended' =>
+        'Payout requests are currently disabled for this creator account.',
+      _ =>
+        'Payout onboarding is not open in this external beta yet. We will not ask you to press a vague verification button or submit incomplete information.',
+    };
+    final icon = normalized == 'verified'
+        ? Icons.check_circle_rounded
+        : normalized == 'pending'
+        ? Icons.schedule_rounded
+        : Icons.account_balance_outlined;
+
     return Container(
+      key: const Key('payout-eligibility-card'),
       padding: const EdgeInsets.all(18),
-      decoration: _studioPanel(),
-      child: Column(
+      decoration: _panelDecoration(),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                verified
-                    ? Icons.verified_rounded
-                    : Icons.verified_user_outlined,
-                color: verified ? const Color(0xFFB784FF) : null,
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Payout verification',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          Icon(icon, color: const Color(0xFFB784FF)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-              _StatusPill(status: status),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            verified
-                ? 'Your Fameverse payout verification is approved. Payouts still require cleared earnings and moderation review.'
-                : pending
-                ? 'Your verification request is waiting for Fameverse review. You cannot request a payout until it is approved.'
-                : blocked
-                ? 'Payout verification is currently suspended. Payout requests are disabled.'
-                : 'Verification is required before any creator payout. Fameverse reviews payout eligibility before money can leave the platform.',
-            style: const TextStyle(color: Color(0xFFB7ACBF), height: 1.4),
-          ),
-          if (canRequest) ...[
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              key: const Key('request-payout-verification'),
-              onPressed: busy ? null : onRequest,
-              icon: const Icon(Icons.verified_user_outlined),
-              label: const Text('Request verification'),
+                const SizedBox(height: 7),
+                Text(
+                  body,
+                  style: const TextStyle(color: Color(0xFFB7ACBF), height: 1.4),
+                ),
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -809,14 +386,14 @@ class _PayoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabledReason = !summary.isVerified
-        ? 'Verification required'
+        ? 'Payout setup required'
         : summary.withdrawableCents < summary.minimumPayoutCents
         ? '${_money(summary.minimumPayoutCents)} minimum'
         : null;
     return Container(
       key: const Key('creator-payout-card'),
       padding: const EdgeInsets.all(18),
-      decoration: _studioPanel(),
+      decoration: _panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -837,7 +414,7 @@ class _PayoutCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Only cleared creator earnings can be requested. Every payout enters moderation review before it can be processed.',
+            'Only cleared creator earnings can be requested. Every payout enters review before processing.',
             style: TextStyle(color: Color(0xFFB7ACBF), height: 1.4),
           ),
           const SizedBox(height: 14),
@@ -870,7 +447,7 @@ class _BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(15),
-      decoration: _studioPanel(),
+      decoration: _panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -901,7 +478,7 @@ class _PayoutRequestTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
       padding: const EdgeInsets.all(14),
-      decoration: _studioPanel(),
+      decoration: _panelDecoration(),
       child: Row(
         children: [
           Container(
@@ -940,174 +517,6 @@ class _PayoutRequestTile extends StatelessWidget {
   }
 }
 
-class _OwnerVerificationQueue extends StatelessWidget {
-  const _OwnerVerificationQueue({
-    required this.items,
-    required this.busy,
-    required this.onReview,
-  });
-
-  final List<FvVerificationModerationItem> items;
-  final bool busy;
-  final void Function(FvVerificationModerationItem, String) onReview;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _studioPanel(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Verification queue',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          if (items.isEmpty)
-            const Text(
-              'No verification requests waiting.',
-              style: TextStyle(color: Color(0xFFAFA4B8)),
-            )
-          else
-            ...items.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      item.username == null ? item.userId : '@${item.username}',
-                      style: const TextStyle(
-                        color: Color(0xFFAFA4B8),
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: [
-                        FilledButton.tonal(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'verified'),
-                          child: const Text('Verify'),
-                        ),
-                        OutlinedButton(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'needs_info'),
-                          child: const Text('Needs info'),
-                        ),
-                        TextButton(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'rejected'),
-                          child: const Text('Reject'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OwnerPayoutQueue extends StatelessWidget {
-  const _OwnerPayoutQueue({
-    required this.items,
-    required this.busy,
-    required this.onReview,
-  });
-
-  final List<FvPayoutModerationItem> items;
-  final bool busy;
-  final void Function(FvPayoutModerationItem, String) onReview;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _studioPanel(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Payout review queue',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 10),
-          if (items.isEmpty)
-            const Text(
-              'No payout requests waiting.',
-              style: TextStyle(color: Color(0xFFAFA4B8)),
-            )
-          else
-            ...items.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${item.displayName} · ${_money(item.amountCents)}',
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                        _StatusPill(status: item.status),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: [
-                        OutlinedButton(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'approved'),
-                          child: const Text('Approve'),
-                        ),
-                        OutlinedButton(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'processing'),
-                          child: const Text('Processing'),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: busy ? null : () => onReview(item, 'paid'),
-                          child: const Text('Paid'),
-                        ),
-                        TextButton(
-                          onPressed: busy
-                              ? null
-                              : () => onReview(item, 'rejected'),
-                          child: const Text('Reject'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StatusPill extends StatelessWidget {
   const _StatusPill({required this.status});
 
@@ -1116,48 +525,19 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF352344),
+        color: const Color(0xFF30203D),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF5C3B78)),
       ),
       child: Text(
         _label(status),
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+        style: const TextStyle(
+          color: Color(0xFFD9C1F2),
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+        ),
       ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFFB784FF),
-        fontSize: 11,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.2,
-      ),
-    );
-  }
-}
-
-class _StudioLoading extends StatelessWidget {
-  const _StudioLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 150,
-      decoration: _studioPanel(),
-      child: const Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -1177,7 +557,7 @@ class _StudioInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: _studioPanel(),
+      decoration: _panelDecoration(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1194,7 +574,7 @@ class _StudioInfoCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   body,
-                  style: const TextStyle(color: Color(0xFFB7ACBF), height: 1.4),
+                  style: const TextStyle(color: Color(0xFFAFA4B8), height: 1.4),
                 ),
               ],
             ),
@@ -1205,15 +585,54 @@ class _StudioInfoCard extends StatelessWidget {
   }
 }
 
-BoxDecoration _studioPanel() {
+class _StudioLoading extends StatelessWidget {
+  const _StudioLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 52),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF96899F),
+        fontSize: 10,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 1.25,
+      ),
+    );
+  }
+}
+
+BoxDecoration _panelDecoration() {
   return BoxDecoration(
-    color: const Color(0xFF17111E),
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: const Color(0xFF2E2238)),
+    color: const Color(0xFF17111D),
+    borderRadius: BorderRadius.circular(18),
+    border: Border.all(color: const Color(0xFF35283E)),
   );
 }
 
 String _money(int cents) => '\$${(cents / 100).toStringAsFixed(2)}';
+
+String _dateLabel(DateTime? value) {
+  if (value == null) return 'Pending date';
+  final local = value.toLocal();
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  return '$month/$day/${local.year}';
+}
 
 String _label(String value) {
   return value
@@ -1221,10 +640,4 @@ String _label(String value) {
       .where((part) => part.isNotEmpty)
       .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
       .join(' ');
-}
-
-String _dateLabel(DateTime? value) {
-  if (value == null) return 'Date unavailable';
-  final local = value.toLocal();
-  return '${local.month}/${local.day}/${local.year}';
 }
