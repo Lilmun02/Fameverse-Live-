@@ -64,6 +64,31 @@ void main() {
       );
     });
 
+    test('custom gift amount keeps quick buttons and quantity field synced', () {
+      final source = _source('lib/features/live/native_live_components.dart');
+
+      expect(source, contains("TextEditingController(text: '1')"));
+      expect(source, contains("Key('gift-custom-quantity-field')"));
+      expect(source, contains('controller: quantityController'));
+      expect(source, contains('setQuantity(value)'));
+      expect(source, contains('syncField: false'));
+    });
+
+    test('Live chat avatars can open profile surfaces', () {
+      final shared = _source('lib/features/live/stream_live_shared.dart');
+      final host = _source('lib/features/live/stream_host_live_screen.dart');
+      final viewer = _source(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      );
+
+      expect(shared, contains('final ValueChanged<String>? onProfileTap;'));
+      expect(shared, contains("Key('live-chat-profile-avatar-$userId')"));
+      expect(host, contains('onProfileTap: (userId)'));
+      expect(host, contains('_showProfileSheet();'));
+      expect(viewer, contains('_showChatProfile(String userId)'));
+      expect(viewer, contains('await widget.backend.loadProfile(userId)'));
+    });
+
     test('gift activity stays lightweight instead of a purple card', () {
       final source = _source('lib/features/live/stream_live_shared.dart');
 
