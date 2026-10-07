@@ -85,7 +85,7 @@ void main() {
       );
 
       expect(shared, contains('final ValueChanged<String>? onProfileTap;'));
-      expect(shared, contains("Key('live-chat-profile-avatar-$userId')"));
+      expect(shared, contains("Key('live-chat-profile-avatar-\$userId')"));
       expect(shared, contains('foregroundImage: hasAvatar'));
       expect(host, contains('onProfileTap: (userId)'));
       expect(host, contains('_showProfileSheet();'));
