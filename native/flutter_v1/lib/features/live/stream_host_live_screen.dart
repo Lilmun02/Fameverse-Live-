@@ -218,7 +218,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       );
     });
     _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      FvGiftPlayback(
+        gift: gift,
+        quantity: quantity,
+        sender: sender,
+        senderAvatarUrl: payload['senderAvatarUrl'] as String?,
+      ),
     );
   }
 
