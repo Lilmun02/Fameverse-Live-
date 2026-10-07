@@ -33,6 +33,7 @@ export default function ProfileScreen({
   signOut,
   setTab,
   followNetwork,
+  onOpenOwnerControls,
 }) {
   const [gifterStats, setGifterStats] = useState(EMPTY_GIFTER_STATS)
 
@@ -73,6 +74,7 @@ export default function ProfileScreen({
         busyTargetId={followNetwork.busyTargetId}
         toggleFollow={followNetwork.toggleFollow}
         gifterStats={gifterStats}
+        onOpenOwnerControls={onOpenOwnerControls}
       />
     )
   }
