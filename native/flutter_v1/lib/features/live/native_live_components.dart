@@ -84,9 +84,15 @@ class NativeGiftOverlay extends StatefulWidget {
 }
 
 class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
+  static const _introDuration = Duration(milliseconds: 850);
+  static const _outroDuration = Duration(milliseconds: 220);
+
   VideoPlayerController? _controller;
-  String? _loadedUrl;
+  Timer? _introTimer;
   Timer? _finishTimer;
+  bool _introComplete = false;
+  bool _playing = false;
+  bool _closing = false;
   bool _reportedFinished = false;
   bool _videoLoading = false;
   bool _videoFailed = false;
@@ -95,6 +101,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   void initState() {
     super.initState();
+    _startIntro();
     unawaited(_syncVideo());
   }
 
@@ -103,72 +110,144 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.playback.gift.id != widget.playback.gift.id ||
         oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.quantity != widget.playback.quantity) {
-      _reportedFinished = false;
+        oldWidget.playback.quantity != widget.playback.quantity ||
+        oldWidget.playback.comboIndex != widget.playback.comboIndex) {
+      _introTimer?.cancel();
       _finishTimer?.cancel();
+      _introComplete = false;
+      _playing = false;
+      _closing = false;
+      _reportedFinished = false;
+      _startIntro();
       unawaited(_syncVideo());
     }
   }
 
+  void _startIntro() {
+    _introTimer?.cancel();
+    _introTimer = Timer(_introDuration, () {
+      if (!mounted || _reportedFinished) return;
+      setState(() => _introComplete = true);
+      unawaited(_beginPlayback());
+    });
+  }
+
   void _scheduleFinish(Duration duration) {
     _finishTimer?.cancel();
-    _finishTimer = Timer(duration, _reportFinished);
+    _finishTimer = Timer(duration, _beginOutro);
   }
 
-  void _reportFinished() {
+  void _watchVideoPlayback() {
+    final player = _controller;
+    if (!mounted || !_playing || _closing || player == null) return;
+    final value = player.value;
+    if (!value.isInitialized) return;
+    if (value.hasError) {
+      _beginOutro();
+      return;
+    }
+    if (value.duration > Duration.zero &&
+        (value.position >=
+                value.duration - const Duration(milliseconds: 180) ||
+            value.isCompleted)) {
+      _beginOutro();
+    }
+  }
+
+  void _beginOutro() {
+    if (!mounted || _closing || _reportedFinished) return;
+    _closing = true;
+    _finishTimer?.cancel();
+    setState(() {});
+    _finishTimer = Timer(
+      _outroDuration,
+      () => unawaited(_finishPlayback()),
+    );
+  }
+
+  Future<void> _finishPlayback() async {
     if (_reportedFinished) return;
     _reportedFinished = true;
-    widget.onFinished?.call();
+    _introTimer?.cancel();
+    _finishTimer?.cancel();
+    final player = _controller;
+    if (player != null) {
+      try {
+        await player.setVolume(0);
+        await player.pause();
+      } catch (_) {
+        // A media teardown must never trap the next gift in the queue.
+      }
+    }
+    if (mounted) widget.onFinished?.call();
   }
 
-  Duration _staticDuration(FvGiftDefinition gift) {
-    if (gift.cinematic) return const Duration(milliseconds: 3200);
-    if (gift.cost >= 100) return const Duration(milliseconds: 3000);
-    return const Duration(milliseconds: 1900);
+  Future<void> _beginPlayback() async {
+    if (!mounted ||
+        !_introComplete ||
+        _playing ||
+        _closing ||
+        _reportedFinished) {
+      return;
+    }
+    final gift = widget.playback.gift;
+    if (!gift.cinematic) {
+      setState(() => _playing = true);
+      _scheduleFinish(const Duration(milliseconds: 1600));
+      return;
+    }
+    final player = _controller;
+    if (player == null || !player.value.isInitialized) {
+      if (_videoFailed) {
+        setState(() => _playing = true);
+        _scheduleFinish(const Duration(milliseconds: 1200));
+      }
+      return;
+    }
+
+    setState(() => _playing = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || _controller != player || _closing) return;
+    try {
+      await player.seekTo(Duration.zero);
+      await player.setVolume(1);
+      await player.play();
+      final safeMs = (player.value.duration.inMilliseconds + 1000)
+          .clamp(1500, 60000)
+          .toInt();
+      _scheduleFinish(Duration(milliseconds: safeMs));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _videoFailed = true);
+      _scheduleFinish(const Duration(milliseconds: 1200));
+    }
   }
 
   Future<void> _syncVideo() async {
     final epoch = ++_videoLoadEpoch;
     final gift = widget.playback.gift;
     final url = gift.videoUrl?.trim() ?? '';
-
-    if (!gift.cinematic || url.isEmpty) {
-      final previous = _controller;
-      _controller = null;
-      _loadedUrl = null;
-      _videoLoading = false;
-      _videoFailed = gift.cinematic;
-      if (previous != null) await previous.dispose();
-      _scheduleFinish(_staticDuration(gift));
-      if (mounted) setState(() {});
-      return;
-    }
-
-    if (_loadedUrl == url &&
-        _controller != null &&
-        _controller!.value.isInitialized) {
-      _videoLoading = false;
-      _videoFailed = false;
-      await _controller!.seekTo(Duration.zero);
-      await _controller!.setVolume(1);
-      await _controller!.play();
-      final rawMs = _controller!.value.duration.inMilliseconds + 350;
-      final safeMs = rawMs.clamp(1500, 60000).toInt();
-      _scheduleFinish(Duration(milliseconds: safeMs));
-      if (mounted) setState(() {});
-      return;
-    }
-
-    _videoLoading = true;
-    _videoFailed = false;
-    if (mounted) setState(() {});
-
     final previous = _controller;
     _controller = null;
-    _loadedUrl = null;
-    if (previous != null) await previous.dispose();
+    _videoLoading = gift.cinematic && url.isNotEmpty;
+    _videoFailed = gift.cinematic && url.isEmpty;
+    if (previous != null) {
+      previous.removeListener(_watchVideoPlayback);
+      try {
+        await previous.setVolume(0);
+        await previous.pause();
+        await previous.dispose();
+      } catch (_) {}
+    }
+    if (!mounted || epoch != _videoLoadEpoch) return;
 
-    Object? lastError;
+    if (!gift.cinematic || url.isEmpty) {
+      setState(() {});
+      unawaited(_beginPlayback());
+      return;
+    }
+
+    setState(() {});
     for (var attempt = 0; attempt < 2; attempt++) {
       final next = VideoPlayerController.networkUrl(
         Uri.parse(url),
@@ -181,21 +260,24 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
           return;
         }
         await next.setLooping(false);
-        await next.setVolume(1);
+        await next.setVolume(0);
+        await next.pause();
         await next.seekTo(Duration.zero);
-        await next.play();
+        if (!mounted || epoch != _videoLoadEpoch) {
+          await next.dispose();
+          return;
+        }
         _controller = next;
-        _loadedUrl = url;
+        next.addListener(_watchVideoPlayback);
         _videoLoading = false;
         _videoFailed = false;
-        final rawMs = next.value.duration.inMilliseconds + 350;
-        final safeMs = rawMs.clamp(1500, 60000).toInt();
-        _scheduleFinish(Duration(milliseconds: safeMs));
         setState(() {});
+        unawaited(_beginPlayback());
         return;
-      } catch (error) {
-        lastError = error;
-        await next.dispose();
+      } catch (_) {
+        try {
+          await next.dispose();
+        } catch (_) {}
         if (!mounted || epoch != _videoLoadEpoch) return;
         if (attempt == 0) {
           await Future<void>.delayed(const Duration(milliseconds: 350));
@@ -206,75 +288,92 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     if (!mounted || epoch != _videoLoadEpoch) return;
     _videoLoading = false;
     _videoFailed = true;
-    _controller = null;
-    _loadedUrl = null;
-    _scheduleFinish(const Duration(milliseconds: 4500));
     setState(() {});
-    assert(() {
-      debugPrint('Premium gift video failed for ${gift.id}: $lastError');
-      return true;
-    }());
+    unawaited(_beginPlayback());
   }
 
   @override
   void dispose() {
     _videoLoadEpoch++;
+    _introTimer?.cancel();
     _finishTimer?.cancel();
-    final controller = _controller;
+    final player = _controller;
     _controller = null;
-    if (controller != null) unawaited(controller.dispose());
+    if (player != null) {
+      player.removeListener(_watchVideoPlayback);
+      unawaited(_muteAndDispose(player));
+    }
     super.dispose();
   }
 
-  Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
-    final size = MediaQuery.sizeOf(context);
-    final premium = playback.gift.cost >= 100;
-    final presentationWidth = size.width * (premium ? .90 : .76);
-    final presentationHeight = size.height * (premium ? .52 : .34);
-    final glowSize = size.width * (premium ? .74 : .48);
-    final symbolSize = premium ? 132.0 : 82.0;
+  Future<void> _muteAndDispose(VideoPlayerController player) async {
+    try {
+      await player.setVolume(0);
+      await player.pause();
+      await player.dispose();
+    } catch (_) {}
+  }
 
-    return IgnorePointer(
-      child: Align(
-        alignment: const Alignment(0, .02),
-        child: SizedBox(
-          key: Key('native-gift-presentation-${playback.gift.id}'),
-          width: presentationWidth,
-          height: presentationHeight,
-          child: Stack(
-            alignment: Alignment.center,
+  Widget _senderIntro(BuildContext context) {
+    final gift = widget.playback.gift;
+    final width = MediaQuery.sizeOf(context).width;
+    return Align(
+      alignment: const Alignment(-1, -0.02),
+      child: TweenAnimationBuilder<double>(
+        key: Key('gift-sender-entrance-${gift.id}'),
+        tween: Tween<double>(begin: -1, end: 0),
+        duration: const Duration(milliseconds: 330),
+        curve: Curves.easeOutCubic,
+        builder: (context, slide, child) => Transform.translate(
+          offset: Offset(slide * width, 0),
+          child: child,
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(left: 14, right: 36),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          constraints: BoxConstraints(maxWidth: width * .76),
+          decoration: BoxDecoration(
+            color: const Color(0xE91D1026),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFB878E7)),
+            boxShadow: const [
+              BoxShadow(color: Color(0x99000000), blurRadius: 16),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: glowSize,
-                height: glowSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(
-                        0xFF9D55FF,
-                      ).withValues(alpha: premium ? .44 : .30),
-                      const Color(0xFF5C22A7).withValues(alpha: .16),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+              const Icon(
+                Icons.card_giftcard_rounded,
+                color: Color(0xFFE1B7FF),
+                size: 22,
               ),
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: .72, end: 1),
-                duration: const Duration(milliseconds: 560),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) =>
-                    Transform.scale(scale: value, child: child),
-                child: Text(
-                  playback.gift.symbol,
-                  style: TextStyle(
-                    fontSize: symbolSize,
-                    shadows: const [
-                      Shadow(color: Color(0xAA8F46E8), blurRadius: 28),
-                      Shadow(color: Colors.black87, blurRadius: 8),
-                    ],
-                  ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.playback.sender,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'sent ${gift.label}${widget.playback.visualCountLabel}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFE6C5F8),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -284,97 +383,129 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final playback = widget.playback;
+  Widget _smallGiftPresentation(BuildContext context) {
+    final gift = widget.playback.gift;
+    final size = MediaQuery.sizeOf(context);
+    return Align(
+      alignment: const Alignment(0, .02),
+      child: SizedBox(
+        key: Key('native-gift-presentation-${gift.id}'),
+        width: size.width * .76,
+        height: size.height * .34,
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: .8, end: 1),
+            duration: const Duration(milliseconds: 480),
+            curve: Curves.easeOutBack,
+            builder: (context, scale, child) =>
+                Transform.scale(scale: scale, child: child),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 22,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                gradient: const RadialGradient(
+                  colors: [Color(0xFF713A99), Color(0xFF211329)],
+                ),
+                border: Border.all(color: const Color(0xFFB974EF)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.card_giftcard_rounded,
+                    size: 58,
+                    color: Color(0xFFF3D7FF),
+                  ),
+                  const SizedBox(height: 9),
+                  Text(
+                    gift.label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-    if (!playback.gift.cinematic) {
-      return _largeNativeGift(context, playback);
+  Widget _activePresentation(BuildContext context) {
+    final gift = widget.playback.gift;
+    if (!gift.cinematic) {
+      return _smallGiftPresentation(context);
     }
 
-    final controller = _controller;
-    if (controller != null && controller.value.isInitialized) {
-      final size = MediaQuery.sizeOf(context);
-      return IgnorePointer(
-        child: Center(
-          child: SizedBox(
-            key: Key('cinematic-gift-presentation-${playback.gift.id}'),
-            width: size.width,
-            height: size.height * .76,
-            child: FittedBox(
-              fit: BoxFit.contain,
-              clipBehavior: Clip.none,
-              child: SizedBox(
-                width: controller.value.size.width <= 0
-                    ? size.width
-                    : controller.value.size.width,
-                height: controller.value.size.height <= 0
-                    ? size.height * .76
-                    : controller.value.size.height,
-                child: VideoPlayer(controller),
-              ),
+    final player = _controller;
+    final size = MediaQuery.sizeOf(context);
+    if (player != null && player.value.isInitialized && !_videoFailed) {
+      return Center(
+        child: SizedBox(
+          key: Key('cinematic-gift-presentation-${gift.id}'),
+          width: size.width,
+          height: size.height * .76,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            clipBehavior: Clip.none,
+            child: SizedBox(
+              width: player.value.size.width <= 0
+                  ? size.width
+                  : player.value.size.width,
+              height: player.value.size.height <= 0
+                  ? size.height * .76
+                  : player.value.size.height,
+              child: VideoPlayer(player),
             ),
           ),
         ),
       );
     }
-
-    final size = MediaQuery.sizeOf(context);
-    return IgnorePointer(
-      child: Center(
-        child: Container(
-          key: Key(
-            _videoFailed
-                ? 'cinematic-gift-media-failed-${playback.gift.id}'
-                : 'cinematic-gift-media-loading-${playback.gift.id}',
-          ),
-          width: size.width * .90,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          decoration: BoxDecoration(
-            color: const Color(0xE617101F),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0x665F37A1)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_videoLoading)
-                const SizedBox.square(
-                  dimension: 30,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
-                )
-              else
-                const Icon(
-                  Icons.movie_filter_outlined,
-                  color: Color(0xFFB98CFF),
-                  size: 34,
-                ),
-              const SizedBox(height: 12),
-              Text(
-                _videoFailed
-                    ? 'Premium gift media could not load'
-                    : 'Loading premium gift…',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _videoFailed
-                    ? 'The premium gift was recorded, but Fameverse will not replace its animation with an emoji.'
-                    : 'Preparing the original premium gift animation.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFB9ACBE),
-                  fontSize: 11,
-                  height: 1.35,
-                ),
-              ),
-            ],
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        key: Key('cinematic-gift-media-failed-${gift.id}'),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xE617101F),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          '${gift.label} animation unavailable',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            color: Color(0xFFE8D4F5),
           ),
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_playing)
+            AnimatedOpacity(
+              opacity: _closing ? 0 : 1,
+              duration: _outroDuration,
+              curve: Curves.easeOut,
+              child: _activePresentation(context),
+            ),
+          if (!_playing) _senderIntro(context),
+        ],
       ),
     );
   }
