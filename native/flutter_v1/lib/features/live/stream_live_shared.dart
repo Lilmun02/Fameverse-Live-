@@ -304,6 +304,8 @@ class FvLiveChatList extends StatelessWidget {
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
         final userId = raw.userId as String?;
+        final avatarUrl = raw.avatarUrl as String?;
+        final hasAvatar = avatarUrl != null && avatarUrl.trim().isNotEmpty;
         final profileTap =
             userId == null || userId.isEmpty || onProfileTap == null
             ? null
@@ -339,14 +341,21 @@ class FvLiveChatList extends StatelessWidget {
                       ),
                       border: Border.all(color: const Color(0xFFB478FF)),
                     ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                    child: CircleAvatar(
+                      radius: 15,
+                      foregroundImage: hasAvatar
+                          ? NetworkImage(avatarUrl.trim())
+                          : null,
+                      backgroundColor: Colors.transparent,
+                      child: hasAvatar
+                          ? null
+                          : Text(
+                              initial,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                     ),
                   ),
                 ),
