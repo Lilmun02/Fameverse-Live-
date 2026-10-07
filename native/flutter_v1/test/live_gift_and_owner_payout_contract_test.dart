@@ -214,50 +214,54 @@ void main() {
     );
 
     test(
-      'owner payout review submits and syncs through PayPal provider functions',
+      'web owner payout review submits, recovers and syncs through PayPal provider functions',
       () {
         final owner = File(
-          'lib/features/profile/owner_control_center_build23.dart',
+          '../../src/components/owner/OwnerControlCenter.jsx',
         ).readAsStringSync();
-        expect(owner, contains('get_creator_payout_moderation_queue'));
-        expect(owner, contains('review_creator_payout'));
-        expect(owner, contains("'process-creator-payout'"));
-        expect(owner, contains("'sync-creator-payout'"));
-        expect(owner, contains("'expected_environment': 'sandbox'"));
-        expect(owner, contains("Key('owner-payout-approve')"));
-        expect(owner, contains("Text('Send with PayPal sandbox')"));
-        expect(owner, contains("Key('owner-payout-sync-provider')"));
-        expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
+        final service = File(
+          '../../src/services/ownerControl.js',
+        ).readAsStringSync();
+
+        expect(service, contains('get_creator_payout_moderation_queue_v2'));
+        expect(service, contains('review_creator_payout'));
+        expect(service, contains("'process-creator-payout'"));
+        expect(service, contains("'sync-creator-payout'"));
+        expect(service, contains('expected_environment: expectedEnvironment'));
+        expect(owner, contains('Release to PayPal'));
+        expect(owner, contains('Recover PayPal submission'));
+        expect(owner, contains('Sync PayPal'));
+        expect(owner, isNot(contains('Mark paid')));
       },
     );
 
-    test('owner can review pending creator verification before payout QA', () {
+    test('web owner can review pending creator verification before payout QA', () {
       final owner = File(
-        'lib/features/profile/owner_control_center_build23.dart',
+        '../../src/components/owner/OwnerControlCenter.jsx',
       ).readAsStringSync();
-      expect(owner, contains('get_creator_verification_moderation_queue'));
-      expect(owner, contains('review_creator_verification'));
-      expect(owner, contains("Key('owner-verification-approve')"));
-      expect(owner, contains("Key('owner-verification-needs-info')"));
-      expect(owner, contains("Key('owner-verification-reject')"));
+      final service = File(
+        '../../src/services/ownerControl.js',
+      ).readAsStringSync();
+
+      expect(service, contains('get_creator_verification_moderation_queue'));
+      expect(service, contains('review_creator_verification'));
+      expect(owner, contains('Verification Queue'));
+      expect(owner, contains("verificationAction(request, 'verified')"));
+      expect(owner, contains("verificationAction(request, 'needs_info')"));
+      expect(owner, contains("verificationAction(request, 'rejected')"));
     });
 
-    test('owner action cards are tappable across the entire card surface', () {
-      final owner = File(
-        'lib/features/profile/owner_control_center_build23.dart',
+    test('native owner profile routes to Creator Studio instead of admin controls', () {
+      final shell = File(
+        'lib/features/shell/fameverse_shell_build23.dart',
       ).readAsStringSync();
-      final actionStart = owner.indexOf(
-        'class _Action extends StatelessWidget',
-      );
-      final noticeStart = owner.indexOf(
-        'class _Notice extends StatelessWidget',
-      );
-      expect(actionStart, greaterThanOrEqualTo(0));
-      expect(noticeStart, greaterThan(actionStart));
-      final action = owner.substring(actionStart, noticeStart);
-      expect(action, contains('return InkWell('));
-      expect(action, contains('onTap: onTap'));
-      expect(action, contains('borderRadius: BorderRadius.circular(18)'));
+      final profile = File(
+        'lib/features/profile/native_profile_build23.dart',
+      ).readAsStringSync();
+
+      expect(shell, isNot(contains('Build23OwnerControlCenterScreen')));
+      expect(profile, contains('Creator Studio'));
+      expect(profile, isNot(contains('Owner Studio')));
     });
   });
 }
