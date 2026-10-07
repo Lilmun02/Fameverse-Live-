@@ -77,16 +77,21 @@ void main() {
       final owner = File(
         '../../src/components/owner/OwnerControlCenter.jsx',
       ).readAsStringSync();
+      final verification = File(
+        '../../src/components/owner/OwnerVerificationQueue.jsx',
+      ).readAsStringSync();
       final service = File(
         '../../src/services/ownerControl.js',
       ).readAsStringSync();
 
       expect(service, contains('get_creator_verification_moderation_queue'));
       expect(service, contains('review_creator_verification'));
-      expect(owner, contains('Verification Queue'));
-      expect(owner, contains("verificationAction(request, 'verified')"));
-      expect(owner, contains("verificationAction(request, 'needs_info')"));
-      expect(owner, contains("verificationAction(request, 'rejected')"));
+      expect(owner, contains('OwnerVerificationQueue'));
+      expect(owner, contains('onAction={verificationAction}'));
+      expect(verification, contains('Verification Queue'));
+      expect(verification, contains("onAction(request, 'verified')"));
+      expect(verification, contains("onAction(request, 'needs_info')"));
+      expect(verification, contains("onAction(request, 'rejected')"));
     });
 
     test('camera spam and Fame Stones touch fixes remain locked', () {
