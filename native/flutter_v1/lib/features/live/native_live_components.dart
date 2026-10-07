@@ -36,6 +36,7 @@ class FvGiftPlayback {
     required this.gift,
     required this.quantity,
     required this.sender,
+    this.senderAvatarUrl,
     this.comboIndex = 1,
     this.comboTotal = 1,
   });
@@ -43,6 +44,7 @@ class FvGiftPlayback {
   final FvGiftDefinition gift;
   final int quantity;
   final String sender;
+  final String? senderAvatarUrl;
   final int comboIndex;
   final int comboTotal;
 
@@ -66,6 +68,7 @@ List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
       gift: playback.gift,
       quantity: 1,
       sender: playback.sender,
+      senderAvatarUrl: playback.senderAvatarUrl,
       comboIndex: index + 1,
       comboTotal: playback.quantity,
     ),
@@ -94,7 +97,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   bool _playing = false;
   bool _closing = false;
   bool _reportedFinished = false;
-  bool _videoLoading = false;
   bool _videoFailed = false;
   int _videoLoadEpoch = 0;
 
@@ -229,7 +231,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     final url = gift.videoUrl?.trim() ?? '';
     final previous = _controller;
     _controller = null;
-    _videoLoading = gift.cinematic && url.isNotEmpty;
     _videoFailed = gift.cinematic && url.isEmpty;
     if (previous != null) {
       previous.removeListener(_watchVideoPlayback);
@@ -269,7 +270,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         }
         _controller = next;
         next.addListener(_watchVideoPlayback);
-        _videoLoading = false;
         _videoFailed = false;
         setState(() {});
         unawaited(_beginPlayback());
@@ -286,7 +286,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     }
 
     if (!mounted || epoch != _videoLoadEpoch) return;
-    _videoLoading = false;
     _videoFailed = true;
     setState(() {});
     unawaited(_beginPlayback());
@@ -343,10 +342,27 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.card_giftcard_rounded,
-                color: Color(0xFFE1B7FF),
-                size: 22,
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: const Color(0xFF6F35A1),
+                foregroundImage:
+                    widget.playback.senderAvatarUrl?.trim().isNotEmpty == true
+                    ? NetworkImage(widget.playback.senderAvatarUrl!.trim())
+                    : null,
+                child:
+                    widget.playback.senderAvatarUrl?.trim().isNotEmpty == true
+                    ? null
+                    : Text(
+                        widget.playback.sender.isEmpty
+                            ? 'F'
+                            : widget.playback.sender.characters.first
+                                  .toUpperCase(),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
               const SizedBox(width: 10),
               Flexible(
