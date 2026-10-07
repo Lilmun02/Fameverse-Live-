@@ -175,6 +175,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         'id': eventId,
         'sender': widget.room.host.displayName,
         'senderId': widget.identity.id,
+        'senderAvatarUrl': widget.room.host.avatarUrl,
         'gifterLevel': nextLevel,
         'giftId': gift.id,
         'quantity': quantity,
