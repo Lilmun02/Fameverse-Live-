@@ -501,6 +501,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
 
   Future<void> _customAmount() async {
     var quantity = 1;
+    final quantityController = TextEditingController(text: '1');
     final accepted = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -508,8 +509,16 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            void setQuantity(int value) {
-              setModalState(() => quantity = value.clamp(1, 100000));
+            void setQuantity(int value, {bool syncField = true}) {
+              final next = value.clamp(1, 100000);
+              setModalState(() => quantity = next);
+              if (!syncField) return;
+              quantityController.value = TextEditingValue(
+                text: '$next',
+                selection: TextSelection.collapsed(
+                  offset: '$next'.length,
+                ),
+              );
             }
 
             return SafeArea(
@@ -557,7 +566,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                         ),
                         Expanded(
                           child: TextFormField(
-                            initialValue: '$quantity',
+                            key: const Key('gift-custom-quantity-field'),
+                            controller: quantityController,
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
@@ -565,7 +575,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             ),
                             onChanged: (value) {
                               final parsed = int.tryParse(value);
-                              if (parsed != null) setQuantity(parsed);
+                              if (parsed != null) {
+                                setQuantity(parsed, syncField: false);
+                              }
                             },
                           ),
                         ),
@@ -614,6 +626,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
         );
       },
     );
+    quantityController.dispose();
     if (accepted != null && mounted) await _send(accepted);
   }
 
