@@ -13,6 +13,7 @@ class FvLiveChatMessage {
     required this.user,
     required this.text,
     this.userId,
+    this.avatarUrl,
     this.gifterLevel = 1,
     this.kind = 'comment',
     this.giftId,
@@ -22,6 +23,7 @@ class FvLiveChatMessage {
   final String id;
   final String user;
   final String? userId;
+  final String? avatarUrl;
   final int gifterLevel;
   final String text;
   final String kind;
