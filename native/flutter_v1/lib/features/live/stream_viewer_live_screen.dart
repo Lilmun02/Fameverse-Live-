@@ -251,7 +251,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       );
     });
     _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      FvGiftPlayback(
+        gift: gift,
+        quantity: quantity,
+        sender: sender,
+        senderAvatarUrl: payload['senderAvatarUrl'] as String?,
+      ),
     );
   }
 
@@ -393,6 +398,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           gift: gift,
           quantity: quantity,
           sender: widget.viewerProfile.displayName,
+          senderAvatarUrl: widget.viewerProfile.avatarUrl,
         ),
       );
       await _broadcastGiftReceipt(<String, dynamic>{
