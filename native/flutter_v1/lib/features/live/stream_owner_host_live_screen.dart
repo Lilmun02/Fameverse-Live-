@@ -161,6 +161,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         gift: gift,
         quantity: quantity,
         sender: widget.room.host.displayName,
+        senderAvatarUrl: widget.room.host.avatarUrl,
       );
 
       if (mounted) {
