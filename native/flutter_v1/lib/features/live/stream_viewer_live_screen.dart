@@ -246,7 +246,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           kind: 'gift',
           giftId: gift.id,
           quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
+          text: 'sent ${gift.label} ×$quantity',
         ),
       );
     });
@@ -379,7 +379,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         kind: 'gift',
         giftId: gift.id,
         quantity: quantity,
-        text: '${gift.symbol} sent ${gift.label} ×$quantity',
+        text: 'sent ${gift.label} ×$quantity',
       );
       if (mounted) {
         setState(() {
