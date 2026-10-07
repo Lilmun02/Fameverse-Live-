@@ -56,6 +56,20 @@ workflows:
             -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
             ios/Runner/Info.plist
 
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSPhotoLibraryUsageDescription Fameverse uses your photo library so you can choose a profile picture." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSPhotoLibraryUsageDescription string Fameverse uses your photo library so you can choose a profile picture." \
+            ios/Runner/Info.plist
+
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSPhotoLibraryUsageDescription Fameverse uses your photo library so you can choose a profile picture." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSPhotoLibraryUsageDescription string Fameverse uses your photo library so you can choose a profile picture." \
+            ios/Runner/Info.plist
+
           bash tool/apply_ios_branding.sh
           bash tool/apply_android_branding.sh
 
