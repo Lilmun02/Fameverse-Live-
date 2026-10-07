@@ -33,6 +33,10 @@ class _Build23CreatorStudioScreenState
       FvCreatorVerificationProgress.empty;
   FvCreatorPayoutMethod? _payoutMethod;
   List<FvCreatorPayoutRequest> _requests = const [];
+  List<Map<String, dynamic>> _giftActivity = const [];
+  int _gifterLevel = 1;
+  int _gifterTotalCoinsSent = 0;
+  int _gifterGiftCount = 0;
   int _promoGrossCoins = 0;
   int _promoCreatorEquivalentCents = 0;
 
@@ -68,6 +72,8 @@ class _Build23CreatorStudioScreenState
     FvCreatorPayoutMethod? payoutMethod;
     FvCreatorVerificationProgress? verificationProgress;
     dynamic promoResult;
+    dynamic giftActivityResult;
+    Map<String, dynamic>? gifterStats;
     var payoutMethodLoaded = false;
     final failures = <String>[];
 
@@ -99,8 +105,27 @@ class _Build23CreatorStudioScreenState
     } catch (_) {
       failures.add('verification progress');
     }
+    try {
+      giftActivityResult = await Supabase.instance.client.rpc(
+        'get_creator_gift_activity',
+        params: {'p_limit': 8},
+      );
+    } catch (_) {
+      // Gift activity is additive and must not block earnings or payouts.
+    }
+    try {
+      final row = await Supabase.instance.client
+          .from('gifter_stats')
+          .select('total_coins_sent, gift_count, level')
+          .eq('user_id', widget.identity.id)
+          .maybeSingle();
+      if (row != null) gifterStats = Map<String, dynamic>.from(row);
+    } catch (_) {
+      // Badge progress is additive and must not block Creator Studio.
+    }
 
     final promoRows = _rows(promoResult);
+    final giftRows = _rows(giftActivityResult);
     if (!mounted) return;
     setState(() {
       if (summary != null) _summary = summary;
@@ -108,6 +133,12 @@ class _Build23CreatorStudioScreenState
       if (payoutMethodLoaded) _payoutMethod = payoutMethod;
       if (verificationProgress != null) {
         _verificationProgress = verificationProgress;
+      }
+      _giftActivity = giftRows;
+      if (gifterStats != null) {
+        _gifterLevel = _intValue(gifterStats!['level']).clamp(1, 99);
+        _gifterTotalCoinsSent = _intValue(gifterStats!['total_coins_sent']);
+        _gifterGiftCount = _intValue(gifterStats!['gift_count']);
       }
       if (promoRows.isNotEmpty) {
         _promoGrossCoins = _intValue(promoRows.first['promo_gross_coins']);
@@ -293,7 +324,7 @@ class _Build23CreatorStudioScreenState
       backgroundColor: const Color(0xFF0C0810),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0C0810),
-        title: Text(widget.isOwner ? 'My Creator Account' : 'Creator Studio'),
+        title: const Text('Creator Studio'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _refresh,
@@ -319,13 +350,15 @@ class _Build23CreatorStudioScreenState
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (_error != null)
-                _InfoCard(
-                  icon: Icons.cloud_off_rounded,
-                  title: 'Creator Studio unavailable',
-                  body: _error!,
-                )
               else ...[
+                if (_error != null) ...[
+                  _InfoCard(
+                    icon: Icons.sync_problem_rounded,
+                    title: 'Some Creator Studio data needs a refresh',
+                    body: _error!,
+                  ),
+                  const SizedBox(height: 18),
+                ],
                 const _SectionLabel('REAL CREATOR EARNINGS'),
                 const SizedBox(height: 10),
                 Row(
@@ -367,7 +400,26 @@ class _Build23CreatorStudioScreenState
                     ),
                   ],
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 26),
+                const _SectionLabel('CREATOR TOOLS'),
+                const SizedBox(height: 10),
+                const _FamAlgorithmCard(),
+                const SizedBox(height: 10),
+                _BadgeProgressCard(
+                  level: _gifterLevel,
+                  totalCoinsSent: _gifterTotalCoinsSent,
+                  giftCount: _gifterGiftCount,
+                ),
+                const SizedBox(height: 10),
+                _GiftActivityCard(rows: _giftActivity),
+                const SizedBox(height: 10),
+                _VerificationCard(
+                  summary: _summary,
+                  progress: _verificationProgress,
+                  busy: _busy,
+                  onRequest: _requestVerification,
+                ),
+                const SizedBox(height: 26),
                 const _SectionLabel('PROMOTIONAL / QA'),
                 const SizedBox(height: 10),
                 _PromoCard(
@@ -376,13 +428,6 @@ class _Build23CreatorStudioScreenState
                 ),
                 const SizedBox(height: 26),
                 const _SectionLabel('PAYOUT SETUP'),
-                const SizedBox(height: 10),
-                _VerificationCard(
-                  summary: _summary,
-                  progress: _verificationProgress,
-                  busy: _busy,
-                  onRequest: _requestVerification,
-                ),
                 const SizedBox(height: 10),
                 _PayoutMethodCard(
                   method: _payoutMethod,
@@ -490,12 +535,12 @@ class _OwnerPremiumCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Premium owner access',
+                  'Your creator account',
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Owner-facing previews stay readable. Build 23 removes the blurred/locked Creator Studio preview from the owner experience.',
+                  'Creator tools stay here. Owner and admin operations are intentionally kept out of the native app and belong on the Fameverse web dashboard.',
                   style: TextStyle(
                     color: Color(0xFFC2B4C5),
                     fontSize: 12,
@@ -505,6 +550,217 @@ class _OwnerPremiumCard extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamAlgorithmCard extends StatelessWidget {
+  const _FamAlgorithmCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('creator-fam-algorithm-card'),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF513862)),
+        color: const Color(0xFF17111B),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_graph_rounded, color: Color(0xFFC78BFA)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'FAM Algorithm 1.2',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ),
+              Chip(label: Text('Ranking OFF')),
+            ],
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Verse Momentum keeps three discovery lanes visible: Audience, Taps and Gift Coins. Discovery ranking stays separate from creator payout calculations.',
+            style: TextStyle(
+              color: Color(0xFFB8ACBC),
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Chip(label: Text('Audience')),
+              Chip(label: Text('Taps')),
+              Chip(label: Text('Gift Coins')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgeProgressCard extends StatelessWidget {
+  const _BadgeProgressCard({
+    required this.level,
+    required this.totalCoinsSent,
+    required this.giftCount,
+  });
+
+  final int level;
+  final int totalCoinsSent;
+  final int giftCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('creator-badges-card'),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF513862)),
+        color: const Color(0xFF17111B),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.workspace_premium_outlined, color: Color(0xFFD3A0FF)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Badges & levels',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _Metric(label: 'Gifter level', value: '$level')),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Metric(
+                  label: 'Gifts sent',
+                  value: '$giftCount',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '$totalCoinsSent Fame Coins sent toward badge progression.',
+            style: const TextStyle(
+              color: Color(0xFFA99DAE),
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GiftActivityCard extends StatelessWidget {
+  const _GiftActivityCard({required this.rows});
+
+  final List<Map<String, dynamic>> rows;
+
+  int _coins(Map<String, dynamic> row) {
+    final value = row['coins_spent'];
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('creator-gift-activity-card'),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF513862)),
+        color: const Color(0xFF17111B),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.card_giftcard_rounded, color: Color(0xFFD3A0FF)),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Gift activity',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (rows.isEmpty)
+            const Text(
+              'No recent gifts received yet.',
+              style: TextStyle(color: Color(0xFFA99DAE), fontSize: 12),
+            )
+          else
+            ...rows.take(5).map((row) {
+              final sender =
+                  (row['sender_display_name']?.toString().trim().isNotEmpty ??
+                          false)
+                      ? row['sender_display_name'].toString().trim()
+                      : 'Fameverse supporter';
+              final giftId = row['gift_id']?.toString().trim() ?? 'gift';
+              final quantity = row['quantity'] is num
+                  ? (row['quantity'] as num).toInt()
+                  : int.tryParse(row['quantity']?.toString() ?? '') ?? 1;
+              return Padding(
+                padding: const EdgeInsets.only(top: 9),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.favorite_rounded,
+                      size: 16,
+                      color: Color(0xFFC78BFA),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        '$sender sent $quantity × $giftId',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFFD8CEDC),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_coins(row)} coins',
+                      style: const TextStyle(
+                        color: Color(0xFFB79AC7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
