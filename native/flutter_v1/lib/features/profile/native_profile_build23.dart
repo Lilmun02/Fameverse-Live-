@@ -211,7 +211,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                   colors: [Color(0xFF2B1738), Color(0xFF130E17)],
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   const Icon(
                     Icons.workspace_premium_rounded,
