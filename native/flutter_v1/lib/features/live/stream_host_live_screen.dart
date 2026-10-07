@@ -213,7 +213,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           kind: 'gift',
           giftId: gift.id,
           quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
+          text: 'sent ${gift.label} ×$quantity',
         ),
       );
     });
