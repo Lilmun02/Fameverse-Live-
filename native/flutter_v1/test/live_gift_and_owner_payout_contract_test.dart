@@ -235,38 +235,44 @@ void main() {
       },
     );
 
-    test('web owner can review pending creator verification before payout QA', () {
-      final owner = File(
-        '../../src/components/owner/OwnerControlCenter.jsx',
-      ).readAsStringSync();
-      final verification = File(
-        '../../src/components/owner/OwnerVerificationQueue.jsx',
-      ).readAsStringSync();
-      final service = File(
-        '../../src/services/ownerControl.js',
-      ).readAsStringSync();
+    test(
+      'web owner can review pending creator verification before payout QA',
+      () {
+        final owner = File(
+          '../../src/components/owner/OwnerControlCenter.jsx',
+        ).readAsStringSync();
+        final verification = File(
+          '../../src/components/owner/OwnerVerificationQueue.jsx',
+        ).readAsStringSync();
+        final service = File(
+          '../../src/services/ownerControl.js',
+        ).readAsStringSync();
 
-      expect(service, contains('get_creator_verification_moderation_queue'));
-      expect(service, contains('review_creator_verification'));
-      expect(owner, contains('OwnerVerificationQueue'));
-      expect(owner, contains('onAction={verificationAction}'));
-      expect(verification, contains('Verification Queue'));
-      expect(verification, contains("onAction(request, 'verified')"));
-      expect(verification, contains("onAction(request, 'needs_info')"));
-      expect(verification, contains("onAction(request, 'rejected')"));
-    });
+        expect(service, contains('get_creator_verification_moderation_queue'));
+        expect(service, contains('review_creator_verification'));
+        expect(owner, contains('OwnerVerificationQueue'));
+        expect(owner, contains('onAction={verificationAction}'));
+        expect(verification, contains('Verification Queue'));
+        expect(verification, contains("onAction(request, 'verified')"));
+        expect(verification, contains("onAction(request, 'needs_info')"));
+        expect(verification, contains("onAction(request, 'rejected')"));
+      },
+    );
 
-    test('native owner profile routes to Creator Studio instead of admin controls', () {
-      final shell = File(
-        'lib/features/shell/fameverse_shell_build23.dart',
-      ).readAsStringSync();
-      final profile = File(
-        'lib/features/profile/native_profile_build23.dart',
-      ).readAsStringSync();
+    test(
+      'native owner profile routes to Creator Studio instead of admin controls',
+      () {
+        final shell = File(
+          'lib/features/shell/fameverse_shell_build23.dart',
+        ).readAsStringSync();
+        final profile = File(
+          'lib/features/profile/native_profile_build23.dart',
+        ).readAsStringSync();
 
-      expect(shell, isNot(contains('Build23OwnerControlCenterScreen')));
-      expect(profile, contains('Creator Studio'));
-      expect(profile, isNot(contains('Owner Studio')));
-    });
+        expect(shell, isNot(contains('Build23OwnerControlCenterScreen')));
+        expect(profile, contains('Creator Studio'));
+        expect(profile, isNot(contains('Owner Studio')));
+      },
+    );
   });
 }

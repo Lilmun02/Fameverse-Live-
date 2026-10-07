@@ -69,7 +69,8 @@ void main() {
     expect(
       profile,
       contains("label: 'Creator Studio'"),
-      reason: 'Owner and creator accounts must enter the same native Creator Studio.',
+      reason:
+          'Owner and creator accounts must enter the same native Creator Studio.',
     );
     expect(
       profile,

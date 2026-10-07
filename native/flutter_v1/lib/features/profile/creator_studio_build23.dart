@@ -649,13 +649,12 @@ class _BadgeProgressCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _Metric(label: 'Gifter level', value: '$level')),
+              Expanded(
+                child: _Metric(label: 'Gifter level', value: '$level'),
+              ),
               const SizedBox(width: 10),
               Expanded(
-                child: _Metric(
-                  label: 'Gifts sent',
-                  value: '$giftCount',
-                ),
+                child: _Metric(label: 'Gifts sent', value: '$giftCount'),
               ),
             ],
           ),
@@ -720,9 +719,9 @@ class _GiftActivityCard extends StatelessWidget {
             ...rows.take(5).map((row) {
               final sender =
                   (row['sender_display_name']?.toString().trim().isNotEmpty ??
-                          false)
-                      ? row['sender_display_name'].toString().trim()
-                      : 'Fameverse supporter';
+                      false)
+                  ? row['sender_display_name'].toString().trim()
+                  : 'Fameverse supporter';
               final giftId = row['gift_id']?.toString().trim() ?? 'gift';
               final quantity = row['quantity'] is num
                   ? (row['quantity'] as num).toInt()
