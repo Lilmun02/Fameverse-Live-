@@ -223,7 +223,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isOwner ? 'Owner Studio' : 'Creator Studio',
+                          'Creator Studio',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
@@ -231,9 +231,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          isOwner
-                              ? 'Premium tools, earnings and payout controls'
-                              : 'Earnings, payouts and creator tools',
+                          'Earnings, verification, gifts and creator tools',
                           style: const TextStyle(
                             color: Color(0xFFAA9DAE),
                             fontSize: 12,
@@ -757,10 +755,8 @@ class _Build23SettingsScreen extends StatelessWidget {
               title: 'CREATOR',
               children: [
                 _RowItem(
-                  label: isOwner ? 'Owner Studio' : 'Creator Studio',
-                  value: isOwner
-                      ? 'Moderation, payouts, platform finance and your creator account'
-                      : 'Earnings, payouts and creator tools',
+                  label: 'Creator Studio',
+                  value: 'Earnings, verification, gifts and creator tools',
                   icon: Icons.workspace_premium_outlined,
                   onTap: onCreatorStudio,
                 ),
