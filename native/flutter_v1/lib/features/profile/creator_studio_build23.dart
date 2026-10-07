@@ -136,9 +136,9 @@ class _Build23CreatorStudioScreenState
       }
       _giftActivity = giftRows;
       if (gifterStats != null) {
-        _gifterLevel = _intValue(gifterStats!['level']).clamp(1, 99).toInt();
-        _gifterTotalCoinsSent = _intValue(gifterStats!['total_coins_sent']);
-        _gifterGiftCount = _intValue(gifterStats!['gift_count']);
+        _gifterLevel = _intValue(gifterStats['level']).clamp(1, 99).toInt();
+        _gifterTotalCoinsSent = _intValue(gifterStats['total_coins_sent']);
+        _gifterGiftCount = _intValue(gifterStats['gift_count']);
       }
       if (promoRows.isNotEmpty) {
         _promoGrossCoins = _intValue(promoRows.first['promo_gross_coins']);
