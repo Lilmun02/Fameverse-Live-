@@ -4,11 +4,13 @@ import {
   listActiveLives,
   listOwnerOperators,
   listPayoutQueue,
+  listVerificationQueue,
   loadMyCashRewardPermission,
   loadOwnerRewardSummary,
   publishUpdateNotice,
   releasePayout,
   reviewPayout,
+  reviewVerification,
   setStaffCashRewardPermission,
   syncPayout,
 } from '../../services/ownerControl.js'
@@ -30,6 +32,7 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
   const [myPermission, setMyPermission] = useState(null)
   const [operators, setOperators] = useState([])
   const [payouts, setPayouts] = useState([])
+  const [verifications, setVerifications] = useState([])
   const [lives, setLives] = useState([])
   const [reserveAmount, setReserveAmount] = useState('10.00')
   const [reserveNote, setReserveNote] = useState('')
@@ -47,11 +50,12 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
   const refresh = useCallback(async () => {
     setError('')
     try {
-      const [rewardSummary, permission, operatorRows, payoutRows, liveRows] = await Promise.all([
+      const [rewardSummary, permission, operatorRows, payoutRows, verificationRows, liveRows] = await Promise.all([
         loadOwnerRewardSummary(),
         loadMyCashRewardPermission(),
         listOwnerOperators(),
         listPayoutQueue(),
+        listVerificationQueue(),
         listActiveLives(),
       ])
       setSummary(rewardSummary)
@@ -59,6 +63,7 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       setMyCap((Number(permission?.max_gross_cents_per_gift || 100) / 100).toFixed(2))
       setOperators(operatorRows)
       setPayouts(payoutRows)
+      setVerifications(verificationRows)
       setLives(liveRows)
     } catch (refreshError) {
       setError(refreshError?.message || 'Owner controls could not refresh.')
@@ -182,17 +187,33 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
         'Payout request rejected.',
       )
     }
-    if (action === 'release') {
+    if (action === 'release' || action === 'recover') {
       return run(
         `payout-${payout.payout_id}`,
         () => releasePayout({ payoutId: payout.payout_id, expectedEnvironment: paypalEnvironment }),
-        'Payout submitted to PayPal. Fameverse will keep the request in processing until PayPal confirms it.',
+        action === 'recover'
+          ? 'PayPal recovery submitted. Creator funds remain reserved until the provider result is confirmed.'
+          : 'Payout submitted to PayPal. Fameverse will keep the request in processing until PayPal confirms it.',
       )
     }
     return run(
       `payout-${payout.payout_id}`,
       () => syncPayout({ payoutId: payout.payout_id, expectedEnvironment: paypalEnvironment }),
       'PayPal payout status refreshed.',
+    )
+  }
+
+  function verificationAction(request, status) {
+    const note = status === 'verified'
+      ? 'Creator verification approved by Fameverse review.'
+      : status === 'needs_info'
+        ? 'More information is required before verification can be approved.'
+        : 'Verification request was not approved.'
+
+    return run(
+      `verification-${request.user_id}`,
+      () => reviewVerification({ userId: request.user_id, status, publicNote: note }),
+      `Verification updated to ${status.replaceAll('_', ' ')}.`,
     )
   }
 
@@ -355,7 +376,43 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
                             <button type="button" className="owner-control-danger small" onClick={() => payoutAction(payout, 'reject')} disabled={Boolean(busyKey)}>Reject</button>
                           </>}
                           {payout.status === 'approved' && <button type="button" className="owner-control-primary small" onClick={() => payoutAction(payout, 'release')} disabled={Boolean(busyKey)}>Release to PayPal</button>}
-                          {['processing', 'held'].includes(payout.status) && <button type="button" className="owner-control-secondary small" onClick={() => payoutAction(payout, 'sync')} disabled={Boolean(busyKey)}>Sync PayPal</button>}
+                          {payout.status === 'processing' && !payout.provider_batch_id && ['SUBMISSION_UNKNOWN', 'SUBMITTING'].includes(payout.provider_status) && (
+                            <button type="button" className="owner-control-primary small" onClick={() => payoutAction(payout, 'recover')} disabled={Boolean(busyKey)}>Recover PayPal submission</button>
+                          )}
+                          {['processing', 'held'].includes(payout.status) && !(!payout.provider_batch_id && ['SUBMISSION_UNKNOWN', 'SUBMITTING'].includes(payout.provider_status)) && (
+                            <button type="button" className="owner-control-secondary small" onClick={() => payoutAction(payout, 'sync')} disabled={Boolean(busyKey)}>Sync PayPal</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="owner-panel owner-panel-wide">
+            <div className="owner-panel-heading">
+              <div><span>CREATOR TRUST</span><h2>Verification Queue</h2></div>
+              <b>{verifications.length}</b>
+            </div>
+            <p className="owner-panel-copy">Review creator verification on the web. The native app only shows creators their own verification progress and result.</p>
+            <div className="owner-table-wrap">
+              <table className="owner-table">
+                <thead><tr><th>Creator</th><th>Status</th><th>Requested</th><th>Action</th></tr></thead>
+                <tbody>
+                  {verifications.length === 0 ? (
+                    <tr><td colSpan="4" className="owner-empty">No creator verification requests waiting.</td></tr>
+                  ) : verifications.map((request) => (
+                    <tr key={request.user_id}>
+                      <td><b>{request.display_name || request.username || 'Creator'}</b><small>{request.username ? `@${request.username}` : ''}</small></td>
+                      <td><span className={`owner-pill status-${request.status}`}>{statusLabel(request.status)}</span></td>
+                      <td>{request.requested_at ? new Date(request.requested_at).toLocaleString() : '—'}</td>
+                      <td>
+                        <div className="owner-button-row tight">
+                          <button type="button" className="owner-control-primary small" onClick={() => verificationAction(request, 'verified')} disabled={Boolean(busyKey)}>Approve</button>
+                          <button type="button" className="owner-control-secondary small" onClick={() => verificationAction(request, 'needs_info')} disabled={Boolean(busyKey)}>Needs info</button>
+                          <button type="button" className="owner-control-danger small" onClick={() => verificationAction(request, 'rejected')} disabled={Boolean(busyKey)}>Reject</button>
                         </div>
                       </td>
                     </tr>
