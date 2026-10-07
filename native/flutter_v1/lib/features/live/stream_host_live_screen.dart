@@ -1085,7 +1085,15 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                       height: cohostActive ? 230 : 245,
                       child: SingleChildScrollView(
                         reverse: true,
-                        child: FvLiveChatList(messages: _chat),
+                        child: FvLiveChatList(
+                          messages: _chat,
+                          onProfileTap: (userId) {
+                            if (userId == widget.identity.id ||
+                                userId == widget.room.hostUserId) {
+                              _showProfileSheet();
+                            }
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
