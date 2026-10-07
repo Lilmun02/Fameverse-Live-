@@ -40,17 +40,24 @@ void main() {
       expect(shell, isNot(contains('_HomeStoryLauncher')));
     });
 
-    test('owner premium surface is not blurred or fake locked', () {
+    test('owner premium identity stays readable while admin tools are web-only', () {
       final profile = _source(
         'lib/features/profile/native_profile_build23.dart',
       );
       final studio = _source(
         'lib/features/profile/creator_studio_build23.dart',
       );
+      final shell = _source('lib/features/shell/fameverse_shell_build23.dart');
 
       expect(profile, contains('FAMEVERSE OWNER • PREMIUM'));
       expect(profile, contains('Owner Premium'));
-      expect(studio, contains('Premium owner access'));
+      expect(profile, contains('Creator Studio'));
+      expect(studio, contains('Your creator account'));
+      expect(
+        studio,
+        contains('Owner and admin operations are intentionally kept out of the native app'),
+      );
+      expect(shell, isNot(contains('Build23OwnerControlCenterScreen')));
       expect(studio, isNot(contains('ImageFiltered')));
       expect(studio, isNot(contains('ImageFilter.blur')));
       expect(studio, isNot(contains('90% hidden')));
