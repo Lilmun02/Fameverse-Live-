@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
+import 'native_badge_transfer_preview.dart';
 
 class Build23CreatorStudioScreen extends StatefulWidget {
   const Build23CreatorStudioScreen({
@@ -410,6 +411,8 @@ class _Build23CreatorStudioScreenState
                   totalCoinsSent: _gifterTotalCoinsSent,
                   giftCount: _gifterGiftCount,
                 ),
+                const SizedBox(height: 10),
+                const NativeBadgeTransferPreview(),
                 const SizedBox(height: 10),
                 _GiftActivityCard(rows: _giftActivity),
                 const SizedBox(height: 10),
