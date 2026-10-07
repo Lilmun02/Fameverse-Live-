@@ -149,8 +149,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
       return;
     }
     if (value.duration > Duration.zero &&
-        (value.position >=
-                value.duration - const Duration(milliseconds: 180) ||
+        (value.position >= value.duration - const Duration(milliseconds: 180) ||
             value.isCompleted)) {
       _beginOutro();
     }
@@ -161,10 +160,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     _closing = true;
     _finishTimer?.cancel();
     setState(() {});
-    _finishTimer = Timer(
-      _outroDuration,
-      () => unawaited(_finishPlayback()),
-    );
+    _finishTimer = Timer(_outroDuration, () => unawaited(_finishPlayback()));
   }
 
   Future<void> _finishPlayback() async {
@@ -323,10 +319,8 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         tween: Tween<double>(begin: -1, end: 0),
         duration: const Duration(milliseconds: 330),
         curve: Curves.easeOutCubic,
-        builder: (context, slide, child) => Transform.translate(
-          offset: Offset(slide * width, 0),
-          child: child,
-        ),
+        builder: (context, slide, child) =>
+            Transform.translate(offset: Offset(slide * width, 0), child: child),
         child: Container(
           margin: const EdgeInsets.only(left: 14, right: 36),
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
@@ -416,10 +410,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
             builder: (context, scale, child) =>
                 Transform.scale(scale: scale, child: child),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 22,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(26),
                 gradient: const RadialGradient(
@@ -664,9 +655,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
               if (!syncField) return;
               quantityController.value = TextEditingValue(
                 text: '$next',
-                selection: TextSelection.collapsed(
-                  offset: '$next'.length,
-                ),
+                selection: TextSelection.collapsed(offset: '$next'.length),
               );
             }
 

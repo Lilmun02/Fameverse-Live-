@@ -64,15 +64,18 @@ void main() {
       );
     });
 
-    test('custom gift amount keeps quick buttons and quantity field synced', () {
-      final source = _source('lib/features/live/native_live_components.dart');
+    test(
+      'custom gift amount keeps quick buttons and quantity field synced',
+      () {
+        final source = _source('lib/features/live/native_live_components.dart');
 
-      expect(source, contains("TextEditingController(text: '1')"));
-      expect(source, contains("Key('gift-custom-quantity-field')"));
-      expect(source, contains('controller: quantityController'));
-      expect(source, contains('setQuantity(value)'));
-      expect(source, contains('syncField: false'));
-    });
+        expect(source, contains("TextEditingController(text: '1')"));
+        expect(source, contains("Key('gift-custom-quantity-field')"));
+        expect(source, contains('controller: quantityController'));
+        expect(source, contains('setQuantity(value)'));
+        expect(source, contains('syncField: false'));
+      },
+    );
 
     test('Live chat avatars can open profile surfaces', () {
       final shared = _source('lib/features/live/stream_live_shared.dart');

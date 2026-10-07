@@ -281,11 +281,7 @@ class FvFameActionButton extends StatelessWidget {
 }
 
 class FvLiveChatList extends StatelessWidget {
-  const FvLiveChatList({
-    required this.messages,
-    this.onProfileTap,
-    super.key,
-  });
+  const FvLiveChatList({required this.messages, this.onProfileTap, super.key});
 
   final List<dynamic> messages;
   final ValueChanged<String>? onProfileTap;
