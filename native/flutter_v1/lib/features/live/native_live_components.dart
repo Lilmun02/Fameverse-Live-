@@ -227,19 +227,24 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
     final size = MediaQuery.sizeOf(context);
     final premium = playback.gift.cost >= 100;
+    final presentationWidth = size.width * (premium ? .90 : .76);
+    final presentationHeight = size.height * (premium ? .52 : .34);
+    final glowSize = size.width * (premium ? .74 : .48);
+    final symbolSize = premium ? 132.0 : 82.0;
+
     return IgnorePointer(
       child: Align(
         alignment: const Alignment(0, .02),
         child: SizedBox(
           key: Key('native-gift-presentation-${playback.gift.id}'),
-          width: size.width * .90,
-          height: size.height * (premium ? .52 : .44),
+          width: presentationWidth,
+          height: presentationHeight,
           child: Stack(
             alignment: Alignment.center,
             children: [
               Container(
-                width: size.width * (premium ? .74 : .60),
-                height: size.width * (premium ? .74 : .60),
+                width: glowSize,
+                height: glowSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
@@ -262,7 +267,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
                 child: Text(
                   playback.gift.symbol,
                   style: TextStyle(
-                    fontSize: premium ? 132 : 104,
+                    fontSize: symbolSize,
                     shadows: const [
                       Shadow(color: Color(0xAA8F46E8), blurRadius: 28),
                       Shadow(color: Colors.black87, blurRadius: 8),
