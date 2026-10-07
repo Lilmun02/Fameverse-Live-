@@ -82,7 +82,6 @@ void main() {
     expect(viewer, isNot(contains("text: '\${gift.symbol} sent")));
   });
 
-
   test(
     'cinematic gift tray uses the real gift media instead of an emoji stand-in',
     () {
@@ -98,7 +97,7 @@ void main() {
       expect(visual, contains('VideoPlayer(controller)'));
       expect(components, contains("Key('native-gift-presentation-"));
       expect(components, contains("Key('cinematic-gift-presentation-"));
-      expect(components, contains('VideoPlayer(controller)'));
+      expect(components, contains('VideoPlayer(player)'));
       expect(components, contains('BoxFit.contain'));
     },
   );
