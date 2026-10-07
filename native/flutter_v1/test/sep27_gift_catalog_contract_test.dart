@@ -47,6 +47,28 @@ void main() {
     expect(sql, contains('No reserve means no hidden liability'));
   });
 
+  test('lightweight gifts render smaller while premium media stays full', () {
+    final components = File(
+      'lib/features/live/native_live_components.dart',
+    ).readAsStringSync();
+
+    expect(
+      components,
+      contains("final presentationWidth = size.width * (premium ? .90 : .76);"),
+    );
+    expect(
+      components,
+      contains("final presentationHeight = size.height * (premium ? .52 : .34);"),
+    );
+    expect(
+      components,
+      contains("final glowSize = size.width * (premium ? .74 : .48);"),
+    );
+    expect(components, contains("final symbolSize = premium ? 132.0 : 82.0;"));
+    expect(components, contains("height: size.height * .76"));
+    expect(components, contains("fit: BoxFit.contain"));
+  });
+
   test(
     'cinematic gift tray uses the real gift media instead of an emoji stand-in',
     () {
