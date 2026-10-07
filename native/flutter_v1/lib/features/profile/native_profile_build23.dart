@@ -213,23 +213,23 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               ),
               child: const Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.workspace_premium_rounded,
                     color: Color(0xFFD49CFF),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Creator Studio',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        SizedBox(height: 3),
                         Text(
                           'Earnings, verification, gifts and creator tools',
                           style: const TextStyle(
@@ -240,7 +240,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded),
+                  Icon(Icons.chevron_right_rounded),
                 ],
               ),
             ),
