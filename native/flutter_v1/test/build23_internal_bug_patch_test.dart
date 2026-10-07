@@ -6,16 +6,12 @@ String _source(String path) => File(path).readAsStringSync();
 
 void main() {
   group('Build 23 internal bug patches', () {
-    test('owner control center keeps dollar validation parse-safe', () {
-      final source = _source(
-        'lib/features/profile/owner_control_center_build23.dart',
-      );
+    test('web owner control keeps dollar validation parse-safe', () {
+      final source = _source('../../src/components/owner/OwnerControlCenter.jsx');
 
-      expect(source, contains("r'Enter an amount greater than \$0.'"));
-      expect(
-        source,
-        isNot(contains("_message('Enter an amount greater than \$0.');")),
-      );
+      expect(source, contains('Math.round(Number(reserveAmount) * 100)'));
+      expect(source, contains('Number.isFinite(cents)'));
+      expect(source, contains("setError('Enter a reward reserve amount greater than \$0.00.')"));
     });
 
     test('host camera flips are serialized and cannot overlap', () {
