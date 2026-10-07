@@ -842,6 +842,27 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     );
   }
 
+  Future<void> _showChatProfile(String userId) async {
+    if (userId == widget.room.hostUserId) {
+      _showProfileSheet();
+      return;
+    }
+
+    final profile = userId == widget.identity.id
+        ? widget.viewerProfile
+        : await widget.backend.loadProfile(userId);
+    if (!mounted || profile == null) return;
+
+    await showNativeLiveProfileSheet(
+      context: context,
+      liveBackend: widget.liveBackend,
+      backend: widget.backend,
+      identity: widget.identity,
+      roomId: widget.room.id,
+      profile: profile,
+    );
+  }
+
   void _showViewerSheet() {
     final call = _call;
     if (call == null) return;
@@ -1277,7 +1298,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                         height: cohostActive ? 250 : 220,
                         child: SingleChildScrollView(
                           reverse: true,
-                          child: FvLiveChatList(messages: _chat),
+                          child: FvLiveChatList(
+                            messages: _chat,
+                            onProfileTap: (userId) =>
+                                unawaited(_showChatProfile(userId)),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
