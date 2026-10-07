@@ -232,7 +232,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                         SizedBox(height: 3),
                         Text(
                           'Earnings, verification, gifts and creator tools',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Color(0xFFAA9DAE),
                             fontSize: 12,
                           ),
