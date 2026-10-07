@@ -83,10 +83,13 @@ void main() {
 
       expect(shared, contains('final ValueChanged<String>? onProfileTap;'));
       expect(shared, contains("Key('live-chat-profile-avatar-$userId')"));
+      expect(shared, contains('foregroundImage: hasAvatar'));
       expect(host, contains('onProfileTap: (userId)'));
       expect(host, contains('_showProfileSheet();'));
+      expect(host, contains('avatarUrl: widget.room.host.avatarUrl'));
       expect(viewer, contains('_showChatProfile(String userId)'));
       expect(viewer, contains('await widget.backend.loadProfile(userId)'));
+      expect(viewer, contains('avatarUrl: widget.viewerProfile.avatarUrl'));
     });
 
     test('gift activity stays lightweight instead of a purple card', () {
