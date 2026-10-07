@@ -393,7 +393,6 @@ export default function App() {
                 cohost={cohostHost}
                 currentUserId={actorId}
                 followNetwork={followNetwork}
-                onOpenOwnerControls={() => setOwnerControlsOpen(true)}
               />
             )}
 
@@ -421,6 +420,7 @@ export default function App() {
                 signOut={signOut}
                 setTab={setTab}
                 followNetwork={followNetwork}
+                onOpenOwnerControls={() => setOwnerControlsOpen(true)}
               />
             )}
           </main>
