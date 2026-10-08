@@ -16,17 +16,25 @@ Echo is intentionally excluded. Imported levels do not stack across multiple sou
 2. Select exactly one supported source app. Enter the source username and badge number.
 3. Record the **source-app profile, matching username and actual badge** together in one screen recording. Upload the video privately from the mobile app.
 4. The submission is marked **pending**. It appears in the **web-only Owner Control Center** review queue.
-5. The Fameverse owner watches the recording, confirms the username and badge, and selects the Fameverse converted level based on the approved conversion policy. The owner can request more proof or reject a mismatch.
-6. On explicit owner approval the secured backend atomically records the approved level in `badge_imports`. The app and website display **verified transferred recognition**.
+5. The Fameverse owner watches the recording and confirms the username and badge. The owner sees the **proposed converted recognition level**, but cannot inflate it manually. The owner can request more proof or reject a mismatch.
+6. On explicit owner approval the secured backend **calculates the capped level itself** and atomically records it in `badge_imports`. The app and website display **verified transferred recognition**, separate from locally earned level.
 7. Denied applicants can resubmit; reviewed claims retain their audit history. A user can have only one approved import.
 
 **No automatic AI approval.** AI may help the owner inspect provided proof, but the owner is the final approver. A reviewer must not impersonate a source-app verification API.
 
 ## Badge conversion
 
-Echo's algorithm is not known. An example of a transferred Level 15 becoming Level 20 does not establish a general formula. **Do not implement an unapproved +5 rule.** Owner supplies the precise level at review until a source-specific conversion table is explicitly approved.
+Echo's algorithm is not known. There is no verified cross-platform coin-to-level equivalence. The following is a **draft Fameverse incentive policy for owner approval**, not an Echo implementation or a claim of equivalent monetary spending:
 
-Imported badge recognition is a separate data field from `gifter_stats`: **it does not award Fame Coins, increase purchased or gifted coins, create spending history, or create creator earnings.**
+```text
+transfer_recognition_level = min(25, 5 + floor(source_badge_level * 0.4))
+```
+
+Source levels must be valid whole numbers. TikTok global gifter badges are limited to Levels 1–50 by this candidate, while Favorited and EPIC are restricted to 1–99 pending source-specific evidence. Examples: TikTok 15 → 11; Favorited 38 → 20; EPIC 80 → 25. **An alleged TikTok Level 80 is invalid.**
+
+The backend—not the owner's browser—enforces the policy. The owner approves identity and evidence; the server computes the final level. Any attempted browser override is rejected. A future recalibration must be separately reviewed and tested.
+
+Imported badge recognition is a separate data field from `gifter_stats`: **it does not award Fame Coins, increase purchased or gifted coins, create spending history, or create creator earnings.** Spending-gated gift unlocks must use only eligible, verified Fameverse spending and never `badge_imports.approved_level`.
 
 ## Earnable and unlockable gifts
 
