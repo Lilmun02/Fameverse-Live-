@@ -375,7 +375,7 @@ workflows:
 # TestFlight upload is a candidate checkpoint, never a product PASS.
 # The candidate must be physically tested before external promotion / release approval.
 
-native-owner-private-qa:
+  native-owner-private-qa:
     name: Fameverse Build 33 - PRIVATE owner iPhone QA (NO PUBLISH)
     instance_type: mac_mini_m2
     max_build_duration: 90
