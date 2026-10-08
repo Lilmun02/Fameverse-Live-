@@ -4,11 +4,12 @@ import { readFileSync } from 'node:fs'
 
 describe('Fameverse draft imported badge recognition policy', () => {
   it.each([
-    ['tiktok', 5, 7],
-    ['tiktok', 15, 11],
-    ['favorited', 25, 15],
-    ['favorited', 38, 20],
-    ['tiktok', 50, 25],
+    ['tiktok', 1, 1],
+    ['tiktok', 5, 2],
+    ['tiktok', 15, 6],
+    ['favorited', 25, 10],
+    ['favorited', 38, 15],
+    ['tiktok', 50, 20],
     ['epic', 80, 25],
     ['epic', 99, 25],
   ])('%s badge %i converts to capped recognition %i', (platform, level, expected) => {
@@ -35,7 +36,7 @@ describe('Fameverse draft imported badge recognition policy', () => {
     )
 
     expect(sql).toContain('create or replace function public.calculate_badge_transfer_level')
-    expect(sql).toContain('least(25, 5 + floor(p_source_level::numeric * 2 / 5)::integer)')
+    expect(sql).toContain('greatest(1, least(25, floor(p_source_level::numeric * 2 / 5)::integer))')
     expect(sql).toContain('p_approved_level <> v_transfer_level')
     expect(sql).toContain('approved_level = v_transfer_level')
     expect(sql).toContain("source_platform <> 'tiktok' or source_level <= 50")
