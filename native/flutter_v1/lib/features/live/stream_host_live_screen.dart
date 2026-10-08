@@ -183,6 +183,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               '${DateTime.now().microsecondsSinceEpoch}',
           user: (payload['user'] as String?) ?? 'Fameverse viewer',
           userId: payload['userId'] as String?,
+          avatarUrl: payload['avatarUrl'] as String?,
           gifterLevel: (payload['gifterLevel'] as num?)?.toInt() ?? 1,
           text: text,
         ),
@@ -207,16 +208,22 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               '${DateTime.now().microsecondsSinceEpoch}',
           user: sender,
           userId: payload['senderId'] as String?,
+          avatarUrl: payload['senderAvatarUrl'] as String?,
           gifterLevel: level,
           kind: 'gift',
           giftId: gift.id,
           quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
+          text: 'sent ${gift.label} ×$quantity',
         ),
       );
     });
     _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      FvGiftPlayback(
+        gift: gift,
+        quantity: quantity,
+        sender: sender,
+        senderAvatarUrl: payload['senderAvatarUrl'] as String?,
+      ),
     );
   }
 
@@ -254,6 +261,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           id: id,
           user: widget.room.host.displayName,
           userId: widget.identity.id,
+          avatarUrl: widget.room.host.avatarUrl,
           gifterLevel: _gifterLevel,
           text: text,
         ),
@@ -266,6 +274,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         'id': id,
         'user': widget.room.host.displayName,
         'userId': widget.identity.id,
+        'avatarUrl': widget.room.host.avatarUrl,
         'gifterLevel': _gifterLevel,
         'text': text,
       });
@@ -1085,7 +1094,15 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                       height: cohostActive ? 230 : 245,
                       child: SingleChildScrollView(
                         reverse: true,
-                        child: FvLiveChatList(messages: _chat),
+                        child: FvLiveChatList(
+                          messages: _chat,
+                          onProfileTap: (userId) {
+                            if (userId == widget.identity.id ||
+                                userId == widget.room.hostUserId) {
+                              _showProfileSheet();
+                            }
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),

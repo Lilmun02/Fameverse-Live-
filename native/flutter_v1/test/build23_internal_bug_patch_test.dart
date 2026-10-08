@@ -6,15 +6,18 @@ String _source(String path) => File(path).readAsStringSync();
 
 void main() {
   group('Build 23 internal bug patches', () {
-    test('owner control center keeps dollar validation parse-safe', () {
+    test('web owner control keeps dollar validation parse-safe', () {
       final source = _source(
-        'lib/features/profile/owner_control_center_build23.dart',
+        '../../src/components/owner/OwnerControlCenter.jsx',
       );
 
-      expect(source, contains("r'Enter an amount greater than \$0.'"));
+      expect(source, contains('Math.round(Number(reserveAmount) * 100)'));
+      expect(source, contains('Number.isFinite(cents)'));
       expect(
         source,
-        isNot(contains("_message('Enter an amount greater than \$0.');")),
+        contains(
+          "setError('Enter a reward reserve amount greater than \$0.00.')",
+        ),
       );
     });
 
@@ -59,6 +62,37 @@ void main() {
             .length,
         greaterThanOrEqualTo(3),
       );
+    });
+
+    test(
+      'custom gift amount keeps quick buttons and quantity field synced',
+      () {
+        final source = _source('lib/features/live/native_live_components.dart');
+
+        expect(source, contains("TextEditingController(text: '1')"));
+        expect(source, contains("Key('gift-custom-quantity-field')"));
+        expect(source, contains('controller: quantityController'));
+        expect(source, contains('setQuantity(value)'));
+        expect(source, contains('syncField: false'));
+      },
+    );
+
+    test('Live chat avatars can open profile surfaces', () {
+      final shared = _source('lib/features/live/stream_live_shared.dart');
+      final host = _source('lib/features/live/stream_host_live_screen.dart');
+      final viewer = _source(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      );
+
+      expect(shared, contains('final ValueChanged<String>? onProfileTap;'));
+      expect(shared, contains("Key('live-chat-profile-avatar-\$userId')"));
+      expect(shared, contains('foregroundImage: hasAvatar'));
+      expect(host, contains('onProfileTap: (userId)'));
+      expect(host, contains('_showProfileSheet();'));
+      expect(host, contains('avatarUrl: widget.room.host.avatarUrl'));
+      expect(viewer, contains('_showChatProfile(String userId)'));
+      expect(viewer, contains('await widget.backend.loadProfile(userId)'));
+      expect(viewer, contains('avatarUrl: widget.viewerProfile.avatarUrl'));
     });
 
     test('gift activity stays lightweight instead of a purple card', () {

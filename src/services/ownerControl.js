@@ -69,11 +69,29 @@ export async function listOwnerOperators() {
 }
 
 export async function listPayoutQueue(limit = 50) {
-  const { data, error } = await supabase.rpc('get_creator_payout_moderation_queue', {
+  const { data, error } = await supabase.rpc('get_creator_payout_moderation_queue_v2', {
     p_limit: limit,
   })
   if (error) throw error
   return Array.isArray(data) ? data : []
+}
+
+export async function listVerificationQueue(limit = 50) {
+  const { data, error } = await supabase.rpc('get_creator_verification_moderation_queue', {
+    p_limit: limit,
+  })
+  if (error) throw error
+  return Array.isArray(data) ? data : []
+}
+
+export async function reviewVerification({ userId, status, publicNote = null }) {
+  const { data, error } = await supabase.rpc('review_creator_verification', {
+    p_user_id: userId,
+    p_status: status,
+    p_public_note: publicNote,
+  })
+  if (error) throw error
+  return data
 }
 
 export async function reviewPayout({ payoutId, status, note = null, externalReference = null }) {

@@ -7,6 +7,7 @@ import BottomNav from './components/layout/BottomNav.jsx'
 import HostLiveV2 from './components/live/HostLiveV2.jsx'
 import ViewerLiveScreen from './components/live/ViewerLiveScreen.jsx'
 import ProfileScreen from './components/profile/ProfileScreen.jsx'
+import OwnerControlCenter from './components/owner/OwnerControlCenter.jsx'
 import { useAccount } from './hooks/useAccount.js'
 import { useCohostHost } from './hooks/useCohostHost.js'
 import { useCreatorDiscovery } from './hooks/useCreatorDiscovery.js'
@@ -44,6 +45,7 @@ export default function App() {
   const [policyPage, setPolicyPage] = useState(null)
   const [settingsDetail, setSettingsDetail] = useState(null)
   const [creatorTab, setCreatorTab] = useState('clips')
+  const [ownerControlsOpen, setOwnerControlsOpen] = useState(false)
   const [chat, setChat] = useState([])
   const [commentText, setCommentText] = useState('')
   const [cohostTrayOpen, setCohostTrayOpen] = useState(false)
@@ -261,6 +263,7 @@ export default function App() {
     setProfileMode('view')
     setPolicyPage(null)
     setSettingsDetail(null)
+    setOwnerControlsOpen(false)
   }
 
   if (!account.authReady || !splashMinimumElapsed) {
@@ -285,6 +288,18 @@ export default function App() {
         authMessage={account.authMessage}
         setAuthMessage={account.setAuthMessage}
         submitAuth={account.submitAuth}
+      />
+    )
+  }
+
+  const isOwnerAccount = String(account.profile?.account_role || '').toLowerCase() === 'owner'
+
+  if (ownerControlsOpen && isOwnerAccount) {
+    return (
+      <OwnerControlCenter
+        userId={actorId}
+        displayName={displayName}
+        onExit={() => setOwnerControlsOpen(false)}
       />
     )
   }
@@ -405,6 +420,7 @@ export default function App() {
                 signOut={signOut}
                 setTab={setTab}
                 followNetwork={followNetwork}
+                onOpenOwnerControls={() => setOwnerControlsOpen(true)}
               />
             )}
           </main>

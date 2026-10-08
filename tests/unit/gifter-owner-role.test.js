@@ -16,7 +16,7 @@ describe('owner gifter identity lock', () => {
     expect(roles).toMatch(/\.from\('account_roles'\)/)
     expect(roles).toMatch(/'owner', 'admin'/)
     expect(profile).toMatch(/isPrivilegedIdentityRole\(profile\?\.account_role\)/)
-    expect(profile).toMatch(/totalCoinsSent > 0 && !hideGifterBadge/)
+    expect(profile).toMatch(/\(totalCoinsSent > 0 \|\| importedBadgeLevel > 0\) && !hideGifterBadge/)
     expect(liveProfileData).toMatch(/accountRole/)
     expect(liveProfile).toMatch(/isPrivilegedIdentityRole\(profile\?\.accountRole\)/)
     expect(liveProfile).toMatch(/profile\.totalCoinsSent > 0 && !hideGifterBadge/)

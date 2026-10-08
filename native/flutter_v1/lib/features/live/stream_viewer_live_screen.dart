@@ -216,6 +216,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
               '${DateTime.now().microsecondsSinceEpoch}',
           user: (payload['user'] as String?) ?? 'Fameverse viewer',
           userId: payload['userId'] as String?,
+          avatarUrl: payload['avatarUrl'] as String?,
           gifterLevel: (payload['gifterLevel'] as num?)?.toInt() ?? 1,
           text: text.length > 160 ? text.substring(0, 160) : text,
         ),
@@ -240,16 +241,22 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
               '${DateTime.now().microsecondsSinceEpoch}',
           user: sender,
           userId: payload['senderId'] as String?,
+          avatarUrl: payload['senderAvatarUrl'] as String?,
           gifterLevel: level,
           kind: 'gift',
           giftId: gift.id,
           quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
+          text: 'sent ${gift.label} ×$quantity',
         ),
       );
     });
     _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      FvGiftPlayback(
+        gift: gift,
+        quantity: quantity,
+        sender: sender,
+        senderAvatarUrl: payload['senderAvatarUrl'] as String?,
+      ),
     );
   }
 
@@ -287,6 +294,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           id: id,
           user: widget.viewerProfile.displayName,
           userId: widget.identity.id,
+          avatarUrl: widget.viewerProfile.avatarUrl,
           gifterLevel: _gifterLevel,
           text: clean,
         ),
@@ -299,6 +307,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         'id': id,
         'user': widget.viewerProfile.displayName,
         'userId': widget.identity.id,
+        'avatarUrl': widget.viewerProfile.avatarUrl,
         'gifterLevel': _gifterLevel,
         'text': clean,
       });
@@ -370,11 +379,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         id: eventId,
         user: widget.viewerProfile.displayName,
         userId: widget.identity.id,
+        avatarUrl: widget.viewerProfile.avatarUrl,
         gifterLevel: result.level,
         kind: 'gift',
         giftId: gift.id,
         quantity: quantity,
-        text: '${gift.symbol} sent ${gift.label} ×$quantity',
+        text: 'sent ${gift.label} ×$quantity',
       );
       if (mounted) {
         setState(() {
@@ -388,12 +398,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           gift: gift,
           quantity: quantity,
           sender: widget.viewerProfile.displayName,
+          senderAvatarUrl: widget.viewerProfile.avatarUrl,
         ),
       );
       await _broadcastGiftReceipt(<String, dynamic>{
         'id': eventId,
         'sender': widget.viewerProfile.displayName,
         'senderId': widget.identity.id,
+        'senderAvatarUrl': widget.viewerProfile.avatarUrl,
         'gifterLevel': result.level,
         'giftId': gift.id,
         'quantity': quantity,
@@ -842,6 +854,27 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     );
   }
 
+  Future<void> _showChatProfile(String userId) async {
+    if (userId == widget.room.hostUserId) {
+      _showProfileSheet();
+      return;
+    }
+
+    final profile = userId == widget.identity.id
+        ? widget.viewerProfile
+        : await widget.backend.loadProfile(userId);
+    if (!mounted || profile == null) return;
+
+    await showNativeLiveProfileSheet(
+      context: context,
+      liveBackend: widget.liveBackend,
+      backend: widget.backend,
+      identity: widget.identity,
+      roomId: widget.room.id,
+      profile: profile,
+    );
+  }
+
   void _showViewerSheet() {
     final call = _call;
     if (call == null) return;
@@ -1277,7 +1310,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                         height: cohostActive ? 250 : 220,
                         child: SingleChildScrollView(
                           reverse: true,
-                          child: FvLiveChatList(messages: _chat),
+                          child: FvLiveChatList(
+                            messages: _chat,
+                            onProfileTap: (userId) =>
+                                unawaited(_showChatProfile(userId)),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),

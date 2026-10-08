@@ -14,6 +14,7 @@ export default function GifterProgressSection({ gifterStats }) {
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const totalCoinsSent = Math.max(0, Number(gifterStats?.totalCoinsSent || 0))
   const giftCount = Math.max(0, Number(gifterStats?.giftCount || 0))
+  const importedBadgeLevel = Math.max(0, Number(gifterStats?.importedBadgeLevel || 0))
   const progress = getGifterProgress(totalCoinsSent)
   const tiers = useMemo(() => listGifterBadgeTiers(), [])
   const currentTier = getGifterBadgeForLevel(progress.level)
@@ -43,6 +44,14 @@ export default function GifterProgressSection({ gifterStats }) {
       {showHowItWorks && (
         <div className="fv-gifter-how-it-works">
           Gifter progress is based only on gift coins sent. FameTaps do not increase gifter level. Unearned badge artwork stays locked until its requirement is reached.
+        </div>
+      )}
+
+      {importedBadgeLevel > 0 && (
+        <div className="fv-gifter-how-it-works" aria-label="Verified imported badge">
+          Imported recognition: Lv. {importedBadgeLevel} from {gifterStats.importedBadgeSource}.
+          It does not add Fame Coins spent here or bypass spending-based gift unlocks.
+          Fameverse gift progress still starts from actual gifting activity.
         </div>
       )}
 
