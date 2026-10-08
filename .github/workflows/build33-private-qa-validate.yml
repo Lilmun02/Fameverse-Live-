@@ -93,3 +93,85 @@ jobs:
             --dart-define=FAMEVERSE_SOURCE_SHA="${GITHUB_SHA}"
           test -s build/app/outputs/flutter-apk/app-debug.apk
           echo "QA compile passed; binaries remain in job environment because repository is public."
+
+  ios-unsigned-qa:
+    name: Build 33 iOS device compilation - unsigned (private QA)
+    runs-on: macos-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Bootstrap Fameverse iOS shell
+        run: |
+          set -euo pipefail
+          flutter create \
+            --platforms=ios \
+            --org com.fameverse \
+            --project-name live \
+            --no-pub \
+            /tmp/fameverse_build33_ios
+          cp -R /tmp/fameverse_build33_ios/ios ./ios
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSCameraUsageDescription Fameverse Live uses the camera while streaming." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSCameraUsageDescription string Fameverse Live uses the camera while streaming." \
+            ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSMicrophoneUsageDescription Fameverse Live uses the microphone while streaming." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone while streaming." \
+            ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy \
+            -c "Set :NSPhotoLibraryUsageDescription Fameverse lets you choose a profile photo." \
+            ios/Runner/Info.plist 2>/dev/null || \
+          /usr/libexec/PlistBuddy \
+            -c "Add :NSPhotoLibraryUsageDescription string Fameverse lets you choose a profile photo." \
+            ios/Runner/Info.plist
+          bash tool/apply_ios_branding.sh
+          bash tool/verify_ios_branding.sh
+          grep -Fq 'PRODUCT_BUNDLE_IDENTIFIER = com.fameverse.live;' ios/Runner.xcodeproj/project.pbxproj
+
+      - name: Resolve Flutter dependencies and install CocoaPods
+        run: |
+          set -euo pipefail
+          flutter pub get
+          find . -name Podfile -execdir pod install \;
+
+      - name: Compile unsigned iPhone release code
+        run: |
+          set -euo pipefail
+          flutter build ios --release --config-only --no-codesign \
+            --dart-define=FAMEVERSE_BUILD_FAMILY=33 \
+            --dart-define=FAMEVERSE_SOURCE_SHA="${GITHUB_SHA}"
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          echo "iOS native code compiled successfully. Not signed or device installable."
+
+      - name: Record unsigned compile provenance
+        if: always()
+        run: |
+          printf '%s\n' \
+            "branch=${GITHUB_REF_NAME}" \
+            "commit=${GITHUB_SHA}" \
+            "family=Build 33 QA" \
+            "signing=unsigned" \
+            "distribution=not-approved" >> "$GITHUB_STEP_SUMMARY"
