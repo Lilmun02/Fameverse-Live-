@@ -130,7 +130,7 @@ begin
   if p_source_level is null or p_source_level not between 1 and 99 then
     raise exception 'Badge number must be between 1 and 99' using errcode = '22023';
   end if;
-  if v_path !~ ('^' || v_user::text || '/[A-Za-z0-9_-]+\\.(mp4|mov|webm)$') then
+  if v_path !~ ('^' || v_user::text || '/[A-Za-z0-9_-]+[.](mp4|mov|webm)$') then
     raise exception 'Proof must be uploaded to your private account folder' using errcode = '22023';
   end if;
   if not exists (
