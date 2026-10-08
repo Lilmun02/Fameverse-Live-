@@ -36,11 +36,11 @@ void main() {
       expect(creator, contains('NativeBadgeTransferPreview'));
       expect(preview, contains("Key('badge-transfer-preview-card')"));
       expect(preview, contains('Bring your badge'));
-      expect(preview, contains('COMING SOON'));
+      expect(preview, contains('ImagePicker().pickVideo'));
       expect(preview, contains('TikTok, Favorited, or EPIC'));
       expect(preview, contains('screen recording'));
-      expect(preview, contains('Only one supported source account'));
-      expect(preview, isNot(contains('from Echo')));
+      expect(preview, contains('Submit for owner review'));
+      expect(preview, isNot(contains("value: 'echo'")));
     },
   );
 }
