@@ -69,11 +69,12 @@ class _BadgeTransferState extends State<NativeBadgeTransferPreview> {
         );
         return;
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           _proof = picked;
           _feedback = null;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _feedback = 'Video library could not open.');
     }
@@ -82,8 +83,9 @@ class _BadgeTransferState extends State<NativeBadgeTransferPreview> {
   Future<void> _submit() async {
     if (_busy ||
         _claim?['status'] == 'pending' ||
-        _claim?['status'] == 'approved')
+        _claim?['status'] == 'approved') {
       return;
+    }
     final uid = _client.auth.currentUser?.id;
     final username = _username.text.trim();
     final badge = int.tryParse(_level.text.trim());
