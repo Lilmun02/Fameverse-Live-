@@ -15,6 +15,8 @@ import {
   syncPayout,
 } from '../../services/ownerControl.js'
 import OwnerVerificationQueue from './OwnerVerificationQueue.jsx'
+import OwnerBadgeTransfers from './OwnerBadgeTransfers.jsx'
+import { loadOwnerBadgeTransferQueue } from '../../services/badgeTransfers.js'
 import '../../styles/owner/control-center.css'
 
 const money = (cents = 0) => `$${(Number(cents || 0) / 100).toFixed(2)}`
@@ -34,6 +36,8 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
   const [operators, setOperators] = useState([])
   const [payouts, setPayouts] = useState([])
   const [verifications, setVerifications] = useState([])
+  const [badgeClaims, setBadgeClaims] = useState([])
+  const [badgeQueueError, setBadgeQueueError] = useState('')
   const [lives, setLives] = useState([])
   const [reserveAmount, setReserveAmount] = useState('10.00')
   const [reserveNote, setReserveNote] = useState('')
@@ -51,13 +55,14 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
   const refresh = useCallback(async () => {
     setError('')
     try {
-      const [rewardSummary, permission, operatorRows, payoutRows, verificationRows, liveRows] = await Promise.all([
+      const [rewardSummary, permission, operatorRows, payoutRows, verificationRows, liveRows, transferQueue] = await Promise.all([
         loadOwnerRewardSummary(),
         loadMyCashRewardPermission(),
         listOwnerOperators(),
         listPayoutQueue(),
         listVerificationQueue(),
         listActiveLives(),
+        loadOwnerBadgeTransferQueue(),
       ])
       setSummary(rewardSummary)
       setMyPermission(permission)
@@ -65,6 +70,8 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       setOperators(operatorRows)
       setPayouts(payoutRows)
       setVerifications(verificationRows)
+      setBadgeClaims(transferQueue.claims)
+      setBadgeQueueError(transferQueue.error || '')
       setLives(liveRows)
     } catch (refreshError) {
       setError(refreshError?.message || 'Owner controls could not refresh.')
