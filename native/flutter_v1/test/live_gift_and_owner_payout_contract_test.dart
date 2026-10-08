@@ -113,10 +113,7 @@ void main() {
 
         expect(tray, contains('for (var attempt = 0; attempt < 2; attempt++)'));
         expect(tray, contains("timeout(const Duration(seconds: 10))"));
-        expect(
-          tray,
-          contains('await next.setVolume(0)'),
-        );
+        expect(tray, contains('await next.setVolume(0)'));
         expect(tray, contains("Key('gift-sender-entrance-"));
         expect(tray, contains('cinematic-gift-media-failed-'));
         expect(tray, contains('AnimatedOpacity('));
@@ -138,7 +135,10 @@ void main() {
       final cinematicStart = overlay.indexOf(
         "key: Key('cinematic-gift-presentation-",
       );
-      final endOfCinematic = overlay.indexOf('return Align(', cinematicStart + 1);
+      final endOfCinematic = overlay.indexOf(
+        'return Align(',
+        cinematicStart + 1,
+      );
       expect(cinematicStart, greaterThanOrEqualTo(0));
       expect(endOfCinematic, greaterThan(cinematicStart));
       final cinematic = overlay.substring(cinematicStart, endOfCinematic);
