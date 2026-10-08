@@ -31,25 +31,35 @@ jobs:
           git merge-base --is-ancestor f3dcf6f361551205fd5f70bb1ca0d51affc390c8 HEAD
           test "${GITHUB_REF_NAME}" = "qa/build33-private-iphone-oct07"
 
-      - name: Validate private Codemagic workflow and signing gate
+      - name: Validate Build 33 internal TestFlight upload safety
         working-directory: .
         run: |
           set -euo pipefail
           ruby -ryaml -e '
             workflows = YAML.load_file("codemagic.yaml").fetch("workflows")
-            qa = workflows.fetch("native-owner-private-qa")
-            abort "private QA must NOT publish" if qa.key?("publishing")
+            qa = workflows.fetch("native-build33-internal-testflight")
             abort "wrong QA branch" unless qa.fetch("triggering").fetch("branch_patterns").any? { |r| r["pattern"] == "qa/build33-private-iphone-oct07" && r["include"] == true }
-            scripts = qa.fetch("scripts").map { |s| s.fetch("script") }.join("\n") + File.read("native/flutter_v1/tool/build33_private_qa.sh")
-            abort "missing private Ad Hoc profile guard" unless scripts.include?("CM_QA_ADHOC_PROVISIONING_PROFILE")
-            abort "missing direct-install profile validation" unless scripts.include?("ProvisionedDevices")
-            abort "no source fingerprint" unless scripts.include?("FAMEVERSE_SOURCE_SHA")
-            abort "must not upload to TestFlight" if scripts.include?("submit_to_testflight")
-            puts "Build 33 QA YAML parsed and confirmed non-publishing"
+            groups = qa.fetch("environment").fetch("groups")
+            abort "missing TestFlight credentials group" unless groups.include?("appstore_credentials")
+            abort "missing manual signing group" unless groups.include?("manual_signing")
+            publish = qa.fetch("publishing").fetch("app_store_connect")
+            abort "TestFlight upload needs Apple credential mapping" unless publish.fetch("api_key") == "$APP_STORE_CONNECT_PRIVATE_KEY"
+            abort "must never submit for external beta review" unless publish["submit_to_testflight"] == false
+            abort "must never submit to public App Store" unless publish["submit_to_app_store"] == false
+            abort "must not select beta groups" if publish.key?("beta_groups")
+            scripts = qa.fetch("scripts").map { |s| s.fetch("script") }.join("\n")
+            abort "wrong signing script" unless scripts.include?("build33_testflight_internal.sh")
+            source = File.read("native/flutter_v1/tool/build33_testflight_internal.sh")
+            abort "missing source lock" unless source.include?("source_branch=$TARGET_BRANCH")
+            abort "missing internal-only IPA export" unless source.include?("testFlightInternalTestingOnly")
+            abort "must not use Ad Hoc UDID profile" if source.include?("CM_QA_ADHOC_PROVISIONING_PROFILE")
+            abort "missing internal-only export verification" unless source.include?("Print :testFlightInternalTestingOnly")
+            abort "old Ad Hoc workflow must be retired" if workflows.key?("native-owner-private-qa")
+            puts "Build 33 YAML parsed; internal TestFlight upload only"
           '
-          bash -n native/flutter_v1/tool/build33_private_qa.sh
+          bash -n native/flutter_v1/tool/build33_testflight_internal.sh
           ! grep -Fq "ImagePicker().pickVideo" native/flutter_v1/lib/features/profile/native_badge_transfer_preview.dart || {
-            echo "BLOCKED: unapproved badge transfer must stay read-only in this device build"
+            echo "BLOCKED: unapproved badge transfers must stay read-only"
             exit 1
           }
 
