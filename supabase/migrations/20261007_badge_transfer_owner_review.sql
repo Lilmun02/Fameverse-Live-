@@ -1,5 +1,6 @@
 -- Build 33 candidate: owner-reviewed gifter badge imports (NOT deployed automatically).
--- No invented source-to-Fameverse conversion. The owner explicitly sets the final level.
+-- Draft transfer recognition: cap at Lv. 25, independent of real Fameverse spend.
+-- Conversion is enforced by the backend after the owner explicitly approves proof.
 -- Imported recognition is separate from coins sent, wallet balances and payouts.
 begin;
 
@@ -9,6 +10,9 @@ create table if not exists public.badge_transfer_claims (
   source_platform text not null check (source_platform in ('tiktok', 'favorited', 'epic')),
   source_username text not null check (length(trim(source_username)) between 2 and 80),
   source_level integer not null check (source_level between 1 and 99),
+  constraint badge_claim_tiktok_gifter_limit check (
+    source_platform <> 'tiktok' or source_level <= 50
+  ),
   evidence_path text not null check (length(evidence_path) between 42 and 240),
   status text not null default 'pending'
     check (status in ('pending','needs_info','rejected','approved')),
@@ -54,6 +58,32 @@ on conflict (id) do update
 set public = false,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
+
+-- Proposed Fameverse policy. NOT reverse engineered from Echo or EPIC.
+-- A badge from elsewhere is VERIFIED RECOGNITION, never purchased Fame Coins.
+-- F = min(25, 5 + floor(source_level * 2 / 5)).
+create or replace function public.calculate_badge_transfer_level(
+  p_source_platform text,
+  p_source_level integer
+) returns integer
+language plpgsql immutable
+set search_path = public, pg_temp
+as $
+declare
+  v_source text := lower(trim(coalesce(p_source_platform, '')));
+begin
+  if v_source not in ('tiktok','favorited','epic')
+    or p_source_level is null
+    or p_source_level not between 1 and 99
+    or (v_source = 'tiktok' and p_source_level > 50) then
+    raise exception 'Unsupported source badge level'
+      using errcode = '22023';
+  end if;
+  return least(25, 5 + floor(p_source_level::numeric * 2 / 5)::integer);
+end;
+$;
+revoke all on function public.calculate_badge_transfer_level(text, integer) from public, anon;
+grant execute on function public.calculate_badge_transfer_level(text, integer) to authenticated;
 
 create or replace function public._badge_transfer_is_owner()
 returns boolean language sql stable security definer
@@ -127,9 +157,8 @@ begin
   if length(v_username) not between 2 and 80 or v_username !~ '^[[:alnum:]_.@-]+$' then
     raise exception 'Enter the source account username' using errcode = '22023';
   end if;
-  if p_source_level is null or p_source_level not between 1 and 99 then
-    raise exception 'Badge number must be between 1 and 99' using errcode = '22023';
-  end if;
+  -- Source-specific validation also rejects impossible TikTok gifter grades.
+  perform public.calculate_badge_transfer_level(v_platform, p_source_level);
   if v_path !~ ('^' || v_user::text || '/[A-Za-z0-9_-]+[.](mp4|mov|webm)$') then
     raise exception 'Proof must be uploaded to your private account folder' using errcode = '22023';
   end if;
@@ -194,6 +223,7 @@ declare
   v_claim public.badge_transfer_claims%rowtype;
   v_decision text := lower(trim(coalesce(p_decision,'')));
   v_note text := left(trim(coalesce(p_note,'')), 1000);
+  v_transfer_level integer;
 begin
   if v_owner is null or not public._badge_transfer_is_owner() then
     raise exception 'Owner review is required' using errcode = '42501';
@@ -211,15 +241,20 @@ begin
   end if;
 
   if v_decision = 'approved' then
-    if p_approved_level is null or p_approved_level not between 1 and 99 then
-      raise exception 'Owner must set an approved Fameverse level from 1 to 99' using errcode = '22023';
+    v_transfer_level := public.calculate_badge_transfer_level(
+      v_claim.source_platform, v_claim.source_level
+    );
+    -- Never accept arbitrary inflated levels from a modified web client.
+    if p_approved_level is not null and p_approved_level <> v_transfer_level then
+      raise exception 'Transfer level is calculated by the Fameverse policy'
+        using errcode = '22023';
     end if;
     if exists (select 1 from public.badge_imports where user_id = v_claim.user_id) then
       raise exception 'A badge has already been imported for this user' using errcode = '23505';
     end if;
     -- Unique approved account identity prevents reusing another person's proof.
     update public.badge_transfer_claims
-    set status = 'approved', approved_level = p_approved_level,
+    set status = 'approved', approved_level = v_transfer_level,
         reviewed_by = v_owner, reviewed_at = now(), review_note = v_note,
         updated_at = now()
     where id = v_claim.id;
@@ -228,9 +263,9 @@ begin
     insert into public.badge_imports (
       user_id,approved_level,source_platform,source_claim_id,approved_by
     ) values (
-      v_claim.user_id,p_approved_level,v_claim.source_platform,v_claim.id,v_owner
+      v_claim.user_id,v_transfer_level,v_claim.source_platform,v_claim.id,v_owner
     );
-    return p_approved_level;
+    return v_transfer_level;
   end if;
 
   update public.badge_transfer_claims
