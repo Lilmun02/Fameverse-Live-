@@ -50,7 +50,7 @@ export async function decideBadgeTransfer({
     ? null
     : Number(approvedLevel)
   if (decision === 'approved' &&
-      (!Number.isInteger(level) || level < 5 || level > 25)) {
+      (!Number.isInteger(level) || level < 1 || level > 25)) {
     throw new Error('Invalid calculated badge transfer level.')
   }
   const { data, error } = await supabase.rpc('owner_review_badge_transfer', {
