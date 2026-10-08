@@ -1,0 +1,76 @@
+name: Build 33 Private QA Source Validation
+
+on:
+  push:
+    branches:
+      - qa/build33-private-iphone-oct07
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build33-private-qa-validate
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify pinned source ancestry
+        working-directory: .
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor f3dcf6f361551205fd5f70bb1ca0d51affc390c8 HEAD
+          test "${GITHUB_REF_NAME}" = "qa/build33-private-iphone-oct07"
+
+      - name: Validate private Codemagic workflow and signing gate
+        working-directory: .
+        run: |
+          set -euo pipefail
+          ruby -ryaml -e '
+            workflows = YAML.load_file("codemagic.yaml").fetch("workflows")
+            qa = workflows.fetch("native-owner-private-qa")
+            abort "private QA must NOT publish" if qa.key?("publishing")
+            abort "wrong QA branch" unless qa.fetch("triggering").fetch("branch_patterns").any? { |r| r["pattern"] == "qa/build33-private-iphone-oct07" && r["include"] == true }
+            scripts = qa.fetch("scripts").map { |s| s.fetch("script") }.join("\n")
+            abort "missing private Ad Hoc profile guard" unless scripts.include?("CM_QA_ADHOC_PROVISIONING_PROFILE")
+            abort "missing direct-install profile validation" unless scripts.include?("ProvisionedDevices")
+            abort "no source fingerprint" unless scripts.include?("FAMEVERSE_SOURCE_SHA")
+            abort "must not upload to TestFlight" if scripts.include?("submit_to_testflight")
+            puts "Build 33 QA YAML parsed and confirmed non-publishing"
+          '
+          ! grep -Fq "ImagePicker().pickVideo" native/flutter_v1/lib/features/profile/native_badge_transfer_preview.dart || {
+            echo "BLOCKED: unapproved badge transfer must stay read-only in this device build"
+            exit 1
+          }
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve packages and check formatting
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Analyze, test, and compile Android for private QA
+        run: |
+          set -euo pipefail
+          dart run tool/check_native_contract.dart
+          flutter analyze
+          flutter test
+          flutter build apk --debug \
+            --dart-define=FAMEVERSE_BUILD_FAMILY=33 \
+            --dart-define=FAMEVERSE_SOURCE_SHA="${GITHUB_SHA}"
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          echo "QA compile passed; binaries remain in job environment because repository is public."
