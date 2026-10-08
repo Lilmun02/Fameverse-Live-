@@ -13,12 +13,18 @@ export {
   gifterLevelRequirement,
 } from '../features/badges/gifterProgression.js'
 
-function normalizeStats(row) {
+function normalizeStats(row, imported = null) {
   const totalCoinsSent = Number(row?.total_coins_sent ?? row?.totalCoinsSent ?? 0)
+  const level = computeGifterLevel(totalCoinsSent)
+  const importedBadgeLevel = Math.min(99, Math.max(0, Number(imported?.approved_level || 0)))
   return {
     totalCoinsSent,
     giftCount: Number(row?.gift_count ?? row?.giftCount ?? 0),
-    level: computeGifterLevel(totalCoinsSent),
+    level,
+    // Recognition never changes the earned level, wallet, or spending totals.
+    importedBadgeLevel,
+    importedBadgeSource: imported?.source_platform || null,
+    displayLevel: Math.max(level, importedBadgeLevel),
     walletBalance: Number(row?.wallet_balance ?? row?.walletBalance ?? 0),
   }
 }
@@ -33,7 +39,20 @@ export async function loadGifterStats(userId) {
     .maybeSingle()
 
   if (error) throw error
-  return normalizeStats(data)
+  // Transfers are an optional recognition layer and must never block base
+  // gifter progress when the migration is not yet installed.
+  let imported = null
+  try {
+    const { data: record, error: importError } = await supabase
+      .from('badge_imports')
+      .select('approved_level,source_platform')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (!importError) imported = record
+  } catch {
+    // Older beta backends may not have the import table yet.
+  }
+  return normalizeStats(data, imported)
 }
 
 export async function recordBetaGift({ roomId, giftId, quantity }) {
