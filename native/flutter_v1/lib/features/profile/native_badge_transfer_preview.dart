@@ -90,7 +90,7 @@ class _BadgeTransferState extends State<NativeBadgeTransferPreview> {
       final ext = proof.name.split('.').last.toLowerCase();
       final mime = ext == 'mov' ? 'video/quicktime' :
           ext == 'webm' ? 'video/webm' : 'video/mp4';
-      final objectPath = '$uid/${DateTime.now().microsecondsSinceEpoch&#125;.$ext';
+      final objectPath = '$uid/${DateTime.now().microsecondsSinceEpoch}.$ext';
       await _client.storage.from('badge-transfer-proofs').upload(
         objectPath,
         File(proof.path),
@@ -119,7 +119,7 @@ class _BadgeTransferState extends State<NativeBadgeTransferPreview> {
     final status = _claim?['status']?.toString() ?? '';
     final frozen = status == 'pending' || status == 'approved';
     final info = status == 'approved'
-        ? 'Approved at Fameverse badge level ${_claim?['approved_level']&#125;.'
+        ? 'Approved at Fameverse badge level ${_claim?['approved_level']}.'
         : status == 'pending'
             ? 'Your proof is pending owner review.'
             : status == 'needs_info'
