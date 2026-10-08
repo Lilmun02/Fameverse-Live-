@@ -61,7 +61,7 @@ set public = false,
 
 -- Proposed Fameverse policy. NOT reverse engineered from Echo or EPIC.
 -- A badge from elsewhere is VERIFIED RECOGNITION, never purchased Fame Coins.
--- F = min(25, 5 + floor(source_level * 2 / 5)).
+-- F = max(1, min(25, floor(source_level * 2 / 5))). NO bonus levels.
 create or replace function public.calculate_badge_transfer_level(
   p_source_platform text,
   p_source_level integer
@@ -79,7 +79,7 @@ begin
     raise exception 'Unsupported source badge level'
       using errcode = '22023';
   end if;
-  return least(25, 5 + floor(p_source_level::numeric * 2 / 5)::integer);
+  return greatest(1, least(25, floor(p_source_level::numeric * 2 / 5)::integer));
 end;
 $;
 revoke all on function public.calculate_badge_transfer_level(text, integer) from public, anon;
