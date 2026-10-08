@@ -138,7 +138,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
-        FAMEVERSE_BUILD_FAMILY: "32"
+        FAMEVERSE_BUILD_FAMILY: "33"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -146,10 +146,14 @@ workflows:
         - ~/.pub-cache
 
     scripts:
-      - name: Checkout locked Build 32 repair source
+      - name: Checkout locked Build 33 QA source
         script: |
           set -euo pipefail
-          TARGET_BRANCH="integration/sep27-big-update"
+          TARGET_BRANCH="qa/build33-private-iphone-oct07"
+          if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then
+            echo "BLOCKED: choose the Build 33 QA branch before launching TestFlight."
+            exit 1
+          fi
           REPO_ROOT="$(git rev-parse --show-toplevel)"
           cd "$REPO_ROOT"
           git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
@@ -161,10 +165,10 @@ workflows:
             exit 1
           fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
-          printf '%s\n' "Build 32 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
+          printf '%s\n' "Build 33 QA TestFlight candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build33_source_identity.txt"
           echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
 
-      - name: Verify Build 32 fixes and Fameboard exist in locked source
+      - name: Verify Build 33 fixes and Fameboard exist in locked source
         script: |
           set -euo pipefail
           SHELL="lib/features/shell/fameverse_shell_build23.dart"
@@ -217,8 +221,8 @@ workflows:
             "fameboard_live=verified" \
             "fameboard_discover=verified" \
             "stripe_hosted_checkout_repair=verified" \
-            >> build32_source_identity.txt
-          echo "Verified Build 32 fixes and Fameboard in exact locked TestFlight source."
+            >> build33_source_identity.txt
+          echo "Verified Build 33 fixes and Fameboard in exact locked TestFlight source."
 
       - name: Verify required TestFlight secrets are present
         script: |
@@ -351,13 +355,13 @@ workflows:
           test -n "${FAMEVERSE_SOURCE_SHA:-}"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
-            --dart-define="FAMEVERSE_BUILD_FAMILY=32" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=33" \
             --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - build32_source_identity.txt
+      - build33_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -367,69 +371,6 @@ workflows:
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
-# Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
-# native-testflight always checks out the locked integration/sep27-big-update Build 32 repair source before validation/building.
-# A user may trigger the workflow from another branch; the published candidate source is still the locked Build 32 repair branch.
-# Every candidate publishes build32_source_identity.txt with the exact source commit used for the IPA.
-# The TestFlight source gate blocks upload if the required Build 32 fixes or Fameboard wiring are absent from the exact locked checkout.
-# TestFlight upload is a candidate checkpoint, never a product PASS.
-# The candidate must be physically tested before external promotion / release approval.
-
-  native-build33-internal-testflight:
-    name: Fameverse Build 33 - INTERNAL TestFlight (NOT App Store Release)
-    instance_type: mac_mini_m2
-    max_build_duration: 90
-    working_directory: native/flutter_v1
-    environment:
-      groups:
-        - appstore_credentials
-        - manual_signing
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-      vars:
-        FAMEVERSE_NATIVE_STAGE: "testflight"
-        FAMEVERSE_BUILD_FAMILY: "33"
-        FAMEVERSE_APP_NAME: "Fameverse"
-        BUNDLE_ID: "com.fameverse.live"
-    cache:
-      cache_paths:
-        - ~/.pub-cache
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'qa/build33-private-iphone-oct07'
-          include: true
-          source: true
-      cancel_previous_builds: true
-    scripts:
-      - name: Lock Build 33 TestFlight source to QA branch
-        script: bash tool/build33_testflight_internal.sh source
-      - name: Block unfinished or unapproved native features
-        script: bash tool/build33_testflight_internal.sh products
-      - name: Verify existing TestFlight signing credentials
-        script: bash tool/build33_testflight_internal.sh secrets
-      - name: Generate Fameverse iOS shell and branding
-        script: bash tool/build33_testflight_internal.sh ios
-      - name: Flutter packages, native contracts, analysis and tests
-        script: bash tool/build33_testflight_internal.sh dependencies
-      - name: Sign for INTERNAL TestFlight only (not Ad Hoc)
-        script: bash tool/build33_testflight_internal.sh sign
-      - name: Build signed internal TestFlight IPA
-        script: bash tool/build33_testflight_internal.sh package
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - build33_testflight_source.txt
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: false
-        submit_to_app_store: false
-
-# Upload is to App Store Connect for existing INTERNAL TestFlight testers only.
-# No external group assignment, beta review, or public App Store release.
+# The EXISTING native-testflight workflow on this isolated QA branch builds
+# Build 33 from qa/build33-private-iphone-oct07 via App Store Connect/TestFlight.
+# No Ad Hoc device install workflow, external testing, or public release.
