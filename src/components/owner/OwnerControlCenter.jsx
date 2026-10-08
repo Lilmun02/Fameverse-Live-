@@ -404,6 +404,11 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
             busy={Boolean(busyKey)}
             onAction={verificationAction}
           />
+          <OwnerBadgeTransfers
+            claims={badgeClaims}
+            queueError={badgeQueueError}
+            onReviewed={refresh}
+          />
 
           <section className="owner-panel">
             <div className="owner-panel-heading compact">
