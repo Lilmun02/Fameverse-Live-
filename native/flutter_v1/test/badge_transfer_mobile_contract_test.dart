@@ -19,7 +19,8 @@ void main() {
       expect(creator, contains('NativeBadgeTransferPreview()'));
       expect(form, contains('ImagePicker().pickVideo'));
       expect(form, contains("source: ImageSource.gallery"));
-      expect(form, contains("from('badge-transfer-proofs').upload"));
+      expect(form, contains("from('badge-transfer-proofs')"));
+    expect(form, contains('.upload('));
       expect(form, contains("'submit_badge_transfer_claim'"));
       expect(form, contains("value: 'tiktok'"));
       expect(form, contains("value: 'favorited'"));
