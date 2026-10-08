@@ -375,22 +375,23 @@ workflows:
 # TestFlight upload is a candidate checkpoint, never a product PASS.
 # The candidate must be physically tested before external promotion / release approval.
 
-  native-owner-private-qa:
-    name: Fameverse Build 33 - PRIVATE owner iPhone QA (NO PUBLISH)
+  native-build33-internal-testflight:
+    name: Fameverse Build 33 - INTERNAL TestFlight (NOT App Store Release)
     instance_type: mac_mini_m2
     max_build_duration: 90
     working_directory: native/flutter_v1
     environment:
       groups:
+        - appstore_credentials
         - manual_signing
       flutter: stable
       xcode: latest
       cocoapods: default
       vars:
-        FAMEVERSE_NATIVE_STAGE: "bootstrap"
+        FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_BUILD_FAMILY: "33"
         FAMEVERSE_APP_NAME: "Fameverse"
-        FAMEVERSE_BUNDLE_ID: "com.fameverse.live"
+        BUNDLE_ID: "com.fameverse.live"
     cache:
       cache_paths:
         - ~/.pub-cache
@@ -403,26 +404,32 @@ workflows:
           source: true
       cancel_previous_builds: true
     scripts:
-      - name: Identify private Build 33 QA source and block stale checkout
-        script: bash tool/build33_private_qa.sh source
-      - name: Bootstrap iOS and Android shells for private QA
-        script: bash tool/build33_private_qa.sh platforms
-      - name: Resolve Flutter packages
-        script: bash tool/build33_private_qa.sh packages
-      - name: Static and contract gates for private QA
-        script: bash tool/build33_private_qa.sh gates
-      - name: Compile private Android debug APK
-        script: bash tool/build33_private_qa.sh android
-      - name: Compile unsigned iOS QA code before provisioning
-        script: bash tool/build33_private_qa.sh ios-unsigned
-      - name: Validate device-installable Ad Hoc signing, without publishing
-        script: bash tool/build33_private_qa.sh adhoc
-      - name: Build signed PRIVATE Ad Hoc IPA (no TestFlight, no publishing)
-        script: bash tool/build33_private_qa.sh ipa
+      - name: Lock Build 33 TestFlight source to QA branch
+        script: bash tool/build33_testflight_internal.sh source
+      - name: Block unfinished or unapproved native features
+        script: bash tool/build33_testflight_internal.sh products
+      - name: Verify existing TestFlight signing credentials
+        script: bash tool/build33_testflight_internal.sh secrets
+      - name: Generate Fameverse iOS shell and branding
+        script: bash tool/build33_testflight_internal.sh ios
+      - name: Flutter packages, native contracts, analysis and tests
+        script: bash tool/build33_testflight_internal.sh dependencies
+      - name: Sign for INTERNAL TestFlight only (not Ad Hoc)
+        script: bash tool/build33_testflight_internal.sh sign
+      - name: Build signed internal TestFlight IPA
+        script: bash tool/build33_testflight_internal.sh package
     artifacts:
-      - build/app/outputs/flutter-apk/app-debug.apk
       - build/ios/ipa/*.ipa
-      - build33_private_qa_source.txt
+      - build33_testflight_source.txt
+      - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: false
+        submit_to_app_store: false
 
-# No publishing. Existing native-testflight remains unchanged.
+# Upload is to App Store Connect for existing INTERNAL TestFlight testers only.
+# No external group assignment, beta review, or public App Store release.
