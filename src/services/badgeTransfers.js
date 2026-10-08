@@ -50,8 +50,8 @@ export async function decideBadgeTransfer({
     ? null
     : Number(approvedLevel)
   if (decision === 'approved' &&
-      (!Number.isInteger(level) || level < 1 || level > 99)) {
-    throw new Error('Choose a Fameverse badge level between 1 and 99.')
+      (!Number.isInteger(level) || level < 5 || level > 25)) {
+    throw new Error('Invalid calculated badge transfer level.')
   }
   const { data, error } = await supabase.rpc('owner_review_badge_transfer', {
     p_claim_id: claimId,
