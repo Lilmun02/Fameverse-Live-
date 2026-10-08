@@ -96,6 +96,7 @@ class _BadgeTransferState extends State<NativeBadgeTransferPreview> {
         badge == null ||
         badge < 1 ||
         badge > 99 ||
+        (_platform == 'tiktok' && badge > 50) ||
         proof == null) {
       setState(
         () => _feedback =
@@ -229,8 +230,10 @@ class _BadgeTransferState extends State<NativeBadgeTransferPreview> {
               controller: _level,
               key: const Key('badge-transfer-level'),
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Source badge number (1–99)',
+              decoration: InputDecoration(
+                labelText: _platform == 'tiktok'
+                    ? 'TikTok gifter badge (1–50)'
+                    : 'Source badge number (1–99)',
               ),
             ),
             OutlinedButton.icon(
