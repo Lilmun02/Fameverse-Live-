@@ -83,6 +83,9 @@ jobs:
           elif [ -f android/app/build.gradle ]; then
             sed -i.bak 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle
           fi
+          # Ubuntu needs an SVG rasterizer for Fameverse native branding.
+          sudo apt-get update -qq
+          sudo apt-get install -y librsvg2-bin
           bash tool/apply_android_branding.sh
           bash tool/verify_android_branding.sh
           flutter build apk --debug \
