@@ -40,13 +40,14 @@ jobs:
             qa = workflows.fetch("native-owner-private-qa")
             abort "private QA must NOT publish" if qa.key?("publishing")
             abort "wrong QA branch" unless qa.fetch("triggering").fetch("branch_patterns").any? { |r| r["pattern"] == "qa/build33-private-iphone-oct07" && r["include"] == true }
-            scripts = qa.fetch("scripts").map { |s| s.fetch("script") }.join("\n")
+            scripts = qa.fetch("scripts").map { |s| s.fetch("script") }.join("\n") + File.read("native/flutter_v1/tool/build33_private_qa.sh")
             abort "missing private Ad Hoc profile guard" unless scripts.include?("CM_QA_ADHOC_PROVISIONING_PROFILE")
             abort "missing direct-install profile validation" unless scripts.include?("ProvisionedDevices")
             abort "no source fingerprint" unless scripts.include?("FAMEVERSE_SOURCE_SHA")
             abort "must not upload to TestFlight" if scripts.include?("submit_to_testflight")
             puts "Build 33 QA YAML parsed and confirmed non-publishing"
           '
+          bash -n native/flutter_v1/tool/build33_private_qa.sh
           ! grep -Fq "ImagePicker().pickVideo" native/flutter_v1/lib/features/profile/native_badge_transfer_preview.dart || {
             echo "BLOCKED: unapproved badge transfer must stay read-only in this device build"
             exit 1
