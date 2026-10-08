@@ -541,11 +541,13 @@ class NativeGiftTray extends StatefulWidget {
 }
 
 class _NativeGiftTrayState extends State<NativeGiftTray> {
+  // Browse by coin amount instead of overlapping, misleading tier names.
+  // Featured is deliberately curated; the remaining groups are disjoint.
   static const _categories = <(String, String)>[
-    ('trending', 'Trending'),
-    ('support', 'Support'),
-    ('fun', 'Fun'),
-    ('luxury', 'Luxury'),
+    ('trending', 'Featured'),
+    ('support', '1–10 Coins'),
+    ('fun', '11–39 Coins'),
+    ('luxury', '40–99 Coins'),
     ('fameverse', 'Fameverse'),
   ];
 
@@ -571,19 +573,15 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
       case 'trending':
         return _trendingIds.contains(gift.id);
       case 'support':
-        return gift.cost <= 10;
+        return gift.category != 'fameverse' && gift.cost <= 10;
       case 'fun':
-        return const <String>{
-          'reactions',
-          'snacks',
-          'flowers',
-          'celebrate',
-          'creator',
-          'sports',
-          'animals',
-        }.contains(gift.category);
+        return gift.category != 'fameverse' &&
+            gift.cost >= 11 &&
+            gift.cost <= 39;
       case 'luxury':
-        return gift.cost >= 40 && gift.cost < 1000;
+        return gift.category != 'fameverse' &&
+            gift.cost >= 40 &&
+            gift.cost <= 99;
       case 'fameverse':
         return gift.category == 'fameverse';
       default:
@@ -591,8 +589,18 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     }
   }
 
-  List<FvGiftDefinition> get _visible =>
-      fvGiftCatalog.where((gift) => _matchesCategory(gift, _category)).toList();
+  List<FvGiftDefinition> get _visible {
+    final gifts = fvGiftCatalog
+        .where((gift) => _matchesCategory(gift, _category))
+        .toList();
+    if (_category != 'trending') {
+      gifts.sort((a, b) {
+        final byPrice = a.cost.compareTo(b.cost);
+        return byPrice != 0 ? byPrice : a.label.compareTo(b.label);
+      });
+    }
+    return gifts;
+  }
 
   FvGiftDefinition get _selected {
     final selected = fvGiftById(_selectedId);
