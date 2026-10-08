@@ -9,10 +9,10 @@ void main() {
         'lib/features/live/native_live_components.dart',
       ).readAsStringSync();
       for (final value in <String>[
-        "('trending', 'Trending')",
-        "('support', 'Support')",
-        "('fun', 'Fun')",
-        "('luxury', 'Luxury')",
+        "('trending', 'Featured')",
+        "('support', '1–10 Coins')",
+        "('fun', '11–39 Coins')",
+        "('luxury', '40–99 Coins')",
         "('fameverse', 'Fameverse')",
       ]) {
         expect(tray, contains(value));
@@ -115,11 +115,11 @@ void main() {
         expect(tray, contains("timeout(const Duration(seconds: 10))"));
         expect(
           tray,
-          contains('Preparing the original premium gift animation.'),
+          contains('await next.setVolume(0)'),
         );
-        expect(tray, contains('will not replace its animation with an emoji'));
+        expect(tray, contains("Key('gift-sender-entrance-"));
         expect(tray, contains('cinematic-gift-media-failed-'));
-        expect(tray, contains('cinematic-gift-media-loading-'));
+        expect(tray, contains('AnimatedOpacity('));
       },
     );
 
@@ -133,15 +133,15 @@ void main() {
 
       expect(overlay, contains('fit: BoxFit.contain'));
       expect(preview, contains('fit: BoxFit.contain'));
-      expect(overlay, contains('rawMs.clamp(1500, 60000).toInt()'));
+      expect(overlay, contains('.clamp(1500, 60000)'));
       expect(overlay, isNot(contains("width: size.width * .96")));
       final cinematicStart = overlay.indexOf(
         "key: Key('cinematic-gift-presentation-",
       );
-      final loadingStart = overlay.indexOf("key: Key(", cinematicStart + 1);
+      final endOfCinematic = overlay.indexOf('return Align(', cinematicStart + 1);
       expect(cinematicStart, greaterThanOrEqualTo(0));
-      expect(loadingStart, greaterThan(cinematicStart));
-      final cinematic = overlay.substring(cinematicStart, loadingStart);
+      expect(endOfCinematic, greaterThan(cinematicStart));
+      final cinematic = overlay.substring(cinematicStart, endOfCinematic);
       expect(cinematic, isNot(contains('playback.gift.label')));
       expect(cinematic, isNot(contains('playback.sender')));
     });
