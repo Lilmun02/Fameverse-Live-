@@ -70,6 +70,21 @@ jobs:
           dart run tool/check_native_contract.dart
           flutter analyze
           flutter test
+          # The repository intentionally does not commit generated Android shells.
+          flutter create \
+            --platforms=android \
+            --org com.fameverse \
+            --project-name live \
+            --no-pub \
+            /tmp/fameverse_qa_android
+          cp -R /tmp/fameverse_qa_android/android ./android
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i.bak 's/minSdk = flutter.minSdkVersion/minSdk = 24/' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i.bak 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 24/' android/app/build.gradle
+          fi
+          bash tool/apply_android_branding.sh
+          bash tool/verify_android_branding.sh
           flutter build apk --debug \
             --dart-define=FAMEVERSE_BUILD_FAMILY=33 \
             --dart-define=FAMEVERSE_SOURCE_SHA="${GITHUB_SHA}"
