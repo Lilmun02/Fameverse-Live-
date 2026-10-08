@@ -96,12 +96,14 @@ void main() {
       releaseSection.contains('flutter build ipa --release'),
       'TestFlight workflow must build a signed release IPA.',
     );
+    const build32Branch = 'integration/sep27-big-update';
+    const build33Branch = 'qa/build33-private-iphone-oct07';
     final isBuild32Source =
-        releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
+        releaseSection.contains('TARGET_BRANCH="$build32Branch"') &&
         releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
         releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32');
     final isBuild33QaSource =
-        releaseSection.contains('TARGET_BRANCH="qa/build33-private-iphone-oct07"') &&
+        releaseSection.contains('TARGET_BRANCH="$build33Branch"') &&
         releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "33"') &&
         releaseSection.contains('FAMEVERSE_BUILD_FAMILY=33') &&
         releaseSection.contains('CM_BRANCH');
