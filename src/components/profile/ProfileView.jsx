@@ -11,6 +11,8 @@ export default function ProfileView({ initial, displayName, username, profile, o
   const totalCoinsSent = Math.max(0, Number(gifterStats?.totalCoinsSent || 0))
   const giftCount = Math.max(0, Number(gifterStats?.giftCount || 0))
   const gifterLevel = Math.max(1, Number(gifterStats?.level || 1))
+  const importedBadgeLevel = Math.max(0, Number(gifterStats?.importedBadgeLevel || 0))
+  const displayedGifterLevel = Math.max(gifterLevel, importedBadgeLevel)
   const hideGifterBadge = isPrivilegedIdentityRole(profile?.account_role)
   const isOwner = String(profile?.account_role || '').toLowerCase() === 'owner'
 
@@ -29,9 +31,12 @@ export default function ProfileView({ initial, displayName, username, profile, o
         <div className="fv-profile-identity">
           <h1>{displayName}</h1>
           <span>{username}</span>
-          {totalCoinsSent > 0 && !hideGifterBadge && (
-            <div className="fv-profile-badges" aria-label="Earned Fameverse identity badge">
-              <GifterBadge level={gifterLevel} size="small" totalCoinsSent={totalCoinsSent} />
+          {(totalCoinsSent > 0 || importedBadgeLevel > 0) && !hideGifterBadge && (
+            <div className="fv-profile-badges" aria-label="Earned or verified transferred Fameverse gifter badge">
+              <GifterBadge level={displayedGifterLevel} size="small" />
+              {importedBadgeLevel > 0 && (
+                <small>Verified transfer from {gifterStats.importedBadgeSource} · recognition only</small>
+              )}
             </div>
           )}
           <p>{profile?.bio || 'Add a bio so people know what you are about.'}</p>
