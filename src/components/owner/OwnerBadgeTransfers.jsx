@@ -110,7 +110,7 @@ export default function OwnerBadgeTransfers({ claims, queueError, onReviewed }) 
                       Proposed Fameverse Transfer · Lv. {suggestedTransferLevel(claim.source_platform, claim.source_level) ?? 'Invalid'}
                     </strong>
                     <p>
-                      Capped at Lv. 25. This is external recognition, not a Fameverse
+                      No bonus. Capped at Lv. 25. This is external recognition, not a Fameverse
                       gifting level or coins actually spent. The backend verifies the
                       conversion when you approve.
                     </p>
