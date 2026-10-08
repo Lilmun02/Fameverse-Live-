@@ -27,10 +27,10 @@ Echo is intentionally excluded. Imported levels do not stack across multiple sou
 Echo's algorithm is not known. There is no verified cross-platform coin-to-level equivalence. The following is a **draft Fameverse incentive policy for owner approval**, not an Echo implementation or a claim of equivalent monetary spending:
 
 ```text
-transfer_recognition_level = min(25, 5 + floor(source_badge_level * 0.4))
+transfer_recognition_level = max(1, min(25, floor(source_badge_level * 0.4)))
 ```
 
-Source levels must be valid whole numbers. TikTok global gifter badges are limited to Levels 1–50 by this candidate, while Favorited and EPIC are restricted to 1–99 pending source-specific evidence. Examples: TikTok 15 → 11; Favorited 38 → 20; EPIC 80 → 25. **An alleged TikTok Level 80 is invalid.**
+There are **no base levels, added bonus points or +5 promotion** in this policy. Recognition alone never unlocks an earned Fameverse gifter badge or counts as local gifting. Source levels must be valid whole numbers. TikTok global gifter badges are limited to Levels 1–50 by this candidate, while Favorited and EPIC are restricted to 1–99 pending source-specific evidence. Examples: TikTok 1 → 1; TikTok 15 → 6; Favorited 38 → 15; EPIC 80 → 25. An account with no existing source-app gifter badge has nothing to transfer and starts with the normal Fameverse default level. **An alleged TikTok Level 80 is invalid.**
 
 The backend—not the owner's browser—enforces the policy. The owner approves identity and evidence; the server computes the final level. Any attempted browser override is rejected. A future recalibration must be separately reviewed and tested.
 
