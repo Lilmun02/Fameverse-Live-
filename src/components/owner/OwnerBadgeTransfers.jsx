@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { decideBadgeTransfer, getBadgeProofUrl } from '../../services/badgeTransfers.js'
+import { suggestedTransferLevel } from '../../features/badges/transferConversion.js'
 
 const STATUS_NAMES = Object.freeze({
   pending: 'Waiting for review',
@@ -35,16 +36,10 @@ export default function OwnerBadgeTransfers({ claims, queueError, onReviewed }) 
 
   async function review(claim, decision) {
     if (busy) return
-    const approvedLevel = drafts[claim.id]?.level || ''
+    const approvedLevel = suggestedTransferLevel(claim.source_platform, claim.source_level)
     const note = drafts[claim.id]?.note || ''
-    if (decision === 'approved' && !Number.isInteger(Number(approvedLevel))) {
-      setError('Enter a whole-number Fameverse badge level before approving.')
-      return
-    }
-    if (decision === 'approved' && (
-      Number(approvedLevel) < 1 || Number(approvedLevel) > 99
-    )) {
-      setError('Badge levels must be from 1 to 99.')
+    if (decision === 'approved' && approvedLevel === null) {
+      setError('The source badge level is invalid. Request corrected evidence.')
       return
     }
     const decisionMessage = decision === 'approved'
@@ -110,15 +105,16 @@ export default function OwnerBadgeTransfers({ claims, queueError, onReviewed }) 
               </button>
               {claim.status === 'pending' && (
                 <div style={{ marginTop: 10, display: 'grid', gap: 9 }}>
-                  <label>
-                    Approved Fameverse level (not coins spent)
-                    <input
-                      type="number" min="1" max="99" step="1" inputMode="numeric"
-                      value={drafts[claim.id]?.level || ''}
-                      onChange={(event) => updateDraft(claim.id, 'level', event.target.value)}
-                      placeholder="Enter approved level"
-                    />
-                  </label>
+                  <div>
+                    <strong>
+                      Proposed Fameverse Transfer · Lv. {suggestedTransferLevel(claim.source_platform, claim.source_level) ?? 'Invalid'}
+                    </strong>
+                    <p>
+                      Capped at Lv. 25. This is external recognition, not a Fameverse
+                      gifting level or coins actually spent. The backend verifies the
+                      conversion when you approve.
+                    </p>
+                  </div>
                   <label>
                     Moderation note (optional)
                     <textarea
