@@ -18,14 +18,11 @@ import OwnerVerificationQueue from './OwnerVerificationQueue.jsx'
 import OwnerBadgeTransfers from './OwnerBadgeTransfers.jsx'
 import { loadOwnerBadgeTransferQueue } from '../../services/badgeTransfers.js'
 import '../../styles/owner/control-center.css'
-
 const money = (cents = 0) => `$${(Number(cents || 0) / 100).toFixed(2)}`
 const percent = (bps = 0) => `${(Number(bps || 0) / 100).toFixed(0)}%`
-
 function statusLabel(status) {
   return String(status || 'unknown').replaceAll('_', ' ')
 }
-
 export default function OwnerControlCenter({ userId, displayName, onExit }) {
   const [loading, setLoading] = useState(true)
   const [busyKey, setBusyKey] = useState('')
@@ -51,7 +48,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
     changelog: '',
     requiresAcknowledgement: true,
   })
-
   const refresh = useCallback(async () => {
     setError('')
     try {
@@ -79,22 +75,18 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       setLoading(false)
     }
   }, [])
-
   useEffect(() => {
     refresh()
   }, [refresh])
-
   useEffect(() => {
     if (!toast) return undefined
     const timer = window.setTimeout(() => setToast(''), 3200)
     return () => window.clearTimeout(timer)
   }, [toast])
-
   const creatorShareExample = useMemo(() => {
     const creatorBps = Number(summary?.creator_share_bps || 7000)
     return Math.round(100 * creatorBps / 10000)
   }, [summary])
-
   async function run(key, action, successMessage) {
     if (busyKey) return
     setBusyKey(key)
@@ -109,7 +101,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       setBusyKey('')
     }
   }
-
   function allocateReserve(event) {
     event.preventDefault()
     const cents = Math.round(Number(reserveAmount) * 100)
@@ -130,7 +121,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       setFundedConfirmed(false)
     })
   }
-
   function toggleMyCashRewards() {
     const maxCents = Math.round(Number(myCap) * 100)
     if (!Number.isFinite(maxCents) || maxCents < 1) {
@@ -149,7 +139,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
         : 'Cash-backed reward mode is ON for your account.',
     )
   }
-
   function saveMyCap() {
     const maxCents = Math.round(Number(myCap) * 100)
     if (!Number.isFinite(maxCents) || maxCents < 1) {
@@ -166,7 +155,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       `Your cash-backed gift cap is now ${money(maxCents)}.`,
     )
   }
-
   function setOperator(operator, enabled) {
     const currentCap = Number(operator.permission?.max_gross_cents_per_gift || 100)
     run(
@@ -179,7 +167,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       `${operator.profile?.display_name || operator.role} cash rewards ${enabled ? 'enabled' : 'disabled'}.`,
     )
   }
-
   function payoutAction(payout, action) {
     if (action === 'approve') {
       return run(
@@ -210,21 +197,18 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       'PayPal payout status refreshed.',
     )
   }
-
   function verificationAction(request, status) {
     const note = status === 'verified'
       ? 'Creator verification approved by Fameverse review.'
       : status === 'needs_info'
         ? 'More information is required before verification can be approved.'
         : 'Verification request was not approved.'
-
     return run(
       `verification-${request.user_id}`,
       () => reviewVerification({ userId: request.user_id, status, publicNote: note }),
       `Verification updated to ${status.replaceAll('_', ' ')}.`,
     )
   }
-
   function publishAnnouncement(event) {
     event.preventDefault()
     const title = announcement.title.trim()
@@ -250,7 +234,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
       setAnnouncement((current) => ({ ...current, title: '', summary: '', changelog: '' }))
     })
   }
-
   return (
     <div className="owner-control-shell">
       {toast && <div className="owner-control-toast">{toast}</div>}
@@ -269,7 +252,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
           </button>
         </div>
       </header>
-
       {error && <div className="owner-control-error">{error}</div>}
       {loading ? (
         <div className="owner-control-loading">Loading Fameverse owner controls…</div>
@@ -308,7 +290,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
               <button type="submit" className="owner-control-primary" disabled={busyKey === 'reserve'}>Allocate reserve</button>
             </form>
           </section>
-
           <section className="owner-panel">
             <div className="owner-panel-heading compact">
               <div><span>YOUR ACCOUNT</span><h2>Cash-backed Gift Mode</h2></div>
@@ -328,7 +309,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
               </button>
             </div>
           </section>
-
           <section className="owner-panel">
             <div className="owner-panel-heading compact">
               <div><span>OWNER + ADMIN</span><h2>Reward Permissions</h2></div>
@@ -352,7 +332,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
               ))}
             </div>
           </section>
-
           <section className="owner-panel owner-panel-wide">
             <div className="owner-panel-heading">
               <div><span>CREATOR MONEY</span><h2>Payout Queue</h2></div>
@@ -398,7 +377,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
               </table>
             </div>
           </section>
-
           <OwnerVerificationQueue
             verifications={verifications}
             busy={Boolean(busyKey)}
@@ -409,7 +387,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
             queueError={badgeQueueError}
             onReviewed={refresh}
           />
-
           <section className="owner-panel">
             <div className="owner-panel-heading compact">
               <div><span>LIVE OPERATIONS</span><h2>Active Live Sessions</h2></div>
@@ -428,7 +405,6 @@ export default function OwnerControlCenter({ userId, displayName, onExit }) {
             </div>
             <p className="owner-panel-footnote">This first control-center pass monitors native Live sessions from Supabase. Desktop video monitoring needs the Stream Video web client wired to the same native calls; this panel does not fake a video preview.</p>
           </section>
-
           <section className="owner-panel">
             <div className="owner-panel-heading compact">
               <div><span>PLATFORM VOICE</span><h2>Announcements</h2></div>
