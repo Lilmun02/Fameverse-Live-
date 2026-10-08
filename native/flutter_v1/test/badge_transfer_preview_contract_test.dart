@@ -23,24 +23,21 @@ void main() {
     },
   );
 
-  test(
-    'current Creator Studio includes read-only badge transfer instructions',
-    () {
-      final creator = File(
-        'lib/features/profile/creator_studio_build23.dart',
-      ).readAsStringSync();
-      final preview = File(
-        'lib/features/profile/native_badge_transfer_preview.dart',
-      ).readAsStringSync();
+  test('Build 33 private device candidate keeps imported levels inactive', () {
+    final creator = File(
+      'lib/features/profile/creator_studio_build23.dart',
+    ).readAsStringSync();
+    final preview = File(
+      'lib/features/profile/native_badge_transfer_preview.dart',
+    ).readAsStringSync();
 
-      expect(creator, contains('NativeBadgeTransferPreview'));
-      expect(preview, contains("Key('badge-transfer-preview-card')"));
-      expect(preview, contains('Bring your badge'));
-      expect(preview, contains('ImagePicker().pickVideo'));
-      expect(preview, contains('TikTok, Favorited, or EPIC'));
-      expect(preview, contains('screen recording'));
-      expect(preview, contains('Submit for owner review'));
-      expect(preview, isNot(contains("value: 'echo'")));
-    },
-  );
+    expect(creator, contains('NativeBadgeTransferPreview'));
+    expect(preview, contains("Key('badge-transfer-preview-card')"));
+    expect(preview, contains('COMING SOON'));
+    expect(preview, contains('TikTok, Favorited, or EPIC'));
+    expect(preview, contains('screen recording'));
+    expect(preview, isNot(contains('pickVideo')));
+    expect(preview, isNot(contains('submit_badge_transfer_claim')));
+    expect(preview, isNot(contains('transferLevel')));
+  });
 }
