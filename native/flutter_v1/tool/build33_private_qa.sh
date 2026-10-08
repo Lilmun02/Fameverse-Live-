@@ -12,6 +12,11 @@ test "${CM_BRANCH:-}" = "qa/build33-private-iphone-oct07" || {
   exit 1
 }
 SOURCE_SHA="$(git rev-parse HEAD)"
+# Codemagic may clone shallowly; fetch the reviewed base if not in local history.
+if ! git cat-file -e "f3dcf6f361551205fd5f70bb1ca0d51affc390c8^{commit}" 2>/dev/null; then
+  git fetch --no-tags --depth=100 origin \
+    "+refs/heads/qa/build33-private-iphone-oct07:refs/remotes/origin/qa/build33-private-iphone-oct07"
+fi
 # The private branch must contain the reviewed repair snapshot.
 git merge-base --is-ancestor f3dcf6f361551205fd5f70bb1ca0d51affc390c8 HEAD || {
   echo "BLOCKED: missing Build 33 repair base."
