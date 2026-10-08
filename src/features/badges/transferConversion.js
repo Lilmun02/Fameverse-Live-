@@ -12,5 +12,5 @@ export function suggestedTransferLevel(sourcePlatform, sourceLevel) {
       (source === 'tiktok' && number > 50)) {
     return null
   }
-  return Math.min(MAX_IMPORTED_RECOGNITION_LEVEL, 5 + Math.floor(number * 2 / 5))
+  return Math.max(1, Math.min(MAX_IMPORTED_RECOGNITION_LEVEL, Math.floor(number * 2 / 5)))
 }
