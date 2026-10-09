@@ -28,8 +28,26 @@ void main() {
       expect(rankings, contains("('creators', 'Creators'"));
       expect(rankings, contains("('24h', '24H')"));
       expect(rankings, contains("('7d', '7D')"));
+      expect(rankings, contains("Key('fameboard-window-24h')"));
+      expect(rankings, contains("Key('fameboard-window-7d')"));
       expect(rankings, contains("'p_limit': 50"));
       expect(rankings, isNot(contains('fake')));
+    });
+
+    test('Discover has a top-bar Fameboard shortcut without a banner', () {
+      final discover = File(
+        'lib/features/shell/fameverse_discover_screen.dart',
+      ).readAsStringSync();
+      final rankingControl = discover.indexOf(
+        "key: const Key('discover-fameboard-card')",
+      );
+      expect(
+        rankingControl,
+        greaterThan(discover.indexOf('class _DiscoverTopBar')),
+      );
+      expect(rankingControl, lessThan(discover.indexOf('class _FilterChip')));
+      expect(discover, isNot(contains('class _DiscoverFameboardCard')));
+      expect(discover, contains('showNativeLiveRankings(context)'));
     });
 
     test('host and viewer keep Live profile and Fameboard entry points', () {

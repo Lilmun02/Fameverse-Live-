@@ -204,7 +204,9 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
                           .map(
                             (item) => Expanded(
                               child: _WindowButton(
-                                key: Key('fameboard-window-${item.$1}'),
+                                key: item.$1 == '24h'
+                                    ? const Key('fameboard-window-24h')
+                                    : const Key('fameboard-window-7d'),
                                 label: item.$2,
                                 selected: _window == item.$1,
                                 onTap: () => unawaited(_selectWindow(item.$1)),
