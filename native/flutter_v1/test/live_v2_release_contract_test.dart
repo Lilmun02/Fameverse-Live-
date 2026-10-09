@@ -238,16 +238,16 @@ void main() {
       );
       expect(
         codemagic,
-        contains('git checkout --detach "refs/remotes/origin/\\$TARGET_BRANCH"'),
+        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
       );
-      expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\\$SOURCE_SHA'));
+      expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
       expect(codemagic, contains('build33_source_identity.txt'));
       expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "33"'));
       expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'));
       expect(
         codemagic,
         contains(
-          '--dart-define="FAMEVERSE_SOURCE_SHA=\\${FAMEVERSE_SOURCE_SHA}"',
+          '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
         ),
       );
       expect(codemagic, isNot(contains('native-build33-internal-testflight:')));
