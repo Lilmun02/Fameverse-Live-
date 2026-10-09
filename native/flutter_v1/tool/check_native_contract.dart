@@ -96,21 +96,12 @@ void main() {
       releaseSection.contains('flutter build ipa --release'),
       'TestFlight workflow must build a signed release IPA.',
     );
-    const build32Branch = 'integration/sep27-big-update';
-    const build33Branch = 'qa/build33-private-iphone-oct07';
-    final isBuild32Source =
-        releaseSection.contains('TARGET_BRANCH="$build32Branch"') &&
-        releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
-        releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32');
-    final isBuild33QaSource =
-        releaseSection.contains('TARGET_BRANCH="$build33Branch"') &&
-        releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "33"') &&
-        releaseSection.contains('FAMEVERSE_BUILD_FAMILY=33') &&
-        releaseSection.contains('CM_BRANCH');
     require(
-      (isBuild32Source || isBuild33QaSource) &&
+      releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32') &&
           !releaseSection.contains('TARGET_BRANCH="build18/live-repair"'),
-      'TestFlight must package the matching locked Build 32 or Build 33 source, never the old Build 18 source.',
+      'TestFlight Build 32 must package the repaired integration branch, never the old Build 18 source.',
     );
 
     final usesEnvironmentPublishing =
@@ -234,7 +225,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, locked TestFlight release source, updater, feed navigation, First Verse settings, web-only owner ops, Creator Studio, promo separation, Supabase, Stream Video, signing, photos, and camera contracts passed',
+      '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, web-only owner ops, Creator Studio, promo separation, Supabase, Stream Video, signing, photos, and camera contracts passed',
     );
   }
 }

@@ -56,13 +56,6 @@ workflows:
             -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
             ios/Runner/Info.plist
 
-          /usr/libexec/PlistBuddy \
-            -c "Set :NSPhotoLibraryUsageDescription Fameverse uses your photo library so you can choose a profile picture." \
-            ios/Runner/Info.plist 2>/dev/null || \
-          /usr/libexec/PlistBuddy \
-            -c "Add :NSPhotoLibraryUsageDescription string Fameverse uses your photo library so you can choose a profile picture." \
-            ios/Runner/Info.plist
-
           bash tool/apply_ios_branding.sh
           bash tool/apply_android_branding.sh
 
@@ -138,7 +131,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
-        FAMEVERSE_BUILD_FAMILY: "33"
+        FAMEVERSE_BUILD_FAMILY: "32"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -146,14 +139,10 @@ workflows:
         - ~/.pub-cache
 
     scripts:
-      - name: Checkout locked Build 33 QA source
+      - name: Checkout locked Build 32 repair source
         script: |
           set -euo pipefail
-          TARGET_BRANCH="qa/build33-private-iphone-oct07"
-          if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then
-            echo "BLOCKED: choose the Build 33 QA branch before launching TestFlight."
-            exit 1
-          fi
+          TARGET_BRANCH="integration/sep27-big-update"
           REPO_ROOT="$(git rev-parse --show-toplevel)"
           cd "$REPO_ROOT"
           git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
@@ -165,14 +154,15 @@ workflows:
             exit 1
           fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
-          printf '%s\n' "Build 33 QA TestFlight candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build33_source_identity.txt"
+          printf '%s\n' "Build 32 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
           echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
 
-      - name: Verify Build 33 fixes and Fameboard exist in locked source
+      - name: Verify Build 32 fixes and Fameboard exist in locked source
         script: |
           set -euo pipefail
           SHELL="lib/features/shell/fameverse_shell_build23.dart"
           PROFILE="lib/features/profile/native_profile_build23.dart"
+          OWNER="lib/features/profile/owner_control_center_build23.dart"
           DISCOVER="lib/features/shell/fameverse_discover_screen.dart"
           RANKINGS="lib/features/live/native_live_rankings.dart"
           HOST_WRAPPER="lib/features/live/stream_owner_host_live_screen.dart"
@@ -184,11 +174,8 @@ workflows:
           STRIPE="../../supabase/functions/stripe-checkout-session/index.ts"
 
           grep -Fq "get_my_fameverse_identity" "$SHELL" || { echo "BLOCKED: authoritative owner identity route missing."; exit 1; }
-          if grep -Fq "Build23OwnerControlCenterScreen" "$SHELL"; then echo "BLOCKED: native Owner Control Center must stay removed."; exit 1; fi
-          grep -Fq "Creator Studio" "$PROFILE" || { echo "BLOCKED: Creator Studio profile entry missing."; exit 1; }
-          grep -Fq "creator-fam-algorithm-card" "lib/features/profile/creator_studio_build23.dart" || { echo "BLOCKED: Creator Studio FAM tools missing."; exit 1; }
-          grep -Fq "creator-gift-activity-card" "lib/features/profile/creator_studio_build23.dart" || { echo "BLOCKED: Creator Studio gift activity missing."; exit 1; }
-          grep -Fq "creator-verification-center" "lib/features/profile/creator_studio_build23.dart" || { echo "BLOCKED: Creator Studio verification missing."; exit 1; }
+          grep -Fq "Build23OwnerControlCenterScreen" "$SHELL" || { echo "BLOCKED: Owner Control Center route missing."; exit 1; }
+          grep -Fq "Owner Studio" "$PROFILE" || { echo "BLOCKED: current Owner Studio settings label missing."; exit 1; }
           grep -Fq "profile-fame-coins-card" "$PROFILE" || { echo "BLOCKED: full Fame Coins card tap fix missing."; exit 1; }
           grep -Fq "owner-host-gift-button" "$HOST_SURFACE" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
           grep -Fq "bool _flipCameraBusy = false;" "$HOST_SURFACE" || { echo "BLOCKED: host camera anti-spam repair missing."; exit 1; }
@@ -199,6 +186,12 @@ workflows:
           grep -Fq "VideoPlayer(controller)" "$GIFT_VISUAL" || { echo "BLOCKED: cinematic gift tray is not rendering its real media frame."; exit 1; }
           grep -Fq "export 'stream_owner_host_live_screen.dart';" "$LIVE_EXPORT" || { echo "BLOCKED: host Live is not routed through owner gift wrapper."; exit 1; }
 
+          grep -Fq "process-creator-payout" "$OWNER" || { echo "BLOCKED: PayPal payout submission wiring missing."; exit 1; }
+          grep -Fq "sync-creator-payout" "$OWNER" || { echo "BLOCKED: PayPal payout sync wiring missing."; exit 1; }
+          grep -Fq "get_creator_payout_moderation_queue_v2" "$OWNER" || { echo "BLOCKED: current payout recovery queue missing."; exit 1; }
+          grep -Fq "owner-payout-recover-provider" "$OWNER" || { echo "BLOCKED: ambiguous PayPal recovery action missing."; exit 1; }
+          grep -Fq "get_creator_verification_moderation_queue" "$OWNER" || { echo "BLOCKED: owner verification queue missing."; exit 1; }
+          grep -Fq "review_creator_verification" "$OWNER" || { echo "BLOCKED: owner verification moderation action missing."; exit 1; }
 
           grep -Fq "get_fameverse_rankings_v2" "$RANKINGS" || { echo "BLOCKED: authoritative Fameboard v2 RPC missing."; exit 1; }
           grep -Fq "fameboard-window-24h" "$RANKINGS" || { echo "BLOCKED: Fameboard 24H window missing."; exit 1; }
@@ -211,9 +204,10 @@ workflows:
           grep -Fq "managed_payments[enabled]" "$STRIPE" || { echo "BLOCKED: Stripe hosted checkout Managed Payments repair missing."; exit 1; }
 
           printf '%s\n' \
-            "native_creator_studio=verified" \
-            "native_owner_ops=removed" \
-            "creator_verification=verified" \
+            "owner_studio=verified" \
+            "payout_provider_submission=verified" \
+            "payout_provider_sync=verified" \
+            "verification_moderation=verified" \
             "host_camera_antispam=verified" \
             "cohost_camera_antispam=verified" \
             "gift_playback_completion=verified" \
@@ -221,8 +215,8 @@ workflows:
             "fameboard_live=verified" \
             "fameboard_discover=verified" \
             "stripe_hosted_checkout_repair=verified" \
-            >> build33_source_identity.txt
-          echo "Verified Build 33 fixes and Fameboard in exact locked TestFlight source."
+            >> build32_source_identity.txt
+          echo "Verified Build 32 fixes and Fameboard in exact locked TestFlight source."
 
       - name: Verify required TestFlight secrets are present
         script: |
@@ -267,13 +261,6 @@ workflows:
             ios/Runner/Info.plist 2>/dev/null || \
           /usr/libexec/PlistBuddy \
             -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
-            ios/Runner/Info.plist
-
-          /usr/libexec/PlistBuddy \
-            -c "Set :NSPhotoLibraryUsageDescription Fameverse uses your photo library so you can choose a profile picture." \
-            ios/Runner/Info.plist 2>/dev/null || \
-          /usr/libexec/PlistBuddy \
-            -c "Add :NSPhotoLibraryUsageDescription string Fameverse uses your photo library so you can choose a profile picture." \
             ios/Runner/Info.plist
 
           bash tool/apply_ios_branding.sh
@@ -355,13 +342,13 @@ workflows:
           test -n "${FAMEVERSE_SOURCE_SHA:-}"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
-            --dart-define="FAMEVERSE_BUILD_FAMILY=33" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=32" \
             --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - build33_source_identity.txt
+      - build32_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -371,6 +358,10 @@ workflows:
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
-# The EXISTING native-testflight workflow on this isolated QA branch builds
-# Build 33 from qa/build33-private-iphone-oct07 via App Store Connect/TestFlight.
-# No Ad Hoc device install workflow, external testing, or public release.
+# Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
+# native-testflight always checks out the locked integration/sep27-big-update Build 32 repair source before validation/building.
+# A user may trigger the workflow from another branch; the published candidate source is still the locked Build 32 repair branch.
+# Every candidate publishes build32_source_identity.txt with the exact source commit used for the IPA.
+# The TestFlight source gate blocks upload if the required Build 32 fixes or Fameboard wiring are absent from the exact locked checkout.
+# TestFlight upload is a candidate checkpoint, never a product PASS.
+# The candidate must be physically tested before external promotion / release approval.

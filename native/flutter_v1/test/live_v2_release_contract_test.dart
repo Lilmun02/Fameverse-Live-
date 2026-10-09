@@ -229,29 +229,27 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is source-locked to Build 33 QA', () async {
+    test('TestFlight candidate is source-locked to Build 32', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
       expect(
         codemagic,
-        contains('TARGET_BRANCH="qa/build33-private-iphone-oct07"'),
+        contains('TARGET_BRANCH="integration/sep27-big-update"'),
       );
       expect(
         codemagic,
         contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
       );
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
-      expect(codemagic, contains('build33_source_identity.txt'));
-      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "33"'));
-      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'));
+      expect(codemagic, contains('build32_source_identity.txt'));
+      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
+      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'));
       expect(
         codemagic,
         contains(
           '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
         ),
       );
-      expect(codemagic, isNot(contains('native-build33-internal-testflight:')));
-      expect(codemagic, isNot(contains('native-owner-private-qa:')));
     });
 
     test('physical Live repair contracts remain wired', () async {
