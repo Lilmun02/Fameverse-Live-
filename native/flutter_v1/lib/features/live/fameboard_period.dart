@@ -39,6 +39,6 @@ String fameboardCountdown(Duration remaining) {
   final minutes = (seconds ~/ 60) % 60;
   final last = seconds % 60;
   String two(int n) => n.toString().padLeft(2, '0');
-  final clock = two(hours) + ':' + two(minutes) + ':' + two(last);
-  return days > 0 ? days.toString() + 'd ' + clock : clock;
+  final clock = '${two(hours)}:${two(minutes)}:${two(last)}';
+  return days > 0 ? '${days}d $clock' : clock;
 }
