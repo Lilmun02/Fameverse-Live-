@@ -27,13 +27,11 @@ class BadgeRequirementsScreen extends StatelessWidget {
                   'after completing all 8 required missions. The 2 bonus '
                   'checks are optional. Owner viewing is a preview only.',
             ),
-            ...fvFirstVerseMissions
-                .where((mission) => mission.required)
-                .map(
-                  (mission) => _Requirement(
-                    title: mission.title,
-                    detail: mission.detail,
-                  ),
+            for (final mission in fvFirstVerseMissions)
+              if (mission.required)
+                _Requirement(
+                  title: mission.title,
+                  detail: mission.detail,
                 ),
             const SizedBox(height: 16),
             const _Requirement(
@@ -43,16 +41,11 @@ class BadgeRequirementsScreen extends StatelessWidget {
                   'appears after you send a gift. Your level is computed '
                   'from total Fame Coins sent.',
             ),
-            ...fvNativeGifterBadgeTiers.map(
-              (tier) => _Requirement(
+            for (final tier in fvNativeGifterBadgeTiers)
+              _Requirement(
                 title: '${tier.icon} ${tier.label}',
-                detail: 'Level ${tier.minLevel}'
-                    '${tier.maxLevel == tier.minLevel ? '' : '–${tier.maxLevel}'}'
-                    ' · at least ${fvGifterMinimumCoinsSentForLevel(tier.minLevel)}'
-                    ' coins sent in total'
-                    '${tier.minLevel == 1 ? ' (send one gift first)' : ''}.',
+                detail: _tierRule(tier),
               ),
-            ),
             const SizedBox(height: 16),
             const _Requirement(
               title: 'Verified creator',
@@ -75,6 +68,14 @@ class BadgeRequirementsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+String _tierRule(FvNativeGifterBadgeTier tier) {
+  final range = tier.minLevel == tier.maxLevel
+      ? '${tier.minLevel}'
+      : '${tier.minLevel}–${tier.maxLevel}';
+  final minimum = fvGifterMinimumCoinsSentForLevel(tier.minLevel);
+  return 'Levels $range · at least $minimum cumulative Fame Coins sent.';
 }
 
 class _Requirement extends StatelessWidget {
