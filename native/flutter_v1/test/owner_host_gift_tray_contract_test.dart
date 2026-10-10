@@ -37,7 +37,8 @@ void main() {
     expect(host, contains("payload['qaHostPreview'] != true"));
     expect(
       wrapper,
-      contains("'record_beta_gift'"),      reason: 'Host QA gifts must use the QA RPC rather than public gifting.',
+      contains("'record_beta_gift'"),
+      reason: 'Host QA gifts must use the QA RPC rather than public gifting.',
     );
     expect(
       wrapper,

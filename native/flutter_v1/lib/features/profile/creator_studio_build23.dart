@@ -688,8 +688,10 @@ class _BadgeLearningCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Badges & how to earn them',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          const Text(
+            'Badges & how to earn them',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 8),
           const Text(
             'Complete First Verse beta missions, send eligible gifts to '

@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import '../../data/fameverse_beta_backend.dart';
 
 class FirstVerseBetaScreen extends StatefulWidget {
-  const FirstVerseBetaScreen({this.backend, this.ownerPreview = false, super.key});
+  const FirstVerseBetaScreen({
+    this.backend,
+    this.ownerPreview = false,
+    super.key,
+  });
 
   /// A clear owner-only preview does not grant First Verse.
   final bool ownerPreview;
@@ -80,7 +84,8 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   title: 'Progress unavailable',
                   body: _error!,
                 )
-              else if (status == null || (!status.enrolled && !widget.ownerPreview))
+              else if (status == null ||
+                  (!status.enrolled && !widget.ownerPreview))
                 const _MessageCard(
                   icon: Icons.lock_outline_rounded,
                   title: 'Beta access is not active',
@@ -88,7 +93,10 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                       'First Verse progress is only available to enrolled external Fameverse beta testers.',
                 )
               else ...[
-                _FirstVerseHero(status: status, ownerPreview: widget.ownerPreview),
+                _FirstVerseHero(
+                  status: status,
+                  ownerPreview: widget.ownerPreview,
+                ),
                 const SizedBox(height: 24),
                 const _SectionTitle('REQUIRED BETA MISSIONS'),
                 const SizedBox(height: 9),
@@ -179,8 +187,8 @@ class _FirstVerseHero extends StatelessWidget {
                       unlocked
                           ? 'You completed the required external beta checks. This legacy badge stays with your account.'
                           : ownerPreview
-                           ? 'This is a clear owner preview only. Enrolled testers must complete all eight required missions to earn First Verse.'
-                           : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
+                          ? 'This is a clear owner preview only. Enrolled testers must complete all eight required missions to earn First Verse.'
+                          : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
                         fontSize: 12,

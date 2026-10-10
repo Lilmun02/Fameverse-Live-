@@ -12,8 +12,10 @@ class BadgeRequirementsScreen extends StatelessWidget {
     return Scaffold(
       key: const Key('badge-requirements-screen'),
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black,
-          title: const Text('How to get badges')),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: const Text('How to get badges'),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -43,8 +45,10 @@ class BadgeRequirementsScreen extends StatelessWidget {
             ...fvNativeGifterBadgeTiers.map(
               (tier) => ListTile(
                 dense: true,
-                leading: Text(tier.icon,
-                    style: const TextStyle(fontSize: 22)),
+                leading: Text(
+                  tier.icon,
+                  style: const TextStyle(fontSize: 22),
+                ),
                 title: Text(tier.label),
                 subtitle: Text(
                   'Level ' +
@@ -93,11 +97,18 @@ class _BadgeInfo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(
-                fontSize: 17, fontWeight: FontWeight.w900)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(description, style: const TextStyle(
-                color: Color(0xFFC5B7CD), height: 1.4)),
+            Text(
+              description,
+              style: const TextStyle(color: Color(0xFFC5B7CD), height: 1.4),
+            ),
           ],
         ),
       ),

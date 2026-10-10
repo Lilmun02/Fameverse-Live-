@@ -655,7 +655,10 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                   itemBuilder: (context, index) {
                     final product = _products[index];
                     final coins = _coins(product);
-                    final anotherPurchaseBusy = _busyProductId != null || _verifying || _stripeBusyPackId != null;
+                    final anotherPurchaseBusy =
+                        _busyProductId != null ||
+                        _verifying ||
+                        _stripeBusyPackId != null;
                     final busy = _busyProductId == product.id || _verifying;
                     return Container(
                       key: Key('fame-coin-pack-${product.id}'),
@@ -690,13 +693,19 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                           const SizedBox(height: 8),
                           FilledButton(
                             key: Key('buy-${product.id}'),
-                            onPressed: anotherPurchaseBusy ? null : () => _buy(product),
+                            onPressed: anotherPurchaseBusy
+                                ? null
+                                : () => _buy(product),
                             style: FilledButton.styleFrom(
                               minimumSize: const Size.fromHeight(42),
                               backgroundColor: const Color(0xFF8E46DE),
                             ),
                             child: Text(
-                              busy ? 'Processing…' : anotherPurchaseBusy ? 'Wait…' : product.price,
+                              busy
+                                  ? 'Processing…'
+                                  : anotherPurchaseBusy
+                                  ? 'Wait…'
+                                  : product.price,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
