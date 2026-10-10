@@ -8,7 +8,11 @@ DateTime fameboardStartUtc(String window, DateTime now) {
     case '7d':
       return todayUtc.subtract(Duration(days: utc.weekday - DateTime.monday));
     default:
-      throw ArgumentError.value(window, 'window', 'Unsupported Fameboard window');
+      throw ArgumentError.value(
+        window,
+        'window',
+        'Unsupported Fameboard window',
+      );
   }
 }
 
@@ -20,7 +24,11 @@ DateTime fameboardEndUtc(String window, DateTime now) {
     case '7d':
       return DateTime.utc(start.year, start.month, start.day + 7);
     default:
-      throw ArgumentError.value(window, 'window', 'Unsupported Fameboard window');
+      throw ArgumentError.value(
+        window,
+        'window',
+        'Unsupported Fameboard window',
+      );
   }
 }
 
