@@ -30,11 +30,11 @@ class BadgeRequirementsScreen extends StatelessWidget {
             ...fvFirstVerseMissions
                 .where((mission) => mission.required)
                 .map(
-              (mission) => _Requirement(
-                title: mission.title,
-                detail: mission.detail,
-              ),
-            ),
+                  (mission) => _Requirement(
+                    title: mission.title,
+                    detail: mission.detail,
+                  ),
+                ),
             const SizedBox(height: 16),
             const _Requirement(
               title: 'Gifter badges',
