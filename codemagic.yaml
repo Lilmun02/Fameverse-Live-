@@ -131,7 +131,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
-        FAMEVERSE_BUILD_FAMILY: "32"
+        FAMEVERSE_BUILD_FAMILY: "33"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -139,10 +139,14 @@ workflows:
         - ~/.pub-cache
 
     scripts:
-      - name: Checkout locked Build 32 repair source
+      - name: Checkout locked Build 33 QA review source
         script: |
           set -euo pipefail
-          TARGET_BRANCH="integration/sep27-big-update"
+          TARGET_BRANCH="qa/fameverse-ux-gifts-badges-oct09"
+          if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then
+            echo "BLOCKED: QA candidate must be triggered on $TARGET_BRANCH; got ${CM_BRANCH:-unknown}."
+            exit 1
+          fi
           REPO_ROOT="$(git rev-parse --show-toplevel)"
           cd "$REPO_ROOT"
           git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
@@ -154,10 +158,10 @@ workflows:
             exit 1
           fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
-          printf '%s\n' "Build 32 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
+          printf '%s\n' "Build 33 QA candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build33_source_identity.txt"
           echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
 
-      - name: Verify Build 32 fixes and Fameboard exist in locked source
+      - name: Verify existing repairs and Build 33 QA features in locked source
         script: |
           set -euo pipefail
           SHELL="lib/features/shell/fameverse_shell_build23.dart"
@@ -165,6 +169,10 @@ workflows:
           OWNER="lib/features/profile/owner_control_center_build23.dart"
           DISCOVER="lib/features/shell/fameverse_discover_screen.dart"
           RANKINGS="lib/features/live/native_live_rankings.dart"
+          BADGE_GUIDE="lib/features/profile/badge_requirements_screen.dart"
+          FIRST_VERSE="lib/features/profile/first_verse_beta_screen.dart"
+          COIN_STORE="lib/features/profile/fame_coin_store_screen.dart"
+          APPLE_VERIFIER="../../supabase/functions/iap-purchase/index.ts"
           HOST_WRAPPER="lib/features/live/stream_owner_host_live_screen.dart"
           HOST_SURFACE="lib/features/live/stream_host_live_screen.dart"
           VIEWER_SURFACE="lib/features/live/stream_viewer_live_screen.dart"
@@ -202,6 +210,13 @@ workflows:
           grep -Fq "showNativeLiveRankings(context)" "$DISCOVER" || { echo "BLOCKED: Discover Fameboard is not wired."; exit 1; }
 
           grep -Fq "managed_payments[enabled]" "$STRIPE" || { echo "BLOCKED: Stripe hosted checkout Managed Payments repair missing."; exit 1; }
+          grep -Fq "badge-requirements-screen" "$BADGE_GUIDE" || { echo "BLOCKED: badge requirements guide missing."; exit 1; }
+          grep -Fq "ownerPreview" "$FIRST_VERSE" || { echo "BLOCKED: First Verse owner preview missing."; exit 1; }
+          grep -Fq "Fameverse Coin Packs" "$COIN_STORE" || { echo "BLOCKED: Fameverse Coin Packs label missing."; exit 1; }
+          grep -Fq "onBuyCoins:" "$HOST_WRAPPER" || { echo "BLOCKED: owner host gift tray purchase entry missing."; exit 1; }
+          grep -Fq "qaHostPreview" "$HOST_SURFACE" || { echo "BLOCKED: duplicate owner gift playback guard missing."; exit 1; }
+          grep -Fq "price_data][unit_amount]" "$STRIPE" || { echo "BLOCKED: Stripe test checkout repair missing."; exit 1; }
+          grep -Fq "X509Certificate.prototype" "$APPLE_VERIFIER" || { echo "BLOCKED: Apple signed transaction verifier compatibility repair missing."; exit 1; }
 
           printf '%s\n' \
             "owner_studio=verified" \
@@ -215,8 +230,8 @@ workflows:
             "fameboard_live=verified" \
             "fameboard_discover=verified" \
             "stripe_hosted_checkout_repair=verified" \
-            >> build32_source_identity.txt
-          echo "Verified Build 32 fixes and Fameboard in exact locked TestFlight source."
+            >> build33_source_identity.txt
+          echo "Verified Build 33 QA features and existing protections in exact locked TestFlight source."
 
       - name: Verify required TestFlight secrets are present
         script: |
@@ -342,13 +357,13 @@ workflows:
           test -n "${FAMEVERSE_SOURCE_SHA:-}"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
-            --dart-define="FAMEVERSE_BUILD_FAMILY=32" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=33" \
             --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - build32_source_identity.txt
+      - build33_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -359,9 +374,9 @@ workflows:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
-# native-testflight always checks out the locked integration/sep27-big-update Build 32 repair source before validation/building.
-# A user may trigger the workflow from another branch; the published candidate source is still the locked Build 32 repair branch.
-# Every candidate publishes build32_source_identity.txt with the exact source commit used for the IPA.
-# The TestFlight source gate blocks upload if the required Build 32 fixes or Fameboard wiring are absent from the exact locked checkout.
+# On this QA branch only, native-testflight checks out the QA review source before validation/building.
+# QA TestFlight must be triggered on the QA branch; the original release workflow remains unchanged.
+# Every QA candidate publishes build33_source_identity.txt with the exact source commit used for the IPA.
+# QA TestFlight source verification blocks upload if required repairs and QA features are missing.
 # TestFlight upload is a candidate checkpoint, never a product PASS.
 # The candidate must be physically tested before external promotion / release approval.
