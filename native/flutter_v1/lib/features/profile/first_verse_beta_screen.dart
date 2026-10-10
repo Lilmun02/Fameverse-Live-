@@ -145,6 +145,18 @@ class _FirstVerseHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final unlocked = status.badgeUnlocked;
+    var heading = 'Your badge is waiting';
+    var detail =
+        'Complete the required beta missions to reveal and permanently unlock First Verse.';
+    if (unlocked) {
+      heading = 'First Verse earned';
+      detail =
+          'You completed the required external beta checks. This legacy badge stays with your account.';
+    } else if (ownerPreview) {
+      heading = 'Owner preview · not yet earned';
+      detail =
+          'This is a clear owner preview only. Enrolled testers must complete all eight required missions to earn First Verse.';
+    }
     return Container(
       key: const Key('first-verse-progress-card'),
       padding: const EdgeInsets.all(18),
@@ -172,11 +184,7 @@ class _FirstVerseHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      unlocked
-                           ? 'First Verse earned'
-                           : ownerPreview
-                           ? 'Owner preview · not yet earned'
-                           : 'Your badge is waiting',
+                      heading,
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -184,11 +192,7 @@ class _FirstVerseHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      unlocked
-                          ? 'You completed the required external beta checks. This legacy badge stays with your account.'
-                          : ownerPreview
-                          ? 'This is a clear owner preview only. Enrolled testers must complete all eight required missions to earn First Verse.'
-                          : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
+                      detail,
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
                         fontSize: 12,

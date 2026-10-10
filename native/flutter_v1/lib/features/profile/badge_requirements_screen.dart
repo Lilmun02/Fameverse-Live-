@@ -51,11 +51,9 @@ class BadgeRequirementsScreen extends StatelessWidget {
                 ),
                 title: Text(tier.label),
                 subtitle: Text(
-                  'Level ' +
-                      tier.minLevel.toString() +
-                      (tier.maxLevel > tier.minLevel
-                          ? '–' + tier.maxLevel.toString()
-                          : ''),
+                  tier.minLevel == tier.maxLevel
+                      ? 'Level ${tier.minLevel}'
+                      : 'Levels ${tier.minLevel}–${tier.maxLevel}',
                 ),
               ),
             ),
