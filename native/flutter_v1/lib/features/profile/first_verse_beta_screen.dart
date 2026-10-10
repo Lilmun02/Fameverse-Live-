@@ -83,7 +83,8 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   title: 'Progress unavailable',
                   body: _error!,
                 )
-              else if ((status == null || !status.enrolled) && !widget.isOwnerPreview)
+              else if ((status == null || !status.enrolled) &&
+                  !widget.isOwnerPreview)
                 const _MessageCard(
                   icon: Icons.lock_outline_rounded,
                   title: 'Beta access is not active',
@@ -166,7 +167,10 @@ class _FirstVerseHero extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _BadgePreview(unlocked: unlocked, isOwnerPreview: isOwnerPreview),
+              _BadgePreview(
+                unlocked: unlocked,
+                isOwnerPreview: isOwnerPreview,
+              ),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
@@ -248,7 +252,10 @@ class _FirstVerseHero extends StatelessWidget {
 }
 
 class _BadgePreview extends StatelessWidget {
-  const _BadgePreview({required this.unlocked, required this.isOwnerPreview});
+  const _BadgePreview({
+    required this.unlocked,
+    required this.isOwnerPreview,
+  });
 
   final bool unlocked;
   final bool isOwnerPreview;
