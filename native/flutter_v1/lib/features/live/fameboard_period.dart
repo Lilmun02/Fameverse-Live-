@@ -33,7 +33,7 @@ DateTime fameboardEndUtc(String window, DateTime now) {
 }
 
 String fameboardCountdown(Duration remaining) {
-  final seconds = remaining.inSeconds.clamp(0, 604800);
+  final seconds = remaining.inSeconds.clamp(0, 604800).toInt();
   final days = seconds ~/ 86400;
   final hours = (seconds ~/ 3600) % 24;
   final minutes = (seconds ~/ 60) % 60;
