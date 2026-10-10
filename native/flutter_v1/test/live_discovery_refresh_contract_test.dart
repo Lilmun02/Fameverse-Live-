@@ -37,8 +37,11 @@ void main() {
       final source = File(
         'lib/features/shell/fameverse_shell_build23.dart',
       ).readAsStringSync();
-      final all = source.split('Future<void> _refreshAll() async {').last
-          .split('Future<void> _toggleFollow(').first;
+      final start = source.indexOf('Future<void> _refreshAll() async {');
+      final end = source.indexOf('Future<void> _toggleFollow(');
+      expect(start, greaterThanOrEqualTo(0));
+      expect(end, greaterThan(start));
+      final all = source.substring(start, end);
 
       expect(all, contains('unawaited(_refreshRooms());'));
       expect(all, isNot(contains('listActiveLiveRooms(')));
