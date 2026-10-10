@@ -22,11 +22,14 @@ class BadgeRequirementsScreen extends StatelessWidget {
           children: [
             const _Requirement(
               title: 'First Verse',
-              detail: 'Enrolled beta testers earn this permanent legacy badge '
+              detail:
+                  'Enrolled beta testers earn this permanent legacy badge '
                   'after completing all 8 required missions. The 2 bonus '
                   'checks are optional. Owner viewing is a preview only.',
             ),
-            ...fvFirstVerseMissions.where((mission) => mission.required).map(
+            ...fvFirstVerseMissions
+                .where((mission) => mission.required)
+                .map(
               (mission) => _Requirement(
                 title: mission.title,
                 detail: mission.detail,
@@ -35,7 +38,8 @@ class BadgeRequirementsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             const _Requirement(
               title: 'Gifter badges',
-              detail: 'Send gifts to gain gifter levels. The first badge only '
+              detail:
+                  'Send gifts to gain gifter levels. The first badge only '
                   'appears after you send a gift. Your level is computed '
                   'from total Fame Coins sent.',
             ),
@@ -52,14 +56,16 @@ class BadgeRequirementsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             const _Requirement(
               title: 'Verified creator',
-              detail: 'Reach 100 followers and 500,000 eligible cash-backed '
+              detail:
+                  'Reach 100 followers and 500,000 eligible cash-backed '
                   'Fame Coins received. Request verification in Creator Studio '
                   'and pass manual review. Promotional, referral, owner-QA '
                   'and self-gifts do not count.',
             ),
             const _Requirement(
               title: 'Bring your badge — coming soon',
-              detail: 'Transfers from TikTok, Favorited and EPIC are not active '
+              detail:
+                  'Transfers from TikTok, Favorited and EPIC are not active '
                   'yet. Planned reviews require evidence of the earned badge '
                   'and matching username; external levels never transfer '
                   'automatically.',
