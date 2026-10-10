@@ -1,0 +1,14 @@
+# Fameverse review routing. Enforcement also requires GitHub rulesets/branch protection.
+# The repo owner must review sensitive operations and all source changes.
+* @Lilmun02
+
+/.github/workflows/ @Lilmun02
+/.github/CODEOWNERS @Lilmun02
+/codemagic.yaml @Lilmun02
+/supabase/ @Lilmun02
+/native/flutter_v1/lib/features/live/ @Lilmun02
+/native/flutter_v1/lib/features/profile/ @Lilmun02
+/native/flutter_v1/test/ @Lilmun02
+/docs/ENGINEERING_CONSTITUTION.md @Lilmun02
+/docs/CURRENT_NATIVE_STABILIZATION_SCOPE.md @Lilmun02
+/scripts/check-native-physical-acceptance.mjs @Lilmun02
