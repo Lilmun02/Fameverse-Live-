@@ -20,6 +20,8 @@ void main() {
 
       expect(components, contains('fvMaxSequentialGiftCombo = 50'));
       expect(components, contains('fvExpandGiftVisualCombo'));
+      expect(components, contains('playback.gift.cost >= 100'));
+      // Premium gifts are one cinematic playback per send, even for combos.
       expect(components, contains(r"return ' · Combo ×$comboIndex'"));
       expect(
         viewer,

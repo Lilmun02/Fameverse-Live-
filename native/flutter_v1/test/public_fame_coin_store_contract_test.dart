@@ -18,6 +18,9 @@ void main() {
       expect(store, contains('InAppPurchase.instance'));
       expect(store, contains('_store.purchaseStream.listen'));
       expect(store, contains('_store.buyConsumable'));
+      expect(store, contains("'Fameverse Coin Packs'"));
+      expect(store, contains('onPressed: anotherPurchaseBusy ? null'));
+      expect(store, contains('PurchaseStatus.canceled'));
       expect(store, contains('applicationUserName: widget.userId'));
       expect(store, contains('serverVerificationData'));
       expect(store, contains("'iap-purchase'"));

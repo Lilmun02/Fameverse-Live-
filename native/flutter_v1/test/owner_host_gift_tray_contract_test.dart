@@ -33,10 +33,11 @@ void main() {
       reason:
           'The privileged host gift entry point must stay beside the canonical composer.',
     );
+    expect(wrapper, contains('onBuyCoins: ()'));
+    expect(host, contains("payload['qaHostPreview'] != true"));
     expect(
       wrapper,
-      contains("'record_beta_gift'"),
-      reason: 'Host QA gifts must use the QA RPC rather than public gifting.',
+      contains("'record_beta_gift'"),      reason: 'Host QA gifts must use the QA RPC rather than public gifting.',
     );
     expect(
       wrapper,

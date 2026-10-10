@@ -7,6 +7,7 @@ import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
 import 'stream_host_live_screen.dart' as base;
+import '../profile/fame_coin_store_screen.dart';
 
 /// Build 23 owner/admin host wrapper.
 ///
@@ -220,6 +221,27 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _giftTimer = Timer(const Duration(seconds: 20), _playNextQaGift);
   }
 
+  Future<void> _openCoinStore() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => FameCoinStoreScreen(
+          userId: widget.identity.id,
+          onBalanceChanged: (balance) {
+            if (mounted) setState(() => _walletBalance = balance);
+          },
+        ),
+      ),
+    );
+    try {
+      final balance = await widget.liveBackend.loadWalletBalance(
+        widget.identity.id,
+      );
+      if (mounted) setState(() => _walletBalance = balance);
+    } catch (_) {
+      // The onBalanceChanged callback still preserves any confirmed credit.
+    }
+  }
+
   void _showGiftTray() {
     if (!_qaGiftAllowed) return;
     FocusManager.instance.primaryFocus?.unfocus();
@@ -227,11 +249,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF140D1B),
-      builder: (context) => NativeGiftTray(
+      builder: (sheetContext) => NativeGiftTray(
         coins: _walletBalance,
         canRefill: true,
         onSend: _sendQaGift,
         onRefill: _refillQaWallet,
+        onBuyCoins: () {
+          Navigator.of(sheetContext).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(_openCoinStore());
+          });
+        },
       ),
     );
   }

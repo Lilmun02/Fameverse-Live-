@@ -54,7 +54,9 @@ class FvGiftPlayback {
 const int fvMaxSequentialGiftCombo = 50;
 
 List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
-  if (playback.quantity <= 1 || playback.quantity > fvMaxSequentialGiftCombo) {
+  if (playback.gift.cost >= 100 ||
+      playback.quantity <= 1 ||
+      playback.quantity > fvMaxSequentialGiftCombo) {
     return <FvGiftPlayback>[playback];
   }
 

@@ -215,9 +215,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     });
-    _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
-    );
+    // Owner QA gifts already render in the privileged host wrapper.
+    // Keep the activity receipt, but do not play its broadcast echo twice.
+    if (payload['qaHostPreview'] != true ||
+        payload['senderId'] != widget.identity.id) {
+      _enqueueGift(
+        FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      );
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
