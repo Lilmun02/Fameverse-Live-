@@ -97,7 +97,9 @@ void main() {
       'TestFlight workflow must build a signed release IPA.',
     );
     final isLockedBuild32 =
-        releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
+        releaseSection.contains(
+          'TARGET_BRANCH="integration/sep27-big-update"',
+        ) &&
         releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
         releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32');
     final isLockedQaBuild33 =
