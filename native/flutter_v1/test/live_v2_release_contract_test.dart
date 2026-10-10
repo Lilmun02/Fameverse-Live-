@@ -53,27 +53,27 @@ void main() {
     test(
       'host and viewer use approved square cohost stage and keyed gift playback',
       () async {
-        final host = await File(
-          'lib/features/live/stream_host_live_screen.dart',
-        ).readAsString();
-        final viewer = await File(
-          'lib/features/live/stream_viewer_live_screen.dart',
-        ).readAsString();
-        final stage = await File(
-          'lib/features/live/native_live_stage.dart',
-        ).readAsString();
+          final host = await File(
+            'lib/features/live/stream_host_live_screen.dart',
+          ).readAsString();
+          final viewer = await File(
+            'lib/features/live/stream_viewer_live_screen.dart',
+          ).readAsString();
+          final stage = await File(
+            'lib/features/live/native_live_stage.dart',
+          ).readAsString();
 
-        expect(host, contains('NativeHostV2Stage('));
-        expect(viewer, contains('NativeViewerV2Stage('));
-        expect(stage, contains('class _V2CohostStage'));
-        expect(stage, contains('child: Row('));
-        expect(stage, contains('aspectRatio: 1'));
-        expect(
-          stage,
-          contains('never convert co-host into tall stacked rectangles'),
-        );
-        expect(host, contains("ValueKey<String>('host-gift-\$_giftSerial')"));
-        expect(viewer, contains("ValueKey('viewer-gift-\$_giftSerial')"));
+          expect(host, contains('NativeHostV2Stage('));
+          expect(viewer, contains('NativeViewerV2Stage('));
+          expect(stage, contains('class _V2CohostStage'));
+          expect(stage, contains('child: Row('));
+          expect(stage, contains('aspectRatio: 1'));
+          expect(
+            stage,
+            contains('never convert co-host into tall stacked rectangles'),
+          );
+          expect(host, contains("ValueKey<String>('host-gift-\$_giftSerial')"));
+          expect(viewer, contains("ValueKey('viewer-gift-\$_giftSerial')"));
       },
     );
 
@@ -229,7 +229,9 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is locked to approved Build 32 or guarded QA Build 33', () async {
+    test(
+      'TestFlight candidate is locked to approved Build 32 or guarded QA Build 33',
+      () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
       final isBuild32 = codemagic.contains(
@@ -251,7 +253,12 @@ void main() {
           codemagic,
           contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'),
         );
-        expect(codemagic, contains('Verify existing repairs and Build 33 QA features in locked source'));
+        expect(
+          codemagic,
+          contains(
+            'Verify existing repairs and Build 33 QA features in locked source',
+          ),
+        );
       } else {
         expect(codemagic, contains('build32_source_identity.txt'));
         expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
@@ -272,7 +279,8 @@ void main() {
           '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
         ),
       );
-    });
+      },
+    );
 
     test('physical Live repair contracts remain wired', () async {
       final viewer = await File(
