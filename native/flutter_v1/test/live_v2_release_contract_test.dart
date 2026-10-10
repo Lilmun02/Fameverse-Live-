@@ -232,53 +232,53 @@ void main() {
     test(
       'TestFlight candidate is locked to approved Build 32 or guarded QA Build 33',
       () async {
-      final codemagic = await File('../../codemagic.yaml').readAsString();
+        final codemagic = await File('../../codemagic.yaml').readAsString();
 
-      final isBuild32 = codemagic.contains(
-        'TARGET_BRANCH="integration/sep27-big-update"',
-      );
-      final isQaBuild33 = codemagic.contains(
-        'TARGET_BRANCH="qa/fameverse-ux-gifts-badges-oct09"',
-      );
-      expect(isBuild32 != isQaBuild33, isTrue);
+        final isBuild32 = codemagic.contains(
+          'TARGET_BRANCH="integration/sep27-big-update"',
+        );
+        final isQaBuild33 = codemagic.contains(
+          'TARGET_BRANCH="qa/fameverse-ux-gifts-badges-oct09"',
+        );
+        expect(isBuild32 != isQaBuild33, isTrue);
 
-      if (isQaBuild33) {
+        if (isQaBuild33) {
+          expect(
+            codemagic,
+            contains(r'if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then'),
+          );
+          expect(codemagic, contains('build33_source_identity.txt'));
+          expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "33"'));
+          expect(
+            codemagic,
+            contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'),
+          );
+          expect(
+            codemagic,
+            contains(
+              'Verify existing repairs and Build 33 QA features in locked source',
+            ),
+          );
+        } else {
+          expect(codemagic, contains('build32_source_identity.txt'));
+          expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
+          expect(
+            codemagic,
+            contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'),
+          );
+        }
+
         expect(
           codemagic,
-          contains(r'if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then'),
+          contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
         );
-        expect(codemagic, contains('build33_source_identity.txt'));
-        expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "33"'));
-        expect(
-          codemagic,
-          contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'),
-        );
+        expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
         expect(
           codemagic,
           contains(
-            'Verify existing repairs and Build 33 QA features in locked source',
+            '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
           ),
         );
-      } else {
-        expect(codemagic, contains('build32_source_identity.txt'));
-        expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
-        expect(
-          codemagic,
-          contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'),
-        );
-      }
-
-      expect(
-        codemagic,
-        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
-      );
-      expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
-      expect(
-        codemagic,
-        contains(
-          '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
-        ),
-      );
       },
     );
 
