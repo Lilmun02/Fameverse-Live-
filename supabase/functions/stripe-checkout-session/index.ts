@@ -151,7 +151,10 @@ Deno.serve(async (req: Request) => {
   const stripePriceId = environment === "live"
     ? String(pack.stripe_live_price_id ?? "")
     : String(pack.stripe_test_price_id ?? "");
-  if (!stripePriceId.startsWith("price_")) {
+  // Production purchases remain locked to the configured live Price ID.
+  // For test checkout, Stripe creates an inline Price using the server-owned
+  // test amount. This avoids test Price IDs tied to another Stripe account.
+  if (environment === "live" && !stripePriceId.startsWith("price_")) {
     return json(503, { error: "stripe-price-not-configured", environment });
   }
 
@@ -177,7 +180,13 @@ Deno.serve(async (req: Request) => {
   form.set("origin_context", "mobile_app");
   form.set("managed_payments[enabled]", "false");
   form.set("payment_method_types[0]", "card");
-  form.set("line_items[0][price]", stripePriceId);
+  if (environment === "live") {
+    form.set("line_items[0][price]", stripePriceId);
+  } else {
+    form.set("line_items[0][price_data][currency]", pack.currency.toLowerCase());
+    form.set("line_items[0][price_data][unit_amount]", String(priceCents));
+    form.set("line_items[0][price_data][product_data][name]", `Fameverse ${pack.coins} Fame Coins (Test)`);
+  }
   form.set("line_items[0][quantity]", "1");
   form.set("client_reference_id", user.id);
   form.set("success_url", `${returnBase}?status=success&session_id={CHECKOUT_SESSION_ID}`);

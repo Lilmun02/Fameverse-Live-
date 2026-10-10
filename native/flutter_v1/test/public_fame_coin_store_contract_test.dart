@@ -62,6 +62,11 @@ void main() {
     expect(checkout, contains('ui_mode", "hosted_page"'));
     expect(checkout, contains('origin_context", "mobile_app"'));
     expect(checkout, contains('line_items[0][price]'));
+    expect(checkout, contains('if (environment === "live")'));
+    expect(checkout, contains('line_items[0][price_data][currency]'));
+    expect(checkout, contains('line_items[0][price_data][unit_amount]'));
+    expect(checkout, contains('line_items[0][price_data][product_data][name]'));
+    expect(checkout, contains('String(priceCents)'));
     expect(checkout, contains('pack_id'));
     expect(checkout, isNot(contains('amount_cents = Number(body')));
 
