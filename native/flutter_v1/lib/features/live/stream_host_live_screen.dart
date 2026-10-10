@@ -53,6 +53,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   bool _micEnabled = true;
   bool _cameraEnabled = true;
   bool _flipCameraBusy = false;
+  bool _heartbeatInFlight = false;
+  bool _tapRefreshInFlight = false;
   int _fameTaps = 0;
   int _gifterLevel = 1;
   int _giftSerial = 0;
@@ -126,14 +128,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
       );
 
-      _heartbeat = Timer.periodic(const Duration(seconds: 15), (_) {
-        unawaited(
-          widget.liveBackend.heartbeatLiveRoom(
-            roomId: widget.room.id,
-            hostUserId: widget.identity.id,
-          ),
-        );
-      });
+      _heartbeat = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => unawaited(_sendHeartbeat()),
+      );
       _tapRefresh = Timer.periodic(
         const Duration(seconds: 2),
         (_) => unawaited(_refreshTapTotal()),
@@ -164,11 +162,34 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
+  Future<void> _sendHeartbeat() async {
+    if (!mounted || _ending || _ended || _heartbeatInFlight) return;
+    _heartbeatInFlight = true;
+    try {
+      await widget.liveBackend.heartbeatLiveRoom(
+        roomId: widget.room.id,
+        hostUserId: widget.identity.id,
+      );
+    } catch (_) {
+      // Best effort: a temporary connection issue must not stop the live stage.
+    } finally {
+      _heartbeatInFlight = false;
+    }
+  }
+
   Future<void> _refreshTapTotal() async {
+    if (!mounted || _ending || _ended || _tapRefreshInFlight) return;
+    _tapRefreshInFlight = true;
     try {
       final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
-      if (mounted && taps != _fameTaps) setState(() => _fameTaps = taps);
-    } catch (_) {}
+      if (mounted && !_ending && !_ended && taps != _fameTaps) {
+        setState(() => _fameTaps = taps);
+      }
+    } catch (_) {
+      // A failed refresh must not prevent the next poll.
+    } finally {
+      _tapRefreshInFlight = false;
+    }
   }
 
   void _receiveComment(Map<String, dynamic> payload) {
