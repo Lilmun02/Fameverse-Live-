@@ -13,9 +13,9 @@ class BadgeRequirementsScreen extends StatelessWidget {
         backgroundColor: Colors.black,
         title: const Text('How to get badges'),
       ),
-      body: const ListView(
-        padding: EdgeInsets.all(18),
-        children: [
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: const [
           Text(
             'FIRST VERSE · BETA LEGACY',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
