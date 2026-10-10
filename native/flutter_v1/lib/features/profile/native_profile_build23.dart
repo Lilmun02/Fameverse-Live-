@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_beta_backend.dart';
+import 'badge_requirements_screen.dart';
 import 'fame_coin_store_screen.dart';
 
 class NativeProfileBuild23Screen extends StatelessWidget {
@@ -763,6 +764,23 @@ class _Build23SettingsScreen extends StatelessWidget {
                       : 'Earnings, payouts and creator tools',
                   icon: Icons.workspace_premium_outlined,
                   onTap: onCreatorStudio,
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            _Section(
+              title: 'BADGES & REQUIREMENTS',
+              children: [
+                _RowItem(
+                  label: 'How to earn badges',
+                  value:
+                      'Gifter tiers, First Verse, verification and transfers',
+                  icon: Icons.workspace_premium_outlined,
+                  onTap: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => const BadgeRequirementsScreen(),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -86,6 +86,26 @@ void main() {
     expect(find.text('1 bonus check completed'), findsOneWidget);
   });
 
+  testWidgets('owner sees clear preview without earning a badge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: FirstVerseBetaScreen(
+          backend: _FakeBetaBackend(FvBetaProgramStatus.notEnrolled),
+          isOwnerPreview: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Owner preview — not earned'), findsOneWidget);
+    expect(find.byKey(const Key('first-verse-badge-art')), findsOneWidget);
+    expect(find.byType(ImageFiltered), findsNothing);
+    expect(find.text('0/8 required tests'), findsOneWidget);
+    expect(find.text('Build your profile'), findsOneWidget);
+  });
+
   test('First Verse required mission list excludes payout operations', () {
     final keys = fvFirstVerseMissions.map((mission) => mission.key).toSet();
     expect(keys, isNot(contains('payout')));

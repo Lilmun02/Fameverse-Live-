@@ -5,9 +5,14 @@ import 'package:flutter/material.dart';
 import '../../data/fameverse_beta_backend.dart';
 
 class FirstVerseBetaScreen extends StatefulWidget {
-  const FirstVerseBetaScreen({this.backend, super.key});
+  const FirstVerseBetaScreen({
+    this.backend,
+    this.isOwnerPreview = false,
+    super.key,
+  });
 
   final FameverseBetaBackend? backend;
+  final bool isOwnerPreview;
 
   @override
   State<FirstVerseBetaScreen> createState() => _FirstVerseBetaScreenState();
@@ -52,6 +57,8 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
   @override
   Widget build(BuildContext context) {
     final status = _status;
+    final visibleStatus = status ?? FvBetaProgramStatus.notEnrolled;
+    final canView = widget.isOwnerPreview || (status?.enrolled ?? false);
     return Scaffold(
       key: const Key('first-verse-beta-screen'),
       backgroundColor: Colors.black,
@@ -77,7 +84,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   title: 'Progress unavailable',
                   body: _error!,
                 )
-              else if (status == null || !status.enrolled)
+              else if (!canView)
                 const _MessageCard(
                   icon: Icons.lock_outline_rounded,
                   title: 'Beta access is not active',
@@ -85,7 +92,10 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                       'First Verse progress is only available to enrolled external Fameverse beta testers.',
                 )
               else ...[
-                _FirstVerseHero(status: status),
+                _FirstVerseHero(
+                  status: visibleStatus,
+                  isOwnerPreview: widget.isOwnerPreview,
+                ),
                 const SizedBox(height: 24),
                 const _SectionTitle('REQUIRED BETA MISSIONS'),
                 const SizedBox(height: 9),
@@ -96,7 +106,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                         padding: const EdgeInsets.only(bottom: 9),
                         child: _MissionCard(
                           mission: mission,
-                          completed: status.completed(mission.key),
+                          completed: visibleStatus.completed(mission.key),
                         ),
                       ),
                     ),
@@ -110,7 +120,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                         padding: const EdgeInsets.only(bottom: 9),
                         child: _MissionCard(
                           mission: mission,
-                          completed: status.completed(mission.key),
+                          completed: visibleStatus.completed(mission.key),
                         ),
                       ),
                     ),
@@ -126,13 +136,32 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
 }
 
 class _FirstVerseHero extends StatelessWidget {
-  const _FirstVerseHero({required this.status});
+  const _FirstVerseHero({
+    required this.status,
+    required this.isOwnerPreview,
+  });
 
   final FvBetaProgramStatus status;
+  final bool isOwnerPreview;
 
   @override
   Widget build(BuildContext context) {
     final unlocked = status.badgeUnlocked;
+    String headline;
+    String explanation;
+    if (unlocked) {
+      headline = 'First Verse earned';
+      explanation =
+          'You completed the required external beta checks. This legacy badge stays with your account.';
+    } else if (isOwnerPreview) {
+      headline = 'Owner preview — not earned';
+      explanation =
+          'Your owner preview is clear, but beta testers still earn the badge by completing all eight required missions.';
+    } else {
+      headline = 'Your badge is waiting';
+      explanation =
+          'Complete the required beta missions to reveal and permanently unlock First Verse.';
+    }
     return Container(
       key: const Key('first-verse-progress-card'),
       padding: const EdgeInsets.all(18),
@@ -153,14 +182,17 @@ class _FirstVerseHero extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _BadgePreview(unlocked: unlocked),
+              _BadgePreview(
+                unlocked: unlocked,
+                isOwnerPreview: isOwnerPreview,
+              ),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      unlocked ? 'First Verse earned' : 'Your badge is waiting',
+                      headline,
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -168,9 +200,7 @@ class _FirstVerseHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      unlocked
-                          ? 'You completed the required external beta checks. This legacy badge stays with your account.'
-                          : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
+                      explanation,
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
                         fontSize: 12,
@@ -235,9 +265,13 @@ class _FirstVerseHero extends StatelessWidget {
 }
 
 class _BadgePreview extends StatelessWidget {
-  const _BadgePreview({required this.unlocked});
+  const _BadgePreview({
+    required this.unlocked,
+    required this.isOwnerPreview,
+  });
 
   final bool unlocked;
+  final bool isOwnerPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +308,7 @@ class _BadgePreview extends StatelessWidget {
       ),
     );
 
-    if (unlocked) return badge;
+    if (unlocked || isOwnerPreview) return badge;
     return Stack(
       alignment: Alignment.center,
       children: [
