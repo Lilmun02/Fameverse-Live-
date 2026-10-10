@@ -59,12 +59,23 @@ void main() {
       shell,
       contains('final account = await _loadAuthoritativeAccount();'),
       reason:
-          'Owner routing must revalidate account authority before navigation.',
+          'Creator Studio navigation must revalidate account authority before navigation.',
+    );
+    expect(
+      shell,
+      isNot(contains('Build23OwnerControlCenterScreen')),
+      reason: 'Native owner/admin operations must stay out of the iPhone app.',
     );
     expect(
       profile,
-      contains("label: isOwner ? 'Owner Studio' : 'Creator Studio'"),
-      reason: 'Owner Settings must visibly expose Owner Studio.',
+      contains("label: 'Creator Studio'"),
+      reason:
+          'Owner and creator accounts must enter the same native Creator Studio.',
+    );
+    expect(
+      profile,
+      isNot(contains('Owner Studio')),
+      reason: 'Native profile must not expose the retired Owner Studio route.',
     );
   });
 }

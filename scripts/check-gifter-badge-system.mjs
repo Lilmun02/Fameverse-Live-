@@ -41,7 +41,7 @@ assert.doesNotMatch(badgeComponent, /\{badge\.icon\}/, 'Cheap glyph placeholders
 
 const profileBadgeOccurrences = profileView.match(/<GifterBadge/g) || []
 assert.equal(profileBadgeOccurrences.length, 1, 'Main profile identity must render at most one earned gifter badge.')
-assert.match(profileView, /totalCoinsSent > 0 && !hideGifterBadge && \(/, 'Owner/admin identity must stay separate from the normal earned gifter identity badge.')
+assert.match(profileView, /\(totalCoinsSent > 0 \|\| importedBadgeLevel > 0\) && !hideGifterBadge && \(/, 'Owner/admin identity must stay separate from the normal earned gifter identity badge.')
 assert.match(profileView, /isPrivilegedIdentityRole\(profile\?\.account_role\)/, 'Main profile must derive privileged identity from the backend role.')
 assert.match(profileView, /<GifterProgressSection gifterStats=\{gifterStats\}/, 'Main profile must mount the approved gifter progression surface.')
 assert.match(profileView, /setConnectionsMode\('followers'\)[\s\S]*Followers[\s\S]*setConnectionsMode\('following'\)[\s\S]*Following[\s\S]*setConnectionsMode\('friends'\)[\s\S]*Friends/, 'Main profile social stats must stay Followers, Following, Friends in that order.')

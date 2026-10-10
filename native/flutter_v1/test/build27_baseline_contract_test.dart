@@ -4,18 +4,27 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Build 27 baseline contract', () {
-    test('owner control center stays wired to authoritative identity', () {
-      final shell = File(
-        'lib/features/shell/fameverse_shell_build23.dart',
-      ).readAsStringSync();
-      final profile = File(
-        'lib/features/profile/native_profile_build23.dart',
-      ).readAsStringSync();
+    test(
+      'owner identity stays authoritative while operations are web-only',
+      () {
+        final shell = File(
+          'lib/features/shell/fameverse_shell_build23.dart',
+        ).readAsStringSync();
+        final profile = File(
+          'lib/features/profile/native_profile_build23.dart',
+        ).readAsStringSync();
+        final webOwner = File(
+          '../../src/components/owner/OwnerControlCenter.jsx',
+        ).readAsStringSync();
 
-      expect(shell, contains('get_my_fameverse_identity'));
-      expect(shell, contains('Build23OwnerControlCenterScreen'));
-      expect(profile, contains('Owner Studio'));
-    });
+        expect(shell, contains('get_my_fameverse_identity'));
+        expect(shell, isNot(contains('Build23OwnerControlCenterScreen')));
+        expect(profile, contains('Creator Studio'));
+        expect(profile, isNot(contains('Owner Studio')));
+        expect(webOwner, contains('Control Center'));
+        expect(webOwner, contains('Payout Queue'));
+      },
+    );
 
     test('owner host gift tray stays on host Live', () {
       final wrapper = File(

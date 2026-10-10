@@ -53,31 +53,45 @@ void main() {
     });
 
     test(
-      'real payout provider wiring cannot regress to database-only processing',
+      'web payout provider wiring cannot regress to database-only processing',
       () {
         final owner = File(
-          'lib/features/profile/owner_control_center_build23.dart',
+          '../../src/components/owner/OwnerControlCenter.jsx',
+        ).readAsStringSync();
+        final service = File(
+          '../../src/services/ownerControl.js',
         ).readAsStringSync();
 
-        expect(owner, contains("'process-creator-payout'"));
-        expect(owner, contains("'sync-creator-payout'"));
-        expect(owner, contains("'expected_environment': 'sandbox'"));
-        expect(owner, contains("Text('Send with PayPal sandbox')"));
-        expect(owner, contains("Key('owner-payout-sync-provider')"));
-        expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
+        expect(service, contains("'process-creator-payout'"));
+        expect(service, contains("'sync-creator-payout'"));
+        expect(service, contains('expected_environment: expectedEnvironment'));
+        expect(service, contains('get_creator_payout_moderation_queue_v2'));
+        expect(owner, contains('Release to PayPal'));
+        expect(owner, contains('Recover PayPal submission'));
+        expect(owner, contains('Sync PayPal'));
+        expect(owner, isNot(contains('Mark paid')));
       },
     );
 
-    test('owner verification review controls remain wired', () {
+    test('web owner verification review controls remain wired', () {
       final owner = File(
-        'lib/features/profile/owner_control_center_build23.dart',
+        '../../src/components/owner/OwnerControlCenter.jsx',
+      ).readAsStringSync();
+      final verification = File(
+        '../../src/components/owner/OwnerVerificationQueue.jsx',
+      ).readAsStringSync();
+      final service = File(
+        '../../src/services/ownerControl.js',
       ).readAsStringSync();
 
-      expect(owner, contains("'get_creator_verification_moderation_queue'"));
-      expect(owner, contains("'review_creator_verification'"));
-      expect(owner, contains("Key('owner-verification-approve')"));
-      expect(owner, contains("Key('owner-verification-needs-info')"));
-      expect(owner, contains("Key('owner-verification-reject')"));
+      expect(service, contains('get_creator_verification_moderation_queue'));
+      expect(service, contains('review_creator_verification'));
+      expect(owner, contains('OwnerVerificationQueue'));
+      expect(owner, contains('onAction={verificationAction}'));
+      expect(verification, contains('Verification Queue'));
+      expect(verification, contains("onAction(request, 'verified')"));
+      expect(verification, contains("onAction(request, 'needs_info')"));
+      expect(verification, contains("onAction(request, 'rejected')"));
     });
 
     test('camera spam and Fame Stones touch fixes remain locked', () {

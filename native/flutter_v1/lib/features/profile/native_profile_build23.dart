@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_beta_backend.dart';
 import 'fame_coin_store_screen.dart';
+import 'native_imported_badge_chip.dart';
 
 class NativeProfileBuild23Screen extends StatelessWidget {
   const NativeProfileBuild23Screen({
@@ -138,6 +139,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (!isOwner) NativeImportedBadgeChip(userId: profile.id),
           if (isOwner) ...[
             const SizedBox(height: 8),
             const Text(
@@ -211,30 +213,28 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                   colors: [Color(0xFF2B1738), Color(0xFF130E17)],
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.workspace_premium_rounded,
                     color: Color(0xFFD49CFF),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isOwner ? 'Owner Studio' : 'Creator Studio',
-                          style: const TextStyle(
+                          'Creator Studio',
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        SizedBox(height: 3),
                         Text(
-                          isOwner
-                              ? 'Premium tools, earnings and payout controls'
-                              : 'Earnings, payouts and creator tools',
-                          style: const TextStyle(
+                          'Earnings, verification, gifts and creator tools',
+                          style: TextStyle(
                             color: Color(0xFFAA9DAE),
                             fontSize: 12,
                           ),
@@ -242,7 +242,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded),
+                  Icon(Icons.chevron_right_rounded),
                 ],
               ),
             ),
@@ -757,10 +757,8 @@ class _Build23SettingsScreen extends StatelessWidget {
               title: 'CREATOR',
               children: [
                 _RowItem(
-                  label: isOwner ? 'Owner Studio' : 'Creator Studio',
-                  value: isOwner
-                      ? 'Moderation, payouts, platform finance and your creator account'
-                      : 'Earnings, payouts and creator tools',
+                  label: 'Creator Studio',
+                  value: 'Earnings, verification, gifts and creator tools',
                   icon: Icons.workspace_premium_outlined,
                   onTap: onCreatorStudio,
                 ),

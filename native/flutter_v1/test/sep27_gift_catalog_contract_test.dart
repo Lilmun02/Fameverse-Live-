@@ -47,6 +47,41 @@ void main() {
     expect(sql, contains('No reserve means no hidden liability'));
   });
 
+  test('gift sender slides in before premium playback starts', () {
+    final components = File(
+      'lib/features/live/native_live_components.dart',
+    ).readAsStringSync();
+
+    expect(components, contains("Key('gift-sender-entrance-"));
+    expect(components, contains('alignment: const Alignment(-1, -0.02)'));
+    expect(components, contains('duration: const Duration(milliseconds: 330)'));
+    expect(components, contains('await next.setVolume(0)'));
+    expect(components, contains('await player.setVolume(1)'));
+    expect(components, contains('await WidgetsBinding.instance.endOfFrame'));
+    expect(components, contains('await player.pause()'));
+    expect(components, contains('AnimatedOpacity('));
+    expect(components, contains('fit: BoxFit.contain'));
+  });
+
+  test('low-cost gift visual is compact and does not use default emoji', () {
+    final components = File(
+      'lib/features/live/native_live_components.dart',
+    ).readAsStringSync();
+    final host = File(
+      'lib/features/live/stream_host_live_screen.dart',
+    ).readAsStringSync();
+    final viewer = File(
+      'lib/features/live/stream_viewer_live_screen.dart',
+    ).readAsStringSync();
+
+    expect(components, contains("width: size.width * .76"));
+    expect(components, contains("height: size.height * .34"));
+    expect(components, contains("Key('native-gift-presentation-"));
+    expect(components, isNot(contains('Text(playback.gift.symbol')));
+    expect(host, isNot(contains("text: '\${gift.symbol} sent")));
+    expect(viewer, isNot(contains("text: '\${gift.symbol} sent")));
+  });
+
   test(
     'cinematic gift tray uses the real gift media instead of an emoji stand-in',
     () {
@@ -62,7 +97,7 @@ void main() {
       expect(visual, contains('VideoPlayer(controller)'));
       expect(components, contains("Key('native-gift-presentation-"));
       expect(components, contains("Key('cinematic-gift-presentation-"));
-      expect(components, contains('VideoPlayer(controller)'));
+      expect(components, contains('VideoPlayer(player)'));
       expect(components, contains('BoxFit.contain'));
     },
   );

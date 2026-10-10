@@ -22,4 +22,25 @@ void main() {
       expect(studio, contains("'COMING SOON'"));
     },
   );
+
+  test(
+    'current Creator Studio includes read-only badge transfer instructions',
+    () {
+      final creator = File(
+        'lib/features/profile/creator_studio_build23.dart',
+      ).readAsStringSync();
+      final preview = File(
+        'lib/features/profile/native_badge_transfer_preview.dart',
+      ).readAsStringSync();
+
+      expect(creator, contains('NativeBadgeTransferPreview'));
+      expect(preview, contains("Key('badge-transfer-preview-card')"));
+      expect(preview, contains('Bring your badge'));
+      expect(preview, contains('ImagePicker().pickVideo'));
+      expect(preview, contains('TikTok, Favorited, or EPIC'));
+      expect(preview, contains('screen recording'));
+      expect(preview, contains('Submit for owner review'));
+      expect(preview, isNot(contains("value: 'echo'")));
+    },
+  );
 }

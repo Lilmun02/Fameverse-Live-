@@ -17,7 +17,6 @@ import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
 import '../profile/native_profile_build23.dart';
-import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_build23.dart';
@@ -383,18 +382,6 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       _accountRole = account.role;
     });
     final currentProfile = account.profile;
-
-    if (account.role == 'owner') {
-      Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (context) => Build23OwnerControlCenterScreen(
-            onOpenCreatorStudio: () =>
-                _openPersonalCreatorStudio(currentProfile),
-          ),
-        ),
-      );
-      return;
-    }
     _openPersonalCreatorStudio(currentProfile);
   }
 

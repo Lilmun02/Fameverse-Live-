@@ -281,9 +281,10 @@ class FvFameActionButton extends StatelessWidget {
 }
 
 class FvLiveChatList extends StatelessWidget {
-  const FvLiveChatList({required this.messages, super.key});
+  const FvLiveChatList({required this.messages, this.onProfileTap, super.key});
 
   final List<dynamic> messages;
+  final ValueChanged<String>? onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -298,6 +299,13 @@ class FvLiveChatList extends StatelessWidget {
         final text = (raw.text as String).trim();
         final level = raw.gifterLevel as int;
         final kind = raw.kind as String;
+        final userId = raw.userId as String?;
+        final avatarUrl = raw.avatarUrl as String?;
+        final hasAvatar = avatarUrl != null && avatarUrl.trim().isNotEmpty;
+        final profileTap =
+            userId == null || userId.isEmpty || onProfileTap == null
+            ? null
+            : () => onProfileTap!(userId);
         final initial = user.isEmpty
             ? 'F'
             : user.characters.first.toUpperCase();
@@ -311,25 +319,39 @@ class FvLiveChatList extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF8E4DFF), Color(0xFF3C1A5A)],
-                    ),
-                    border: Border.all(color: const Color(0xFFB478FF)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
+                GestureDetector(
+                  key: userId == null
+                      ? null
+                      : Key('live-chat-profile-avatar-$userId'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: profileTap,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF8E4DFF), Color(0xFF3C1A5A)],
                       ),
+                      border: Border.all(color: const Color(0xFFB478FF)),
+                    ),
+                    child: CircleAvatar(
+                      radius: 15,
+                      foregroundImage: hasAvatar
+                          ? NetworkImage(avatarUrl.trim())
+                          : null,
+                      backgroundColor: Colors.transparent,
+                      child: hasAvatar
+                          ? null
+                          : Text(
+                              initial,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -341,13 +363,17 @@ class FvLiveChatList extends StatelessWidget {
                       Row(
                         children: [
                           Flexible(
-                            child: Text(
-                              user.isEmpty ? 'Fameverse viewer' : user,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: profileTap,
+                              child: Text(
+                                user.isEmpty ? 'Fameverse viewer' : user,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
                             ),
                           ),

@@ -167,11 +167,21 @@ void main() {
   );
   require(
     build23Profile.contains('FAMEVERSE OWNER • PREMIUM') &&
-        build23Studio.contains('Premium owner access') &&
+        !build23Profile.contains('Owner Studio') &&
+        !build23Shell.contains('Build23OwnerControlCenterScreen') &&
+        build23Studio.contains('Your creator account') &&
+        build23Studio.contains('creator-fam-algorithm-card') &&
+        build23Studio.contains('creator-badges-card') &&
+        build23Studio.contains('creator-gift-activity-card') &&
+        build23Studio.contains('creator-verification-center') &&
         !build23Studio.contains('ImageFiltered') &&
         !build23Studio.contains('ImageFilter.blur') &&
         build23Studio.contains('Promotional (non-withdrawable)'),
-    'Owner premium surfaces must stay readable and promo QA value must remain separate from withdrawable cash.',
+    'Native owner identity may stay branded, but admin operations must remain web-only while Creator Studio keeps creator tools and promo separation.',
+  );
+  require(
+    codemagic.contains('NSPhotoLibraryUsageDescription'),
+    'iOS builds must declare photo-library access for profile photo selection.',
   );
 
   final keepsAuthoritativeCommunityContracts =
@@ -215,7 +225,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
+      '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, web-only owner ops, Creator Studio, promo separation, Supabase, Stream Video, signing, photos, and camera contracts passed',
     );
   }
 }

@@ -5,13 +5,16 @@ import GifterBadge from './GifterBadge.jsx'
 import GifterProgressSection from './GifterProgressSection.jsx'
 import ProfileConnections from './ProfileConnections.jsx'
 
-export default function ProfileView({ initial, displayName, username, profile, openProfileMode, followers, following, followerCount, followingCount, busyTargetId, toggleFollow, gifterStats }) {
+export default function ProfileView({ initial, displayName, username, profile, openProfileMode, followers, following, followerCount, followingCount, busyTargetId, toggleFollow, gifterStats, onOpenOwnerControls }) {
   const [connectionsMode, setConnectionsMode] = useState(null)
   const friends = followers.filter((person) => person.relation?.key === 'friend')
   const totalCoinsSent = Math.max(0, Number(gifterStats?.totalCoinsSent || 0))
   const giftCount = Math.max(0, Number(gifterStats?.giftCount || 0))
   const gifterLevel = Math.max(1, Number(gifterStats?.level || 1))
+  const importedBadgeLevel = Math.max(0, Number(gifterStats?.importedBadgeLevel || 0))
+  const displayedGifterLevel = Math.max(gifterLevel, importedBadgeLevel)
   const hideGifterBadge = isPrivilegedIdentityRole(profile?.account_role)
+  const isOwner = String(profile?.account_role || '').toLowerCase() === 'owner'
 
   return (
     <section className="panel full-panel profile-panel refined-profile fv-profile">
@@ -28,9 +31,12 @@ export default function ProfileView({ initial, displayName, username, profile, o
         <div className="fv-profile-identity">
           <h1>{displayName}</h1>
           <span>{username}</span>
-          {totalCoinsSent > 0 && !hideGifterBadge && (
-            <div className="fv-profile-badges" aria-label="Earned Fameverse identity badge">
-              <GifterBadge level={gifterLevel} size="small" totalCoinsSent={totalCoinsSent} />
+          {(totalCoinsSent > 0 || importedBadgeLevel > 0) && !hideGifterBadge && (
+            <div className="fv-profile-badges" aria-label="Earned or verified transferred Fameverse gifter badge">
+              <GifterBadge level={displayedGifterLevel} size="small" />
+              {importedBadgeLevel > 0 && (
+                <small>Verified transfer from {gifterStats.importedBadgeSource} · recognition only</small>
+              )}
             </div>
           )}
           <p>{profile?.bio || 'Add a bio so people know what you are about.'}</p>
@@ -53,6 +59,9 @@ export default function ProfileView({ initial, displayName, username, profile, o
         <GifterProgressSection gifterStats={gifterStats} />
 
         <button type="button" className="fv-studio-row" onClick={() => openProfileMode('studio')}><div><span>CREATOR TOOLS</span><strong>Creator Studio</strong></div><b>›</b></button>
+        {isOwner && (
+          <button type="button" className="fv-studio-row" onClick={onOpenOwnerControls}><div><span>OWNER OPERATIONS · WEB</span><strong>Owner Control Center</strong></div><b>›</b></button>
+        )}
       </div>
     </section>
   )
