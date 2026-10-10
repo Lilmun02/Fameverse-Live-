@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import '../../data/fameverse_beta_backend.dart';
 
 class FirstVerseBetaScreen extends StatefulWidget {
-  const FirstVerseBetaScreen({this.backend, this.isOwnerPreview = false, super.key});
+  const FirstVerseBetaScreen({
+    this.backend,
+    this.isOwnerPreview = false,
+    super.key,
+  });
 
   final FameverseBetaBackend? backend;
   final bool isOwnerPreview;
@@ -87,7 +91,10 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                       'First Verse progress is only available to enrolled external Fameverse beta testers.',
                 )
               else ...[
-                _FirstVerseHero(status: visibleStatus, isOwnerPreview: widget.isOwnerPreview),
+                _FirstVerseHero(
+                  status: visibleStatus,
+                  isOwnerPreview: widget.isOwnerPreview,
+                ),
                 const SizedBox(height: 24),
                 const _SectionTitle('REQUIRED BETA MISSIONS'),
                 const SizedBox(height: 9),
@@ -128,7 +135,10 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
 }
 
 class _FirstVerseHero extends StatelessWidget {
-  const _FirstVerseHero({required this.status, required this.isOwnerPreview});
+  const _FirstVerseHero({
+    required this.status,
+    required this.isOwnerPreview,
+  });
 
   final FvBetaProgramStatus status;
   final bool isOwnerPreview;
