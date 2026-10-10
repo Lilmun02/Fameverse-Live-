@@ -159,8 +159,8 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
   String _windowCopy() {
     final countdown = fameboardCountdown(_resetAtUtc.difference(_clockUtc));
     return _window == '24h'
-        ? 'Daily resets 00:00 UTC · ' + countdown + ' left'
-        : 'Weekly resets Mon 00:00 UTC · ' + countdown + ' left';
+        ? 'Daily resets 00:00 UTC · $countdown left'
+        : 'Weekly resets Mon 00:00 UTC · $countdown left';
   }
 
   String _scoreCopy(_RankingEntry entry) {
