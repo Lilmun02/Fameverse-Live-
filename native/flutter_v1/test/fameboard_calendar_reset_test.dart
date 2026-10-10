@@ -50,7 +50,7 @@ void main() {
 
     test('all ranking categories use backend half-open period boundaries', () {
       final sql = File(
-        '../../supabase/migrations/20261010_fameboard_calendar_reset.sql',
+        '../../supabase/migrations/20261010223000_fameboard_calendar_reset.sql',
       ).readAsStringSync();
       expect(sql, contains("date_trunc('day', now() at time zone 'UTC')"));
       expect(sql, contains("date_trunc('week', now() at time zone 'UTC')"));
