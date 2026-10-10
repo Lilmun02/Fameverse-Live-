@@ -119,6 +119,11 @@ void main() {
       expect(migration, contains('to service_role'));
       expect(migration, contains("'purchase'"));
       expect(function, contains('SignedDataVerifier'));
+      expect(function, contains('X509Certificate.prototype'));
+      expect(function, contains('BEGIN CERTIFICATE'));
+      expect(function, contains('new SignedDataVerifier('));
+      expect(function, contains('      true,'));
+      expect(function, contains('verified.appAccountToken !== user.id'));
       expect(function, contains('com.fameverse.live'));
       expect(function, contains('verified.appAccountToken !== user.id'));
       expect(function, contains('apple-transaction-verification-failed'));

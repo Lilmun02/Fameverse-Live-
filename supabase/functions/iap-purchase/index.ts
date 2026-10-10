@@ -1,6 +1,22 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { Buffer } from "node:buffer";
+import { X509Certificate } from "node:crypto";
+
+// Supabase Deno's Node compatibility implementation currently throws
+// ERR_NOT_IMPLEMENTED for X509Certificate.toString(). Apple's official
+// verifier uses that method to serialize certificates during trusted-chain
+// validation and OCSP checks. Restore Node's PEM serialization only;
+// DO NOT turn off signature, certificate-chain or online revocation checks.
+Object.defineProperty(X509Certificate.prototype, "toString", {
+  configurable: true,
+  writable: true,
+  value: function (this: X509Certificate): string {
+    const base64 = Buffer.from(this.raw).toString("base64");
+    const lines = base64.match(/.{1,64}/g) ?? [];
+    return `-----BEGIN CERTIFICATE-----\n${lines.join("\n")}\n-----END CERTIFICATE-----\n`;
+  },
+});
 import {
   Environment,
   SignedDataVerifier,
