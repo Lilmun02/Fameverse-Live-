@@ -30,7 +30,10 @@ void main() {
 
     test('countdown clamps to zero and shows hours, minutes and seconds', () {
       expect(fameboardCountdown(const Duration(seconds: 62)), '00:01:02');
-      expect(fameboardCountdown(const Duration(days: 2, seconds: 5)), '2d 00:00:05');
+      expect(
+        fameboardCountdown(const Duration(days: 2, seconds: 5)),
+        '2d 00:00:05',
+      );
       expect(fameboardCountdown(const Duration(seconds: -1)), '00:00:00');
     });
 
