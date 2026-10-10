@@ -1,18 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../data/fameverse_beta_backend.dart';
-import '../live/native_live_profile_sheet.dart';
-
-/// Requirements are informational; the backend awards badges.
+/// Explains published badge requirements without issuing or modifying badges.
 class BadgeRequirementsScreen extends StatelessWidget {
   const BadgeRequirementsScreen({super.key});
-
-  String _tierLabel(FvNativeGifterBadgeTier tier) {
-    if (tier.minLevel == tier.maxLevel) {
-      return 'Level ${tier.minLevel}';
-    }
-    return 'Levels ${tier.minLevel}–${tier.maxLevel}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,87 +13,63 @@ class BadgeRequirementsScreen extends StatelessWidget {
         backgroundColor: Colors.black,
         title: const Text('How to get badges'),
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          children: [
-            const _BadgeInfo(
-              title: 'First Verse · Beta legacy',
-              description: 'Enroll in the external Fameverse beta and complete all eight required missions to earn the permanent First Verse badge. Bonus missions are optional. Owner previews never award the badge.',
-            ),
-            ...fvFirstVerseMissions.where((mission) => mission.required).map(
-              (mission) => ListTile(
-                dense: true,
-                leading: const Icon(Icons.checklist_rounded),
-                title: Text(mission.title),
-                subtitle: Text(mission.detail),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _BadgeInfo(
-              title: 'Gifter badges',
-              description: 'Send eligible Fame Coin gifts to creators to build your gifter level. Buying Fame Coins does not award a gifter badge. Your earned tier appears in Live.',
-            ),
-            ...fvNativeGifterBadgeTiers.map(
-              (tier) => ListTile(
-                dense: true,
-                leading: Text(
-                  tier.icon,
-                  style: const TextStyle(fontSize: 22),
-                ),
-                title: Text(tier.label),
-                subtitle: Text(_tierLabel(tier)),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _BadgeInfo(
-              title: 'Verified Creator',
-              description: 'Reach 100 followers and 500,000 eligible cash-backed Fame Coins received from gifts, then request manual approval. Promotional, referral, self-gifts and owner QA gifts do not count.',
-            ),
-            const SizedBox(height: 12),
-            const _BadgeInfo(
-              title: 'Bring your badge · Coming soon',
-              description: 'Planned for TikTok, Favorited and EPIC. Submit a recording showing the source account and earned badge. Fameverse reviews proof; transfers are not active and will not grant automatic Fameverse levels.',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BadgeInfo extends StatelessWidget {
-  const _BadgeInfo({required this.title, required this.description});
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xFF21142B),
-      child: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: const TextStyle(
-                color: Color(0xFFC5B7CD),
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
+        children: const [
+          ListTile(
+            title: Text('First Verse · Beta legacy'),
+            subtitle: Text('Enroll as an external Fameverse beta tester and complete all eight required missions. The badge remains permanent once earned. Owner preview does not award it.'),
+          ),
+          ListTile(
+            title: Text('First Verse · Required missions'),
+            subtitle: Text('1. Build your profile. 2. Browse Home. 3. Explore Discover. 4. Open another profile. 5. Test following. 6. Join a Live. 7. Send a Live comment. 8. View a Story.'),
+          ),
+          ListTile(
+            title: Text('First Verse · Bonus checks'),
+            subtitle: Text('Sending a permitted test gift and completing a co-host session are optional. They do not block the badge.'),
+          ),
+          Divider(),
+          ListTile(
+            title: Text('Gifter badge requirements'),
+            subtitle: Text('Send eligible gifts to creators to increase your gifter level and unlock the corresponding gifter tier. Buying coins alone does not increase your gifter level.'),
+          ),
+          ListTile(
+            title: Text('Spark Gifter · Levels 1–4'),
+          ),
+          ListTile(
+            title: Text('Bronze Gifter · Levels 5–9'),
+          ),
+          ListTile(
+            title: Text('Silver Gifter · Levels 10–19'),
+          ),
+          ListTile(
+            title: Text('Gold Gifter · Levels 20–29'),
+          ),
+          ListTile(
+            title: Text('Platinum Gifter · Levels 30–49'),
+          ),
+          ListTile(
+            title: Text('Diamond Gifter · Levels 50–69'),
+          ),
+          ListTile(
+            title: Text('Royal Gifter · Levels 70–84'),
+          ),
+          ListTile(
+            title: Text('Legendary Gifter · Levels 85–98'),
+          ),
+          ListTile(
+            title: Text('Fame Icon · Level 99'),
+          ),
+          Divider(),
+          ListTile(
+            title: Text('Verified Creator'),
+            subtitle: Text('Reach 100 followers and receive 500,000 eligible cash-backed Fame Coins in gifts. Then request manual review. Promotional, referral, owner QA and self-gifts do not count.'),
+          ),
+          ListTile(
+            title: Text('Bring your badge · Coming soon'),
+            subtitle: Text('Future badge transfer review from TikTok, Favorited or EPIC requires a recording showing your source account and earned badge. Imports are not available yet.'),
+          ),
+        ],
       ),
     );
   }
