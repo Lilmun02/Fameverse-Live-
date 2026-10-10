@@ -516,6 +516,10 @@ const _gifterLevelThresholds = <int>[
   50000000,
 ];
 
+int fvGifterMinimumCoinsSentForLevel(int level) {
+  return _gifterLevelThresholds[level.clamp(1, 99) - 1];
+}
+
 FvNativeGifterProgress fvNativeGifterProgress({
   required int level,
   required int totalCoinsSent,
