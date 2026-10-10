@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'fameboard_period.dart';
+
 Future<void> showNativeLiveRankings(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -33,14 +35,52 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
   bool _loading = true;
   String? _error;
   List<_RankingEntry> _rows = const [];
+  Timer? _resetTicker;
+  DateTime _clockUtc = DateTime.now().toUtc();
+  late DateTime _resetAtUtc;
+  int _loadRequestId = 0;
 
   @override
   void initState() {
     super.initState();
+    _resetAtUtc = fameboardEndUtc(_window, _clockUtc);
+    _resetTicker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _tickResetClock(),
+    );
     unawaited(_load());
   }
 
+  @override
+  void dispose() {
+    _resetTicker?.cancel();
+    super.dispose();
+  }
+
+  void _tickResetClock() {
+    if (!mounted) return;
+    final nowUtc = DateTime.now().toUtc();
+    final nextResetUtc = fameboardEndUtc(_window, nowUtc);
+    if (nextResetUtc != _resetAtUtc) {
+      // At the exact boundary, stop displaying all prior-period scores.
+      setState(() {
+        _clockUtc = nowUtc;
+        _resetAtUtc = nextResetUtc;
+        _rows = const [];
+        _loading = true;
+        _error = null;
+      });
+      unawaited(_load());
+      return;
+    }
+    setState(() => _clockUtc = nowUtc);
+  }
+
   Future<void> _load() async {
+    final requestId = ++_loadRequestId;
+    final requestedWindow = _window;
+    final requestedKind = _kind;
+    final requestedResetUtc = _resetAtUtc;
     if (mounted) {
       setState(() {
         _loading = true;
@@ -51,8 +91,8 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
       final data = await Supabase.instance.client.rpc(
         'get_fameverse_rankings_v2',
         params: <String, dynamic>{
-          'p_kind': _kind,
-          'p_window': _window,
+          'p_kind': requestedKind,
+          'p_window': requestedWindow,
           'p_limit': 50,
         },
       );
@@ -71,13 +111,27 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
             );
           })
           .toList(growable: false);
-      if (!mounted) return;
+      if (!mounted ||
+          requestId != _loadRequestId ||
+          requestedResetUtc != _resetAtUtc) {
+        return;
+      }
+      // Never show a late result from the previous ranking period.
+      if (fameboardEndUtc(requestedWindow, DateTime.now().toUtc()) !=
+          requestedResetUtc) {
+        _tickResetClock();
+        return;
+      }
       setState(() {
         _rows = rows;
         _loading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted ||
+          requestId != _loadRequestId ||
+          requestedResetUtc != _resetAtUtc) {
+        return;
+      }
       setState(() {
         _loading = false;
         _error = 'Fameboard could not refresh right now.';
@@ -93,13 +147,21 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
 
   Future<void> _selectWindow(String window) async {
     if (window == _window || _loading) return;
-    setState(() => _window = window);
+    setState(() {
+      _window = window;
+      _clockUtc = DateTime.now().toUtc();
+      _resetAtUtc = fameboardEndUtc(window, _clockUtc);
+      _rows = const [];
+    });
     await _load();
   }
 
-  String _windowCopy() => _window == '24h'
-      ? 'Momentum from the last 24 hours'
-      : 'Momentum from the last 7 days';
+  String _windowCopy() {
+    final countdown = fameboardCountdown(_resetAtUtc.difference(_clockUtc));
+    return _window == '24h'
+        ? 'Daily resets 00:00 UTC · ' + countdown + ' left'
+        : 'Weekly resets Mon 00:00 UTC · ' + countdown + ' left';
+  }
 
   String _scoreCopy(_RankingEntry entry) {
     return switch (_kind) {
@@ -244,12 +306,17 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
                         color: Color(0xFF9D8FA4),
                       ),
                       const SizedBox(width: 5),
-                      Text(
-                        _windowCopy(),
-                        style: const TextStyle(
-                          color: Color(0xFF9D8FA4),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: Text(
+                          _windowCopy(),
+                          key: const Key('fameboard-reset-countdown'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF9D8FA4),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
