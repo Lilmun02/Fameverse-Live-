@@ -48,6 +48,25 @@ void main() {
     expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
   });
 
+  testWidgets('Owner sees unblurred badge art without earning First Verse', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: FirstVerseBetaScreen(
+          backend: _FakeBetaBackend(FvBetaProgramStatus.notEnrolled),
+          ownerPreview: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Owner preview · not yet earned'), findsOneWidget);
+    expect(find.byKey(const Key('first-verse-badge-art')), findsOneWidget);
+    expect(find.byIcon(Icons.lock_rounded), findsNothing);
+    expect(find.text('Build your profile'), findsOneWidget);
+  });
+
   testWidgets('First Verse reveals permanently earned badge state', (
     tester,
   ) async {
