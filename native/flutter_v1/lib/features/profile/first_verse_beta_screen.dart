@@ -147,6 +147,21 @@ class _FirstVerseHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final unlocked = status.badgeUnlocked;
+    String headline;
+    String explanation;
+    if (unlocked) {
+      headline = 'First Verse earned';
+      explanation =
+          'You completed the required external beta checks. This legacy badge stays with your account.';
+    } else if (isOwnerPreview) {
+      headline = 'Owner preview — not earned';
+      explanation =
+          'Your owner preview is clear, but beta testers still earn the badge by completing all eight required missions.';
+    } else {
+      headline = 'Your badge is waiting';
+      explanation =
+          'Complete the required beta missions to reveal and permanently unlock First Verse.';
+    }
     return Container(
       key: const Key('first-verse-progress-card'),
       padding: const EdgeInsets.all(18),
@@ -177,11 +192,7 @@ class _FirstVerseHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      unlocked
-                          ? 'First Verse earned'
-                          : isOwnerPreview
-                          ? 'Owner preview — not earned'
-                          : 'Your badge is waiting',
+                      headline,
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -189,11 +200,7 @@ class _FirstVerseHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      unlocked
-                          ? 'You completed the required external beta checks. This legacy badge stays with your account.'
-                          : isOwnerPreview
-                          ? 'Your owner preview is clear, but beta testers still earn the badge by completing all eight required missions.'
-                          : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
+                      explanation,
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
                         fontSize: 12,
