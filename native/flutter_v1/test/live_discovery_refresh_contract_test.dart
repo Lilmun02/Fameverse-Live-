@@ -4,14 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Live discovery refresh stability', () {
-    test('room discovery refreshes on Home/Discover without mixing with profile', () {
+    test('room discovery refreshes independently on Home/Discover', () {
       final source = File(
         'lib/features/shell/fameverse_shell_build23.dart',
       ).readAsStringSync();
 
       expect(source, contains('Future<void> _refreshRooms() async {'));
       expect(source, contains('unawaited(_refreshRooms());'));
-      expect(source, contains('final rooms = await widget.backend.listActiveLiveRooms('));
+      expect(
+        source,
+        contains('final rooms = await widget.backend.listActiveLiveRooms('),
+      );
       expect(source, contains('setState(() => _rooms = rooms)'));
       expect(source, contains('if (_tab == 0 || _tab == 1)'));
     });
@@ -30,7 +33,7 @@ void main() {
       expect(source, contains('if (mounted) setState(() => _rooms = rooms)'));
     });
 
-    test('unrelated profile or recommendations failure cannot prevent room request', () {
+    test('profile failure cannot block live discovery', () {
       final source = File(
         'lib/features/shell/fameverse_shell_build23.dart',
       ).readAsStringSync();
