@@ -773,7 +773,8 @@ class _Build23SettingsScreen extends StatelessWidget {
               children: [
                 _RowItem(
                   label: 'How to earn badges',
-                  value: 'Gifter tiers, First Verse, verification and transfers',
+                  value:
+                      'Gifter tiers, First Verse, verification and transfers',
                   icon: Icons.workspace_premium_outlined,
                   onTap: () => Navigator.of(context).push<void>(
                     MaterialPageRoute(
