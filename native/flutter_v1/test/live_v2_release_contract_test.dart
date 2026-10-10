@@ -229,48 +229,22 @@ void main() {
       },
     );
 
-    test('TestFlight candidate uses an approved source lock', () async {
-      final codemagic = await File('../../codemagic.yaml').readAsString();
-
-      final usesBuild32 = codemagic.contains(
-        'TARGET_BRANCH="integration/sep27-big-update"',
-      );
-      final usesQaBuild33 = codemagic.contains(
+    test('TestFlight QA source is locked', () async {
+      final yaml = await File('../../codemagic.yaml').readAsString();
+      const required = [
         'TARGET_BRANCH="qa/fameverse-ux-gifts-badges-oct09"',
-      );
-      expect(usesBuild32 != usesQaBuild33, isTrue);
-
-      if (usesQaBuild33) {
-        expect(codemagic, contains('build33_source_identity.txt'));
-        expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "33"'));
-        expect(
-          codemagic,
-          contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'),
-        );
-        expect(
-          codemagic,
-          contains(r'if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then'),
-        );
-      } else {
-        expect(codemagic, contains('build32_source_identity.txt'));
-        expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
-        expect(
-          codemagic,
-          contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'),
-        );
+        'build33_source_identity.txt',
+        'FAMEVERSE_BUILD_FAMILY: "33"',
+        '--dart-define="FAMEVERSE_BUILD_FAMILY=33"',
+        r'if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then',
+        r'git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"',
+        r'FAMEVERSE_SOURCE_SHA=$SOURCE_SHA',
+        r'--dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}"',
+      ];
+      for (final marker in required) {
+        expect(yaml, contains(marker));
       }
-
-      expect(
-        codemagic,
-        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
-      );
-      expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
-      expect(
-        codemagic,
-        contains(
-          '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
-        ),
-      );
+      expect(yaml, isNot(contains('TARGET_BRANCH="build18/live-repair"')));
     });
 
     test('physical Live repair contracts remain wired', () async {
