@@ -58,6 +58,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
   Widget build(BuildContext context) {
     final status = _status;
     final visibleStatus = status ?? FvBetaProgramStatus.notEnrolled;
+    final canView = widget.isOwnerPreview || (status?.enrolled ?? false);
     return Scaffold(
       key: const Key('first-verse-beta-screen'),
       backgroundColor: Colors.black,
@@ -83,8 +84,7 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   title: 'Progress unavailable',
                   body: _error!,
                 )
-              else if ((status == null || !status.enrolled) &&
-                  !widget.isOwnerPreview)
+              else if (!canView)
                 const _MessageCard(
                   icon: Icons.lock_outline_rounded,
                   title: 'Beta access is not active',
