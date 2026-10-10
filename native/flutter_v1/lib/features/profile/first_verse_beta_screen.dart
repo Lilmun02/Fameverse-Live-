@@ -5,7 +5,14 @@ import 'package:flutter/material.dart';
 import '../../data/fameverse_beta_backend.dart';
 
 class FirstVerseBetaScreen extends StatefulWidget {
-  const FirstVerseBetaScreen({this.backend, super.key});
+  const FirstVerseBetaScreen({
+    this.backend,
+    this.ownerPreview = false,
+    super.key,
+  });
+
+  /// A clear owner-only preview does not grant First Verse.
+  final bool ownerPreview;
 
   final FameverseBetaBackend? backend;
 
@@ -77,7 +84,8 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                   title: 'Progress unavailable',
                   body: _error!,
                 )
-              else if (status == null || !status.enrolled)
+              else if (status == null ||
+                  (!status.enrolled && !widget.ownerPreview))
                 const _MessageCard(
                   icon: Icons.lock_outline_rounded,
                   title: 'Beta access is not active',
@@ -85,7 +93,10 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
                       'First Verse progress is only available to enrolled external Fameverse beta testers.',
                 )
               else ...[
-                _FirstVerseHero(status: status),
+                _FirstVerseHero(
+                  status: status,
+                  ownerPreview: widget.ownerPreview,
+                ),
                 const SizedBox(height: 24),
                 const _SectionTitle('REQUIRED BETA MISSIONS'),
                 const SizedBox(height: 9),
@@ -126,13 +137,26 @@ class _FirstVerseBetaScreenState extends State<FirstVerseBetaScreen> {
 }
 
 class _FirstVerseHero extends StatelessWidget {
-  const _FirstVerseHero({required this.status});
+  const _FirstVerseHero({required this.status, required this.ownerPreview});
 
   final FvBetaProgramStatus status;
+  final bool ownerPreview;
 
   @override
   Widget build(BuildContext context) {
     final unlocked = status.badgeUnlocked;
+    var heading = 'Your badge is waiting';
+    var detail =
+        'Complete the required beta missions to reveal and permanently unlock First Verse.';
+    if (unlocked) {
+      heading = 'First Verse earned';
+      detail =
+          'You completed the required external beta checks. This legacy badge stays with your account.';
+    } else if (ownerPreview) {
+      heading = 'Owner preview · not yet earned';
+      detail =
+          'This is a clear owner preview only. Enrolled testers must complete all eight required missions to earn First Verse.';
+    }
     return Container(
       key: const Key('first-verse-progress-card'),
       padding: const EdgeInsets.all(18),
@@ -153,14 +177,14 @@ class _FirstVerseHero extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _BadgePreview(unlocked: unlocked),
+              _BadgePreview(unlocked: unlocked, ownerPreview: ownerPreview),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      unlocked ? 'First Verse earned' : 'Your badge is waiting',
+                      heading,
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -168,9 +192,7 @@ class _FirstVerseHero extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      unlocked
-                          ? 'You completed the required external beta checks. This legacy badge stays with your account.'
-                          : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
+                      detail,
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
                         fontSize: 12,
@@ -235,9 +257,10 @@ class _FirstVerseHero extends StatelessWidget {
 }
 
 class _BadgePreview extends StatelessWidget {
-  const _BadgePreview({required this.unlocked});
+  const _BadgePreview({required this.unlocked, required this.ownerPreview});
 
   final bool unlocked;
+  final bool ownerPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +297,7 @@ class _BadgePreview extends StatelessWidget {
       ),
     );
 
-    if (unlocked) return badge;
+    if (unlocked || ownerPreview) return badge;
     return Stack(
       alignment: Alignment.center,
       children: [

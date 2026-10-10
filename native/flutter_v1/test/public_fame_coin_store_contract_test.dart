@@ -18,6 +18,10 @@ void main() {
       expect(store, contains('InAppPurchase.instance'));
       expect(store, contains('_store.purchaseStream.listen'));
       expect(store, contains('_store.buyConsumable'));
+      expect(store, contains("'Fameverse Coin Packs'"));
+      expect(store, contains('onPressed: anotherPurchaseBusy'));
+      expect(store, contains('final anotherPurchaseBusy ='));
+      expect(store, contains('PurchaseStatus.canceled'));
       expect(store, contains('applicationUserName: widget.userId'));
       expect(store, contains('serverVerificationData'));
       expect(store, contains("'iap-purchase'"));
@@ -58,6 +62,11 @@ void main() {
     expect(checkout, contains('ui_mode", "hosted_page"'));
     expect(checkout, contains('origin_context", "mobile_app"'));
     expect(checkout, contains('line_items[0][price]'));
+    expect(checkout, contains('if (environment === "live")'));
+    expect(checkout, contains('line_items[0][price_data][currency]'));
+    expect(checkout, contains('line_items[0][price_data][unit_amount]'));
+    expect(checkout, contains('line_items[0][price_data][product_data][name]'));
+    expect(checkout, contains('String(priceCents)'));
     expect(checkout, contains('pack_id'));
     expect(checkout, isNot(contains('amount_cents = Number(body')));
 
@@ -115,6 +124,11 @@ void main() {
       expect(migration, contains('to service_role'));
       expect(migration, contains("'purchase'"));
       expect(function, contains('SignedDataVerifier'));
+      expect(function, contains('X509Certificate.prototype'));
+      expect(function, contains('BEGIN CERTIFICATE'));
+      expect(function, contains('new SignedDataVerifier('));
+      expect(function, contains('      true,'));
+      expect(function, contains('verified.appAccountToken !== user.id'));
       expect(function, contains('com.fameverse.live'));
       expect(function, contains('verified.appAccountToken !== user.id'));
       expect(function, contains('apple-transaction-verification-failed'));

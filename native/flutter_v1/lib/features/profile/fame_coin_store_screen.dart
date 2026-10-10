@@ -618,12 +618,12 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
               ],
               const SizedBox(height: 22),
               const Text(
-                'App Store packs',
+                'Fameverse Coin Packs',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 5),
               const Text(
-                'Apple shows the localized purchase price and handles the App Store checkout. Applicable taxes are reflected by Apple where required.',
+                'Fameverse coins are purchased using Apple in-app purchases. Apple processes the App Store transaction and shows your local price and applicable taxes.',
                 style: TextStyle(
                   color: Color(0xFFA79BAA),
                   fontSize: 11,
@@ -655,6 +655,10 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                   itemBuilder: (context, index) {
                     final product = _products[index];
                     final coins = _coins(product);
+                    final anotherPurchaseBusy =
+                        _busyProductId != null ||
+                        _verifying ||
+                        _stripeBusyPackId != null;
                     final busy = _busyProductId == product.id || _verifying;
                     return Container(
                       key: Key('fame-coin-pack-${product.id}'),
@@ -689,13 +693,19 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
                           const SizedBox(height: 8),
                           FilledButton(
                             key: Key('buy-${product.id}'),
-                            onPressed: busy ? null : () => _buy(product),
+                            onPressed: anotherPurchaseBusy
+                                ? null
+                                : () => _buy(product),
                             style: FilledButton.styleFrom(
                               minimumSize: const Size.fromHeight(42),
                               backgroundColor: const Color(0xFF8E46DE),
                             ),
                             child: Text(
-                              busy ? 'Processing…' : product.price,
+                              busy
+                                  ? 'Processing…'
+                                  : anotherPurchaseBusy
+                                  ? 'Wait…'
+                                  : product.price,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),

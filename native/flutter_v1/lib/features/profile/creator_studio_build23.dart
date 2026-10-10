@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
+import 'badge_requirements_screen.dart';
+import 'native_badge_transfer_preview.dart';
 
 class Build23CreatorStudioScreen extends StatefulWidget {
   const Build23CreatorStudioScreen({
@@ -375,6 +377,18 @@ class _Build23CreatorStudioScreenState
                   creatorEquivalentCents: _promoCreatorEquivalentCents,
                 ),
                 const SizedBox(height: 26),
+                const _SectionLabel('BADGES & LEVELS'),
+                const SizedBox(height: 10),
+                _BadgeLearningCard(
+                  onOpen: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => const BadgeRequirementsScreen(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const NativeBadgeTransferPreview(),
+                const SizedBox(height: 26),
                 const _SectionLabel('PAYOUT SETUP'),
                 const SizedBox(height: 10),
                 _VerificationCard(
@@ -655,6 +669,46 @@ String _creatorStatusTime(DateTime? value) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '${local.month}/${local.day}/${local.year} $hour:$minute';
+}
+
+class _BadgeLearningCard extends StatelessWidget {
+  const _BadgeLearningCard({required this.onOpen});
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('creator-badges-card'),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF513862)),
+        color: const Color(0xFF17111B),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Badges & how to earn them',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Complete First Verse beta missions, send eligible gifts to '
+            'increase gifter level, or meet the creator verification rules.',
+            style: TextStyle(color: Color(0xFFB8ACBC), height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const Key('open-badge-requirements'),
+            onPressed: onOpen,
+            icon: const Icon(Icons.military_tech_outlined),
+            label: const Text('View badge requirements'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _VerificationCard extends StatelessWidget {

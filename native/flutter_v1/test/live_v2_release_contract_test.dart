@@ -229,21 +229,21 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is source-locked to Build 32', () async {
+    test('TestFlight candidate is source-locked to Build 33', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
       expect(
         codemagic,
-        contains('TARGET_BRANCH="integration/sep27-big-update"'),
+        contains('TARGET_BRANCH="qa/fameverse-ux-gifts-badges-oct09"'),
       );
       expect(
         codemagic,
         contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
       );
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
-      expect(codemagic, contains('build32_source_identity.txt'));
-      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
-      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'));
+      expect(codemagic, contains('build33_source_identity.txt'));
+      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "33"'));
+      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=33"'));
       expect(
         codemagic,
         contains(

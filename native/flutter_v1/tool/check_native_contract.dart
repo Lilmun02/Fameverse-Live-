@@ -96,12 +96,30 @@ void main() {
       releaseSection.contains('flutter build ipa --release'),
       'TestFlight workflow must build a signed release IPA.',
     );
+    final isLockedBuild32 =
+        releaseSection.contains(
+          'TARGET_BRANCH="integration/sep27-big-update"',
+        ) &&
+        releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
+        releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32');
+    final isLockedQaBuild33 =
+        releaseSection.contains(
+          'TARGET_BRANCH="qa/fameverse-ux-gifts-badges-oct09"',
+        ) &&
+        releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "33"') &&
+        releaseSection.contains('FAMEVERSE_BUILD_FAMILY=33') &&
+        releaseSection.contains(
+          r'if [ "${CM_BRANCH:-}" != "$TARGET_BRANCH" ]; then',
+        ) &&
+        releaseSection.contains('build33_source_identity.txt') &&
+        releaseSection.contains(
+          'Verify existing repairs and Build 33 QA features in locked source',
+        );
     require(
-      releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
-          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
-          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32') &&
+      (isLockedBuild32 || isLockedQaBuild33) &&
           !releaseSection.contains('TARGET_BRANCH="build18/live-repair"'),
-      'TestFlight Build 32 must package the repaired integration branch, never the old Build 18 source.',
+      'TestFlight must lock to the original Build 32 integration source or '
+      'the guarded Build 33 QA candidate. Older sources are forbidden.',
     );
 
     final usesEnvironmentPublishing =
