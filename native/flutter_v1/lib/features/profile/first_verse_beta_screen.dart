@@ -177,7 +177,11 @@ class _FirstVerseHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      unlocked ? 'First Verse earned' : isOwnerPreview ? 'Owner preview — not earned' : 'Your badge is waiting',
+                      unlocked
+                          ? 'First Verse earned'
+                          : isOwnerPreview
+                          ? 'Owner preview — not earned'
+                          : 'Your badge is waiting',
                       style: const TextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
@@ -187,7 +191,9 @@ class _FirstVerseHero extends StatelessWidget {
                     Text(
                       unlocked
                           ? 'You completed the required external beta checks. This legacy badge stays with your account.'
-                          : isOwnerPreview ? 'Your owner preview is clear, but beta testers still earn the badge by completing all eight required missions.' : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
+                          : isOwnerPreview
+                          ? 'Your owner preview is clear, but beta testers still earn the badge by completing all eight required missions.'
+                          : 'Complete the required beta missions to reveal and permanently unlock First Verse.',
                       style: const TextStyle(
                         color: Color(0xFFB8ACBC),
                         fontSize: 12,
