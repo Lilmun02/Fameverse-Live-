@@ -552,9 +552,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
             onBadgeTransfer: () => Navigator.of(context).push<void>(
               MaterialPageRoute(
-                builder: (context) => BadgeTransferRequestScreen(
-                  userId: widget.identity.id,
-                ),
+                builder: (context) =>
+                    BadgeTransferRequestScreen(userId: widget.identity.id),
               ),
             ),
             onPolicies: _openPolicies,
