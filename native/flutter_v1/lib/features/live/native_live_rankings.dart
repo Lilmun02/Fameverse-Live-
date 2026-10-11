@@ -139,7 +139,10 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
                 'do not count as paid Supporter coins.',
               ),
               SizedBox(height: 14),
-              Text('Pulse', style: TextStyle(fontWeight: FontWeight.w800)),
+              Text(
+                'Pulse',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
               Text(
                 'Ranked by eligible FameTaps you send in Live. '
                 'Spam-filtered taps may not count; total raw taps '
