@@ -1,8 +1,7 @@
 /// One visual/audio gift presentation per authoritative Live receipt ID.
 /// A new ID always represents a new gift, even for the same gift catalog item.
 class FvGiftReceiptGate {
-  FvGiftReceiptGate({this.maxEntries = 256})
-    : assert(maxEntries > 0);
+  FvGiftReceiptGate({this.maxEntries = 256}) : assert(maxEntries > 0);
 
   final int maxEntries;
   final Set<String> _seen = <String>{};
