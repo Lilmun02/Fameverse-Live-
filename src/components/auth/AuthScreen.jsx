@@ -1,4 +1,22 @@
+import { useState } from 'react'
+import { supabase } from '../../services/supabase.js'
+
 export default function AuthScreen({ authMode, setAuthMode, authForm, setAuthForm, authMessage, setAuthMessage, submitAuth }) {
+  const [recoveryBusy, setRecoveryBusy] = useState(false)
+  const requestRecovery = async () => {
+    const email = authForm.email.trim()
+    if (!email) { setAuthMessage('Enter your email address first.'); return }
+    setRecoveryBusy(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://fameverse-live.vercel.app/reset-password.html',
+      })
+      setAuthMessage(error ? error.message : 'If this account exists, check your email for a password-reset link.')
+    } catch (_) {
+      setAuthMessage('Could not request a reset. Please try again.')
+    } finally { setRecoveryBusy(false) }
+  }
+
   return (
     <div className="auth-shell">
       <div className="auth-brand"><span>FAMEVERSE</span> LIVE <b>BETA 0.2</b></div>
@@ -44,6 +62,11 @@ export default function AuthScreen({ authMode, setAuthMode, authForm, setAuthFor
           {authMessage && <div className="auth-message">{authMessage}</div>}
           <button className="auth-primary" type="submit">{authMode === 'signup' ? 'Create account' : 'Sign in'}</button>
         </form>
+        {authMode === 'signin' && (
+          <button type="button" className="auth-switch" disabled={recoveryBusy} onClick={requestRecovery}>
+            {recoveryBusy ? 'Sending reset email…' : 'Forgot password?'}
+          </button>
+        )}
         <button
           className="auth-switch"
           onClick={() => {
