@@ -3,9 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Displays owner-awarded, non-monetary profile recognition.
 class ProfileRecognitionBadges extends StatefulWidget {
-  const ProfileRecognitionBadges({required this.userId, super.key});
+  const ProfileRecognitionBadges({
+    required this.userId,
+    this.awardLoader,
+    super.key,
+  });
 
   final String userId;
+  final Future<List<String>> Function(String userId)? awardLoader;
 
   @override
   State<ProfileRecognitionBadges> createState() =>
@@ -25,7 +30,8 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
   @override
   void didUpdateWidget(covariant ProfileRecognitionBadges oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.userId != widget.userId) {
+    if (oldWidget.userId != widget.userId ||
+        oldWidget.awardLoader != widget.awardLoader) {
       _awards = const [];
       _loadError = null;
       _load();
@@ -35,17 +41,18 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
   Future<void> _load() async {
     final requestedId = widget.userId;
     try {
-      final rows = await Supabase.instance.client
-          .from('profile_recognition_awards')
-          .select('award_code')
-          .eq('user_id', requestedId);
+      final codes = widget.awardLoader != null
+          ? await widget.awardLoader!(requestedId)
+          : (await Supabase.instance.client
+                .from('profile_recognition_awards')
+                .select('award_code')
+                .eq('user_id', requestedId))
+                .map((row) => row['award_code']?.toString() ?? '')
+                .toList();
       if (!mounted || widget.userId != requestedId) return;
       setState(() {
         _loadError = null;
-        _awards = rows
-            .map((row) => row['award_code']?.toString() ?? '')
-            .where((code) => code == 'verse_pioneer')
-            .toList();
+        _awards = codes.where((code) => code == 'verse_pioneer').toList();
       });
     } catch (error) {
       // Keep the profile usable while making a failed badge request visible to QA.
