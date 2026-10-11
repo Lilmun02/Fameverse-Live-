@@ -33,7 +33,10 @@ void main() {
     expect(glyph, findsOneWidget);
     expect(tester.getSize(glyph), const Size(56, 48));
     expect(find.byType(VideoPlayer), findsNothing);
-    expect(find.byKey(Key('cinematic-gift-presentation-${gift.id}')), findsNothing);
+    expect(
+      find.byKey(Key('cinematic-gift-presentation-${gift.id}')),
+      findsNothing,
+    );
     expect(find.text('Loading premium gift…'), findsNothing);
     expect(find.text(gift.label), findsNothing);
   });
@@ -64,7 +67,10 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byKey(const Key('lightweight-gift-misconfigured-cheap')), findsOneWidget);
+    expect(
+      find.byKey(const Key('lightweight-gift-misconfigured-cheap')),
+      findsOneWidget,
+    );
     expect(find.byType(VideoPlayer), findsNothing);
   });
 }
