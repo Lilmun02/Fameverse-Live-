@@ -138,6 +138,34 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          // First Verse is earned by completing backend-verified beta missions.
+          // Never grant badge visibility from transferred levels or test coins.
+          if (betaStatus.enrolled && betaStatus.badgeUnlocked) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: Semantics(
+                label: 'First Verse badge earned',
+                child: Chip(
+                  key: const Key('profile-first-verse-earned-badge'),
+                  avatar: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFFFFD58F),
+                    size: 17,
+                  ),
+                  label: const Text(
+                    'FIRST VERSE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  backgroundColor: const Color(0xFF2A1739),
+                  side: const BorderSide(color: Color(0xFFC98DFF)),
+                ),
+              ),
+            ),
+          ],
           if (isOwner) ...[
             const SizedBox(height: 8),
             const Text(
