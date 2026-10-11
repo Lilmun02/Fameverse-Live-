@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -93,5 +95,16 @@ void main() {
     expect(keys, isNot(contains('approve_payout')));
     expect(keys, contains('browse_discover'));
     expect(fvFirstVerseMissions.where((mission) => mission.required).length, 8);
+  });
+
+  test('profile First Verse badge is server-unlock gated', () async {
+    final profile = await File(
+      'lib/features/profile/native_profile_build23.dart',
+    ).readAsString();
+    expect(
+      profile,
+      contains('betaStatus.enrolled && betaStatus.badgeUnlocked'),
+    );
+    expect(profile, contains("Key('profile-first-verse-earned-badge')"));
   });
 }
