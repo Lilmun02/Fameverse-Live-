@@ -13,7 +13,9 @@ void main() {
 
         for (final marker in <String>[
           "'get_fameverse_rankings_v2'",
-          "'p_window': _window",
+          "'p_window': requestedWindow",
+          'final requestedWindow = _window;',
+          'requestId != _loadRequestId',
           "('24h', '24H')",
           "('7d', '7D')",
           "('supporters', 'Supporters'",
