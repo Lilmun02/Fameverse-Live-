@@ -228,8 +228,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   // Present only a small, silent glyph; sender/description remain in Live chat.
   Widget _lightweightGift(FvGiftPlayback playback) {
     final description =
-        '${playback.sender} sent ${playback.gift.label}'
-        '${playback.visualCountLabel}';
+        '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}';
     return IgnorePointer(
       child: Align(
         alignment: const Alignment(-0.85, 0.1),
