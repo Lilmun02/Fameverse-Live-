@@ -101,7 +101,9 @@ class _BadgeTransferRequestScreenState
                   key: Key('badge-request-pending'),
                   leading: Icon(Icons.hourglass_top_rounded),
                   title: Text('Submitted for owner review'),
-                  subtitle: Text('Your request is pending. No level was awarded.'),
+                  subtitle: Text(
+                    'Your request is pending. No level was awarded.',
+                  ),
                 )
               else
                 Form(
@@ -115,7 +117,10 @@ class _BadgeTransferRequestScreenState
                           labelText: 'Source app',
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'TikTok', child: Text('TikTok')),
+                          DropdownMenuItem(
+                            value: 'TikTok',
+                            child: Text('TikTok'),
+                          ),
                           DropdownMenuItem(
                             value: 'Favorited',
                             child: Text('Favorited'),
