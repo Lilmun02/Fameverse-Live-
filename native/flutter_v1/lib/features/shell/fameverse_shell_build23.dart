@@ -16,6 +16,7 @@ import '../profile/fameverse_edit_profile_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
+import '../profile/fameverse_inbox_screen.dart';
 import '../profile/native_profile_build23.dart';
 import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
@@ -549,6 +550,11 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onEdit: () => _openEdit(profile),
             onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
+            onOpenInbox: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (context) => FameverseInboxScreen(userId: widget.identity.id),
+              ),
+            ),
             onPolicies: _openPolicies,
             onSignOut: widget.backend.signOut,
           ),
