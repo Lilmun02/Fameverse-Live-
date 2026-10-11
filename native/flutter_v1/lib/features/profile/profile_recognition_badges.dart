@@ -70,16 +70,21 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.workspace_premium_rounded,
-                    size: 16, color: Color(0xFFFFD58F)),
+                Icon(
+                  Icons.workspace_premium_rounded,
+                  size: 16,
+                  color: Color(0xFFFFD58F),
+                ),
                 SizedBox(width: 6),
-                Text('VERSE PIONEER',
-                    style: TextStyle(
+                Text(
+                  'VERSE PIONEER',
+                  style: TextStyle(
                       color: Color(0xFFE3B8FF),
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    )),
+                    letterSpacing: 1,
+                  ),
+                ),
               ],
             ),
           ),
