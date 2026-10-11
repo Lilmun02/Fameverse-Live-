@@ -227,11 +227,14 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   // Gift regression law: under-100 gifts must never obscure a Live broadcast.
   // Present only a small, silent glyph; sender/description remain in Live chat.
   Widget _lightweightGift(FvGiftPlayback playback) {
+    final description =
+        '${playback.sender} sent ${playback.gift.label}'
+        '${playback.visualCountLabel}';
     return IgnorePointer(
       child: Align(
         alignment: const Alignment(-0.85, 0.1),
         child: Semantics(
-          label: '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}',
+          label: description,
           child: SizedBox(
             key: Key('lightweight-gift-${playback.gift.id}'),
             width: 56,
