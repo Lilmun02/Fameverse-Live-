@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fameverse_live/features/profile/fameverse_inbox_screen.dart';
 
 void main() {
-  testWidgets('inbox shows private entries returned for the user', (tester) async {
+  testWidgets('inbox displays entries for owner', (tester) async {
     var loadedUser = '';
     await tester.pumpWidget(
       MaterialApp(
@@ -43,7 +43,7 @@ void main() {
     expect(find.byKey(const Key('inbox-empty')), findsOneWidget);
   });
 
-  testWidgets('inbox backend failure reports a retryable error', (tester) async {
+  testWidgets('inbox reports backend failure', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: FameverseInboxScreen(
