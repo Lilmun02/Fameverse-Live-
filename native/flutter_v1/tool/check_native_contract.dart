@@ -10,13 +10,6 @@ void require(bool condition, String message) {
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
-  // Temporary formatting QA preview; no files or release gates are changed.
-  for (final path in <String>['lib/features/profile/profile_recognition_badges.dart']) {
-    final preview = Process.runSync('dart', <String>['format', '--output=show', path]);
-    stdout.writeln('FAMEVERSE_FORMAT_START:$path');
-    stdout.write(preview.stdout);
-    stdout.writeln('FAMEVERSE_FORMAT_END:$path');
-  }
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
