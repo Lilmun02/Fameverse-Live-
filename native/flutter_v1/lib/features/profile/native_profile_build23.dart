@@ -145,8 +145,8 @@ class NativeProfileBuild23Screen extends StatelessWidget {
             Center(
               child: Semantics(
                 label: 'First Verse badge earned',
-                child: Chip(
-                  key: const Key('profile-first-verse-earned-badge'),
+                child: const Chip(
+                  key: Key('profile-first-verse-earned-badge'),
                   avatar: const Icon(
                     Icons.auto_awesome_rounded,
                     color: Color(0xFFFFD58F),
