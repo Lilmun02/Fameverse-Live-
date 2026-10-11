@@ -79,9 +79,9 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
                 Text(
                   'VERSE PIONEER',
                   style: TextStyle(
-                      color: Color(0xFFE3B8FF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                    color: Color(0xFFE3B8FF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                   ),
                 ),
