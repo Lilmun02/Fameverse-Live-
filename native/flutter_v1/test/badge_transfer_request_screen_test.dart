@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fameverse_live/features/profile/badge_transfer_request_screen.dart';
 
 void main() {
-  testWidgets('valid proof creates a pending owner-review request', (tester) async {
+  testWidgets('valid proof creates pending request', (tester) async {
     String? submittedPlatform;
     int? submittedLevel;
     String? submittedProof;
@@ -40,7 +40,7 @@ void main() {
     expect(find.textContaining('No level was awarded.'), findsOneWidget);
   });
 
-  testWidgets('invalid badge or unsafe evidence URL is rejected', (tester) async {
+  testWidgets('invalid evidence is rejected', (tester) async {
     var submitted = false;
     await tester.pumpWidget(
       MaterialApp(
