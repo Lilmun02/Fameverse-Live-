@@ -61,8 +61,11 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
       if (_loadError == null) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.only(top: 8),
-        child: Text(_loadError!, textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFFC98DFF), fontSize: 11)),
+        child: Text(
+          _loadError!,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFFC98DFF), fontSize: 11),
+        ),
       );
     }
     return Padding(
