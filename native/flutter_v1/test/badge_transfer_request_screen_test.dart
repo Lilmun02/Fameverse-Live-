@@ -21,10 +21,7 @@ void main() {
       ),
     );
 
-    await tester.enterText(
-      find.byKey(const Key('badge-transfer-level')),
-      '15',
-    );
+    await tester.enterText(find.byKey(const Key('badge-transfer-level')), '15');
     await tester.enterText(
       find.byKey(const Key('badge-transfer-proof')),
       'https://example.com/badge-proof',
