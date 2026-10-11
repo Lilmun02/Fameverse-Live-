@@ -44,9 +44,9 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
       final codes = widget.awardLoader != null
           ? await widget.awardLoader!(requestedId)
           : (await Supabase.instance.client
-                .from('profile_recognition_awards')
-                .select('award_code')
-                .eq('user_id', requestedId))
+                    .from('profile_recognition_awards')
+                    .select('award_code')
+                    .eq('user_id', requestedId))
                 .map((row) => row['award_code']?.toString() ?? '')
                 .toList();
       if (!mounted || widget.userId != requestedId) return;
