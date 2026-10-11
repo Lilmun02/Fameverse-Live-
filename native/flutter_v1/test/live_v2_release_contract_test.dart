@@ -229,7 +229,7 @@ void main() {
       },
     );
 
-    test('TestFlight candidate builds the selected triggering commit', () async {
+    test('TestFlight builds the triggering commit', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
       expect(codemagic, contains('git checkout --detach "\$CM_COMMIT"'));
