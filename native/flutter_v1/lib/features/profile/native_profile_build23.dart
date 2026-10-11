@@ -18,6 +18,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
     required this.onCreatorStudio,
     required this.onFirstVerse,
     required this.onPolicies,
+    this.onBadgeTransfer,
     required this.onSignOut,
     super.key,
   });
@@ -33,6 +34,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
   final VoidCallback onCreatorStudio;
   final VoidCallback? onFirstVerse;
   final VoidCallback onPolicies;
+  final VoidCallback? onBadgeTransfer;
   final Future<void> Function() onSignOut;
 
   int get _friends =>
@@ -57,6 +59,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
           onEdit: onEdit,
           onCreatorStudio: onCreatorStudio,
           onFirstVerse: onFirstVerse,
+          onBadgeTransfer: onBadgeTransfer,
           onPolicies: onPolicies,
           onSignOut: onSignOut,
         ),
@@ -640,6 +643,7 @@ class _Build23SettingsScreen extends StatelessWidget {
     required this.onCreatorStudio,
     required this.onFirstVerse,
     required this.onPolicies,
+    this.onBadgeTransfer,
     required this.onSignOut,
   });
 
@@ -652,6 +656,7 @@ class _Build23SettingsScreen extends StatelessWidget {
   final VoidCallback onCreatorStudio;
   final VoidCallback? onFirstVerse;
   final VoidCallback onPolicies;
+  final VoidCallback? onBadgeTransfer;
   final Future<void> Function() onSignOut;
 
   Future<void> _signOut(BuildContext context) async {
@@ -750,6 +755,13 @@ class _Build23SettingsScreen extends StatelessWidget {
                   icon: Icons.photo_camera_outlined,
                   onTap: avatarBusy ? null : onChangePhoto,
                 ),
+                if (onBadgeTransfer != null)
+                  _RowItem(
+                    label: 'Bring Your Badge',
+                    value: 'Submit proof for owner review',
+                    icon: Icons.workspace_premium_outlined,
+                    onTap: onBadgeTransfer,
+                  ),
               ],
             ),
             const SizedBox(height: 22),
