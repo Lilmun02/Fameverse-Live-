@@ -229,17 +229,10 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is source-locked to Build 32', () async {
+    test('TestFlight candidate builds the selected triggering commit', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
-      expect(
-        codemagic,
-        contains('TARGET_BRANCH="integration/sep27-big-update"'),
-      );
-      expect(
-        codemagic,
-        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
-      );
+      expect(codemagic, contains('git checkout --detach "\$CM_COMMIT"'));
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
       expect(codemagic, contains('build32_source_identity.txt'));
       expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
@@ -250,9 +243,13 @@ void main() {
           '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
         ),
       );
+      expect(
+        codemagic,
+        isNot(contains('TARGET_BRANCH="integration/sep27-big-update"')),
+      );
     });
 
-    test('physical Live repair contracts remain wired', () async {
+        test('physical Live repair contracts remain wired', () async {
       final viewer = await File(
         'lib/features/live/stream_viewer_live_screen.dart',
       ).readAsString();
