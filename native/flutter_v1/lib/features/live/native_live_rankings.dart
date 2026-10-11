@@ -119,6 +119,65 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
     };
   }
 
+  void _showRankingGuide(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('How Fameboard works'),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Supporters',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                'Ranked by cash-backed Fame Coins gifted to creators. '
+                'Gift quantity breaks ties. Promotional and test gifts '
+                'do not count as paid Supporter coins.',
+              ),
+              SizedBox(height: 14),
+              Text('Pulse', style: TextStyle(fontWeight: FontWeight.w800)),
+              Text(
+                'Ranked by eligible FameTaps you send in Live. '
+                'Spam-filtered taps may not count; total raw taps '
+                'appear as a secondary measure.',
+              ),
+              SizedBox(height: 14),
+              Text(
+                'Creators',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                'Ranked by eligible FameTaps received in your Live rooms. '
+                'New followers in the period are the secondary measure.',
+              ),
+              SizedBox(height: 14),
+              Text(
+                'Current time windows',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                '24H currently shows the last 24 hours; 7D currently '
+                'shows the last 7 days. Scores move as older activity '
+                'leaves those windows. Fixed UTC resets are not active '
+                'until the server update is approved.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -184,6 +243,12 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
                             ),
                           ],
                         ),
+                      ),
+                      IconButton(
+                        key: const Key('fameboard-ranking-info'),
+                        tooltip: 'How Fameboard rankings work',
+                        onPressed: () => _showRankingGuide(context),
+                        icon: const Icon(Icons.info_outline_rounded),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
