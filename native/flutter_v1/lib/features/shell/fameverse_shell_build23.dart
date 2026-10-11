@@ -552,9 +552,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
             onOpenInbox: () => Navigator.of(context).push<void>(
               MaterialPageRoute(
-                builder: (context) => FameverseInboxScreen(
-                  userId: widget.identity.id,
-                ),
+                builder: (context) =>
+                    FameverseInboxScreen(userId: widget.identity.id),
               ),
             ),
             onPolicies: _openPolicies,
