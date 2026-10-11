@@ -57,7 +57,9 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
     } catch (error) {
       // Keep the profile usable while making a failed badge request visible to QA.
       if (!mounted || widget.userId != requestedId) return;
-      setState(() => _loadError = 'Recognition badge unavailable. Pull to refresh.');
+      setState(
+        () => _loadError = 'Recognition badge unavailable. Pull to refresh.',
+      );
       debugPrint('Fameverse recognition badge fetch failed: $error');
     }
   }
