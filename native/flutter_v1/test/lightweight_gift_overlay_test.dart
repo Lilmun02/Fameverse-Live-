@@ -6,9 +6,7 @@ import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:fameverse_live/features/live/native_live_components.dart';
 
 void main() {
-  testWidgets('under-100 gifts never cover the Live stage or start video', (
-    tester,
-  ) async {
+  testWidgets('small gifts stay compact and silent', (tester) async {
     final gift = fvGiftCatalog.firstWhere((item) => item.cost < 100);
     await tester.pumpWidget(
       MaterialApp(
@@ -41,9 +39,7 @@ void main() {
     expect(find.text(gift.label), findsNothing);
   });
 
-  testWidgets('even miscategorized cheap cinematic gifts stay lightweight', (
-    tester,
-  ) async {
+  testWidgets('cheap cinematic never starts video', (tester) async {
     const gift = FvGiftDefinition(
       id: 'misconfigured-cheap',
       label: 'Tiny',
