@@ -139,23 +139,29 @@ workflows:
         - ~/.pub-cache
 
     scripts:
-      - name: Checkout locked Build 32 repair source
+      - name: Verify exact triggered branch source
         script: |
           set -euo pipefail
-          TARGET_BRANCH="integration/sep27-big-update"
+          : "${CM_BRANCH:?BLOCKED: Codemagic branch is missing}"
+          : "${CM_COMMIT:?BLOCKED: Codemagic commit is missing}"
+          : "${CM_ENV:?BLOCKED: Codemagic environment file is missing}"
           REPO_ROOT="$(git rev-parse --show-toplevel)"
           cd "$REPO_ROOT"
-          git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
-          git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"
+          git fetch --no-tags origin "+refs/heads/$CM_BRANCH:refs/remotes/origin/$CM_BRANCH"
+          git cat-file -e "$CM_COMMIT^{commit}"
+          git checkout --detach "$CM_COMMIT"
           SOURCE_SHA="$(git rev-parse HEAD)"
-          TARGET_SHA="$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)"
-          if [ "$SOURCE_SHA" != "$TARGET_SHA" ]; then
-            echo "BLOCKED: checked-out source does not match $TARGET_BRANCH."
+          if [ "$SOURCE_SHA" != "$CM_COMMIT" ]; then
+            echo "BLOCKED: checked-out source differs from the triggering commit."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$CM_COMMIT" "refs/remotes/origin/$CM_BRANCH"; then
+            echo "BLOCKED: triggering commit is not on the selected branch."
             exit 1
           fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
-          printf '%s\n' "Build 32 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
-          echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
+          printf '%s\n' "TestFlight candidate" "source_branch=$CM_BRANCH" "source_commit=$SOURCE_SHA" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
+          echo "Verified exact TestFlight source: $CM_BRANCH@$SOURCE_SHA"
 
       - name: Verify Build 32 fixes and Fameboard exist in locked source
         script: |
