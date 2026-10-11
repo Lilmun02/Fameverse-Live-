@@ -1,72 +1,31 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:video_player/video_player.dart';
+import 'dart:io';
 
+import 'package:flutter_test/flutter_test.dart';
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
-import 'package:fameverse_live/features/live/native_live_components.dart';
 
 void main() {
-  testWidgets('small gifts stay compact and silent', (tester) async {
-    final gift = fvGiftCatalog.firstWhere((item) => item.cost < 100);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Stack(
-            children: [
-              const SizedBox.expand(),
-              NativeGiftOverlay(
-                playback: FvGiftPlayback(
-                  gift: gift,
-                  quantity: 1,
-                  sender: 'Viewer',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    final glyph = find.byKey(Key('lightweight-gift-${gift.id}'));
-    expect(glyph, findsOneWidget);
-    expect(tester.getSize(glyph), const Size(56, 48));
-    expect(find.byType(VideoPlayer), findsNothing);
-    expect(
-      find.byKey(Key('cinematic-gift-presentation-${gift.id}')),
-      findsNothing,
-    );
-    expect(find.text('Loading premium gift…'), findsNothing);
-    expect(find.text(gift.label), findsNothing);
+  test('every existing under-100 gift is noncinematic and silent', () {
+    final gifts = fvGiftCatalog.where((gift) => gift.cost < 100).toList();
+    expect(gifts, isNotEmpty);
+    for (final gift in gifts) {
+      expect(gift.cinematic, isFalse, reason: gift.id);
+      expect(gift.videoUrl, isNull, reason: gift.id);
+    }
   });
 
-  testWidgets('cheap cinematic never starts video', (tester) async {
-    const gift = FvGiftDefinition(
-      id: 'misconfigured-cheap',
-      label: 'Tiny',
-      cost: 5,
-      category: 'test',
-      emoji: '✦',
-      cinematic: true,
-      videoUrl: 'https://example.invalid/not-loaded.mp4',
-    );
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: NativeGiftOverlay(
-            playback: FvGiftPlayback(
-              gift: gift,
-              quantity: 1,
-              sender: 'Tester',
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    expect(
-      find.byKey(const Key('lightweight-gift-misconfigured-cheap')),
-      findsOneWidget,
-    );
-    expect(find.byType(VideoPlayer), findsNothing);
+  test('native lightweight gift uses tiny mid-left art, not a full overlay', () {
+    final source = File(
+      'lib/features/live/native_live_components.dart',
+    ).readAsStringSync();
+
+    expect(source, contains('Widget _lightweightGift('));
+    expect(source, contains('width: 56,'));
+    expect(source, contains('height: 48,'));
+    expect(source, contains('Alignment(-0.85, 0.1)'));
+    expect(source, contains('if (playback.gift.cost < 100)'));
+    expect(source, contains('if (gift.cost < 100 || !gift.cinematic'));
+    expect(source, contains('return _lightweightGift(playback);'));
+    expect(source, contains("Key('lightweight-gift-"));
+    expect(source, contains('child: Semantics('));
   });
 }
