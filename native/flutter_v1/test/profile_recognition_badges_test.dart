@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fameverse_live/features/profile/profile_recognition_badges.dart';
 
 void main() {
-  testWidgets('awarded Verse Pioneer is visible on the profile', (tester) async {
+  testWidgets('awarded Pioneer is visible', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -17,11 +17,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('verse-pioneer-profile-badge')), findsOneWidget);
+    expect(
+      find.byKey(const Key('verse-pioneer-profile-badge')),
+      findsOneWidget,
+    );
     expect(find.text('VERSE PIONEER'), findsOneWidget);
   });
 
-  testWidgets('unawarded profiles do not show the Pioneer badge', (tester) async {
+  testWidgets('unawarded profiles hide Pioneer', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -50,6 +53,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Recognition badge unavailable. Pull to refresh.'), findsOneWidget);
+    expect(
+      find.text('Recognition badge unavailable. Pull to refresh.'),
+      findsOneWidget,
+    );
   });
 }
