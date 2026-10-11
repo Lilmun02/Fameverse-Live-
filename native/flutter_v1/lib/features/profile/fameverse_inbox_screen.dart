@@ -84,7 +84,8 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
       });
     }
     try {
-      final items = await (widget.loadItems?.call(userId) ?? _fromBackend(userId));
+      final items = await (widget.loadItems?.call(userId) ??
+          _fromBackend(userId));
       if (!mounted || request != _requestVersion || widget.userId != userId) {
         return;
       }
