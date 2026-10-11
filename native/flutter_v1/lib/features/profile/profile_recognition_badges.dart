@@ -14,6 +14,7 @@ class ProfileRecognitionBadges extends StatefulWidget {
 
 class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
   List<String> _awards = const [];
+  String? _loadError;
 
   @override
   void initState() {
@@ -26,6 +27,7 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.userId != widget.userId) {
       _awards = const [];
+      _loadError = null;
       _load();
     }
   }
@@ -39,20 +41,29 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
           .eq('user_id', requestedId);
       if (!mounted || widget.userId != requestedId) return;
       setState(() {
+        _loadError = null;
         _awards = rows
             .map((row) => row['award_code']?.toString() ?? '')
             .where((code) => code == 'verse_pioneer')
             .toList();
       });
-    } catch (_) {
-      // Recognition must never block loading a profile.
+    } catch (error) {
+      // Keep the profile usable while making a failed badge request visible to QA.
+      if (!mounted || widget.userId != requestedId) return;
+      setState(() => _loadError = 'Recognition badge unavailable. Pull to refresh.');
+      debugPrint('Fameverse recognition badge fetch failed: $error');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_awards.contains('verse_pioneer')) {
-      return const SizedBox.shrink();
+      if (_loadError == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(_loadError!, textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFFC98DFF), fontSize: 11)),
+      );
     }
     return Padding(
       padding: const EdgeInsets.only(top: 8),
