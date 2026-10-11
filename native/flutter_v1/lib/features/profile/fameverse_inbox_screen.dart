@@ -15,21 +15,17 @@ class FvInboxItem {
   final DateTime? createdAt;
 
   factory FvInboxItem.fromMap(Map<String, dynamic> row) => FvInboxItem(
-        id: row['id']?.toString() ?? '',
-        title: row['title']?.toString() ?? '',
-        body: row['body']?.toString() ?? '',
-        createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
-      );
+    id: row['id']?.toString() ?? '',
+    title: row['title']?.toString() ?? '',
+    body: row['body']?.toString() ?? '',
+    createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
+  );
 }
 
 /// Personal, read-only inbox. The service must enforce user_id = auth.uid()
 /// through RLS; no client may forge a notification for another account.
 class FameverseInboxScreen extends StatefulWidget {
-  const FameverseInboxScreen({
-    required this.userId,
-    this.loadItems,
-    super.key,
-  });
+  const FameverseInboxScreen({required this.userId, this.loadItems, super.key});
 
   final String userId;
   final Future<List<FvInboxItem>> Function(String userId)? loadItems;
@@ -84,8 +80,8 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
       });
     }
     try {
-      final items = await (widget.loadItems?.call(userId) ??
-          _fromBackend(userId));
+      final items =
+          await (widget.loadItems?.call(userId) ?? _fromBackend(userId));
       if (!mounted || request != _requestVersion || widget.userId != userId) {
         return;
       }
@@ -106,42 +102,42 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        key: const Key('fameverse-inbox-screen'),
-        appBar: AppBar(title: const Text('Inbox')),
-        body: RefreshIndicator(
-          onRefresh: _refresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (_loading)
-                const Center(child: CircularProgressIndicator())
-              else if (_error != null)
-                ListTile(
-                  key: const Key('inbox-load-error'),
-                  leading: const Icon(Icons.error_outline),
-                  title: Text(_error!),
-                )
-              else if (_items.isEmpty)
-                const ListTile(
-                  key: Key('inbox-empty'),
-                  leading: Icon(Icons.mark_email_read_outlined),
-                  title: Text('Your inbox is empty'),
-                  subtitle: Text('Account updates will appear here.'),
-                )
-              else
-                for (final item in _items)
-                  Card(
-                    key: Key('inbox-item-${item.id}'),
-                    child: ListTile(
-                      leading: const Icon(Icons.mail_outline),
-                      title: Text(item.title),
-                      subtitle: Text(item.body),
-                      isThreeLine: item.body.isNotEmpty,
-                    ),
-                  ),
-            ],
-          ),
-        ),
-      );
+    key: const Key('fameverse-inbox-screen'),
+    appBar: AppBar(title: const Text('Inbox')),
+    body: RefreshIndicator(
+      onRefresh: _refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (_loading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error != null)
+            ListTile(
+              key: const Key('inbox-load-error'),
+              leading: const Icon(Icons.error_outline),
+              title: Text(_error!),
+            )
+          else if (_items.isEmpty)
+            const ListTile(
+              key: Key('inbox-empty'),
+              leading: Icon(Icons.mark_email_read_outlined),
+              title: Text('Your inbox is empty'),
+              subtitle: Text('Account updates will appear here.'),
+            )
+          else
+            for (final item in _items)
+              Card(
+                key: Key('inbox-item-${item.id}'),
+                child: ListTile(
+                  leading: const Icon(Icons.mail_outline),
+                  title: Text(item.title),
+                  subtitle: Text(item.body),
+                  isThreeLine: item.body.isNotEmpty,
+                ),
+              ),
+        ],
+      ),
+    ),
+  );
 }
