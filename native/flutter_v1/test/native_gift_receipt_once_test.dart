@@ -50,6 +50,9 @@ void main() {
     expect(host, contains('_chat.add('));
     expect(host, contains('_giftEventGate.shouldRender'));
     expect(viewer, contains('_giftEventGate.shouldRender(eventId)'));
-    expect(viewer, contains("_giftEventGate.shouldRender(payload['id']?.toString())"));
+    expect(
+      viewer,
+      contains("_giftEventGate.shouldRender(payload['id']?.toString())"),
+    );
   });
 }
