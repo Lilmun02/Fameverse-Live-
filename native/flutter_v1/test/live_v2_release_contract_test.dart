@@ -249,7 +249,7 @@ void main() {
       );
     });
 
-        test('physical Live repair contracts remain wired', () async {
+    test('physical Live repair contracts remain wired', () async {
       final viewer = await File(
         'lib/features/live/stream_viewer_live_screen.dart',
       ).readAsString();
