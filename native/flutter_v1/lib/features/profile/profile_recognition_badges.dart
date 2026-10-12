@@ -6,11 +6,13 @@ class ProfileRecognitionBadges extends StatefulWidget {
   const ProfileRecognitionBadges({
     required this.userId,
     this.awardLoader,
+    this.refreshToken = 0,
     super.key,
   });
 
   final String userId;
   final Future<List<String>> Function(String userId)? awardLoader;
+  final int refreshToken;
 
   @override
   State<ProfileRecognitionBadges> createState() =>
@@ -31,7 +33,8 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
   void didUpdateWidget(covariant ProfileRecognitionBadges oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.userId != widget.userId ||
-        oldWidget.awardLoader != widget.awardLoader) {
+        oldWidget.awardLoader != widget.awardLoader ||
+        oldWidget.refreshToken != widget.refreshToken) {
       _awards = const [];
       _loadError = null;
       _load();
