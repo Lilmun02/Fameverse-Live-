@@ -58,4 +58,32 @@ void main() {
       findsOneWidget,
     );
   });
+  testWidgets('Pioneer badge reloads when profile reopens', (tester) async {
+    var loads = 0;
+    Future<List<String>> loadAwards(String userId) async {
+      loads++;
+      return loads == 1 ? const [] : const ['verse_pioneer'];
+    }
+
+    Widget page(int refreshToken) => MaterialApp(
+      home: Scaffold(
+        body: ProfileRecognitionBadges(
+          userId: 'pioneer-user',
+          refreshToken: refreshToken,
+          awardLoader: loadAwards,
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(page(0));
+    await tester.pumpAndSettle();
+    expect(find.text('VERSE PIONEER'), findsNothing);
+
+    await tester.pumpWidget(page(1));
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(find.text('VERSE PIONEER'), findsOneWidget);
+  });
+
+
 }
