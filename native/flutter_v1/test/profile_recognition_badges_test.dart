@@ -84,6 +84,4 @@ void main() {
     expect(loads, 2);
     expect(find.text('VERSE PIONEER'), findsOneWidget);
   });
-
-
 }
