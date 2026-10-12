@@ -164,6 +164,12 @@ workflows:
             grep -Fq "ProfileRecognitionBadges(userId: profile.id)" native/flutter_v1/lib/features/profile/fameverse_public_profile_screen.dart || { echo "BLOCKED: public profile recognition widget missing."; exit 1; }
             grep -Fq "verse-pioneer-profile-badge" native/flutter_v1/lib/features/profile/profile_recognition_badges.dart || { echo "BLOCKED: Pioneer badge widget missing."; exit 1; }
           fi
+          if [ "$CM_BRANCH" = "qa/native-earned-badges-consolidation-oct12" ]; then
+            grep -Fq "ProfileRecognitionBadges(userId: profile.id)" native/flutter_v1/lib/features/profile/fameverse_public_profile_screen.dart || { echo "BLOCKED: Pioneer profile widget missing."; exit 1; }
+            grep -Fq "verse-pioneer-profile-badge" native/flutter_v1/lib/features/profile/profile_recognition_badges.dart || { echo "BLOCKED: Pioneer badge component missing."; exit 1; }
+            grep -Fq "profile-first-verse-earned-badge" native/flutter_v1/lib/features/profile/native_profile_build23.dart || { echo "BLOCKED: First Verse profile badge missing."; exit 1; }
+            grep -Fq "betaStatus.enrolled && betaStatus.badgeUnlocked" native/flutter_v1/lib/features/profile/native_profile_build23.dart || { echo "BLOCKED: earned-only First Verse guard missing."; exit 1; }
+          fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
           printf '%s\n' "TestFlight candidate" "source_branch=$CM_BRANCH" "source_commit=$SOURCE_SHA" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
           echo "Verified exact TestFlight source: $CM_BRANCH@$SOURCE_SHA"
