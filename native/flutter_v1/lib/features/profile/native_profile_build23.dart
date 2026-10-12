@@ -140,6 +140,32 @@ class NativeProfileBuild23Screen extends StatelessWidget {
             ),
           ),
           ProfileRecognitionBadges(userId: profile.id),
+          if (betaStatus.enrolled && betaStatus.badgeUnlocked) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: Semantics(
+                label: 'First Verse badge earned',
+                child: const Chip(
+                  key: Key('profile-first-verse-earned-badge'),
+                  avatar: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFFFFD58F),
+                    size: 17,
+                  ),
+                  label: Text(
+                    'FIRST VERSE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  backgroundColor: Color(0xFF2A1739),
+                  side: BorderSide(color: Color(0xFFC98DFF)),
+                ),
+              ),
+            ),
+          ],
           if (isOwner) ...[
             const SizedBox(height: 8),
             const Text(
