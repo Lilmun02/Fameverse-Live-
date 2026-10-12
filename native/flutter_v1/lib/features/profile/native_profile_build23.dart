@@ -20,6 +20,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
     required this.onFirstVerse,
     required this.onPolicies,
     required this.onSignOut,
+    this.recognitionRefreshToken = 0,
     super.key,
   });
 
@@ -35,6 +36,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
   final VoidCallback? onFirstVerse;
   final VoidCallback onPolicies;
   final Future<void> Function() onSignOut;
+  final int recognitionRefreshToken;
 
   int get _friends =>
       network.followingIds.intersection(network.followerIds).length;
@@ -139,7 +141,10 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          ProfileRecognitionBadges(userId: profile.id),
+          ProfileRecognitionBadges(
+            userId: profile.id,
+            refreshToken: recognitionRefreshToken,
+          ),
           if (betaStatus.enrolled && betaStatus.badgeUnlocked) ...[
             const SizedBox(height: 8),
             Center(
