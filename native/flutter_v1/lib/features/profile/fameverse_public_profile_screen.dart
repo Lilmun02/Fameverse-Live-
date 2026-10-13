@@ -32,6 +32,7 @@ class _FameversePublicProfileScreenState
   bool _following = false;
   bool _loading = true;
   bool _followBusy = false;
+  int _recognitionRefreshToken = 0;
   String? _error;
 
   bool get _isSelf => widget.viewerUserId == widget.targetUserId;
@@ -61,6 +62,8 @@ class _FameversePublicProfileScreenState
       setState(() {
         _loading = true;
         _error = null;
+        // Refresh recognition when users revisit or pull down on a profile.
+        _recognitionRefreshToken++;
       });
     }
     try {
@@ -184,7 +187,10 @@ class _FameversePublicProfileScreenState
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              ProfileRecognitionBadges(userId: profile.id),
+              ProfileRecognitionBadges(
+                userId: profile.id,
+                refreshToken: _recognitionRefreshToken,
+              ),
               if (_publicBio.isNotEmpty) ...[
                 const SizedBox(height: 13),
                 Text(
