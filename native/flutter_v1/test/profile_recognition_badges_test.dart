@@ -87,6 +87,7 @@ void main() {
     expect(loads, 2);
     expect(find.text('VERSE PIONEER'), findsOneWidget);
   });
+
   testWidgets('stale badge fetch cannot replace a newer refresh', (tester) async {
     final oldFetch = Completer<List<String>>();
     final latestFetch = Completer<List<String>>();
@@ -130,5 +131,4 @@ void main() {
     expect(source, contains('key: ValueKey(_recognitionRefreshToken)'));
     expect(source, contains('ProfileRecognitionBadges(userId: profile.id)'));
   });
-
 }
