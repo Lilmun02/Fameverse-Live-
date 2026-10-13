@@ -22,6 +22,7 @@ class ProfileRecognitionBadges extends StatefulWidget {
 class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
   List<String> _awards = const [];
   String? _loadError;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -42,6 +43,7 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
   }
 
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     final requestedId = widget.userId;
     try {
       final codes = widget.awardLoader != null
@@ -52,14 +54,22 @@ class _ProfileRecognitionBadgesState extends State<ProfileRecognitionBadges> {
                     .eq('user_id', requestedId))
                 .map((row) => row['award_code']?.toString() ?? '')
                 .toList();
-      if (!mounted || widget.userId != requestedId) return;
+      if (!mounted ||
+          widget.userId != requestedId ||
+          generation != _loadGeneration) {
+        return;
+      }
       setState(() {
         _loadError = null;
         _awards = codes.where((code) => code == 'verse_pioneer').toList();
       });
     } catch (error) {
       // Keep the profile usable while making a failed badge request visible to QA.
-      if (!mounted || widget.userId != requestedId) return;
+      if (!mounted ||
+          widget.userId != requestedId ||
+          generation != _loadGeneration) {
+        return;
+      }
       setState(
         () => _loadError = 'Recognition badge unavailable. Pull to refresh.',
       );
