@@ -127,7 +127,8 @@ void main() {
       'lib/features/profile/fameverse_public_profile_screen.dart',
     ).readAsString();
     expect(source, contains('_recognitionRefreshToken++'));
-    expect(source, contains('refreshToken: _recognitionRefreshToken'));
+    expect(source, contains('key: ValueKey(_recognitionRefreshToken)'));
+    expect(source, contains('ProfileRecognitionBadges(userId: profile.id)'));
   });
 
 }
