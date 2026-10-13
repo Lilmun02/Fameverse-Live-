@@ -88,7 +88,7 @@ void main() {
     expect(find.text('VERSE PIONEER'), findsOneWidget);
   });
 
-  testWidgets('stale badge fetch cannot replace a newer refresh', (tester) async {
+  testWidgets('stale fetch does not erase a newer badge', (tester) async {
     final oldFetch = Completer<List<String>>();
     final latestFetch = Completer<List<String>>();
     var requests = 0;
