@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -84,4 +87,47 @@ void main() {
     expect(loads, 2);
     expect(find.text('VERSE PIONEER'), findsOneWidget);
   });
+  testWidgets('stale badge fetch cannot replace a newer refresh', (tester) async {
+    final oldFetch = Completer<List<String>>();
+    final latestFetch = Completer<List<String>>();
+    var requests = 0;
+
+    Future<List<String>> loadAwards(String userId) {
+      requests++;
+      return requests == 1 ? oldFetch.future : latestFetch.future;
+    }
+
+    Widget page(int refreshToken) => MaterialApp(
+      home: Scaffold(
+        body: ProfileRecognitionBadges(
+          userId: 'pioneer-user',
+          refreshToken: refreshToken,
+          awardLoader: loadAwards,
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(page(0));
+    await tester.pump();
+    await tester.pumpWidget(page(1));
+    await tester.pump();
+    expect(requests, 2);
+
+    latestFetch.complete(const ['verse_pioneer']);
+    await tester.pumpAndSettle();
+    expect(find.text('VERSE PIONEER'), findsOneWidget);
+
+    oldFetch.complete(const []);
+    await tester.pumpAndSettle();
+    expect(find.text('VERSE PIONEER'), findsOneWidget);
+  });
+
+  test('public profile refresh reloads the recognition badge', () async {
+    final source = await File(
+      'lib/features/profile/fameverse_public_profile_screen.dart',
+    ).readAsString();
+    expect(source, contains('_recognitionRefreshToken++'));
+    expect(source, contains('refreshToken: _recognitionRefreshToken'));
+  });
+
 }
