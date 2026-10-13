@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import 'profile_recognition_badges.dart';
 
 class FameversePublicProfileScreen extends StatefulWidget {
   const FameversePublicProfileScreen({
@@ -31,6 +32,7 @@ class _FameversePublicProfileScreenState
   bool _following = false;
   bool _loading = true;
   bool _followBusy = false;
+  int _recognitionRefreshToken = 0;
   String? _error;
 
   bool get _isSelf => widget.viewerUserId == widget.targetUserId;
@@ -60,6 +62,8 @@ class _FameversePublicProfileScreenState
       setState(() {
         _loading = true;
         _error = null;
+        // Refresh recognition when users revisit or pull down on a profile.
+        _recognitionRefreshToken++;
       });
     }
     try {
@@ -182,6 +186,10 @@ class _FameversePublicProfileScreenState
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
+              ),
+              KeyedSubtree(
+                key: ValueKey(_recognitionRefreshToken),
+                child: ProfileRecognitionBadges(userId: profile.id),
               ),
               if (_publicBio.isNotEmpty) ...[
                 const SizedBox(height: 13),

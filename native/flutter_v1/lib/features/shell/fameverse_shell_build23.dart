@@ -51,6 +51,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   SupabaseFameverseCreatorBackend? _creatorBackend;
 
   int _tab = 0;
+  int _profileRecognitionRefreshToken = 0;
   bool _loading = true;
   bool _followBusy = false;
   bool _avatarBusy = false;
@@ -465,7 +466,10 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   void _setTab(int value) {
-    setState(() => _tab = value);
+    setState(() {
+      _tab = value;
+      if (value == 3) _profileRecognitionRefreshToken++;
+    });
     if (value == 0) {
       unawaited(_recordBetaMission('browse_home'));
       unawaited(_refreshStories());
@@ -544,6 +548,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             network: _network,
             isOwner: _isOwner,
             betaStatus: _betaStatus,
+            recognitionRefreshToken: _profileRecognitionRefreshToken,
             avatarBusy: _avatarBusy,
             onChangePhoto: _pickProfilePhoto,
             onEdit: () => _openEdit(profile),

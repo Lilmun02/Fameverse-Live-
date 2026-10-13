@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import 'profile_recognition_badges.dart';
 import '../../data/fameverse_beta_backend.dart';
 import 'fame_coin_store_screen.dart';
 
@@ -19,6 +20,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
     required this.onFirstVerse,
     required this.onPolicies,
     required this.onSignOut,
+    this.recognitionRefreshToken = 0,
     super.key,
   });
 
@@ -34,6 +36,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
   final VoidCallback? onFirstVerse;
   final VoidCallback onPolicies;
   final Future<void> Function() onSignOut;
+  final int recognitionRefreshToken;
 
   int get _friends =>
       network.followingIds.intersection(network.followerIds).length;
@@ -138,6 +141,36 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          ProfileRecognitionBadges(
+            userId: profile.id,
+            refreshToken: recognitionRefreshToken,
+          ),
+          if (betaStatus.enrolled && betaStatus.badgeUnlocked) ...[
+            const SizedBox(height: 8),
+            Center(
+              child: Semantics(
+                label: 'First Verse badge earned',
+                child: const Chip(
+                  key: Key('profile-first-verse-earned-badge'),
+                  avatar: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFFFFD58F),
+                    size: 17,
+                  ),
+                  label: Text(
+                    'FIRST VERSE',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  backgroundColor: Color(0xFF2A1739),
+                  side: BorderSide(color: Color(0xFFC98DFF)),
+                ),
+              ),
+            ),
+          ],
           if (isOwner) ...[
             const SizedBox(height: 8),
             const Text(
