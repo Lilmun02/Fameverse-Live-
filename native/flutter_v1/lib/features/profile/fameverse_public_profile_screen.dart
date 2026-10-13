@@ -187,9 +187,9 @@ class _FameversePublicProfileScreenState
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              ProfileRecognitionBadges(
-                userId: profile.id,
-                refreshToken: _recognitionRefreshToken,
+              KeyedSubtree(
+                key: ValueKey(_recognitionRefreshToken),
+                child: ProfileRecognitionBadges(userId: profile.id),
               ),
               if (_publicBio.isNotEmpty) ...[
                 const SizedBox(height: 13),
