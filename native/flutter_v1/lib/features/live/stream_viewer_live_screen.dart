@@ -21,6 +21,7 @@ class NativeViewerLiveScreen extends StatefulWidget {
     required this.identity,
     required this.viewerProfile,
     required this.room,
+    this.onLiveJoined,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class NativeViewerLiveScreen extends StatefulWidget {
   final FvIdentity identity;
   final FvProfile viewerProfile;
   final FvLiveRoom room;
+  final VoidCallback? onLiveJoined;
 
   @override
   State<NativeViewerLiveScreen> createState() => _NativeViewerLiveScreenState();
@@ -51,6 +53,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   FvGiftPlayback? _giftPlayback;
   bool _connecting = true;
   bool _leaving = false;
+  bool _roomEnded = false;
+  bool _joinedOnce = false;
   bool _walletReady = false;
   bool _giftSending = false;
   bool _tapDraining = false;
@@ -95,6 +99,17 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         );
       }
     } catch (_) {}
+  }
+
+  void _retryJoin() {
+    if (_connecting || _leaving) return;
+    setState(() {
+      _connecting = true;
+      _error = null;
+      _roomEnded = false;
+      _walletReady = false;
+    });
+    unawaited(_connect());
   }
 
   Future<void> _connect() async {
@@ -163,13 +178,22 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _flushTapBuffer();
       });
       if (mounted) setState(() => _connecting = false);
+      if (!_joinedOnce && mounted) {
+        _joinedOnce = true;
+        widget.onLiveJoined?.call();
+      }
       unawaited(_hydrateViewerState());
     } catch (error) {
       await _disposeTransport();
       if (!mounted) return;
+      final ended = fvIsEndedLiveError(error);
       setState(() {
         _connecting = false;
-        _error = 'Could not join this live. ${fvFriendlyError(error)}';
+        _walletReady = false;
+        _roomEnded = ended;
+        _error = ended
+            ? 'This live has ended. Return to the Live feed.'
+            : 'Could not join this live. ${fvFriendlyError(error)}';
       });
     }
   }
@@ -489,7 +513,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _tapStage() {
-    if (_connecting || _leaving) return;
+    if (_connecting || _leaving || _error != null || _activity == null) {
+      return;
+    }
     _tapBuffer.add(_tapClock.elapsedMicroseconds / 1000.0);
     final serial = _localTapCount + 1;
     setState(() {
@@ -1255,11 +1281,32 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: Icons.wifi_tethering_rounded,
                             text: 'Joining live…',
                           ),
-                        if (_error != null)
+                        if (_error != null) ...[
                           FvLiveStatusCard(
                             icon: Icons.error_outline_rounded,
                             text: _error!,
                           ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (!_roomEnded)
+                                OutlinedButton.icon(
+                                  key: const Key('viewer-live-retry-join'),
+                                  onPressed: _retryJoin,
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  label: const Text('Retry join'),
+                                ),
+                              OutlinedButton.icon(
+                                key: const Key('viewer-live-exit-failed-join'),
+                                onPressed: _leaving ? null : _leave,
+                                icon: const Icon(Icons.arrow_back_rounded),
+                                label: const Text('Back to feed'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                       if (cohostActive)
                         SizedBox(height: cohostCameraHeight + 32)
@@ -1309,12 +1356,21 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           Expanded(
                             child: FvLiveCommentComposer(
                               controller: _comment,
-                              hintText: 'Say something...',
+                              hintText: _error == null
+                                  ? 'Say something...'
+                                  : 'Live unavailable',
+                              enabled: _activity != null &&
+                                  !_connecting &&
+                                  _error == null,
                             ),
                           ),
                           const SizedBox(width: 5),
                           IconButton.filled(
-                            onPressed: _postComment,
+                            onPressed: _activity != null &&
+                                    !_connecting &&
+                                    _error == null
+                                ? _postComment
+                                : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF6F35C5),
                               foregroundColor: Colors.white,
@@ -1325,7 +1381,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           const SizedBox(width: 4),
                           IconButton.filled(
                             key: const Key('viewer-gift-button'),
-                            onPressed: _walletReady ? _showGiftTray : null,
+                            onPressed: _walletReady &&
+                                    _activity != null &&
+                                    !_connecting &&
+                                    _error == null
+                                ? _showGiftTray
+                                : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF211529),
                               foregroundColor: const Color(0xFFFFC65A),
