@@ -320,7 +320,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _toggleCamera() async {
     final call = _call;
-    if (call == null || _connecting || _ending) return;
+    if (call == null || _connecting || _ending || _flipCameraBusy) {
+      return;
+    }
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _flipCameraBusy = true);
+    } else {
+      _flipCameraBusy = true;
+    }
+
     final next = !_cameraEnabled;
     try {
       fvRequireSuccess(
@@ -330,6 +340,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) setState(() => _cameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _flipCameraBusy = false);
+      } else {
+        _flipCameraBusy = false;
+      }
     }
   }
 
@@ -854,10 +870,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ? Icons.videocam_rounded
                         : Icons.videocam_off_rounded,
                     label: _cameraEnabled ? 'Camera' : 'Camera on',
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      unawaited(_toggleCamera());
-                    },
+                    onPressed: !_flipCameraBusy
+                        ? () {
+                            Navigator.of(context).pop();
+                            unawaited(_toggleCamera());
+                          }
+                        : null,
                   ),
                   FvRoundLiveButton(
                     icon: Icons.group_add_rounded,
