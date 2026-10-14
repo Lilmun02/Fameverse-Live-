@@ -1,10 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-
-import 'package:flutter_test/flutter_test.dart';
-import 'package:fameverse_live/features/live/native_live_components.dart';
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
+import 'package:fameverse_live/features/live/native_live_components.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('every existing under-100 gift is noncinematic and silent', () {
@@ -31,6 +30,7 @@ void main() {
     expect(source, contains("Key('lightweight-gift-"));
     expect(source, contains('child: Semantics('));
   });
+
   testWidgets('cheap gifts render 56 by 48 symbol with no video player', (
     tester,
   ) async {
@@ -61,5 +61,4 @@ void main() {
     // Tear down before the overlay's 1.9s completion timer reaches the test boundary.
     await tester.pumpWidget(const SizedBox.shrink());
   });
-
 }
