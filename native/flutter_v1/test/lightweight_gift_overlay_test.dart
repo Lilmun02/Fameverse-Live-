@@ -58,6 +58,8 @@ void main() {
       find.byKey(Key('cinematic-gift-presentation-${cheapGift.id}')),
       findsNothing,
     );
+    // Tear down before the overlay's 1.9s completion timer reaches the test boundary.
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
 }
