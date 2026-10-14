@@ -851,6 +851,12 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
       if (details is Map && details['error'] == 'stream-not-configured') {
         throw Exception('stream-not-configured');
       }
+      // An old feed card must not be treated as a joinable Stream call.
+      if (details is Map &&
+          (details['error'] == 'room-not-live' ||
+              details['error'] == 'room-not-found')) {
+        throw StateError('live-room-ended');
+      }
       rethrow;
     }
   }
