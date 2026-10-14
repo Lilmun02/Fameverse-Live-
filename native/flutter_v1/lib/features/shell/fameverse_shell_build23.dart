@@ -61,6 +61,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   FvFollowNetwork _network = _emptyNetwork;
   List<FvCreator> _creators = const [];
   List<FvLiveRoom> _rooms = const [];
+  Timer? _roomRefreshTimer;
+  bool _roomRefreshBusy = false;
   List<FvCreatorStory> _stories = const [];
   FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
@@ -73,6 +75,18 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     unawaited(_refreshBeta());
     unawaited(_refreshStories());
     unawaited(_refreshRole());
+    // Active-room heartbeats expire quickly. Refresh Home/Discover while open.
+    _roomRefreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (_tab == 0 || _tab == 1) {
+        unawaited(_refreshRooms());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _roomRefreshTimer?.cancel();
+    super.dispose();
   }
 
   bool _ensureSupplementalBackends() {
@@ -189,7 +203,24 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     }
   }
 
+  Future<void> _refreshRooms() async {
+    if (_roomRefreshBusy) return;
+    _roomRefreshBusy = true;
+    try {
+      final rooms = await widget.backend.listActiveLiveRooms(
+        excludeUserId: widget.identity.id,
+      );
+      if (mounted) setState(() => _rooms = rooms);
+    } catch (_) {
+      // A temporary discovery failure must not erase visible live rooms.
+    } finally {
+      _roomRefreshBusy = false;
+    }
+  }
+
   Future<void> _refreshAll() async {
+    // Discovery must load independently of recommendations, follows or profile.
+    unawaited(_refreshRooms());
     if (mounted) {
       setState(() {
         _loading = true;
@@ -203,7 +234,6 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
         widget.backend.listRecommendedCreators(
           excludeUserId: widget.identity.id,
         ),
-        widget.backend.listActiveLiveRooms(excludeUserId: widget.identity.id),
       ]);
       if (!mounted) return;
       final account = results[0] as ({FvProfile profile, String? role})?;
@@ -215,7 +245,6 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
         _accountRole = account.role;
         _network = results[1] as FvFollowNetwork;
         _creators = results[2] as List<FvCreator>;
-        _rooms = results[3] as List<FvLiveRoom>;
         _loading = false;
       });
       unawaited(_refreshStories());
@@ -480,12 +509,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       unawaited(_refreshRole());
     }
     if (value == 0 || value == 1) {
-      widget.backend
-          .listActiveLiveRooms(excludeUserId: widget.identity.id)
-          .then((rooms) {
-            if (mounted) setState(() => _rooms = rooms);
-          })
-          .catchError((_) {});
+      unawaited(_refreshRooms());
     }
   }
 
