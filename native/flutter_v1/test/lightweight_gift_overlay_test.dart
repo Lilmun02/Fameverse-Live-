@@ -54,8 +54,10 @@ void main() {
     expect(smallGift, findsOneWidget);
     expect(tester.getSize(smallGift), const Size(56, 48));
     expect(find.text(cheapGift.symbol), findsOneWidget);
-    expect(find.byKey(Key('cinematic-gift-presentation-${cheapGift.id}')),
-        findsNothing);
+    expect(
+      find.byKey(Key('cinematic-gift-presentation-${cheapGift.id}')),
+      findsNothing,
+    );
   });
 
 }
