@@ -488,10 +488,13 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
           identity: widget.identity,
           viewerProfile: profile,
           room: room,
+          onLiveJoined: () => unawaited(_recordBetaMission('join_live')),
         ),
       ),
     );
-    await _recordBetaMission('join_live');
+    // A room can end while it is still present in a previously loaded feed.
+    // Always refresh discovery after returning, even after a failed join.
+    if (mounted) unawaited(_refreshRooms());
   }
 
   void _setTab(int value) {
