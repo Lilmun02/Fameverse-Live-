@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fameverse_live/features/live/native_live_components.dart';
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
 
 void main() {
@@ -28,4 +31,31 @@ void main() {
     expect(source, contains("Key('lightweight-gift-"));
     expect(source, contains('child: Semantics('));
   });
+  testWidgets('cheap gifts render 56 by 48 symbol with no video player', (
+    tester,
+  ) async {
+    final cheapGift = fvGiftCatalog.firstWhere((gift) => gift.cost < 100);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NativeGiftOverlay(
+            playback: FvGiftPlayback(
+              gift: cheapGift,
+              quantity: 1,
+              sender: 'Tester',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final smallGift = find.byKey(Key('lightweight-gift-${cheapGift.id}'));
+    expect(smallGift, findsOneWidget);
+    expect(tester.getSize(smallGift), const Size(56, 48));
+    expect(find.text(cheapGift.symbol), findsOneWidget);
+    expect(find.byKey(Key('cinematic-gift-presentation-${cheapGift.id}')),
+        findsNothing);
+  });
+
 }
