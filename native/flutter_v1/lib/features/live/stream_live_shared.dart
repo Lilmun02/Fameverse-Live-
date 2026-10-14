@@ -7,7 +7,17 @@ void fvRequireSuccess<T>(Result<T> result, String message) {
   }
 }
 
+bool fvIsEndedLiveError(Object error) {
+  final text = error.toString().toLowerCase();
+  return text.contains('live-room-ended') ||
+      text.contains('room-not-live') ||
+      text.contains('room-not-found');
+}
+
 String fvFriendlyError(Object error) {
+  if (fvIsEndedLiveError(error)) {
+    return 'This live has ended. Return to the Live feed.';
+  }
   final text = error.toString();
   if (text.contains('stream-not-configured')) {
     return 'Stream Video credentials are not configured yet.';
