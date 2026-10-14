@@ -201,17 +201,20 @@ class FvLiveCommentComposer extends StatelessWidget {
   const FvLiveCommentComposer({
     required this.controller,
     required this.hintText,
+    this.enabled = true,
     super.key,
   });
 
   final TextEditingController controller;
   final String hintText;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       key: const Key('live-multiline-comment-composer'),
       controller: controller,
+      enabled: enabled,
       maxLength: 160,
       minLines: 1,
       maxLines: 3,
