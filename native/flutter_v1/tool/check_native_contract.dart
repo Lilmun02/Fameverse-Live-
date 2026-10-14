@@ -214,6 +214,15 @@ void main() {
     'Native product shell must have account-entry and signed-in navigation widget gates.',
   );
 
+  // TEMP QA ONLY: print the exact formatter output for the new widget test.
+  final formatPreview = Process.runSync(
+    'dart',
+    ['format', '--output=show', 'test/lightweight_gift_overlay_test.dart'],
+  );
+  stdout.writeln('FAMEVERSE_FORMAT_BEGIN');
+  stdout.writeln(formatPreview.stdout);
+  stdout.writeln('FAMEVERSE_FORMAT_END');
+
   if (exitCode == 0) {
     stdout.writeln(
       '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
