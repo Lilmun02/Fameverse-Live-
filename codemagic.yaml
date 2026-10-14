@@ -170,6 +170,27 @@ workflows:
             grep -Fq "profile-first-verse-earned-badge" native/flutter_v1/lib/features/profile/native_profile_build23.dart || { echo "BLOCKED: First Verse profile badge missing."; exit 1; }
             grep -Fq "betaStatus.enrolled && betaStatus.badgeUnlocked" native/flutter_v1/lib/features/profile/native_profile_build23.dart || { echo "BLOCKED: earned-only First Verse guard missing."; exit 1; }
           fi
+          if [ "$CM_BRANCH" = "qa/native-live-gifts-badges-oct14" ]; then
+            PROFILE="native/flutter_v1/lib/features/profile/native_profile_build23.dart"
+            RECOGNITION="native/flutter_v1/lib/features/profile/profile_recognition_badges.dart"
+            LIVE_SHELL="native/flutter_v1/lib/features/shell/fameverse_shell_build23.dart"
+            HOST="native/flutter_v1/lib/features/live/stream_host_live_screen.dart"
+            VIEWER="native/flutter_v1/lib/features/live/stream_viewer_live_screen.dart"
+            GIFT_VISUAL="native/flutter_v1/lib/features/live/native_live_components.dart"
+            GIFT_RECEIPTS="native/flutter_v1/lib/features/live/native_gift_receipt_gate.dart"
+            STAGE="native/flutter_v1/lib/features/live/native_live_stage.dart"
+            grep -Fq "verse-pioneer-profile-badge" "$RECOGNITION" || { echo "BLOCKED: Pioneer badge missing."; exit 1; }
+            grep -Fq "profile-first-verse-earned-badge" "$PROFILE" || { echo "BLOCKED: earned First Verse badge missing."; exit 1; }
+            grep -Fq "betaStatus.enrolled && betaStatus.badgeUnlocked" "$PROFILE" || { echo "BLOCKED: First Verse unlock guard missing."; exit 1; }
+            grep -Fq "Future<void> _refreshRooms() async" "$LIVE_SHELL" || { echo "BLOCKED: independent Live discovery refresh missing."; exit 1; }
+            grep -Fq "_flipCameraBusy" "$HOST" || { echo "BLOCKED: host camera serialization missing."; exit 1; }
+            grep -Fq "_cohostFlipBusy" "$VIEWER" || { echo "BLOCKED: cohost camera serialization missing."; exit 1; }
+            grep -Fq "const SizedBox(width: 2)," "$STAGE" || { echo "BLOCKED: cohost stage geometry missing."; exit 1; }
+            grep -Fq "Widget _lightweightGift(" "$GIFT_VISUAL" || { echo "BLOCKED: compact low-value gift visuals missing."; exit 1; }
+            grep -Fq "FvGiftReceiptGate" "$GIFT_RECEIPTS" || { echo "BLOCKED: gift receipt once gate missing."; exit 1; }
+            grep -Fq "_giftEventGate.shouldRender" "$HOST" || { echo "BLOCKED: host duplicate gift suppression missing."; exit 1; }
+            grep -Fq "_giftEventGate.shouldRender" "$VIEWER" || { echo "BLOCKED: viewer duplicate gift suppression missing."; exit 1; }
+          fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
           printf '%s\n' "TestFlight candidate" "source_branch=$CM_BRANCH" "source_commit=$SOURCE_SHA" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
           echo "Verified exact TestFlight source: $CM_BRANCH@$SOURCE_SHA"
