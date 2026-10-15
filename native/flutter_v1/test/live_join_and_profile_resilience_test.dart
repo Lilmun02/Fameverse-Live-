@@ -21,7 +21,9 @@ void main() {
     );
   });
 
-  testWidgets('disconnected Live comment composer refuses input', (tester) async {
+  testWidgets('disconnected Live comment composer refuses input', (
+    tester,
+  ) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
 
@@ -50,8 +52,8 @@ void main() {
     expect(viewer, contains('viewer-live-exit-failed-join'));
     expect(viewer, contains('fvIsEndedLiveError(error)'));
     expect(viewer, contains('_activity == null'));
-    expect(viewer, contains('enabled: _activity != null'));
-    expect(viewer, contains('onPressed: _activity != null'));
+    expect(viewer, contains('enabled: _canInteract'));
+    expect(viewer, contains('onPressed: _canInteract ? _postComment : null'));
     expect(viewer, contains('_walletReady &&'));
   });
 
@@ -65,7 +67,9 @@ void main() {
 
     expect(
       shell,
-      contains("onLiveJoined: () => unawaited(_recordBetaMission('join_live'))"),
+      contains(
+        "onLiveJoined: () => unawaited(_recordBetaMission('join_live'))",
+      ),
     );
     expect(viewer, contains('widget.onLiveJoined?.call()'));
     expect(shell, contains('if (mounted) unawaited(_refreshRooms())'));
