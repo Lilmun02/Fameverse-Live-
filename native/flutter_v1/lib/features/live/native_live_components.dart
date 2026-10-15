@@ -425,59 +425,45 @@ class NativeGiftTray extends StatefulWidget {
   State<NativeGiftTray> createState() => _NativeGiftTrayState();
 }
 
-class _NativeGiftTrayState extends State<NativeGiftTray> {
-  static const _categories = <(String, String)>[
-    ('trending', 'Trending'),
-    ('support', 'Support'),
-    ('fun', 'Fun'),
-    ('luxury', 'Luxury'),
-    ('fameverse', 'Fameverse'),
-  ];
-
-  static const _trendingIds = <String>{
-    'rose',
-    'heart',
-    'fire',
-    'star',
-    'planet',
-    'galaxy',
-    'welcome-to-fameverse',
-    'fame-burst',
-  };
-
-  String _category = 'trending';
-  String _selectedId = 'rose';
-  bool _sending = false;
-  bool _refilling = false;
-  late int _coins;
-
-  bool _matchesCategory(FvGiftDefinition gift, String category) {
+// Organize by price and brand without hiding catalog gifts or modifying
+// costs, send quantities, media URLs or revenue rules.
+List<FvGiftDefinition> fvGiftsForTrayCategory(String category) {
+  final result = fvGiftCatalog.where((gift) {
     switch (category) {
-      case 'trending':
-        return _trendingIds.contains(gift.id);
-      case 'support':
-        return gift.cost <= 10;
-      case 'fun':
-        return const <String>{
-          'reactions',
-          'snacks',
-          'flowers',
-          'celebrate',
-          'creator',
-          'sports',
-          'animals',
-        }.contains(gift.category);
-      case 'luxury':
-        return gift.cost >= 40 && gift.cost < 1000;
+      case 'all':
+        return true;
+      case 'small':
+        return gift.cost < 100;
+      case 'premium':
+        return gift.cost >= 100;
       case 'fameverse':
         return gift.category == 'fameverse';
       default:
         return false;
     }
-  }
+  }).toList();
+  result.sort((a, b) {
+    final byCost = a.cost.compareTo(b.cost);
+    return byCost != 0 ? byCost : a.label.compareTo(b.label);
+  });
+  return result;
+}
 
-  List<FvGiftDefinition> get _visible =>
-      fvGiftCatalog.where((gift) => _matchesCategory(gift, _category)).toList();
+class _NativeGiftTrayState extends State<NativeGiftTray> {
+  static const _categories = <(String, String)>[
+    ('all', 'All gifts'),
+    ('small', 'Under 100'),
+    ('premium', '100+ Coins'),
+    ('fameverse', 'Fameverse'),
+  ];
+
+  String _category = 'all';
+  String _selectedId = 'rose';
+  bool _sending = false;
+  bool _refilling = false;
+  late int _coins;
+
+  List<FvGiftDefinition> get _visible => fvGiftsForTrayCategory(_category);
 
   FvGiftDefinition get _selected {
     final selected = fvGiftById(_selectedId);
@@ -700,9 +686,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     label: Text(item.$2),
                     selected: _category == item.$1,
                     onSelected: (_) {
-                      final visible = fvGiftCatalog
-                          .where((gift) => _matchesCategory(gift, item.$1))
-                          .toList();
+                      final visible = fvGiftsForTrayCategory(item.$1);
                       setState(() {
                         _category = item.$1;
                         if (visible.isNotEmpty &&
