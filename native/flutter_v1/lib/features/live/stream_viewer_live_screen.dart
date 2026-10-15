@@ -1362,8 +1362,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                         ),
                       SizedBox(
                         height: MediaQuery.viewInsetsOf(context).bottom > 0
-                                  ? 96
-                                  : (cohostActive ? 250 : 220),
+                            ? 96
+                            : (cohostActive ? 250 : 220),
                         child: SingleChildScrollView(
                           reverse: true,
                           child: FvLiveChatList(messages: _chat),
