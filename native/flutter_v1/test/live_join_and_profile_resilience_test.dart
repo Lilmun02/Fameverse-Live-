@@ -48,6 +48,7 @@ void main() {
     ).readAsStringSync();
 
     expect(viewer, contains('void _retryJoin() {'));
+    expect(viewer, contains('_transportCleanup = null;'));
     expect(viewer, contains('viewer-live-retry-join'));
     expect(viewer, contains('viewer-live-exit-failed-join'));
     expect(viewer, contains('fvIsEndedLiveError(error)'));
