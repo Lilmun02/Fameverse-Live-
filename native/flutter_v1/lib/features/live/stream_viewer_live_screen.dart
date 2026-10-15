@@ -75,8 +75,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   String? _error;
 
   bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';
-  bool get _canInteract =>
-      _activity != null && !_connecting && _error == null;
+  bool get _canInteract => _activity != null && !_connecting && _error == null;
   bool get _selfIsCohost => _activeCohostUserId == widget.identity.id;
 
   @override
@@ -1386,8 +1385,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           IconButton.filled(
                             key: const Key('viewer-gift-button'),
                             onPressed: _walletReady && _canInteract
-                                 ? _showGiftTray
-                                 : null,
+                                ? _showGiftTray
+                                : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF211529),
                               foregroundColor: const Color(0xFFFFC65A),
