@@ -75,6 +75,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   String? _error;
 
   bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _canInteract =>
+      _activity != null && !_connecting && _error == null;
   bool get _selfIsCohost => _activeCohostUserId == widget.identity.id;
 
   @override
@@ -1367,18 +1369,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                               hintText: _error == null
                                   ? 'Say something...'
                                   : 'Live unavailable',
-                              enabled: _activity != null &&
-                                  !_connecting &&
-                                  _error == null,
+                              enabled: _canInteract,
                             ),
                           ),
                           const SizedBox(width: 5),
                           IconButton.filled(
-                            onPressed: _activity != null &&
-                                    !_connecting &&
-                                    _error == null
-                                ? _postComment
-                                : null,
+                            onPressed: _canInteract ? _postComment : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF6F35C5),
                               foregroundColor: Colors.white,
@@ -1389,12 +1385,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           const SizedBox(width: 4),
                           IconButton.filled(
                             key: const Key('viewer-gift-button'),
-                            onPressed: _walletReady &&
-                                    _activity != null &&
-                                    !_connecting &&
-                                    _error == null
-                                ? _showGiftTray
-                                : null,
+                            onPressed: _walletReady && _canInteract
+                                 ? _showGiftTray
+                                 : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF211529),
                               foregroundColor: const Color(0xFFFFC65A),
