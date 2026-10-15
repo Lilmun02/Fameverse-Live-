@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fameverse_live/data/fameverse_live_backend.dart';
+import 'package:fameverse_live/features/live/native_live_components.dart';
 import 'package:fameverse_live/features/live/native_gift_receipt_gate.dart';
 
 void main() {
@@ -55,4 +57,31 @@ void main() {
       contains("_giftEventGate.shouldRender(payload['id']?.toString())"),
     );
   });
+  test('three distinct gifts with 5x combos keep every receipt unique', () {
+    final catalog = fvGiftCatalog.take(3).toList();
+    expect(catalog.length, 3);
+    final gate = FvGiftReceiptGate();
+    final queue = <FvGiftPlayback>[];
+
+    for (var giftIndex = 0; giftIndex < catalog.length; giftIndex++) {
+      final receiptId = 'room-1-gift-$giftIndex-combo-5';
+      expect(gate.shouldRender(receiptId), isTrue);
+      expect(gate.shouldRender(receiptId), isFalse);
+      queue.addAll(
+        fvExpandGiftVisualCombo(
+          FvGiftPlayback(
+            gift: catalog[giftIndex],
+            quantity: 5,
+            sender: 'viewer-$giftIndex',
+          ),
+        ),
+      );
+    }
+
+    expect(queue.length, 15);
+    expect(queue.where((item) => item.comboIndex == 5).length, 3);
+    expect(queue.every((item) => item.comboTotal == 5), isTrue);
+    expect(queue.map((item) => item.gift.id).toSet().length, 3);
+  });
+
 }
