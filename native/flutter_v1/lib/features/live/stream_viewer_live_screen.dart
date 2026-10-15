@@ -1352,7 +1352,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ),
                         ),
                       SizedBox(
-                        height: cohostActive ? 250 : 220,
+                        height: MediaQuery.viewInsetsOf(context).bottom > 0
+                                  ? 96
+                                  : (cohostActive ? 250 : 220),
                         child: SingleChildScrollView(
                           reverse: true,
                           child: FvLiveChatList(messages: _chat),
@@ -1365,6 +1367,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           Expanded(
                             child: FvLiveCommentComposer(
                               controller: _comment,
+                              onSend: () => unawaited(_postComment()),
                               hintText: _error == null
                                   ? 'Say something...'
                                   : 'Live unavailable',
