@@ -34,6 +34,7 @@ class FvProfile {
     final name = displayName.trim();
     return name.isNotEmpty ? name : 'Fameverse creator';
   }
+
   String get initial {
     final source = displayName.trim().isNotEmpty
         ? displayName.trim()
