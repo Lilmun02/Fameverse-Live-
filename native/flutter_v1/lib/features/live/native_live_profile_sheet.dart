@@ -251,41 +251,41 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
                 ],
                 if (stats != null) ...[
                   if (badge != null)
-                  _GifterBadgeCard(
-                    badge: badge,
+                    _GifterBadgeCard(
+                      badge: badge,
+                      level: stats?.gifterLevel ?? 1,
+                    ),
+                  const SizedBox(height: 12),
+                  _GifterProgressCard(
                     level: stats?.gifterLevel ?? 1,
+                    totalCoinsSent: stats?.totalCoinsSent ?? 0,
+                    progress: progress,
                   ),
-                const SizedBox(height: 12),
-                _GifterProgressCard(
-                  level: stats?.gifterLevel ?? 1,
-                  totalCoinsSent: stats?.totalCoinsSent ?? 0,
-                  progress: progress,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Gift coins',
-                        value: '${stats?.totalCoinsSent ?? 0}',
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Gift coins',
+                          value: '${stats?.totalCoinsSent ?? 0}',
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Live gifts',
-                        value: '${stats?.roomGiftCount ?? 0}',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Live gifts',
+                          value: '${stats?.roomGiftCount ?? 0}',
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Fame taps',
-                        value: '${stats?.roomFameTaps ?? 0}',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Fame taps',
+                          value: '${stats?.roomFameTaps ?? 0}',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 ],
                 if (_targetNetwork != null) ...[
                   const SizedBox(height: 12),
