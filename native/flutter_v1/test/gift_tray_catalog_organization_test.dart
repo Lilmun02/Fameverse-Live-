@@ -24,8 +24,10 @@ void main() {
     final expected = fvGiftCatalog
         .where((gift) => gift.category == 'fameverse')
         .toList();
-    expect(branded.map((gift) => gift.id).toSet(),
-        expected.map((gift) => gift.id).toSet());
+    expect(
+      branded.map((gift) => gift.id).toSet(),
+      expected.map((gift) => gift.id).toSet(),
+    );
   });
 
   test('all tabs are sorted low to high and preserve gift prices', () {
