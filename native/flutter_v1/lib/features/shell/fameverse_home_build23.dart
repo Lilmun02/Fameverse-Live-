@@ -210,26 +210,20 @@ class _FameverseHomeBuild23ScreenState
           body: 'Try another feed or discover more creators.',
         )
       else
-        GridView.builder(
-          key: const Key('home-live-discovery-grid'),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: ranked.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.75,
-          ),
-          itemBuilder: (context, index) {
-            final room = ranked[index];
-            return _LiveCard(
-              room: room,
-              following: widget.network.followingIds.contains(room.hostUserId),
-              onTap: () => widget.onRoomSelected(room),
-            );
-          },
-        ),
+        ...ranked
+            .take(8)
+            .map(
+              (room) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _LiveCard(
+                  room: room,
+                  following: widget.network.followingIds.contains(
+                    room.hostUserId,
+                  ),
+                  onTap: () => widget.onRoomSelected(room),
+                ),
+              ),
+            ),
       const SizedBox(height: 14),
       _SectionHeader(
         eyebrow: 'DISCOVER PEOPLE',
@@ -858,138 +852,76 @@ class _LiveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = room.host.avatarUrl?.trim() ?? '';
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: Key('home-live-room-${room.id}'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF312044),
-                Color(0xFF140F1D),
-                Color(0xFF09070D),
-              ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Ink(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF3F2D48)),
+          color: const Color(0xFF151018),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFE94F79), Color(0xFF8F49F5)],
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  room.hostDisplayName.isEmpty
+                      ? 'F'
+                      : room.hostDisplayName.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF644577)),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(19),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Center(
-                  child: CircleAvatar(
-                    radius: 38,
-                    backgroundColor: const Color(0xFF5A327A),
-                    backgroundImage:
-                        avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-                    child: avatarUrl.isEmpty
-                        ? Text(
-                            room.host.initial,
-                            style: const TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.center,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Color(0xEE08060B)],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ),
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    key: const Key('home-live-status-badge'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE33C71),
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.7,
-                      ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${room.hostDisplayName} · ${room.fameTaps} FameTaps',
+                    style: const TextStyle(
+                      color: Color(0xFFA79BAA),
+                      fontSize: 11,
                     ),
                   ),
-                ),
-                if (following)
-                  const Positioned(
-                    top: 12,
-                    right: 10,
-                    child: Icon(
-                      Icons.favorite_rounded,
-                      size: 17,
-                      color: Color(0xFFE6A7FF),
-                    ),
-                  ),
-                Positioned(
-                  left: 11,
-                  right: 11,
-                  bottom: 12,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        room.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        room.hostDisplayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFE6D7E9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${room.fameTaps} FameTaps',
-                        style: const TextStyle(
-                          color: Color(0xFFD0ADD9),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            if (following)
+              const Icon(
+                Icons.favorite_rounded,
+                color: Color(0xFFC879FF),
+                size: 18,
+              ),
+            const SizedBox(width: 6),
+            const Icon(Icons.chevron_right_rounded),
+          ],
         ),
       ),
     );
   }
 }
+
 class _CreatorCard extends StatelessWidget {
   const _CreatorCard({
     required this.creator,
