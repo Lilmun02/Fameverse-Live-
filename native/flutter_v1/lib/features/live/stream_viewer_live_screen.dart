@@ -323,7 +323,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
