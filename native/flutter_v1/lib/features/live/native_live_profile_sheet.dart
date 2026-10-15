@@ -251,10 +251,7 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
                 ],
                 if (stats != null) ...[
                   if (badge != null)
-                    _GifterBadgeCard(
-                      badge: badge,
-                      level: stats.gifterLevel,
-                    ),
+                    _GifterBadgeCard(badge: badge, level: stats.gifterLevel),
                   const SizedBox(height: 12),
                   _GifterProgressCard(
                     level: stats.gifterLevel,
