@@ -156,7 +156,8 @@ void main() {
       expect(host, contains("Key('host-v2-combined-stats')"));
       expect(host, contains('backgroundColor: const Color(0xFFE62952)'));
       expect(host, contains("Key('host-f-menu-button')"));
-      expect(host, contains('height: cohostActive ? 230 : 245'));
+      expect(host, contains('height: MediaQuery.viewInsetsOf(context).bottom > 0'));
+      expect(host, contains('(cohostActive ? 230 : 245)'));
       expect(host, contains('FvLiveCommentComposer('));
       expect(shared, contains('class FvFameActionButton'));
       expect(shared, contains('color: Color(0xFFE1B5FF)'));
@@ -178,9 +179,11 @@ void main() {
 
         expect(shared, contains('fontSize: 15'));
         expect(shared, contains("'Lv. \$level'"));
-        expect(shared, contains('maxLines: 3'));
-        expect(shared, contains('keyboardType: TextInputType.multiline'));
-        expect(shared, contains('textInputAction: TextInputAction.newline'));
+        expect(shared, contains('maxLength: 160'));
+        expect(shared, contains('maxLines: 1'));
+        expect(shared, contains('keyboardType: TextInputType.text'));
+        expect(shared, contains('textInputAction: TextInputAction.send'));
+        expect(shared, contains('onSubmitted: (_) => onSend?.call()'));
         expect(host, contains('cohostCameraHeight + 32'));
         expect(viewer, contains('cohostCameraHeight + 32'));
         expect(host, contains('FvLiveCommentComposer('));
