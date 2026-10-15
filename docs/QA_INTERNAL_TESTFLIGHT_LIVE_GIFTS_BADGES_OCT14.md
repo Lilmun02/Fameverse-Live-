@@ -19,6 +19,21 @@
 - Held notification-permission or UTC-calendar reset changes.
 - Standalone web password-reset PR, other unreviewed changes.
 
+## Unfinished founder requirements — do not claim these have shipped
+
+The Live and gift changes above are **candidates**; the video recorded on October 14 shows a failed Live join and profile-detail refresh. Server logs from the same evening contain both successful Stream token issuance and `room-not-live` responses. This is not proof that video join, latency, or uptime is fixed.
+
+- **Critical live acceptance:** host goes live first, viewer can actually join and see/hear the host, uptime survives a long session, host/cohost camera flip and off/on stay usable, leaving removes stale sessions, and failed joins do not allow fake comments/taps/gifts.
+- **High-volume gifting:** three distinct gifts in 5× combos during one Live; each authorized send must produce exactly the intended debit, quantity, chat receipt, and audience playback. Verify 1- and 100+-coin audio rules, premium media timing, no flicker/double sound, and no orphaned visuals. Automated dedupe checks alone are insufficient.
+- **Chat and navigation:** spam comments across two phones, open/close Live and profiles repeatedly, evaluate Home/Discover load/swipe responsiveness and profile image update. Native live-to-live vertical swiping and watch-while-hosting/multi-guest support are not confirmed in this candidate.
+- **Gift assets:** founder-approved cinematic Dragon/Phoenix art and sound must be verified as real assets, never placeholder emoji or rejected previews.
+- **Business systems:** Apple sandbox in-app coin purchases, web checkout, provider payouts, creator split, and owner promotional testing balances remain unverified in this candidate. Do not claim payment certification.
+- **Pending product features:** secure Inbox messaging delivery, TikTok/Favorited/EPIC badge transfers with WEB-only owner review, verification review, affiliate/subscription workflows, and invite-only referral acceptance require dedicated complete implementations and QA. They are not silently included here.
+- **Founder control contract:** Owner Panel Control belongs on the web; mobile profile settings are separate. Audit any legacy native owner-panel route before a full product release rather than silently shipping it as approved.
+- **Other held work:** notification permission and UTC reset changes stay out until their hold is lifted. First Verse earned state must never grant free levels or coins.
+
+**Do not promote to external testers or a public release because this list exists.** A missing item remains open until real code, backend permission rules, and physical acceptance establish it works.
+
 ## Build provenance, automated checks, and release boundaries
 
 1. Confirm GitHub quality preflight passes (Dart formatting, Flutter analysis, Flutter tests, native source contract).
