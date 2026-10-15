@@ -1148,7 +1148,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         Expanded(
                           child: FvLiveCommentComposer(
                             controller: _comment,
-                              onSend: () => unawaited(_postComment()),
+                            onSend: () => unawaited(_postComment()),
                             hintText: 'Say something...',
                           ),
                         ),
