@@ -13,6 +13,7 @@ import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_build23.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
+import '../profile/fameverse_inbox_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
@@ -583,6 +584,13 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
             onPolicies: _openPolicies,
             onSignOut: widget.backend.signOut,
+            onOpenInbox: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (context) => FameverseInboxScreen(
+                  userId: widget.identity.id,
+                ),
+              ),
+            ),
           ),
         ],
       ),
