@@ -39,9 +39,7 @@ class SupabaseFameverseInboxRepository implements FameverseInboxRepository {
         )
         .toSet()
         .toList();
-    final roomIds = conversations
-        .map((row) => row['id'].toString())
-        .toList();
+    final roomIds = conversations.map((row) => row['id'].toString()).toList();
     final profiles = peerIds.isEmpty
         ? <Map<String, dynamic>>[]
         : await client
