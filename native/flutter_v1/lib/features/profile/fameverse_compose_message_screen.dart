@@ -47,7 +47,10 @@ class _FameverseComposeMessageScreenState
       _error = null;
     });
     try {
-      final users = await widget.repository.searchContacts(widget.userId, value);
+      final users = await widget.repository.searchContacts(
+        widget.userId,
+        value,
+      );
       if (!mounted) return;
       setState(() => _results = users);
     } catch (_) {
