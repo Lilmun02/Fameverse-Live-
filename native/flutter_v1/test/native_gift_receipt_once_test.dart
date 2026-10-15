@@ -49,17 +49,21 @@ void main() {
     expect(expanded, hasLength(1));
     expect(expanded.single.quantity, 5);
     expect(expanded.single.visualCountLabel, contains('×5'));
-    expect(fvGiftPlaybackWatchdog(expanded.single),
-        const Duration(seconds: 90));
+    expect(
+      fvGiftPlaybackWatchdog(expanded.single),
+      const Duration(seconds: 90),
+    );
   });
 
   test('three distinct premium 5x gifts stay three presentations', () {
     final premium = fvGiftCatalog.where((gift) => gift.cinematic).take(3);
     final queue = <FvGiftPlayback>[];
     for (final gift in premium) {
-      queue.addAll(fvExpandGiftVisualCombo(
-        FvGiftPlayback(gift: gift, quantity: 5, sender: 'Tester'),
-      ));
+      queue.addAll(
+        fvExpandGiftVisualCombo(
+          FvGiftPlayback(gift: gift, quantity: 5, sender: 'Tester'),
+        ),
+      );
     }
     expect(queue, hasLength(3));
     expect(queue.every((item) => item.quantity == 5), isTrue);
@@ -73,8 +77,10 @@ void main() {
     );
     expect(queue, hasLength(5));
     expect(queue.map((item) => item.comboIndex), [1, 2, 3, 4, 5]);
-    expect(fvGiftPlaybackWatchdog(queue.first),
-        const Duration(seconds: 8));
+    expect(
+      fvGiftPlaybackWatchdog(queue.first),
+      const Duration(seconds: 8),
+    );
   });
 
   test('owner host shows chat but skips its duplicate local QA overlay', () {
