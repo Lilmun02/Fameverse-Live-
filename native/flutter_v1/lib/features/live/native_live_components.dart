@@ -54,7 +54,11 @@ class FvGiftPlayback {
 const int fvMaxSequentialGiftCombo = 50;
 
 List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
-  if (playback.quantity <= 1 || playback.quantity > fvMaxSequentialGiftCombo) {
+  // A cinematic combo is one purchased send with a quantity, not N separate
+  // movies. Restarting the same long video N times backs up the gift queue.
+  if (playback.gift.cinematic ||
+      playback.quantity <= 1 ||
+      playback.quantity > fvMaxSequentialGiftCombo) {
     return <FvGiftPlayback>[playback];
   }
 
@@ -69,6 +73,19 @@ List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
     ),
     growable: false,
   );
+}
+
+/// Safety timeout only: normal playback advances via NativeGiftOverlay.onFinished.
+/// Video setup retries may take 20+ seconds, followed by up to 60s of media;
+/// the former 20s watchdog cut legitimate premium gifts off mid-animation.
+Duration fvGiftPlaybackWatchdog(FvGiftPlayback playback) {
+  final gift = playback.gift;
+  if (gift.cost >= 100 &&
+      gift.cinematic &&
+      (gift.videoUrl?.trim().isNotEmpty ?? false)) {
+    return const Duration(seconds: 90);
+  }
+  return const Duration(seconds: 8);
 }
 
 class NativeGiftOverlay extends StatefulWidget {
