@@ -15,14 +15,13 @@ class FvInboxActivity {
 
   bool get unread => readAt == null;
 
-  factory FvInboxActivity.fromRow(Map<String, dynamic> row) =>
-      FvInboxActivity(
-        id: row['id']?.toString() ?? '',
-        title: row['title']?.toString() ?? '',
-        body: row['body']?.toString() ?? '',
-        createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
-        readAt: DateTime.tryParse(row['read_at']?.toString() ?? ''),
-      );
+  factory FvInboxActivity.fromRow(Map<String, dynamic> row) => FvInboxActivity(
+    id: row['id']?.toString() ?? '',
+    title: row['title']?.toString() ?? '',
+    body: row['body']?.toString() ?? '',
+    createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
+    readAt: DateTime.tryParse(row['read_at']?.toString() ?? ''),
+  );
 }
 
 class FvInboxConversation {
@@ -102,11 +101,7 @@ abstract class FameverseInboxRepository {
     String userId,
     String conversationId,
   );
-  Future<void> sendMessage(
-    String userId,
-    String conversationId,
-    String body,
-  );
+  Future<void> sendMessage(String userId, String conversationId, String body);
   Future<void> readConversation(String userId, String conversationId);
   Future<void> readActivity(String userId, String activityId);
 }
