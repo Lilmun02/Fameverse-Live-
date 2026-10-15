@@ -160,9 +160,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         if (attempt == 2) {
           fvRequireSuccess(joinResult, 'Could not join the livestream');
         }
-        await Future<void>.delayed(
-          Duration(milliseconds: 400 * (attempt + 1)),
-        );
+        await Future<void>.delayed(Duration(milliseconds: 400 * (attempt + 1)));
       }
 
       _callStateSubscription?.cancel();
