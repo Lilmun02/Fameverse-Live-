@@ -202,12 +202,14 @@ class FvLiveCommentComposer extends StatelessWidget {
     required this.controller,
     required this.hintText,
     this.enabled = true,
+    this.onSend,
     super.key,
   });
 
   final TextEditingController controller;
   final String hintText;
   final bool enabled;
+  final VoidCallback? onSend;
 
   @override
   Widget build(BuildContext context) {
@@ -217,9 +219,11 @@ class FvLiveCommentComposer extends StatelessWidget {
       enabled: enabled,
       maxLength: 160,
       minLines: 1,
-      maxLines: 3,
-      keyboardType: TextInputType.multiline,
-      textInputAction: TextInputAction.newline,
+      maxLines: 1,
+      keyboardType: TextInputType.text,
+      textInputAction: TextInputAction.send,
+      onSubmitted: (_) => onSend?.call(),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       style: const TextStyle(fontSize: 15, height: 1.28),
       decoration: InputDecoration(
         hintText: hintText,
