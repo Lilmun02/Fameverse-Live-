@@ -26,8 +26,14 @@ class FvProfile {
   final String? avatarUrl;
   final DateTime? createdAt;
 
-  String get handle =>
-      username == null || username!.isEmpty ? '@newuser' : '@$username';
+  String get handle {
+    final registered = username?.trim() ?? '';
+    if (registered.isNotEmpty) return '@$registered';
+    // Never pretend that an unset username is literally '@newuser'.
+    // Show the creator's real display name until a handle is configured.
+    final name = displayName.trim();
+    return name.isNotEmpty ? name : 'Fameverse creator';
+  }
   String get initial {
     final source = displayName.trim().isNotEmpty
         ? displayName.trim()
