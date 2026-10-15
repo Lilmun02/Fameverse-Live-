@@ -88,15 +88,14 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
   }
 
   Future<void> _compose() async {
-    final conversation =
-        await Navigator.of(context).push<FvInboxConversation>(
-          MaterialPageRoute(
-            builder: (context) => FameverseComposeMessageScreen(
-              userId: widget.userId,
-              repository: _repo,
-            ),
-          ),
-        );
+    final conversation = await Navigator.of(context).push<FvInboxConversation>(
+      MaterialPageRoute(
+        builder: (context) => FameverseComposeMessageScreen(
+          userId: widget.userId,
+          repository: _repo,
+        ),
+      ),
+    );
     if (!mounted || conversation == null) return;
     await _openConversation(conversation);
   }
@@ -141,10 +140,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
     backgroundColor: const Color(0xFF0D0912),
     appBar: AppBar(
       backgroundColor: const Color(0xFF0D0912),
-      title: const Text(
-        'Inbox',
-        style: TextStyle(fontWeight: FontWeight.w900),
-      ),
+      title: const Text('Inbox', style: TextStyle(fontWeight: FontWeight.w900)),
       actions: [
         IconButton(
           key: const Key('inbox-compose-button'),
@@ -168,10 +164,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Your conversations and activity',
-                style: TextStyle(
-                  color: Color(0xFFC0A7CD),
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Color(0xFFC0A7CD), fontSize: 13),
               ),
             ),
           ),
@@ -348,10 +341,7 @@ class _InboxTab extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(label),
-        if (count > 0) ...[
-          const SizedBox(width: 8),
-          Text('($count)'),
-        ],
+        if (count > 0) ...[const SizedBox(width: 8), Text('($count)')],
       ],
     ),
   );
@@ -378,10 +368,7 @@ class _InboxEmpty extends StatelessWidget {
         const SizedBox(height: 15),
         Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
         ),
         const SizedBox(height: 8),
         Text(
