@@ -10,20 +10,6 @@ void require(bool condition, String message) {
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
-  // Temporary CI-only formatting diagnostics; remove after format repairs.
-  for (final path in const [
-    'lib/features/profile/fameverse_compose_message_screen.dart',
-    'lib/features/profile/fameverse_inbox_models.dart',
-    'lib/features/profile/fameverse_inbox_repository.dart',
-    'lib/features/profile/fameverse_inbox_screen.dart',
-    'lib/features/shell/fameverse_shell_build23.dart',
-    'lib/features/shell/fameverse_vertical_live_feed.dart',
-  ]) {
-    final formatted = Process.runSync('dart', ['format', '--output=show', path]);
-    stdout.writeln('FV_FORMAT_BEGIN:$path');
-    stdout.write(formatted.stdout);
-    stdout.writeln('FV_FORMAT_END:$path');
-  }
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
