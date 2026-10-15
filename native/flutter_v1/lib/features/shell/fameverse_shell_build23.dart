@@ -602,9 +602,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onSignOut: widget.backend.signOut,
             onOpenInbox: () => Navigator.of(context).push<void>(
               MaterialPageRoute(
-                builder: (context) => FameverseInboxScreen(
-                  userId: widget.identity.id,
-                ),
+                builder: (context) =>
+                    FameverseInboxScreen(userId: widget.identity.id),
               ),
             ),
           ),
