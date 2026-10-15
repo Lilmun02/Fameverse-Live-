@@ -146,15 +146,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         call.setAudioBitrateProfile(SfuAudioBitrateProfile.voiceHighQuality),
         'Could not configure high-quality live audio',
       );
-      fvRequireSuccess(
-        await call.join(
+      // Supabase can expose a room before the host's goLive() finishes.
+      // Stream denies ordinary viewers access while the call is backstage.
+      // Bound retries rather than trapping viewers on an empty Live screen.
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final joinResult = await call.join(
           connectOptions: CallConnectOptions(
             camera: TrackOption.disabled(),
             microphone: TrackOption.disabled(),
           ),
-        ),
-        'Could not join the livestream',
-      );
+        );
+        if (!joinResult.isFailure) break;
+        if (attempt == 2) {
+          fvRequireSuccess(joinResult, 'Could not join the livestream');
+        }
+        await Future<void>.delayed(
+          Duration(milliseconds: 400 * (attempt + 1)),
+        );
+      }
 
       _callStateSubscription?.cancel();
       _callStateSubscription = call.state.valueStream.listen((state) {
