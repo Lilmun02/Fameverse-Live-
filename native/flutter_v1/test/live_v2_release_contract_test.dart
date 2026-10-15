@@ -156,7 +156,10 @@ void main() {
       expect(host, contains("Key('host-v2-combined-stats')"));
       expect(host, contains('backgroundColor: const Color(0xFFE62952)'));
       expect(host, contains("Key('host-f-menu-button')"));
-      expect(host, contains('height: MediaQuery.viewInsetsOf(context).bottom > 0'));
+      expect(
+        host,
+        contains('height: MediaQuery.viewInsetsOf(context).bottom > 0'),
+      );
       expect(host, contains('(cohostActive ? 230 : 245)'));
       expect(host, contains('FvLiveCommentComposer('));
       expect(shared, contains('class FvFameActionButton'));
