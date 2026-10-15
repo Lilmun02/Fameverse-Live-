@@ -231,11 +231,19 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (_) {}
   }
 
+  // Keep Live scrolling responsive under sustained comment/gift floods.
+  void _appendChat(FvLiveChatMessage message) {
+    _chat.add(message);
+    if (_chat.length > 200) {
+      _chat.removeRange(0, _chat.length - 200);
+    }
+  }
+
   void _receiveComment(Map<String, dynamic> payload) {
     final text = (payload['text'] as String?)?.trim() ?? '';
     if (text.isEmpty || !mounted) return;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -260,7 +268,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -309,7 +317,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final clean = text.length > 160 ? text.substring(0, 160) : text;
     final id = 'comment-${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id: id,
           user: widget.viewerProfile.displayName,
@@ -410,7 +418,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         setState(() {
           _walletBalance = result.walletBalance;
           _gifterLevel = result.level;
-          _chat.add(message);
+          _appendChat(message);
         });
       }
       _enqueueGift(
