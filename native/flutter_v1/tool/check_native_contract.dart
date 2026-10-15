@@ -10,21 +10,6 @@ void require(bool condition, String message) {
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
-  // TEMPORARY FORMAT QA - remove after reviewing CI output.
-  final paths = <String>[
-    'lib/data/fameverse_backend.dart',
-    'lib/features/live/native_live_profile_sheet.dart',
-    'lib/features/live/stream_host_live_screen.dart',
-    'lib/features/live/stream_viewer_live_screen.dart',
-    'lib/features/live/stream_live_shared.dart',
-  ];
-  final formatted = Process.runSync('dart', ['format', ...paths]);
-  stdout.write(formatted.stdout);
-  stderr.write(formatted.stderr);
-  final diff = Process.runSync('git', ['diff', '--', ...paths]);
-  stdout.writeln('[FORMAT DIFF BEGIN]');
-  stdout.write(diff.stdout);
-  stdout.writeln('[FORMAT DIFF END]');
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
