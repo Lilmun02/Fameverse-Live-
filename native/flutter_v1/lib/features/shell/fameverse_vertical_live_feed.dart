@@ -39,8 +39,7 @@ class FameverseVerticalLiveFeed extends StatefulWidget {
 
 enum _LiveFeedLane { forYou, following, rising }
 
-class _FameverseVerticalLiveFeedState
-    extends State<FameverseVerticalLiveFeed> {
+class _FameverseVerticalLiveFeedState extends State<FameverseVerticalLiveFeed> {
   final PageController _pages = PageController();
   _LiveFeedLane _lane = _LiveFeedLane.forYou;
   int _activeIndex = 0;
@@ -54,17 +53,17 @@ class _FameverseVerticalLiveFeedState
       );
     }
     rooms.sort((left, right) {
-      final leftBoost = _lane == _LiveFeedLane.forYou &&
+      final leftBoost =
+          _lane == _LiveFeedLane.forYou &&
               widget.followingIds.contains(left.hostUserId)
           ? 80
           : 0;
-      final rightBoost = _lane == _LiveFeedLane.forYou &&
+      final rightBoost =
+          _lane == _LiveFeedLane.forYou &&
               widget.followingIds.contains(right.hostUserId)
           ? 80
           : 0;
-      return (right.fameTaps + rightBoost).compareTo(
-        left.fameTaps + leftBoost,
-      );
+      return (right.fameTaps + rightBoost).compareTo(left.fameTaps + leftBoost);
     });
     return rooms;
   }
@@ -79,7 +78,9 @@ class _FameverseVerticalLiveFeedState
       return;
     }
     final selected = rooms.indexWhere((room) => room.id == _activeRoomId);
-    final next = selected >= 0 ? selected : _activeIndex.clamp(0, rooms.length - 1);
+    final next = selected >= 0
+        ? selected
+        : _activeIndex.clamp(0, rooms.length - 1);
     if (next != _activeIndex) {
       _activeIndex = next;
       WidgetsBinding.instance.addPostFrameCallback((_) {
