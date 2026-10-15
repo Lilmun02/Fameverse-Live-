@@ -83,6 +83,20 @@ void main() {
     expect(sheet, contains('Retry details'));
   });
 
+  test('host heartbeats serialize and absorb temporary network failures', () {
+    final host = File(
+      'lib/features/live/stream_host_live_screen.dart',
+    ).readAsStringSync();
+
+    expect(host, contains('Future<void> _heartbeatRoom() async {'));
+    expect(host, contains('if (_heartbeatBusy || _ending || _ended) return;'));
+    expect(host, contains('_heartbeatBusy = true;'));
+    expect(host, contains('_heartbeatBusy = false;'));
+    expect(host, contains('} catch (_) {'));
+    expect(host, contains('} finally {'));
+    expect(host, contains('unawaited(_heartbeatRoom())'));
+  });
+
   test('missing or ended room credentials never attempt Stream Video join', () {
     final backend = File(
       'lib/data/fameverse_live_backend.dart',
