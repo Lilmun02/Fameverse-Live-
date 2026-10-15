@@ -49,7 +49,7 @@ void main() {
     expect(host, contains("payload['qaHostPreview'] == true"));
     expect(host, contains("payload['senderId'] == widget.identity.id"));
     expect(host, contains('if (!ownerLocalPreview)'));
-    expect(host, contains('_chat.add('));
+    expect(host, contains('_appendChat('));
     expect(host, contains('_giftEventGate.shouldRender'));
     expect(viewer, contains('_giftEventGate.shouldRender(eventId)'));
     expect(
@@ -57,6 +57,7 @@ void main() {
       contains("_giftEventGate.shouldRender(payload['id']?.toString())"),
     );
   });
+
   test('three distinct gifts with 5x combos keep every receipt unique', () {
     final catalog = fvGiftCatalog.take(3).toList();
     expect(catalog.length, 3);
@@ -83,5 +84,4 @@ void main() {
     expect(queue.every((item) => item.comboTotal == 5), isTrue);
     expect(queue.map((item) => item.gift.id).toSet().length, 3);
   });
-
 }
