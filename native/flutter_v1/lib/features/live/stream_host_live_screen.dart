@@ -51,6 +51,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   bool _connecting = true;
   bool _ending = false;
+  bool _heartbeatBusy = false;
   bool _ended = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
@@ -128,14 +129,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
       );
 
-      _heartbeat = Timer.periodic(const Duration(seconds: 15), (_) {
-        unawaited(
-          widget.liveBackend.heartbeatLiveRoom(
-            roomId: widget.room.id,
-            hostUserId: widget.identity.id,
-          ),
-        );
-      });
+      _heartbeat = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => unawaited(_heartbeatRoom()),
+      );
       _tapRefresh = Timer.periodic(
         const Duration(seconds: 2),
         (_) => unawaited(_refreshTapTotal()),
@@ -163,6 +160,24 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         _error =
             'Could not start the live broadcast. ${fvFriendlyError(error)}';
       });
+    }
+  }
+
+  // Heartbeat requests can overlap during a temporary network stall. A
+  // failed heartbeat must not become an unhandled async exception or crash Live.
+  Future<void> _heartbeatRoom() async {
+    if (_heartbeatBusy || _ending || _ended) return;
+    _heartbeatBusy = true;
+    try {
+      await widget.liveBackend.heartbeatLiveRoom(
+        roomId: widget.room.id,
+        hostUserId: widget.identity.id,
+      );
+    } catch (_) {
+      // The server's heartbeat cutoff handles genuinely disconnected hosts.
+      // Keep the local Stream session usable through short network outages.
+    } finally {
+      _heartbeatBusy = false;
     }
   }
 
