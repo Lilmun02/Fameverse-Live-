@@ -10,6 +10,21 @@ void require(bool condition, String message) {
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
+  // TEMPORARY formatting probe. Remove after capturing CI formatter output.
+  for (final file in <String>[
+    'lib/features/live/native_live_profile_sheet.dart',
+    'lib/features/live/stream_viewer_live_screen.dart',
+    'test/live_join_and_profile_resilience_test.dart',
+  ]) {
+    final formatted = Process.runSync('dart', [
+      'format',
+      '--output=show',
+      file,
+    ]);
+    stdout.writeln('FVFORMAT-BEGIN:$file');
+    stdout.write(formatted.stdout);
+    stdout.writeln('FVFORMAT-END:$file');
+  }
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
