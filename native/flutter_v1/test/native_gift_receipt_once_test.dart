@@ -38,6 +38,45 @@ void main() {
     expect(gate.shouldRender(''), isTrue);
   });
 
+  test('premium 5x combo plays one movie with quantity intact', () {
+    final premium = fvGiftCatalog.firstWhere((gift) => gift.cinematic);
+    final playback = FvGiftPlayback(
+      gift: premium,
+      quantity: 5,
+      sender: 'Combo tester',
+    );
+    final expanded = fvExpandGiftVisualCombo(playback);
+    expect(expanded, hasLength(1));
+    expect(expanded.single.quantity, 5);
+    expect(expanded.single.visualCountLabel, contains('×5'));
+    expect(fvGiftPlaybackWatchdog(expanded.single),
+        const Duration(seconds: 90));
+  });
+
+  test('three distinct premium 5x gifts stay three presentations', () {
+    final premium = fvGiftCatalog.where((gift) => gift.cinematic).take(3);
+    final queue = <FvGiftPlayback>[];
+    for (final gift in premium) {
+      queue.addAll(fvExpandGiftVisualCombo(
+        FvGiftPlayback(gift: gift, quantity: 5, sender: 'Tester'),
+      ));
+    }
+    expect(queue, hasLength(3));
+    expect(queue.every((item) => item.quantity == 5), isTrue);
+    expect(queue.map((item) => item.gift.id).toSet(), hasLength(3));
+  });
+
+  test('lightweight gifts preserve incremental 5x combo presentation', () {
+    final cheapGift = fvGiftCatalog.firstWhere((gift) => gift.cost < 100);
+    final queue = fvExpandGiftVisualCombo(
+      FvGiftPlayback(gift: cheapGift, quantity: 5, sender: 'Tester'),
+    );
+    expect(queue, hasLength(5));
+    expect(queue.map((item) => item.comboIndex), [1, 2, 3, 4, 5]);
+    expect(fvGiftPlaybackWatchdog(queue.first),
+        const Duration(seconds: 8));
+  });
+
   test('owner host shows chat but skips its duplicate local QA overlay', () {
     final host = File(
       'lib/features/live/stream_host_live_screen.dart',
