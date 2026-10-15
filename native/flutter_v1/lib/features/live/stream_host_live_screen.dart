@@ -1134,8 +1134,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                       ),
                     SizedBox(
                       height: MediaQuery.viewInsetsOf(context).bottom > 0
-                            ? 96
-                            : (cohostActive ? 230 : 245),
+                          ? 96
+                          : (cohostActive ? 230 : 245),
                       child: SingleChildScrollView(
                         reverse: true,
                         child: FvLiveChatList(messages: _chat),
