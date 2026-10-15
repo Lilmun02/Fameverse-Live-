@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Home Live Feed plays a real fullscreen room and swipes vertically', () {
+  test('Home Live Feed plays real fullscreen video with vertical swipes', () {
     final feed = File(
       'lib/features/shell/fameverse_vertical_live_feed.dart',
     ).readAsStringSync();
@@ -50,7 +50,7 @@ void main() {
     expect(feed, contains('room: room'));
   });
 
-  test('Inbox includes real conversations, activities, composer and search', () {
+  test('Inbox contains messages, activity, composer and search', () {
     final inbox = File(
       'lib/features/profile/fameverse_inbox_screen.dart',
     ).readAsStringSync();
