@@ -110,7 +110,7 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
       final targetNetworkFuture = backend == null
           ? Future<FvFollowNetwork?>.value(null)
           : backend.loadFollowNetwork(widget.profile.id);
-      final results = await Future.wait<Object?>([
+      final results = await Future.wait<dynamic>([
         _optionalLoad(statsFuture),
         _optionalLoad(viewerNetworkFuture),
         _optionalLoad(targetNetworkFuture),
@@ -253,12 +253,12 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
                   if (badge != null)
                     _GifterBadgeCard(
                       badge: badge,
-                      level: stats?.gifterLevel ?? 1,
+                      level: stats.gifterLevel,
                     ),
                   const SizedBox(height: 12),
                   _GifterProgressCard(
-                    level: stats?.gifterLevel ?? 1,
-                    totalCoinsSent: stats?.totalCoinsSent ?? 0,
+                    level: stats.gifterLevel,
+                    totalCoinsSent: stats.totalCoinsSent,
                     progress: progress,
                   ),
                   const SizedBox(height: 12),
@@ -267,21 +267,21 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
                       Expanded(
                         child: _MiniStat(
                           label: 'Gift coins',
-                          value: '${stats?.totalCoinsSent ?? 0}',
+                          value: '${stats.totalCoinsSent}',
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _MiniStat(
                           label: 'Live gifts',
-                          value: '${stats?.roomGiftCount ?? 0}',
+                          value: '${stats.roomGiftCount}',
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _MiniStat(
                           label: 'Fame taps',
-                          value: '${stats?.roomFameTaps ?? 0}',
+                          value: '${stats.roomFameTaps}',
                         ),
                       ),
                     ],
