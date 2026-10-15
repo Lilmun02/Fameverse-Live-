@@ -109,6 +109,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _retryJoin() {
     if (_connecting || _leaving) return;
+    // The failed attempt already finished cleanup. Re-arm teardown so this
+    // new Stream call can be left/reset if it fails or the viewer swipes away.
+    _transportCleanup = null;
     setState(() {
       _connecting = true;
       _error = null;
