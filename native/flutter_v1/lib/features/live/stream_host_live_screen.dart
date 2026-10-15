@@ -173,12 +173,20 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     } catch (_) {}
   }
 
+  // Keep Live scrolling responsive under sustained comment/gift floods.
+  void _appendChat(FvLiveChatMessage message) {
+    _chat.add(message);
+    if (_chat.length > 200) {
+      _chat.removeRange(0, _chat.length - 200);
+    }
+  }
+
   void _receiveComment(Map<String, dynamic> payload) {
     final raw = (payload['text'] as String?)?.trim() ?? '';
     if (!mounted || raw.isEmpty) return;
     final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -203,7 +211,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -259,7 +267,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     final id = 'comment-${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id: id,
           user: widget.room.host.displayName,
