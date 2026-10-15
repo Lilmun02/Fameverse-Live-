@@ -1133,7 +1133,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ),
                       ),
                     SizedBox(
-                      height: cohostActive ? 230 : 245,
+                      height: MediaQuery.viewInsetsOf(context).bottom > 0
+                            ? 96
+                            : (cohostActive ? 230 : 245),
                       child: SingleChildScrollView(
                         reverse: true,
                         child: FvLiveChatList(messages: _chat),
@@ -1146,6 +1148,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         Expanded(
                           child: FvLiveCommentComposer(
                             controller: _comment,
+                              onSend: () => unawaited(_postComment()),
                             hintText: 'Say something...',
                           ),
                         ),
