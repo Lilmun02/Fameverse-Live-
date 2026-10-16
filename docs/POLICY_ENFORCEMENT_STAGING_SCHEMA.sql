@@ -46,13 +46,14 @@ LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $fn$
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended(NEW.group_id::text, 0));
-  IF (SELECT count(*) FROM public.fv_account_links WHERE group_id = NEW.group_id) >= 2 THEN
+  IF (SELECT count(*) FROM public.fv_account_links
+      WHERE group_id = NEW.group_id AND user_id <> NEW.user_id) >= 2 THEN
     RAISE EXCEPTION 'Maximum two Fameverse accounts per verified person';
   END IF;
   RETURN NEW;
 END;
 $fn$;
-CREATE TRIGGER fv_max_two_accounts BEFORE INSERT ON public.fv_account_links
+CREATE TRIGGER fv_max_two_accounts BEFORE INSERT OR UPDATE OF group_id ON public.fv_account_links
 FOR EACH ROW EXECUTE FUNCTION public.fv_enforce_two_account_limit();
 
 CREATE TABLE public.fv_account_standing (
