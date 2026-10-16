@@ -16,19 +16,19 @@ void main() {
   test(
     'native lightweight gift uses tiny mid-left art, not a full overlay',
     () {
-    final source = File(
-      'lib/features/live/native_live_components.dart',
-    ).readAsStringSync();
+      final source = File(
+        'lib/features/live/native_live_components.dart',
+      ).readAsStringSync();
 
-    expect(source, contains('Widget _lightweightGift('));
-    expect(source, contains('width: 56,'));
-    expect(source, contains('height: 48,'));
-    expect(source, contains('Alignment(-0.85, 0.1)'));
-    expect(source, contains('if (playback.gift.cost < 100)'));
-    expect(source, contains('if (gift.cost < 100 || !gift.cinematic'));
-    expect(source, contains('return _lightweightGift(playback);'));
-    expect(source, contains("Key('lightweight-gift-"));
-    expect(source, contains('child: Semantics('));
+      expect(source, contains('Widget _lightweightGift('));
+      expect(source, contains('width: 56,'));
+      expect(source, contains('height: 48,'));
+      expect(source, contains('Alignment(-0.85, 0.1)'));
+      expect(source, contains('if (playback.gift.cost < 100)'));
+      expect(source, contains('if (gift.cost < 100 || !gift.cinematic'));
+      expect(source, contains('return _lightweightGift(playback);'));
+      expect(source, contains("Key('lightweight-gift-"));
+      expect(source, contains('child: Semantics('));
     },
   );
 }
