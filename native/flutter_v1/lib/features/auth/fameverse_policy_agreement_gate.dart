@@ -34,10 +34,16 @@ class _FameversePolicyAgreementGateState
   }
 
   Future<void> _load() async {
-    if (mounted) setState(() { _loading = true; _error = null; });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
-      final result = await Supabase.instance.client
-          .rpc('fv_get_policy_requirement');
+      final result = await Supabase.instance.client.rpc(
+        'fv_get_policy_requirement',
+      );
       if (result is! Map) throw StateError('Invalid policy response');
       final record = Map<String, dynamic>.from(result);
       if ((record['version'] as String?)?.isEmpty ?? true) {
@@ -61,27 +67,36 @@ class _FameversePolicyAgreementGateState
 
   Future<void> _accept() async {
     if (!_checked || _saving || _policy == null) return;
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      final result = await Supabase.instance.client
-          .rpc('fv_accept_current_policy');
-      if (result is! Map || result['accepted'] != true ||
+      final result = await Supabase.instance.client.rpc(
+        'fv_accept_current_policy',
+      );
+      if (result is! Map ||
+          result['accepted'] != true ||
           result['version'] != _policy!['version']) {
         throw StateError('Policy version changed before confirmation');
       }
       // Verify the authenticated acceptance is actually present server-side.
-      final recheck = await Supabase.instance.client
-          .rpc('fv_get_policy_requirement');
-      if (recheck is! Map || recheck['accepted'] != true ||
+      final recheck = await Supabase.instance.client.rpc(
+        'fv_get_policy_requirement',
+      );
+      if (recheck is! Map ||
+          recheck['accepted'] != true ||
           recheck['version'] != _policy!['version']) {
         throw StateError('Policy acceptance not confirmed');
       }
       if (mounted) setState(() => _accepted = true);
     } catch (_) {
-      if (mounted) setState(() {
-        _error = 'Agreement could not be saved. Retry to continue.';
-        _checked = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Agreement could not be saved. Retry to continue.';
+          _checked = false;
+        });
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -110,23 +125,31 @@ class _FameversePolicyAgreementGateState
           children: [
             const Icon(Icons.shield_rounded, size: 45),
             const SizedBox(height: 14),
-            const Text('Review before continuing',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              'Review before continuing',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Text('Policy version: ${_policy?['version'] ?? 'Unavailable'}'),
             const SizedBox(height: 12),
-            const Text('Up to two accounts per person. Fraudulent purchases, '
-                'deliberate chargeback or refund abuse, gift manipulation '
-                'and payout fraud are prohibited. Good-faith refunds and '
-                'billing disputes remain protected.'),
+            const Text(
+              'Up to two accounts per person. Fraudulent purchases, '
+              'deliberate chargeback or refund abuse, gift manipulation '
+              'and payout fraud are prohibited. Good-faith refunds and '
+              'billing disputes remain protected.',
+            ),
             const SizedBox(height: 12),
-            ...documents.map((entry) => ExpansionTile(
-              title: Text(entry.$1),
-              children: [Padding(
-                padding: const EdgeInsets.all(14),
-                child: SelectableText(entry.$2),
-              )],
-            )),
+            ...documents.map(
+              (entry) => ExpansionTile(
+                title: Text(entry.$1),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: SelectableText(entry.$2),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             CheckboxListTile(
               key: const Key('policy-consent-checkbox'),
@@ -135,18 +158,24 @@ class _FameversePolicyAgreementGateState
                   ? null
                   : (value) => setState(() => _checked = value == true),
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text('I have read and agree to the Terms of '
-                  'Service, Community Standards, and Financial Protection '
-                  'Policy, and acknowledge the Privacy Notice.'),
+              title: const Text(
+                'I have read and agree to the Terms of '
+                'Service, Community Standards, and Financial Protection '
+                'Policy, and acknowledge the Privacy Notice.',
+              ),
             ),
             if (_error != null) ...[
-              Text(_error!, style: const TextStyle(color: Colors.orangeAccent)),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.orangeAccent),
+              ),
               TextButton(onPressed: _load, child: const Text('Retry check')),
             ],
             FilledButton(
               key: const Key('policy-accept-continue'),
               onPressed: _checked && !_saving && _policy != null
-                  ? _accept : null,
+                  ? _accept
+                  : null,
               child: Text(_saving ? 'Saving…' : 'Accept & continue'),
             ),
             TextButton(
