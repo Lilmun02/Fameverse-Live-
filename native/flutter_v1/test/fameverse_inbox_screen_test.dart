@@ -51,6 +51,16 @@ class _InboxStub implements FameverseInboxRepository {
 
   @override
   Future<void> readActivity(String userId, String activityId) async {}
+
+  @override
+  Future<void> blockUser(String userId, String blockedUserId) async {}
+
+  @override
+  Future<void> reportUser(
+    String userId,
+    String targetUserId,
+    String reason,
+  ) async {}
 }
 
 void main() {
