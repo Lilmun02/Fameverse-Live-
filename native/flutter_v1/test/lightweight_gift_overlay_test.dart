@@ -13,7 +13,9 @@ void main() {
     }
   });
 
-  test('native lightweight gift uses tiny mid-left art, not a full overlay', () {
+  test(
+    'native lightweight gift uses tiny mid-left art, not a full overlay',
+    () {
     final source = File(
       'lib/features/live/native_live_components.dart',
     ).readAsStringSync();
@@ -27,5 +29,6 @@ void main() {
     expect(source, contains('return _lightweightGift(playback);'));
     expect(source, contains("Key('lightweight-gift-"));
     expect(source, contains('child: Semantics('));
-  });
+    },
+  );
 }
