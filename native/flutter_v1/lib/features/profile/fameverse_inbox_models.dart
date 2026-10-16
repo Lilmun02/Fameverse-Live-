@@ -104,4 +104,6 @@ abstract class FameverseInboxRepository {
   Future<void> sendMessage(String userId, String conversationId, String body);
   Future<void> readConversation(String userId, String conversationId);
   Future<void> readActivity(String userId, String activityId);
+  Future<void> blockUser(String userId, String blockedUserId);
+  Future<void> reportUser(String userId, String targetUserId, String reason);
 }
