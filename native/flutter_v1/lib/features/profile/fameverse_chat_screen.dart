@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'fameverse_inbox_models.dart';
+
+enum _ChatSafetyAction { block, report }
 
 class FameverseChatScreen extends StatefulWidget {
   const FameverseChatScreen({
     required this.repository,
     required this.userId,
     required this.conversationId,
+    required this.peerId,
     required this.peerName,
     super.key,
   });
@@ -14,6 +19,7 @@ class FameverseChatScreen extends StatefulWidget {
   final FameverseInboxRepository repository;
   final String userId;
   final String conversationId;
+  final String peerId;
   final String peerName;
 
   @override
@@ -97,6 +103,99 @@ class _FameverseChatScreenState extends State<FameverseChatScreen> {
     }
   }
 
+
+  Future<void> _blockUser() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Block this user?'),
+        content: const Text(
+          'They will not be able to send you messages. '
+          'You can still report abusive behavior.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    try {
+      await widget.repository.blockUser(widget.userId, widget.peerId);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not block this account.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _reportUser() async {
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Report this user'),
+        content: TextField(
+          key: const Key('direct-chat-report-reason'),
+          controller: controller,
+          minLines: 2,
+          maxLines: 4,
+          maxLength: 1000,
+          decoration: const InputDecoration(
+            labelText: 'Describe the abusive behavior',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Submit report'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || reason == null) return;
+    if (reason.length < 5 || reason.length > 1000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter at least 5 characters.')),
+      );
+      return;
+    }
+    try {
+      await widget.repository.reportUser(
+        widget.userId,
+        widget.peerId,
+        reason,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted for review.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not submit report.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     key: const Key('fameverse-direct-chat'),
@@ -105,6 +204,27 @@ class _FameverseChatScreenState extends State<FameverseChatScreen> {
       backgroundColor: const Color(0xFF0D0912),
       title: Text(widget.peerName),
       actions: [
+        PopupMenuButton<_ChatSafetyAction>(
+          key: const Key('direct-chat-safety-menu'),
+          tooltip: 'Block or report user',
+          onSelected: (action) {
+            if (action == _ChatSafetyAction.block) {
+              unawaited(_blockUser());
+            } else {
+              unawaited(_reportUser());
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: _ChatSafetyAction.block,
+              child: Text('Block user'),
+            ),
+            PopupMenuItem(
+              value: _ChatSafetyAction.report,
+              child: Text('Report user'),
+            ),
+          ],
+        ),
         IconButton(
           tooltip: 'Refresh messages',
           onPressed: _load,
