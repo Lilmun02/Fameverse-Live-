@@ -550,12 +550,19 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onEdit: () => _openEdit(profile),
             onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
-            onOpenInbox: () => Navigator.of(context).push<void>(
-              MaterialPageRoute(
-                builder: (context) =>
-                    FameverseInboxScreen(userId: widget.identity.id),
-              ),
-            ),
+            // Inbox remains opt-in until its private RLS-backed tables and
+            // blocking/reporting controls pass staged multi-account QA.
+            onOpenInbox: const bool.fromEnvironment(
+              'FAMEVERSE_NATIVE_INBOX_ENABLED',
+              defaultValue: false,
+            )
+                ? () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          FameverseInboxScreen(userId: widget.identity.id),
+                    ),
+                  )
+                : null,
             onPolicies: _openPolicies,
             onSignOut: widget.backend.signOut,
           ),
