@@ -185,4 +185,34 @@ class SupabaseFameverseInboxRepository implements FameverseInboxRepository {
         .eq('user_id', userId)
         .eq('id', activityId);
   }
+  @override
+  Future<void> blockUser(String userId, String blockedUserId) async {
+    _requireAccount(userId);
+    if (userId == blockedUserId) {
+      throw StateError('You cannot block your own account');
+    }
+    await client.from('direct_user_blocks').insert({
+      'blocker_id': userId,
+      'blocked_id': blockedUserId,
+    });
+  }
+
+  @override
+  Future<void> reportUser(
+    String userId,
+    String targetUserId,
+    String reason,
+  ) async {
+    _requireAccount(userId);
+    final clean = reason.trim();
+    if (targetUserId == userId || clean.length < 5 || clean.length > 1000) {
+      throw ArgumentError('Choose another account and a valid report reason');
+    }
+    await client.from('direct_user_reports').insert({
+      'reporter_id': userId,
+      'reported_user_id': targetUserId,
+      'reason': clean,
+    });
+  }
+
 }
