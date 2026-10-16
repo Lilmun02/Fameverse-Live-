@@ -45,7 +45,7 @@ class FvGiftPlayback {
   final int comboTotal;
 
   String get visualCountLabel {
-    if (comboTotal > 1) return ' · Combo ×$comboIndex';
+    if (comboTotal > 1) return ' · Combo $comboIndex/$comboTotal';
     if (quantity > 1) return ' · ×$quantity';
     return '';
   }
@@ -54,10 +54,11 @@ class FvGiftPlayback {
 const int fvMaxSequentialGiftCombo = 50;
 
 List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
-  // A cinematic combo is one purchased send with a quantity, not N separate
-  // movies. Restarting the same long video N times backs up the gift queue.
-  if (playback.gift.cinematic ||
-      playback.quantity <= 1 ||
+  // One accepted quantity-5 send becomes five sequential presentations,
+  // even for cinematic Dragons. This visual expansion NEVER makes new wallet
+  // debits or network gift receipts: all viewers render the same 5 stages.
+  // The existing high-quantity safety limit prevents unbounded UI allocation.
+  if (playback.quantity <= 1 ||
       playback.quantity > fvMaxSequentialGiftCombo) {
     return <FvGiftPlayback>[playback];
   }
@@ -118,7 +119,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.playback.gift.id != widget.playback.gift.id ||
         oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.quantity != widget.playback.quantity) {
+        oldWidget.playback.quantity != widget.playback.quantity ||
+        oldWidget.playback.comboIndex != widget.playback.comboIndex ||
+        oldWidget.playback.comboTotal != widget.playback.comboTotal) {
       _reportedFinished = false;
       _finishTimer?.cancel();
       unawaited(_syncVideo());
@@ -322,6 +325,50 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final playback = widget.playback;
+    final visual = _buildGiftVisual(context);
+    if (playback.comboTotal <= 1) return visual;
+
+    // Compact progress label, visible for premium video AND lightweight gifts.
+    // Only the active queued animation is on screen; never overlay 5 movies.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        visual,
+        IgnorePointer(
+          child: Align(
+            alignment: const Alignment(-0.72, -0.42),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xDD160C23),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD49BFF)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                child: Text(
+                  'COMBO ${playback.comboIndex}/${playback.comboTotal}',
+                  key: Key(
+                    'gift-combo-stage-${playback.comboIndex}-of-${playback.comboTotal}',
+                  ),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGiftVisual(BuildContext context) {
     final playback = widget.playback;
 
     if (playback.gift.cost < 100) {
