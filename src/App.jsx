@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import AuthScreen from './components/auth/AuthScreen.jsx'
+import PolicyAgreementGate from './components/auth/PolicyAgreementGate.jsx'
 import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
 import GiftOverlay from './components/gifts/GiftOverlay.jsx'
 import HomeScreen from './components/home/HomeScreen.jsx'
@@ -290,6 +291,7 @@ export default function App() {
   }
 
   return (
+    <PolicyAgreementGate userId={account.session.user.id}>
     <div className={`app-shell ${tab === 'live' && live.isLive ? 'live-app-shell' : ''}`}>
       {toast && <div className="toast">{toast}</div>}
       <GiftOverlay giftOverlay={gifts.giftOverlay} />
@@ -413,5 +415,6 @@ export default function App() {
         </>
       )}
     </div>
+    </PolicyAgreementGate>
   )
 }
