@@ -38,24 +38,28 @@ void main() {
     expect(gate.shouldRender(''), isTrue);
   });
 
-  test('premium 5x combo plays one movie with quantity intact', () {
+  test('five premium Dragons queue five separate combo movies in order', () {
     final premium = fvGiftCatalog.firstWhere((gift) => gift.cinematic);
     final playback = FvGiftPlayback(
       gift: premium,
       quantity: 5,
       sender: 'Combo tester',
     );
-    final expanded = fvExpandGiftVisualCombo(playback);
-    final timeout = fvGiftPlaybackWatchdog(expanded.single);
-    expect(expanded, hasLength(1));
-    expect(expanded.single.quantity, 5);
-    expect(expanded.single.visualCountLabel, contains('×5'));
-    expect(timeout, const Duration(seconds: 90));
+    final queue = fvExpandGiftVisualCombo(playback);
+    expect(queue, hasLength(5));
+    expect(queue.every((item) => item.gift.id == premium.id), isTrue);
+    expect(queue.every((item) => item.quantity == 1), isTrue);
+    expect(queue.map((item) => item.comboIndex), [1, 2, 3, 4, 5]);
+    expect(queue.every((item) => item.comboTotal == 5), isTrue);
+    expect(queue.first.visualCountLabel, contains('Combo 1/5'));
+    expect(queue.last.visualCountLabel, contains('Combo 5/5'));
+    expect(fvGiftPlaybackWatchdog(queue.first), const Duration(seconds: 90));
   });
 
-  test('three distinct premium 5x gifts stay three presentations', () {
+  test('three premium combo receipts queue all 15 movies FIFO', () {
     final premium = fvGiftCatalog.where((gift) => gift.cinematic).take(3);
     final queue = <FvGiftPlayback>[];
+    final expectedGiftIds = <String>[];
     for (final gift in premium) {
       final playback = FvGiftPlayback(
         gift: gift,
@@ -63,10 +67,16 @@ void main() {
         sender: 'Tester',
       );
       queue.addAll(fvExpandGiftVisualCombo(playback));
+      expectedGiftIds.addAll(List<String>.filled(5, gift.id));
     }
-    expect(queue, hasLength(3));
-    expect(queue.every((item) => item.quantity == 5), isTrue);
-    expect(queue.map((item) => item.gift.id).toSet(), hasLength(3));
+    expect(queue, hasLength(15));
+    expect(queue.map((item) => item.gift.id).toList(), expectedGiftIds);
+    expect(queue.map((item) => item.comboIndex).toList(), [
+      1, 2, 3, 4, 5,
+      1, 2, 3, 4, 5,
+      1, 2, 3, 4, 5,
+    ]);
+    expect(queue.every((item) => item.quantity == 1), isTrue);
   });
 
   test('lightweight gifts preserve incremental 5x combo presentation', () {
@@ -81,6 +91,55 @@ void main() {
     expect(queue, hasLength(5));
     expect(queue.map((item) => item.comboIndex), [1, 2, 3, 4, 5]);
     expect(timeout, const Duration(seconds: 8));
+  });
+
+  testWidgets('identical combo gifts play one at a time with visible progress', (
+    tester,
+  ) async {
+    const dragon = FvGiftDefinition(
+      id: 'test-dragon',
+      label: 'Dragon',
+      cost: 1000,
+      category: 'fameverse',
+      emoji: '🐉',
+    );
+    final queue = fvExpandGiftVisualCombo(
+      const FvGiftPlayback(gift: dragon, quantity: 5, sender: 'Tester'),
+    );
+    final completed = <int>[];
+    var active = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setStage) => Stack(
+              children: [
+                if (active < queue.length)
+                  NativeGiftOverlay(
+                    key: ValueKey('stage-$active'),
+                    playback: queue[active],
+                    onFinished: () {
+                      completed.add(active + 1);
+                      setStage(() => active++);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    for (var stage = 1; stage <= 5; stage++) {
+      expect(
+        find.byKey(Key('gift-combo-stage-$stage-of-5')),
+        findsOneWidget,
+      );
+      expect(find.text('COMBO $stage/5'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 3100));
+    }
+    expect(completed, [1, 2, 3, 4, 5]);
+    expect(find.byType(NativeGiftOverlay), findsNothing);
   });
 
   test('owner host shows chat but skips its duplicate local QA overlay', () {
@@ -104,7 +163,7 @@ void main() {
   });
 
   test('three distinct gifts with 5x combos keep every receipt unique', () {
-    final catalog = fvGiftCatalog.take(3).toList();
+    final catalog = fvGiftCatalog.where((gift) => gift.cinematic).take(3).toList();
     expect(catalog.length, 3);
     final gate = FvGiftReceiptGate();
     final queue = <FvGiftPlayback>[];
