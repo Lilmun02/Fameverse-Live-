@@ -80,6 +80,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
           repository: _repo,
           userId: widget.userId,
           conversationId: conversation.id,
+          peerId: conversation.peerId,
           peerName: conversation.peerName,
         ),
       ),
