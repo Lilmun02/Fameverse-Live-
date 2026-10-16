@@ -156,7 +156,11 @@ void main() {
       expect(host, contains("Key('host-v2-combined-stats')"));
       expect(host, contains('backgroundColor: const Color(0xFFE62952)'));
       expect(host, contains("Key('host-f-menu-button')"));
-      expect(host, contains('height: cohostActive ? 230 : 245'));
+      expect(
+        host,
+        contains('height: MediaQuery.viewInsetsOf(context).bottom > 0'),
+      );
+      expect(host, contains('(cohostActive ? 230 : 245)'));
       expect(host, contains('FvLiveCommentComposer('));
       expect(shared, contains('class FvFameActionButton'));
       expect(shared, contains('color: Color(0xFFE1B5FF)'));
@@ -178,9 +182,11 @@ void main() {
 
         expect(shared, contains('fontSize: 15'));
         expect(shared, contains("'Lv. \$level'"));
-        expect(shared, contains('maxLines: 3'));
-        expect(shared, contains('keyboardType: TextInputType.multiline'));
-        expect(shared, contains('textInputAction: TextInputAction.newline'));
+        expect(shared, contains('maxLength: 160'));
+        expect(shared, contains('maxLines: 1'));
+        expect(shared, contains('keyboardType: TextInputType.text'));
+        expect(shared, contains('textInputAction: TextInputAction.send'));
+        expect(shared, contains('onSubmitted: (_) => onSend?.call()'));
         expect(host, contains('cohostCameraHeight + 32'));
         expect(viewer, contains('cohostCameraHeight + 32'));
         expect(host, contains('FvLiveCommentComposer('));
@@ -229,17 +235,10 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is source-locked to Build 32', () async {
+    test('TestFlight builds the triggering commit', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
-      expect(
-        codemagic,
-        contains('TARGET_BRANCH="integration/sep27-big-update"'),
-      );
-      expect(
-        codemagic,
-        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
-      );
+      expect(codemagic, contains('git checkout --detach "\$CM_COMMIT"'));
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
       expect(codemagic, contains('build32_source_identity.txt'));
       expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
@@ -249,6 +248,10 @@ void main() {
         contains(
           '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
         ),
+      );
+      expect(
+        codemagic,
+        isNot(contains('TARGET_BRANCH="integration/sep27-big-update"')),
       );
     });
 

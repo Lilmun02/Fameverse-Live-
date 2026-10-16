@@ -81,7 +81,23 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
     unawaited(_load());
   }
 
+  // Live gifting stats can fail when a room ends; follow/profile data
+  // must remain available instead of failing the entire profile sheet.
+  Future<T?> _optionalLoad<T>(Future<T> request) async {
+    try {
+      return await request;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _load() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final statsFuture = widget.liveBackend.loadViewerIdentityStats(
         roomId: widget.roomId,
@@ -94,19 +110,21 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
       final targetNetworkFuture = backend == null
           ? Future<FvFollowNetwork?>.value(null)
           : backend.loadFollowNetwork(widget.profile.id);
-      final results = await Future.wait<dynamic>(<Future<dynamic>>[
-        statsFuture,
-        viewerNetworkFuture,
-        targetNetworkFuture,
+      final results = await Future.wait<dynamic>([
+        _optionalLoad(statsFuture),
+        _optionalLoad(viewerNetworkFuture),
+        _optionalLoad(targetNetworkFuture),
       ]);
       if (!mounted) return;
-      final stats = (results[0] as List<FvViewerIdentityStats>);
+      final stats = results[0] as List<FvViewerIdentityStats>?;
       setState(() {
-        _stats = stats.isEmpty ? null : stats.first;
+        _stats = stats == null || stats.isEmpty ? null : stats.first;
         _viewerNetwork = results[1] as FvFollowNetwork?;
         _targetNetwork = results[2] as FvFollowNetwork?;
         _loading = false;
-        _error = null;
+        _error = stats == null
+            ? 'Live gift stats are temporarily unavailable.'
+            : null;
       });
     } catch (_) {
       if (!mounted) return;
@@ -218,49 +236,54 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
                   padding: EdgeInsets.symmetric(vertical: 18),
                   child: CircularProgressIndicator(),
                 )
-              else if (_error != null)
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFFB6A9BC)),
-                )
               else ...[
-                if (badge != null)
-                  _GifterBadgeCard(
-                    badge: badge,
-                    level: stats?.gifterLevel ?? 1,
+                if (_error != null) ...[
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Color(0xFFB6A9BC)),
                   ),
-                const SizedBox(height: 12),
-                _GifterProgressCard(
-                  level: stats?.gifterLevel ?? 1,
-                  totalCoinsSent: stats?.totalCoinsSent ?? 0,
-                  progress: progress,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Gift coins',
-                        value: '${stats?.totalCoinsSent ?? 0}',
+                  TextButton.icon(
+                    onPressed: () => unawaited(_load()),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry details'),
+                  ),
+                ],
+                if (stats != null) ...[
+                  if (badge != null)
+                    _GifterBadgeCard(badge: badge, level: stats.gifterLevel),
+                  const SizedBox(height: 12),
+                  _GifterProgressCard(
+                    level: stats.gifterLevel,
+                    totalCoinsSent: stats.totalCoinsSent,
+                    progress: progress,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Gift coins',
+                          value: '${stats.totalCoinsSent}',
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Live gifts',
-                        value: '${stats?.roomGiftCount ?? 0}',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Live gifts',
+                          value: '${stats.roomGiftCount}',
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Fame taps',
-                        value: '${stats?.roomFameTaps ?? 0}',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Fame taps',
+                          value: '${stats.roomFameTaps}',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
                 if (_targetNetwork != null) ...[
                   const SizedBox(height: 12),
                   Row(
@@ -286,7 +309,9 @@ class _NativeLiveProfileSheetState extends State<NativeLiveProfileSheet> {
                 const SizedBox(height: 16),
                 FilledButton(
                   key: const Key('native-live-profile-follow-button'),
-                  onPressed: _followBusy ? null : _toggleFollow,
+                  onPressed: _followBusy || _viewerNetwork == null
+                      ? null
+                      : _toggleFollow,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                     backgroundColor: _isFollowing

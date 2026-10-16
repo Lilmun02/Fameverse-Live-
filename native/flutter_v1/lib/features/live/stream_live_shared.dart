@@ -7,7 +7,17 @@ void fvRequireSuccess<T>(Result<T> result, String message) {
   }
 }
 
+bool fvIsEndedLiveError(Object error) {
+  final text = error.toString().toLowerCase();
+  return text.contains('live-room-ended') ||
+      text.contains('room-not-live') ||
+      text.contains('room-not-found');
+}
+
 String fvFriendlyError(Object error) {
+  if (fvIsEndedLiveError(error)) {
+    return 'This live has ended. Return to the Live feed.';
+  }
   final text = error.toString();
   if (text.contains('stream-not-configured')) {
     return 'Stream Video credentials are not configured yet.';
@@ -191,22 +201,29 @@ class FvLiveCommentComposer extends StatelessWidget {
   const FvLiveCommentComposer({
     required this.controller,
     required this.hintText,
+    this.enabled = true,
+    this.onSend,
     super.key,
   });
 
   final TextEditingController controller;
   final String hintText;
+  final bool enabled;
+  final VoidCallback? onSend;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       key: const Key('live-multiline-comment-composer'),
       controller: controller,
+      enabled: enabled,
       maxLength: 160,
       minLines: 1,
-      maxLines: 3,
-      keyboardType: TextInputType.multiline,
-      textInputAction: TextInputAction.newline,
+      maxLines: 1,
+      keyboardType: TextInputType.text,
+      textInputAction: TextInputAction.send,
+      onSubmitted: (_) => onSend?.call(),
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       style: const TextStyle(fontSize: 15, height: 1.28),
       decoration: InputDecoration(
         hintText: hintText,

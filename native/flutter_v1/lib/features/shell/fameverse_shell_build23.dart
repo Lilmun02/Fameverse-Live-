@@ -13,6 +13,7 @@ import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_build23.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
+import '../profile/fameverse_inbox_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
@@ -21,6 +22,7 @@ import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_build23.dart';
+import 'fameverse_vertical_live_feed.dart';
 
 class FameverseBuild23Shell extends StatefulWidget {
   const FameverseBuild23Shell({
@@ -51,6 +53,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   SupabaseFameverseCreatorBackend? _creatorBackend;
 
   int _tab = 0;
+  int _profileRecognitionRefreshToken = 0;
   bool _loading = true;
   bool _followBusy = false;
   bool _avatarBusy = false;
@@ -60,6 +63,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   FvFollowNetwork _network = _emptyNetwork;
   List<FvCreator> _creators = const [];
   List<FvLiveRoom> _rooms = const [];
+  Timer? _roomRefreshTimer;
+  bool _roomRefreshBusy = false;
   List<FvCreatorStory> _stories = const [];
   FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
@@ -72,6 +77,18 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     unawaited(_refreshBeta());
     unawaited(_refreshStories());
     unawaited(_refreshRole());
+    // Active-room heartbeats expire quickly. Refresh Home/Discover while open.
+    _roomRefreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (_tab == 0 || _tab == 1) {
+        unawaited(_refreshRooms());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _roomRefreshTimer?.cancel();
+    super.dispose();
   }
 
   bool _ensureSupplementalBackends() {
@@ -188,7 +205,24 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     }
   }
 
+  Future<void> _refreshRooms() async {
+    if (_roomRefreshBusy) return;
+    _roomRefreshBusy = true;
+    try {
+      final rooms = await widget.backend.listActiveLiveRooms(
+        excludeUserId: widget.identity.id,
+      );
+      if (mounted) setState(() => _rooms = rooms);
+    } catch (_) {
+      // A temporary discovery failure must not erase visible live rooms.
+    } finally {
+      _roomRefreshBusy = false;
+    }
+  }
+
   Future<void> _refreshAll() async {
+    // Discovery must load independently of recommendations, follows or profile.
+    unawaited(_refreshRooms());
     if (mounted) {
       setState(() {
         _loading = true;
@@ -202,7 +236,6 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
         widget.backend.listRecommendedCreators(
           excludeUserId: widget.identity.id,
         ),
-        widget.backend.listActiveLiveRooms(excludeUserId: widget.identity.id),
       ]);
       if (!mounted) return;
       final account = results[0] as ({FvProfile profile, String? role})?;
@@ -214,7 +247,6 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
         _accountRole = account.role;
         _network = results[1] as FvFollowNetwork;
         _creators = results[2] as List<FvCreator>;
-        _rooms = results[3] as List<FvLiveRoom>;
         _loading = false;
       });
       unawaited(_refreshStories());
@@ -458,14 +490,20 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
           identity: widget.identity,
           viewerProfile: profile,
           room: room,
+          onLiveJoined: () => unawaited(_recordBetaMission('join_live')),
         ),
       ),
     );
-    await _recordBetaMission('join_live');
+    // A room can end while it is still present in a previously loaded feed.
+    // Always refresh discovery after returning, even after a failed join.
+    if (mounted) unawaited(_refreshRooms());
   }
 
   void _setTab(int value) {
-    setState(() => _tab = value);
+    setState(() {
+      _tab = value;
+      if (value == 3) _profileRecognitionRefreshToken++;
+    });
     if (value == 0) {
       unawaited(_recordBetaMission('browse_home'));
       unawaited(_refreshStories());
@@ -476,12 +514,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       unawaited(_refreshRole());
     }
     if (value == 0 || value == 1) {
-      widget.backend
-          .listActiveLiveRooms(excludeUserId: widget.identity.id)
-          .then((rooms) {
-            if (mounted) setState(() => _rooms = rooms);
-          })
-          .catchError((_) {});
+      unawaited(_refreshRooms());
     }
   }
 
@@ -502,23 +535,38 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       body: IndexedStack(
         index: _tab,
         children: [
-          FameverseHomeBuild23Screen(
-            profile: profile,
-            network: _network,
-            creators: _creators,
-            rooms: _rooms,
-            stories: _stories,
-            loading: _loading,
-            error: _error,
-            onRefresh: _refreshAll,
-            onOpenProfile: () => _setTab(3),
-            onOpenDiscover: () => _setTab(1),
-            onOpenStories: () => unawaited(_openStories(profile)),
-            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
-            onToggleFollow: _toggleFollow,
-            onCreatorSelected: _openPublicProfile,
-            followBusy: _followBusy,
-          ),
+          if (_tab == 0 && _rooms.isNotEmpty)
+            FameverseVerticalLiveFeed(
+              backend: widget.backend,
+              liveBackend: widget.liveBackend,
+              identity: widget.identity,
+              profile: profile,
+              rooms: _rooms,
+              followingIds: _network.followingIds,
+              onOpenDiscover: () => _setTab(1),
+              onOpenStories: () => unawaited(_openStories(profile)),
+              onRefresh: _refreshRooms,
+            )
+          else if (_tab == 0)
+            FameverseHomeBuild23Screen(
+              profile: profile,
+              network: _network,
+              creators: _creators,
+              rooms: _rooms,
+              stories: _stories,
+              loading: _loading,
+              error: _error,
+              onRefresh: _refreshAll,
+              onOpenProfile: () => _setTab(3),
+              onOpenDiscover: () => _setTab(1),
+              onOpenStories: () => unawaited(_openStories(profile)),
+              onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
+              onToggleFollow: _toggleFollow,
+              onCreatorSelected: _openPublicProfile,
+              followBusy: _followBusy,
+            )
+          else
+            const SizedBox.shrink(),
           FameverseDiscoverScreen(
             profile: profile,
             network: _network,
@@ -544,6 +592,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             network: _network,
             isOwner: _isOwner,
             betaStatus: _betaStatus,
+            recognitionRefreshToken: _profileRecognitionRefreshToken,
             avatarBusy: _avatarBusy,
             onChangePhoto: _pickProfilePhoto,
             onEdit: () => _openEdit(profile),
@@ -551,6 +600,12 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
             onPolicies: _openPolicies,
             onSignOut: widget.backend.signOut,
+            onOpenInbox: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (context) =>
+                    FameverseInboxScreen(userId: widget.identity.id),
+              ),
+            ),
           ),
         ],
       ),

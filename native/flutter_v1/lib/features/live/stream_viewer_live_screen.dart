@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import '../profile/fame_coin_store_screen.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_components.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
@@ -14,12 +15,16 @@ import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
 class NativeViewerLiveScreen extends StatefulWidget {
+  // Serializes the teardown of the previous fullscreen feed session.
+  static Future<void> _lastTransportCleanup = Future<void>.value();
   const NativeViewerLiveScreen({
     required this.backend,
     required this.liveBackend,
     required this.identity,
     required this.viewerProfile,
     required this.room,
+    this.onLiveJoined,
+    this.onExitFeed,
     super.key,
   });
 
@@ -28,6 +33,8 @@ class NativeViewerLiveScreen extends StatefulWidget {
   final FvIdentity identity;
   final FvProfile viewerProfile;
   final FvLiveRoom room;
+  final VoidCallback? onLiveJoined;
+  final VoidCallback? onExitFeed;
 
   @override
   State<NativeViewerLiveScreen> createState() => _NativeViewerLiveScreenState();
@@ -37,11 +44,13 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final TextEditingController _comment = TextEditingController();
   final List<FvLiveChatMessage> _chat = [];
   final List<FvGiftPlayback> _giftQueue = [];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
   final List<int> _tapBursts = [];
   final Stopwatch _tapClock = Stopwatch();
   Call? _call;
+  Future<void>? _transportCleanup;
   FvLiveActivitySession? _activity;
   StreamSubscription<CallState>? _callStateSubscription;
   Timer? _tapFlushTimer;
@@ -49,6 +58,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   FvGiftPlayback? _giftPlayback;
   bool _connecting = true;
   bool _leaving = false;
+  bool _roomEnded = false;
+  bool _joinedOnce = false;
   bool _walletReady = false;
   bool _giftSending = false;
   bool _tapDraining = false;
@@ -69,6 +80,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   String? _error;
 
   bool get _canRefill => _accountRole == 'owner' || _accountRole == 'admin';
+  bool get _canInteract => _activity != null && !_connecting && _error == null;
   bool get _selfIsCohost => _activeCohostUserId == widget.identity.id;
 
   @override
@@ -95,8 +107,25 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (_) {}
   }
 
+  void _retryJoin() {
+    if (_connecting || _leaving) return;
+    // The failed attempt already finished cleanup. Re-arm teardown so this
+    // new Stream call can be left/reset if it fails or the viewer swipes away.
+    _transportCleanup = null;
+    setState(() {
+      _connecting = true;
+      _error = null;
+      _roomEnded = false;
+      _walletReady = false;
+    });
+    unawaited(_connect());
+  }
+
   Future<void> _connect() async {
     try {
+      await Future<void>.delayed(Duration.zero);
+      await NativeViewerLiveScreen._lastTransportCleanup;
+      if (!mounted) return;
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: widget.room.id,
         role: 'viewer',
@@ -128,15 +157,22 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         call.setAudioBitrateProfile(SfuAudioBitrateProfile.voiceHighQuality),
         'Could not configure high-quality live audio',
       );
-      fvRequireSuccess(
-        await call.join(
+      // Supabase can expose a room before the host's goLive() finishes.
+      // Stream denies ordinary viewers access while the call is backstage.
+      // Bound retries rather than trapping viewers on an empty Live screen.
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final joinResult = await call.join(
           connectOptions: CallConnectOptions(
             camera: TrackOption.disabled(),
             microphone: TrackOption.disabled(),
           ),
-        ),
-        'Could not join the livestream',
-      );
+        );
+        if (!joinResult.isFailure) break;
+        if (attempt == 2) {
+          fvRequireSuccess(joinResult, 'Could not join the livestream');
+        }
+        await Future<void>.delayed(Duration(milliseconds: 400 * (attempt + 1)));
+      }
 
       _callStateSubscription?.cancel();
       _callStateSubscription = call.state.valueStream.listen((state) {
@@ -161,13 +197,22 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _flushTapBuffer();
       });
       if (mounted) setState(() => _connecting = false);
+      if (!_joinedOnce && mounted) {
+        _joinedOnce = true;
+        widget.onLiveJoined?.call();
+      }
       unawaited(_hydrateViewerState());
     } catch (error) {
       await _disposeTransport();
       if (!mounted) return;
+      final ended = fvIsEndedLiveError(error);
       setState(() {
         _connecting = false;
-        _error = 'Could not join this live. ${fvFriendlyError(error)}';
+        _walletReady = false;
+        _roomEnded = ended;
+        _error = ended
+            ? 'This live has ended. Return to the Live feed.'
+            : 'Could not join this live. ${fvFriendlyError(error)}';
       });
     }
   }
@@ -205,11 +250,19 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (_) {}
   }
 
+  // Keep Live scrolling responsive under sustained comment/gift floods.
+  void _appendChat(FvLiveChatMessage message) {
+    _chat.add(message);
+    if (_chat.length > 200) {
+      _chat.removeRange(0, _chat.length - 200);
+    }
+  }
+
   void _receiveComment(Map<String, dynamic> payload) {
     final text = (payload['text'] as String?)?.trim() ?? '';
     if (text.isEmpty || !mounted) return;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -226,6 +279,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (gift == null || !mounted) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -233,7 +287,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -272,7 +326,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -282,7 +336,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final clean = text.length > 160 ? text.substring(0, 160) : text;
     final id = 'comment-${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id: id,
           user: widget.viewerProfile.displayName,
@@ -366,6 +420,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         quantity: quantity,
       );
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
+      // The sender gets a local immediate presentation; an echoed
+      // broadcast of this same receipt must not restart its audio.
+      _giftEventGate.shouldRender(eventId);
       final message = FvLiveChatMessage(
         id: eventId,
         user: widget.viewerProfile.displayName,
@@ -380,7 +437,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         setState(() {
           _walletBalance = result.walletBalance;
           _gifterLevel = result.level;
-          _chat.add(message);
+          _appendChat(message);
         });
       }
       _enqueueGift(
@@ -483,7 +540,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   void _tapStage() {
-    if (_connecting || _leaving) return;
+    if (_connecting || _leaving || _error != null || _activity == null) {
+      return;
+    }
     _tapBuffer.add(_tapClock.elapsedMicroseconds / 1000.0);
     final serial = _localTapCount + 1;
     setState(() {
@@ -806,7 +865,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _toggleCohostCamera() async {
-    if (!_selfIsCohost || _call == null) return;
+    if (!_selfIsCohost || _call == null || _cohostFlipBusy) return;
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _cohostFlipBusy = true);
+    } else {
+      _cohostFlipBusy = true;
+    }
+
     final next = !_cohostCameraEnabled;
     try {
       fvRequireSuccess(
@@ -816,6 +883,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (mounted) setState(() => _cohostCameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _cohostFlipBusy = false);
+      } else {
+        _cohostFlipBusy = false;
+      }
     }
   }
 
@@ -958,10 +1031,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ? Icons.videocam_rounded
                           : Icons.videocam_off_rounded,
                       label: _cohostCameraEnabled ? 'Camera' : 'Camera on',
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        unawaited(_toggleCohostCamera());
-                      },
+                      onPressed: !_cohostFlipBusy
+                          ? () {
+                              Navigator.of(context).pop();
+                              unawaited(_toggleCohostCamera());
+                            }
+                          : null,
                     ),
                     FvRoundLiveButton(
                       icon: Icons.call_end_rounded,
@@ -1021,7 +1096,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _schedulePop() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).maybePop();
+      if (!mounted) return;
+      if (widget.onExitFeed != null) {
+        widget.onExitFeed!();
+      } else {
+        Navigator.of(context).maybePop();
+      }
     });
   }
 
@@ -1055,7 +1135,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     unawaited(_disposeTransport());
   }
 
-  Future<void> _disposeTransport() async {
+  Future<void> _disposeTransport() =>
+      _transportCleanup ??= _performTransportCleanup();
+
+  Future<void> _performTransportCleanup() async {
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
     await _callStateSubscription?.cancel();
@@ -1093,7 +1176,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _callStateSubscription?.cancel();
     _queueTapBuffer();
     unawaited(_drainTapQueue());
-    unawaited(_disposeTransport());
+    NativeViewerLiveScreen._lastTransportCleanup = _disposeTransport();
     super.dispose();
   }
 
@@ -1233,11 +1316,32 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                             icon: Icons.wifi_tethering_rounded,
                             text: 'Joining live…',
                           ),
-                        if (_error != null)
+                        if (_error != null) ...[
                           FvLiveStatusCard(
                             icon: Icons.error_outline_rounded,
                             text: _error!,
                           ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (!_roomEnded)
+                                OutlinedButton.icon(
+                                  key: const Key('viewer-live-retry-join'),
+                                  onPressed: _retryJoin,
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  label: const Text('Retry join'),
+                                ),
+                              OutlinedButton.icon(
+                                key: const Key('viewer-live-exit-failed-join'),
+                                onPressed: _leaving ? null : _leave,
+                                icon: const Icon(Icons.arrow_back_rounded),
+                                label: const Text('Back to feed'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                       if (cohostActive)
                         SizedBox(height: cohostCameraHeight + 32)
@@ -1274,7 +1378,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ),
                         ),
                       SizedBox(
-                        height: cohostActive ? 250 : 220,
+                        height: MediaQuery.viewInsetsOf(context).bottom > 0
+                            ? 96
+                            : (cohostActive ? 250 : 220),
                         child: SingleChildScrollView(
                           reverse: true,
                           child: FvLiveChatList(messages: _chat),
@@ -1287,12 +1393,16 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           Expanded(
                             child: FvLiveCommentComposer(
                               controller: _comment,
-                              hintText: 'Say something...',
+                              onSend: () => unawaited(_postComment()),
+                              hintText: _error == null
+                                  ? 'Say something...'
+                                  : 'Live unavailable',
+                              enabled: _canInteract,
                             ),
                           ),
                           const SizedBox(width: 5),
                           IconButton.filled(
-                            onPressed: _postComment,
+                            onPressed: _canInteract ? _postComment : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF6F35C5),
                               foregroundColor: Colors.white,
@@ -1303,7 +1413,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           const SizedBox(width: 4),
                           IconButton.filled(
                             key: const Key('viewer-gift-button'),
-                            onPressed: _walletReady ? _showGiftTray : null,
+                            onPressed: _walletReady && _canInteract
+                                ? _showGiftTray
+                                : null,
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFF211529),
                               foregroundColor: const Color(0xFFFFC65A),

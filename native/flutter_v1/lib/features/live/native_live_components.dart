@@ -45,7 +45,7 @@ class FvGiftPlayback {
   final int comboTotal;
 
   String get visualCountLabel {
-    if (comboTotal > 1) return ' · Combo ×$comboIndex';
+    if (comboTotal > 1) return ' · Combo $comboIndex/$comboTotal';
     if (quantity > 1) return ' · ×$quantity';
     return '';
   }
@@ -54,7 +54,12 @@ class FvGiftPlayback {
 const int fvMaxSequentialGiftCombo = 50;
 
 List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
-  if (playback.quantity <= 1 || playback.quantity > fvMaxSequentialGiftCombo) {
+  // One accepted quantity-5 send becomes five sequential presentations,
+  // even for cinematic Dragons. This visual expansion NEVER makes new wallet
+  // debits or network gift receipts: all viewers render the same 5 stages.
+  // The existing high-quantity safety limit prevents unbounded UI allocation.
+  if (playback.quantity <= 1 ||
+      playback.quantity > fvMaxSequentialGiftCombo) {
     return <FvGiftPlayback>[playback];
   }
 
@@ -69,6 +74,19 @@ List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
     ),
     growable: false,
   );
+}
+
+/// Safety timeout only: normal playback advances via NativeGiftOverlay.onFinished.
+/// Video setup retries may take 20+ seconds, followed by up to 60s of media;
+/// the former 20s watchdog cut legitimate premium gifts off mid-animation.
+Duration fvGiftPlaybackWatchdog(FvGiftPlayback playback) {
+  final gift = playback.gift;
+  if (gift.cost >= 100 &&
+      gift.cinematic &&
+      (gift.videoUrl?.trim().isNotEmpty ?? false)) {
+    return const Duration(seconds: 90);
+  }
+  return const Duration(seconds: 8);
 }
 
 class NativeGiftOverlay extends StatefulWidget {
@@ -101,7 +119,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.playback.gift.id != widget.playback.gift.id ||
         oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.quantity != widget.playback.quantity) {
+        oldWidget.playback.quantity != widget.playback.quantity ||
+        oldWidget.playback.comboIndex != widget.playback.comboIndex ||
+        oldWidget.playback.comboTotal != widget.playback.comboTotal) {
       _reportedFinished = false;
       _finishTimer?.cancel();
       unawaited(_syncVideo());
@@ -130,7 +150,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     final gift = widget.playback.gift;
     final url = gift.videoUrl?.trim() ?? '';
 
-    if (!gift.cinematic || url.isEmpty) {
+    if (gift.cost < 100 || !gift.cinematic || url.isEmpty) {
       final previous = _controller;
       _controller = null;
       _loadedUrl = null;
@@ -224,6 +244,32 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.dispose();
   }
 
+  // Gift regression law: under-100 gifts must never obscure a Live broadcast.
+  // Present only a small, silent glyph; sender/description remain in Live chat.
+  Widget _lightweightGift(FvGiftPlayback playback) {
+    final description =
+        '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}';
+    return IgnorePointer(
+      child: Align(
+        alignment: const Alignment(-0.85, 0.1),
+        child: Semantics(
+          label: description,
+          child: SizedBox(
+            key: Key('lightweight-gift-${playback.gift.id}'),
+            width: 56,
+            height: 48,
+            child: Center(
+              child: Text(
+                playback.gift.symbol,
+                style: const TextStyle(fontSize: 32),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
     final size = MediaQuery.sizeOf(context);
     final premium = playback.gift.cost >= 100;
@@ -280,6 +326,54 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   Widget build(BuildContext context) {
     final playback = widget.playback;
+    final visual = _buildGiftVisual(context);
+    if (playback.comboTotal <= 1) return visual;
+
+    // Compact progress label, visible for premium video AND lightweight gifts.
+    // Only the active queued animation is on screen; never overlay 5 movies.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        visual,
+        IgnorePointer(
+          child: Align(
+            alignment: const Alignment(-0.72, -0.42),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xDD160C23),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD49BFF)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                child: Text(
+                  'COMBO ${playback.comboIndex}/${playback.comboTotal}',
+                  key: Key(
+                    'gift-combo-stage-${playback.comboIndex}-of-${playback.comboTotal}',
+                  ),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGiftVisual(BuildContext context) {
+    final playback = widget.playback;
+
+    if (playback.gift.cost < 100) {
+      return _lightweightGift(playback);
+    }
 
     if (!playback.gift.cinematic) {
       return _largeNativeGift(context, playback);
@@ -395,59 +489,45 @@ class NativeGiftTray extends StatefulWidget {
   State<NativeGiftTray> createState() => _NativeGiftTrayState();
 }
 
-class _NativeGiftTrayState extends State<NativeGiftTray> {
-  static const _categories = <(String, String)>[
-    ('trending', 'Trending'),
-    ('support', 'Support'),
-    ('fun', 'Fun'),
-    ('luxury', 'Luxury'),
-    ('fameverse', 'Fameverse'),
-  ];
-
-  static const _trendingIds = <String>{
-    'rose',
-    'heart',
-    'fire',
-    'star',
-    'planet',
-    'galaxy',
-    'welcome-to-fameverse',
-    'fame-burst',
-  };
-
-  String _category = 'trending';
-  String _selectedId = 'rose';
-  bool _sending = false;
-  bool _refilling = false;
-  late int _coins;
-
-  bool _matchesCategory(FvGiftDefinition gift, String category) {
+// Organize by price and brand without hiding catalog gifts or modifying
+// costs, send quantities, media URLs or revenue rules.
+List<FvGiftDefinition> fvGiftsForTrayCategory(String category) {
+  final result = fvGiftCatalog.where((gift) {
     switch (category) {
-      case 'trending':
-        return _trendingIds.contains(gift.id);
-      case 'support':
-        return gift.cost <= 10;
-      case 'fun':
-        return const <String>{
-          'reactions',
-          'snacks',
-          'flowers',
-          'celebrate',
-          'creator',
-          'sports',
-          'animals',
-        }.contains(gift.category);
-      case 'luxury':
-        return gift.cost >= 40 && gift.cost < 1000;
+      case 'all':
+        return true;
+      case 'small':
+        return gift.cost < 100;
+      case 'premium':
+        return gift.cost >= 100;
       case 'fameverse':
         return gift.category == 'fameverse';
       default:
         return false;
     }
-  }
+  }).toList();
+  result.sort((a, b) {
+    final byCost = a.cost.compareTo(b.cost);
+    return byCost != 0 ? byCost : a.label.compareTo(b.label);
+  });
+  return result;
+}
 
-  List<FvGiftDefinition> get _visible =>
-      fvGiftCatalog.where((gift) => _matchesCategory(gift, _category)).toList();
+class _NativeGiftTrayState extends State<NativeGiftTray> {
+  static const _categories = <(String, String)>[
+    ('all', 'All gifts'),
+    ('small', 'Under 100'),
+    ('premium', '100+ Coins'),
+    ('fameverse', 'Fameverse'),
+  ];
+
+  String _category = 'all';
+  String _selectedId = 'rose';
+  bool _sending = false;
+  bool _refilling = false;
+  late int _coins;
+
+  List<FvGiftDefinition> get _visible => fvGiftsForTrayCategory(_category);
 
   FvGiftDefinition get _selected {
     final selected = fvGiftById(_selectedId);
@@ -670,9 +750,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     label: Text(item.$2),
                     selected: _category == item.$1,
                     onSelected: (_) {
-                      final visible = fvGiftCatalog
-                          .where((gift) => _matchesCategory(gift, item.$1))
-                          .toList();
+                      final visible = fvGiftsForTrayCategory(item.$1);
                       setState(() {
                         _category = item.$1;
                         if (visible.isNotEmpty &&

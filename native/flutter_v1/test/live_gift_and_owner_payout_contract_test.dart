@@ -4,19 +4,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Live gifting and owner payout repair', () {
-    test('gift tray stays reduced to five human-sized categories', () {
+    test('gift tray keeps the complete catalog and clear price bands', () {
       final tray = File(
         'lib/features/live/native_live_components.dart',
       ).readAsStringSync();
       for (final value in <String>[
-        "('trending', 'Trending')",
-        "('support', 'Support')",
-        "('fun', 'Fun')",
-        "('luxury', 'Luxury')",
+        "('all', 'All gifts')",
+        "('small', 'Under 100')",
+        "('premium', '100+ Coins')",
         "('fameverse', 'Fameverse')",
       ]) {
         expect(tray, contains(value));
       }
+      expect(tray, contains("case 'all':"));
+      expect(tray, contains('return gift.cost < 100;'));
+      expect(tray, contains('return gift.cost >= 100;'));
       expect(tray, isNot(contains("('classic', 'Classic')")));
       expect(tray, isNot(contains("('sports', 'Sports')")));
       expect(

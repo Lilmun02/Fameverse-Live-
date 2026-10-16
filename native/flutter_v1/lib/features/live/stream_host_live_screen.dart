@@ -6,6 +6,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_components.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
@@ -39,6 +40,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -49,6 +51,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   bool _connecting = true;
   bool _ending = false;
+  bool _heartbeatBusy = false;
   bool _ended = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
@@ -126,14 +129,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         onCohost: (payload) => unawaited(_handleCohostEvent(payload)),
       );
 
-      _heartbeat = Timer.periodic(const Duration(seconds: 15), (_) {
-        unawaited(
-          widget.liveBackend.heartbeatLiveRoom(
-            roomId: widget.room.id,
-            hostUserId: widget.identity.id,
-          ),
-        );
-      });
+      _heartbeat = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) => unawaited(_heartbeatRoom()),
+      );
       _tapRefresh = Timer.periodic(
         const Duration(seconds: 2),
         (_) => unawaited(_refreshTapTotal()),
@@ -164,6 +163,24 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
+  // Heartbeat requests can overlap during a temporary network stall. A
+  // failed heartbeat must not become an unhandled async exception or crash Live.
+  Future<void> _heartbeatRoom() async {
+    if (_heartbeatBusy || _ending || _ended) return;
+    _heartbeatBusy = true;
+    try {
+      await widget.liveBackend.heartbeatLiveRoom(
+        roomId: widget.room.id,
+        hostUserId: widget.identity.id,
+      );
+    } catch (_) {
+      // The server's heartbeat cutoff handles genuinely disconnected hosts.
+      // Keep the local Stream session usable through short network outages.
+    } finally {
+      _heartbeatBusy = false;
+    }
+  }
+
   Future<void> _refreshTapTotal() async {
     try {
       final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
@@ -171,12 +188,20 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     } catch (_) {}
   }
 
+  // Keep Live scrolling responsive under sustained comment/gift floods.
+  void _appendChat(FvLiveChatMessage message) {
+    _chat.add(message);
+    if (_chat.length > 200) {
+      _chat.removeRange(0, _chat.length - 200);
+    }
+  }
+
   void _receiveComment(Map<String, dynamic> payload) {
     final raw = (payload['text'] as String?)?.trim() ?? '';
     if (!mounted || raw.isEmpty) return;
     final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -193,6 +218,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -200,7 +226,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id:
               payload['id']?.toString() ??
@@ -215,9 +241,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     });
-    _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
-    );
+    // Owner QA already plays this on the outer owner-host overlay.
+    // Never start a second audible player on the same host device.
+    final ownerLocalPreview =
+        payload['qaHostPreview'] == true &&
+        payload['senderId'] == widget.identity.id;
+    if (!ownerLocalPreview) {
+      _enqueueGift(
+        FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      );
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -239,7 +272,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -249,7 +282,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final text = raw.length > 160 ? raw.substring(0, 160) : raw;
     final id = 'comment-${DateTime.now().microsecondsSinceEpoch}';
     setState(() {
-      _chat.add(
+      _appendChat(
         FvLiveChatMessage(
           id: id,
           user: widget.room.host.displayName,
@@ -320,7 +353,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _toggleCamera() async {
     final call = _call;
-    if (call == null || _connecting || _ending) return;
+    if (call == null || _connecting || _ending || _flipCameraBusy) {
+      return;
+    }
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _flipCameraBusy = true);
+    } else {
+      _flipCameraBusy = true;
+    }
+
     final next = !_cameraEnabled;
     try {
       fvRequireSuccess(
@@ -330,6 +373,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) setState(() => _cameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _flipCameraBusy = false);
+      } else {
+        _flipCameraBusy = false;
+      }
     }
   }
 
@@ -854,10 +903,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ? Icons.videocam_rounded
                         : Icons.videocam_off_rounded,
                     label: _cameraEnabled ? 'Camera' : 'Camera on',
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      unawaited(_toggleCamera());
-                    },
+                    onPressed: !_flipCameraBusy
+                        ? () {
+                            Navigator.of(context).pop();
+                            unawaited(_toggleCamera());
+                          }
+                        : null,
                   ),
                   FvRoundLiveButton(
                     icon: Icons.group_add_rounded,
@@ -1082,7 +1133,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ),
                       ),
                     SizedBox(
-                      height: cohostActive ? 230 : 245,
+                      height: MediaQuery.viewInsetsOf(context).bottom > 0
+                          ? 96
+                          : (cohostActive ? 230 : 245),
                       child: SingleChildScrollView(
                         reverse: true,
                         child: FvLiveChatList(messages: _chat),
@@ -1095,6 +1148,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         Expanded(
                           child: FvLiveCommentComposer(
                             controller: _comment,
+                            onSend: () => unawaited(_postComment()),
                             hintText: 'Say something...',
                           ),
                         ),
