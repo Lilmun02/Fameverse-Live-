@@ -251,6 +251,18 @@ grant insert (reporter_id, reported_user_id, message_id, reason)
 create policy reports_owner_read on public.direct_user_reports
   for select to authenticated using (reporter_id = (select auth.uid()));
 create policy reports_owner_create on public.direct_user_reports
-  for insert to authenticated with check (reporter_id = (select auth.uid()));
+  for insert to authenticated with check (
+    reporter_id = (select auth.uid()) and
+    (
+      message_id is null or exists (
+        select 1 from public.direct_messages m
+        join public.direct_conversations c on c.id = m.conversation_id
+        where m.id = message_id
+          and (c.user_low = (select auth.uid())
+               or c.user_high = (select auth.uid()))
+          and m.sender_id = reported_user_id
+      )
+    )
+  );
 
 commit;
