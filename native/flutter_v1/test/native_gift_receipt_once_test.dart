@@ -46,24 +46,23 @@ void main() {
       sender: 'Combo tester',
     );
     final expanded = fvExpandGiftVisualCombo(playback);
+    final timeout = fvGiftPlaybackWatchdog(expanded.single);
     expect(expanded, hasLength(1));
     expect(expanded.single.quantity, 5);
     expect(expanded.single.visualCountLabel, contains('×5'));
-    expect(
-      fvGiftPlaybackWatchdog(expanded.single),
-      const Duration(seconds: 90),
-    );
+    expect(timeout, const Duration(seconds: 90));
   });
 
   test('three distinct premium 5x gifts stay three presentations', () {
     final premium = fvGiftCatalog.where((gift) => gift.cinematic).take(3);
     final queue = <FvGiftPlayback>[];
     for (final gift in premium) {
-      queue.addAll(
-        fvExpandGiftVisualCombo(
-          FvGiftPlayback(gift: gift, quantity: 5, sender: 'Tester'),
-        ),
+      final playback = FvGiftPlayback(
+        gift: gift,
+        quantity: 5,
+        sender: 'Tester',
       );
+      queue.addAll(fvExpandGiftVisualCombo(playback));
     }
     expect(queue, hasLength(3));
     expect(queue.every((item) => item.quantity == 5), isTrue);
@@ -72,15 +71,16 @@ void main() {
 
   test('lightweight gifts preserve incremental 5x combo presentation', () {
     final cheapGift = fvGiftCatalog.firstWhere((gift) => gift.cost < 100);
-    final queue = fvExpandGiftVisualCombo(
-      FvGiftPlayback(gift: cheapGift, quantity: 5, sender: 'Tester'),
+    final playback = FvGiftPlayback(
+      gift: cheapGift,
+      quantity: 5,
+      sender: 'Tester',
     );
+    final queue = fvExpandGiftVisualCombo(playback);
+    final timeout = fvGiftPlaybackWatchdog(queue.first);
     expect(queue, hasLength(5));
     expect(queue.map((item) => item.comboIndex), [1, 2, 3, 4, 5]);
-    expect(
-      fvGiftPlaybackWatchdog(queue.first),
-      const Duration(seconds: 8),
-    );
+    expect(timeout, const Duration(seconds: 8));
   });
 
   test('owner host shows chat but skips its duplicate local QA overlay', () {
