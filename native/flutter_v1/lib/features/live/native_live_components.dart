@@ -101,7 +101,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.playback.gift.id != widget.playback.gift.id ||
         oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.quantity != widget.playback.quantity) {
+        oldWidget.playback.quantity != widget.playback.quantity ||
+        oldWidget.playback.comboIndex != widget.playback.comboIndex ||
+        oldWidget.playback.comboTotal != widget.playback.comboTotal) {
       _reportedFinished = false;
       _finishTimer?.cancel();
       unawaited(_syncVideo());
