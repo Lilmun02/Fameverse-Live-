@@ -8,6 +8,7 @@ import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
 import '../data/startup_update_service.dart';
 import '../features/auth/auth_screen.dart';
+import '../features/auth/fameverse_policy_agreement_gate.dart';
 import '../features/shell/fameverse_shell_build23.dart';
 
 /// Build 23 native Fameverse app shell.
@@ -182,12 +183,24 @@ class _FameverseAppState extends State<FameverseApp> {
       return AuthScreen(backend: widget.backend);
     }
 
-    return FameverseBuild23Shell(
+    // Enable after owner-approved backend policy publication and QA.
+    const enabled = bool.fromEnvironment(
+      'FAMEVERSE_POLICY_GATE_ENABLED',
+      defaultValue: false,
+    );
+    final shell = FameverseBuild23Shell(
       key: ValueKey(_identity!.id),
       backend: widget.backend,
       liveBackend: widget.liveBackend,
       identity: _identity!,
     );
+    return enabled
+        ? FameversePolicyAgreementGate(
+            key: ValueKey('policy-${_identity!.id}'),
+            userId: _identity!.id,
+            child: shell,
+          )
+        : shell;
   }
 }
 
