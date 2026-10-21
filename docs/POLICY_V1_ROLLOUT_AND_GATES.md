@@ -11,6 +11,10 @@
 - Web gate: `src/components/auth/PolicyAgreementGate.jsx` wrapped around signed-in shell via `src/App.jsx`.
 - Expanded legal terms in existing native and browser Settings pages. Legal/privacy counsel review required before formal publication.
 - Native source regression contract test. No financial transactions or test gifts were executed.
+- Build 45 review amendment adds authenticated per-user accepted/declined decisions, an October 26 pending cutoff, and server-side draft triggers before Live hosting, sending gifts and creating new coin recharge orders. Watching Lives is always permitted.
+- Decliners may continue to browse, watch Lives, open profiles, settings, Inbox and support. They cannot host, buy coins, send gifts or access new badge privileges. Nonresponders after the cutoff may send eligible gifts from existing coins but may not host, buy coins or use new badge privileges.
+- Frontend restrictions must also prevent starting Apple IAP and hide inaccessible hosting/gift/badge actions. Staged SQL triggers are not a substitute for these controls or a provider-level transaction audit; do not activate before those checks pass.
+- The Google Form is only pre-launch acknowledgement; its verified email does NOT automatically prove ownership of a Fameverse auth user_id. No form response is automatically converted into in-app consent.
 
 ## Critical rollout protection
 - **Do not run this SQL in production as part of code review.** It is staged SQL, not an applied migration. Follow the project's approved migration generator / migration versioning workflow.
