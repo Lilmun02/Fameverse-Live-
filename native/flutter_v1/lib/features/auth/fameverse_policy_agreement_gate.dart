@@ -25,6 +25,8 @@ class _FameversePolicyAgreementGateState
   bool _checked = false;
   bool _saving = false;
   bool _accepted = false;
+  bool _limited = false;
+  String _decision = 'pending';
   String? _error;
 
   @override
@@ -53,6 +55,8 @@ class _FameversePolicyAgreementGateState
       setState(() {
         _policy = record;
         _accepted = record['accepted'] == true;
+        _decision = record['decision']?.toString() ?? 'pending';
+        _limited = _decision == 'declined';
         _loading = false;
       });
     } catch (_) {
@@ -89,7 +93,13 @@ class _FameversePolicyAgreementGateState
           recheck['version'] != _policy!['version']) {
         throw StateError('Policy acceptance not confirmed');
       }
-      if (mounted) setState(() => _accepted = true);
+      if (mounted) {
+        setState(() {
+          _accepted = true;
+          _limited = false;
+          _decision = 'accepted';
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -102,9 +112,50 @@ class _FameversePolicyAgreementGateState
     }
   }
 
+  Future<void> _decline() async {
+    if (_saving || _policy == null) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final result = await Supabase.instance.client.rpc(
+        'fv_decline_current_policy',
+      );
+      if (result is! Map ||
+          result['decision'] != 'declined' ||
+          result['version'] != _policy!['version']) {
+        throw StateError('Policy decision was not saved');
+      }
+      final recheck = await Supabase.instance.client.rpc(
+        'fv_get_policy_requirement',
+      );
+      if (recheck is! Map ||
+          recheck['decision'] != 'declined' ||
+          recheck['version'] != _policy!['version']) {
+        throw StateError('Policy decline was not confirmed');
+      }
+      if (mounted) {
+        setState(() {
+          _decision = 'declined';
+          _accepted = false;
+          _limited = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = 'Your decision could not be recorded. Please retry.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_accepted) return widget.child;
+    if (_accepted || _limited) return widget.child;
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -150,6 +201,15 @@ class _FameversePolicyAgreementGateState
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            const Text(
+              'Accept: watch Lives, host, buy Fame Coins, send gifts, and use '
+              'eligible badges and creator features. Decline: you can still '
+              'watch Lives, browse, use your profile, settings, Inbox and '
+              'support; hosting, coin purchases, gifts and badges are locked. '
+              'No response after October 26: watching and eligible existing-coin '
+              'gifting remain, but new purchases, hosting and badges are locked.',
+            ),
             const SizedBox(height: 16),
             CheckboxListTile(
               key: const Key('policy-consent-checkbox'),
@@ -177,6 +237,16 @@ class _FameversePolicyAgreementGateState
                   ? _accept
                   : null,
               child: Text(_saving ? 'Saving…' : 'Accept & continue'),
+            ),
+            OutlinedButton(
+              key: const Key('policy-decline-continue'),
+              onPressed: _saving ? null : _decline,
+              child: const Text('Decline & continue watching'),
+            ),
+            TextButton(
+              key: const Key('policy-pending-continue'),
+              onPressed: _saving ? null : () => setState(() => _limited = true),
+              child: const Text('Decide later (limited access after October 26)'),
             ),
             TextButton(
               onPressed: () => Supabase.instance.client.auth.signOut(),
