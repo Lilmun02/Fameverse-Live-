@@ -9,6 +9,7 @@ export default function PolicyAgreementGate({ userId, children }) {
   const [checked, setChecked] = useState(false)
   const [saving, setSaving] = useState(false)
   const [approved, setApproved] = useState(false)
+  const [limited, setLimited] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -16,6 +17,7 @@ export default function PolicyAgreementGate({ userId, children }) {
     let active = true
     setChecking(true)
     setApproved(false)
+    setLimited(false)
     setChecked(false)
     setPolicy(null)
     setError('')
@@ -25,6 +27,7 @@ export default function PolicyAgreementGate({ userId, children }) {
         if (serverError || !data?.version) throw new Error('Policy unavailable')
         setPolicy(data)
         setApproved(data.accepted === true)
+        setLimited(data.decision === 'declined')
       })
       .catch(() => {
         if (active) setError('Could not verify your policy agreement. Please retry.')
@@ -33,7 +36,7 @@ export default function PolicyAgreementGate({ userId, children }) {
     return () => { active = false }
   }, [userId])
 
-  if (!POLICY_ENABLED || !userId || approved) return children
+  if (!POLICY_ENABLED || !userId || approved || limited) return children
 
   const accept = async () => {
     if (!checked || saving || !policy?.version) return
@@ -52,6 +55,27 @@ export default function PolicyAgreementGate({ userId, children }) {
     } catch (_) {
       setChecked(false)
       setError('Agreement was not confirmed by Fameverse. Please retry.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const decline = async () => {
+    if (saving || !policy?.version) return
+    setSaving(true)
+    setError('')
+    try {
+      const { data, error: saveError } = await supabase.rpc('fv_decline_current_policy')
+      if (saveError || data?.decision !== 'declined' || data.version !== policy.version) {
+        throw new Error('Decline save failed')
+      }
+      const { data: confirmation, error: confirmError } =
+        await supabase.rpc('fv_get_policy_requirement')
+      if (confirmError || confirmation?.decision !== 'declined' ||
+          confirmation.version !== policy.version) throw new Error('Decline not confirmed')
+      setLimited(true)
+    } catch (_) {
+      setError('Your decision could not be recorded. Please retry.')
     } finally {
       setSaving(false)
     }
@@ -81,6 +105,7 @@ export default function PolicyAgreementGate({ userId, children }) {
                 <p>{body}</p>
               </details>
             ))}
+            <p>Accept: watch Lives, host, purchase Fame Coins, send gifts and use eligible badges. Decline: keep Live viewing, profile, browsing, settings, Inbox and support; hosting, purchases, gifts and badges are restricted. No response after October 26: eligible existing-coin gifting and Live viewing remain; new purchases, hosting and badges are restricted.</p>
             <label>
               <input type="checkbox" checked={checked}
                 onChange={event => setChecked(event.target.checked)} disabled={saving} />
@@ -90,6 +115,13 @@ export default function PolicyAgreementGate({ userId, children }) {
             <button type="button" className="auth-primary"
               disabled={!checked || saving} onClick={accept}>
               {saving ? 'Saving agreement…' : 'Accept & continue'}
+            </button>
+            <button type="button" disabled={saving} onClick={decline}>
+              Decline & continue watching
+            </button>
+            <button type="button" disabled={saving}
+              onClick={() => setLimited(true)}>
+              Decide later (limited access after October 26)
             </button>
           </>
         )}
