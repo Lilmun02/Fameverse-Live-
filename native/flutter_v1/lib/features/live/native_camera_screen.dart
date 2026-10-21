@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
@@ -130,8 +131,31 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     return confirmed == true;
   }
 
+  // Never allocate a camera or open a room for a restricted policy account.
+  Future<bool> _policyMayHost() async {
+    const enabled = bool.fromEnvironment(
+      'FAMEVERSE_POLICY_GATE_ENABLED',
+      defaultValue: false,
+    );
+    if (!enabled) return true;
+    try {
+      final result = await Supabase.instance.client.rpc('fv_policy_permissions');
+      if (result is Map && result['can_go_live'] == true) return true;
+    } catch (_) {
+      // A failed eligibility lookup is not permission to broadcast.
+    }
+    if (mounted) {
+      setState(() {
+        _error = 'Going Live requires accepting the Fameverse policies. '
+            'You can still watch Lives, browse and use your profile.';
+      });
+    }
+    return false;
+  }
+
   Future<void> _goLive() async {
     if (_liveBusy) return;
+    if (!await _policyMayHost()) return;
     if (_title.text.trim().isEmpty) {
       setState(() => _error = 'Add a live title before you go live.');
       return;
