@@ -253,10 +253,35 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
     }
   }
 
+  // Check before starting a NEW payment. Already-purchased receipts must still
+  // be verified and fulfilled separately to protect customers from lost money.
+  Future<bool> _policyAllowsNewCoinPurchase() async {
+    const enabled = bool.fromEnvironment(
+      'FAMEVERSE_POLICY_GATE_ENABLED',
+      defaultValue: false,
+    );
+    if (!enabled) return true;
+    try {
+      final result = await _client.rpc('fv_policy_permissions');
+      if (result is Map && result['can_buy_coins'] == true) return true;
+    } catch (_) {
+      // Failing to verify policy must never initiate an irreversible charge.
+    }
+    if (mounted) {
+      setState(() {
+        _notice = 'Fame Coin purchases require accepting the current '
+            'Fameverse policies. Watching Lives and basic account access '
+            'remain available.';
+      });
+    }
+    return false;
+  }
+
   Future<void> _buy(ProductDetails product) async {
     if (_busyProductId != null || _verifying || _stripeBusyPackId != null) {
       return;
     }
+    if (!await _policyAllowsNewCoinPurchase()) return;
     if (!Platform.isIOS) {
       setState(() {
         _notice =
@@ -297,6 +322,7 @@ class _FameCoinStoreScreenState extends State<FameCoinStoreScreen>
     if (_stripeBusyPackId != null || _busyProductId != null || _verifying) {
       return;
     }
+    if (!await _policyAllowsNewCoinPurchase()) return;
     if (!_stripeCheckoutEnabled) {
       setState(() {
         _notice =
