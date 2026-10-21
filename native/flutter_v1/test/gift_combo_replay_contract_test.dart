@@ -19,8 +19,9 @@ void main() {
   });
 
   test('changing combo index restarts native video playback', () {
-    final source = File('lib/features/live/native_live_components.dart')
-        .readAsStringSync();
+    final source = File(
+      'lib/features/live/native_live_components.dart',
+    ).readAsStringSync();
 
     expect(
       source,
