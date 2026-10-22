@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { evaluateHostPolicyAccess } from "./host-policy.ts";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -94,6 +95,28 @@ Deno.serve(async (req: Request) => {
   const isHost = room.host_user_id === user.id;
   if (role === "host" && !isHost) {
     return response(403, { error: "host-role-forbidden" });
+  }
+
+  // A live JWT is not permission to keep hosting after a policy change.
+  // When the owner enables the staged policy enforcement, reauthorize every
+  // HOST token request using the caller's authenticated Supabase identity.
+  // Viewer tokens remain available to declined and pending accounts.
+  if (role === "host" && Deno.env.get("FAMEVERSE_POLICY_GATE_ENABLED") === "true") {
+    const { data: permissions, error: policyError } = await userClient.rpc(
+      "fv_policy_permissions",
+    );
+    const decision = evaluateHostPolicyAccess({
+      role,
+      enabled: true,
+      permissions,
+      error: policyError,
+    });
+    if (decision === "unavailable") {
+      return response(503, { error: "policy-permissions-unavailable" });
+    }
+    if (decision !== "allow") {
+      return response(403, { error: "policy-host-forbidden" });
+    }
   }
 
   const callId = `fv_${room.id}`;
