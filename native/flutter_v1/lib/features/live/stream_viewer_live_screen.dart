@@ -8,6 +8,7 @@ import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import '../profile/fame_coin_store_screen.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -37,6 +38,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final TextEditingController _comment = TextEditingController();
   final List<FvLiveChatMessage> _chat = [];
   final List<FvGiftPlayback> _giftQueue = [];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
   final List<int> _tapBursts = [];
@@ -226,6 +228,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (gift == null || !mounted) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -366,6 +369,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         quantity: quantity,
       );
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
+      // This receipt is presented locally; do not replay its own echo.
+      _giftEventGate.shouldRender(eventId);
       final message = FvLiveChatMessage(
         id: eventId,
         user: widget.viewerProfile.displayName,

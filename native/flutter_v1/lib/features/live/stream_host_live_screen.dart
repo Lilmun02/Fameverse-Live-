@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -39,6 +40,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -193,6 +195,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -215,9 +218,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     });
-    _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
-    );
+    // The owner wrapper already renders QA gifts. Prevent a second audible
+    // player on the same host device while retaining the gift chat receipt.
+    final ownerLocalPreview =
+        payload['qaHostPreview'] == true &&
+        payload['senderId'] == widget.identity.id;
+    if (!ownerLocalPreview) {
+      _enqueueGift(
+        FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      );
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
