@@ -541,24 +541,23 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
               onLiveJoined: () => unawaited(_recordBetaMission('join_live')),
             )
           else if (_tab == 0)
-          FameverseHomeBuild23Screen(
-            profile: profile,
-            network: _network,
-            creators: _creators,
-            rooms: _rooms,
-            stories: _stories,
-            loading: _loading,
-            error: _error,
-            onRefresh: _refreshAll,
-            onOpenProfile: () => _setTab(3),
-            onOpenDiscover: () => _setTab(1),
-            onOpenStories: () => unawaited(_openStories(profile)),
-            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
-            onToggleFollow: _toggleFollow,
-            onCreatorSelected: _openPublicProfile,
-            followBusy: _followBusy,
-          ),
-
+            FameverseHomeBuild23Screen(
+              profile: profile,
+              network: _network,
+              creators: _creators,
+              rooms: _rooms,
+              stories: _stories,
+              loading: _loading,
+              error: _error,
+              onRefresh: _refreshAll,
+              onOpenProfile: () => _setTab(3),
+              onOpenDiscover: () => _setTab(1),
+              onOpenStories: () => unawaited(_openStories(profile)),
+              onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
+              onToggleFollow: _toggleFollow,
+              onCreatorSelected: _openPublicProfile,
+              followBusy: _followBusy,
+            )
           else
             const SizedBox.shrink(),
           FameverseDiscoverScreen(
