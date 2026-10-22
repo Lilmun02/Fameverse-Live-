@@ -8,18 +8,22 @@ import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import '../profile/fame_coin_store_screen.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
 class NativeViewerLiveScreen extends StatefulWidget {
+  static Future<void> _lastTransportCleanup = Future<void>.value();
   const NativeViewerLiveScreen({
     required this.backend,
     required this.liveBackend,
     required this.identity,
     required this.viewerProfile,
     required this.room,
+    this.onLiveJoined,
+    this.onExitFeed,
     super.key,
   });
 
@@ -28,6 +32,8 @@ class NativeViewerLiveScreen extends StatefulWidget {
   final FvIdentity identity;
   final FvProfile viewerProfile;
   final FvLiveRoom room;
+  final VoidCallback? onLiveJoined;
+  final VoidCallback? onExitFeed;
 
   @override
   State<NativeViewerLiveScreen> createState() => _NativeViewerLiveScreenState();
@@ -37,11 +43,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final TextEditingController _comment = TextEditingController();
   final List<FvLiveChatMessage> _chat = [];
   final List<FvGiftPlayback> _giftQueue = [];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
   final List<int> _tapBursts = [];
   final Stopwatch _tapClock = Stopwatch();
   Call? _call;
+  Future<void>? _transportCleanup;
+  bool _joinedOnce = false;
   FvLiveActivitySession? _activity;
   StreamSubscription<CallState>? _callStateSubscription;
   Timer? _tapFlushTimer;
@@ -97,6 +106,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _connect() async {
     try {
+      // Serialize ownership transfer between adjacent swipe-feed pages.
+      await NativeViewerLiveScreen._lastTransportCleanup;
+      if (!mounted) return;
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: widget.room.id,
         role: 'viewer',
@@ -161,6 +173,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _flushTapBuffer();
       });
       if (mounted) setState(() => _connecting = false);
+      if (!_joinedOnce && mounted) {
+        _joinedOnce = true;
+        widget.onLiveJoined?.call();
+      }
       unawaited(_hydrateViewerState());
     } catch (error) {
       await _disposeTransport();
@@ -226,6 +242,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (gift == null || !mounted) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -272,7 +289,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -366,6 +383,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         quantity: quantity,
       );
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
+      // This receipt is presented locally; do not replay its own echo.
+      _giftEventGate.shouldRender(eventId);
       final message = FvLiveChatMessage(
         id: eventId,
         user: widget.viewerProfile.displayName,
@@ -806,7 +825,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _toggleCohostCamera() async {
-    if (!_selfIsCohost || _call == null) return;
+    if (!_selfIsCohost || _call == null || _cohostFlipBusy) return;
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _cohostFlipBusy = true);
+    } else {
+      _cohostFlipBusy = true;
+    }
+
     final next = !_cohostCameraEnabled;
     try {
       fvRequireSuccess(
@@ -816,6 +843,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (mounted) setState(() => _cohostCameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _cohostFlipBusy = false);
+      } else {
+        _cohostFlipBusy = false;
+      }
     }
   }
 
@@ -958,10 +991,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ? Icons.videocam_rounded
                           : Icons.videocam_off_rounded,
                       label: _cohostCameraEnabled ? 'Camera' : 'Camera on',
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        unawaited(_toggleCohostCamera());
-                      },
+                      onPressed: !_cohostFlipBusy
+                          ? () {
+                              Navigator.of(context).pop();
+                              unawaited(_toggleCohostCamera());
+                            }
+                          : null,
                     ),
                     FvRoundLiveButton(
                       icon: Icons.call_end_rounded,
@@ -1021,7 +1056,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _schedulePop() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).maybePop();
+      if (!mounted) return;
+      if (widget.onExitFeed != null) {
+        widget.onExitFeed!();
+      } else {
+        Navigator.of(context).maybePop();
+      }
     });
   }
 
@@ -1055,7 +1095,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     unawaited(_disposeTransport());
   }
 
-  Future<void> _disposeTransport() async {
+  Future<void> _disposeTransport() =>
+      _transportCleanup ??= _performTransportCleanup();
+
+  Future<void> _performTransportCleanup() async {
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
     await _callStateSubscription?.cancel();
@@ -1093,7 +1136,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _callStateSubscription?.cancel();
     _queueTapBuffer();
     unawaited(_drainTapQueue());
-    unawaited(_disposeTransport());
+    NativeViewerLiveScreen._lastTransportCleanup = _disposeTransport();
     super.dispose();
   }
 

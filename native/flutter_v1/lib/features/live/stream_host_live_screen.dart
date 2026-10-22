@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -39,6 +40,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -193,6 +195,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -215,9 +218,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     });
-    _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
-    );
+    // The owner wrapper already renders QA gifts. Prevent a second audible
+    // player on the same host device while retaining the gift chat receipt.
+    final ownerLocalPreview =
+        payload['qaHostPreview'] == true &&
+        payload['senderId'] == widget.identity.id;
+    if (!ownerLocalPreview) {
+      _enqueueGift(
+        FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      );
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -239,7 +249,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -320,7 +330,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _toggleCamera() async {
     final call = _call;
-    if (call == null || _connecting || _ending) return;
+    if (call == null || _connecting || _ending || _flipCameraBusy) {
+      return;
+    }
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _flipCameraBusy = true);
+    } else {
+      _flipCameraBusy = true;
+    }
+
     final next = !_cameraEnabled;
     try {
       fvRequireSuccess(
@@ -330,6 +350,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) setState(() => _cameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _flipCameraBusy = false);
+      } else {
+        _flipCameraBusy = false;
+      }
     }
   }
 
@@ -854,10 +880,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ? Icons.videocam_rounded
                         : Icons.videocam_off_rounded,
                     label: _cameraEnabled ? 'Camera' : 'Camera on',
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      unawaited(_toggleCamera());
-                    },
+                    onPressed: !_flipCameraBusy
+                        ? () {
+                            Navigator.of(context).pop();
+                            unawaited(_toggleCamera());
+                          }
+                        : null,
                   ),
                   FvRoundLiveButton(
                     icon: Icons.group_add_rounded,

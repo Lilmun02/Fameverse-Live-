@@ -189,7 +189,7 @@ class _V2CohostStage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 2),
                   Expanded(
                     child: AspectRatio(
                       aspectRatio: 1,
