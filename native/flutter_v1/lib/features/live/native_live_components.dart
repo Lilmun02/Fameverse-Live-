@@ -71,6 +71,16 @@ List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
   );
 }
 
+/// Longer watchdog for cinematic videos. Renderer completion normally advances
+/// the FIFO queue; watchdogs must never truncate a legitimate full animation.
+Duration fvGiftPlaybackWatchdog(FvGiftPlayback playback) {
+  final url = playback.gift.videoUrl?.trim() ?? '';
+  if (playback.gift.cinematic && url.isNotEmpty) {
+    return const Duration(seconds: 90);
+  }
+  return const Duration(seconds: 8);
+}
+
 class NativeGiftOverlay extends StatefulWidget {
   const NativeGiftOverlay({required this.playback, this.onFinished, super.key});
 

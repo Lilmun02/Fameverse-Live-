@@ -217,7 +217,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         _giftSerial += 1;
       });
     }
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextQaGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextQaGift);
   }
 
   void _showGiftTray() {
