@@ -49,5 +49,4 @@ void main() {
     expect(feed, isNot(contains('viewerCount: 999')));
     expect(feed, contains('room: room'));
   });
-
 }
