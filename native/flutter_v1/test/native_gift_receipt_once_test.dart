@@ -2,8 +2,42 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fameverse_live/features/live/native_gift_receipt_gate.dart';
+import 'package:fameverse_live/features/live/native_live_components.dart';
+import 'package:fameverse_live/data/fameverse_live_backend.dart';
 
 void main() {
+  test('premium videos have enough time to finish before emergency fallback', () {
+    final cinematic = fvGiftCatalog.firstWhere(
+      (gift) => gift.cinematic && (gift.videoUrl?.isNotEmpty ?? false),
+    );
+    final staticGift = fvGiftCatalog.firstWhere((gift) => gift.cost < 100);
+    expect(
+      fvGiftPlaybackWatchdog(
+        FvGiftPlayback(gift: cinematic, quantity: 1, sender: 'QA'),
+      ),
+      const Duration(seconds: 90),
+    );
+    expect(
+      fvGiftPlaybackWatchdog(
+        FvGiftPlayback(gift: staticGift, quantity: 1, sender: 'QA'),
+      ),
+      const Duration(seconds: 8),
+    );
+  });
+
+  test('host, viewer and QA wrapper use completion-safe gift watchdogs', () {
+    for (final path in [
+      'lib/features/live/stream_host_live_screen.dart',
+      'lib/features/live/stream_viewer_live_screen.dart',
+      'lib/features/live/stream_owner_host_live_screen.dart',
+    ]) {
+      final source = File(path).readAsStringSync();
+      expect(source, contains('fvGiftPlaybackWatchdog(next)'));
+      expect(source, isNot(contains('Timer(const Duration(seconds: 20), _playNext')));
+    }
+  });
+
+
   test('an authoritative receipt renders once even when delivered repeatedly', () {
     final gate = FvGiftReceiptGate();
     expect(gate.shouldRender('receipt-1'), isTrue);
