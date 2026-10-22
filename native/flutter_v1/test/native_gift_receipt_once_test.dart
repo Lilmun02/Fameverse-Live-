@@ -6,7 +6,7 @@ import 'package:fameverse_live/features/live/native_live_components.dart';
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
 
 void main() {
-  test('premium videos have enough time to finish before emergency fallback', () {
+  test('premium gift watchdog protects full playback', () {
     final cinematic = fvGiftCatalog.firstWhere(
       (gift) => gift.cinematic && (gift.videoUrl?.isNotEmpty ?? false),
     );
@@ -33,12 +33,14 @@ void main() {
     ]) {
       final source = File(path).readAsStringSync();
       expect(source, contains('fvGiftPlaybackWatchdog(next)'));
-      expect(source, isNot(contains('Timer(const Duration(seconds: 20), _playNext')));
+      expect(
+        source,
+        isNot(contains('Timer(const Duration(seconds: 20), _playNext')),
+      );
     }
   });
 
-
-  test('an authoritative receipt renders once even when delivered repeatedly', () {
+  test('a receipt renders only once on duplicate delivery', () {
     final gate = FvGiftReceiptGate();
     expect(gate.shouldRender('receipt-1'), isTrue);
     expect(gate.shouldRender('receipt-1'), isFalse);
@@ -53,7 +55,7 @@ void main() {
     expect(gate.shouldRender('dragon-gift-1'), isFalse);
   });
 
-  test('bounded cache tolerates legacy receipts while rejecting known echoes', () {
+  test('bounded cache tolerates legacy receipts and known echoes', () {
     final gate = FvGiftReceiptGate(maxEntries: 2);
     expect(gate.shouldRender(null), isTrue);
     expect(gate.shouldRender(''), isTrue);
@@ -69,8 +71,10 @@ void main() {
         .readAsStringSync();
     final viewer = File('lib/features/live/stream_viewer_live_screen.dart')
         .readAsStringSync();
-    expect(host, contains("_giftEventGate.shouldRender(payload['id']?.toString())"));
-    expect(viewer, contains("_giftEventGate.shouldRender(payload['id']?.toString())"));
+    const receiptIdGate =
+        "_giftEventGate.shouldRender(payload['id']?.toString())";
+    expect(host, contains(receiptIdGate));
+    expect(viewer, contains(receiptIdGate));
     expect(viewer, contains('_giftEventGate.shouldRender(eventId);'));
     expect(host, contains("payload['qaHostPreview'] == true"));
     expect(host, contains('if (!ownerLocalPreview)'));
