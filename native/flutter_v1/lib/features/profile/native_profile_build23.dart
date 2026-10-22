@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import 'profile_recognition_badges.dart';
 import '../../data/fameverse_beta_backend.dart';
 import 'fame_coin_store_screen.dart';
 
@@ -138,6 +139,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          ProfileRecognitionBadges(userId: profile.id),
           if (isOwner) ...[
             const SizedBox(height: 8),
             const Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import 'profile_recognition_badges.dart';
 
 class FameversePublicProfileScreen extends StatefulWidget {
   const FameversePublicProfileScreen({
@@ -183,6 +184,7 @@ class _FameversePublicProfileScreenState
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              ProfileRecognitionBadges(userId: profile.id),
               if (_publicBio.isNotEmpty) ...[
                 const SizedBox(height: 13),
                 Text(

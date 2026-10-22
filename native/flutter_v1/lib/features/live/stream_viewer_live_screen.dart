@@ -8,6 +8,7 @@ import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import '../profile/fame_coin_store_screen.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -37,6 +38,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final TextEditingController _comment = TextEditingController();
   final List<FvLiveChatMessage> _chat = [];
   final List<FvGiftPlayback> _giftQueue = [];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
   final List<int> _tapBursts = [];
@@ -226,6 +228,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (gift == null || !mounted) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -272,7 +275,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -366,6 +369,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         quantity: quantity,
       );
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
+      // This receipt is presented locally; do not replay its own echo.
+      _giftEventGate.shouldRender(eventId);
       final message = FvLiveChatMessage(
         id: eventId,
         user: widget.viewerProfile.displayName,
@@ -806,7 +811,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _toggleCohostCamera() async {
-    if (!_selfIsCohost || _call == null) return;
+    if (!_selfIsCohost || _call == null || _cohostFlipBusy) return;
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _cohostFlipBusy = true);
+    } else {
+      _cohostFlipBusy = true;
+    }
+
     final next = !_cohostCameraEnabled;
     try {
       fvRequireSuccess(
@@ -816,6 +829,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (mounted) setState(() => _cohostCameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _cohostFlipBusy = false);
+      } else {
+        _cohostFlipBusy = false;
+      }
     }
   }
 
@@ -958,10 +977,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ? Icons.videocam_rounded
                           : Icons.videocam_off_rounded,
                       label: _cohostCameraEnabled ? 'Camera' : 'Camera on',
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        unawaited(_toggleCohostCamera());
-                      },
+                      onPressed: !_cohostFlipBusy
+                          ? () {
+                              Navigator.of(context).pop();
+                              unawaited(_toggleCohostCamera());
+                            }
+                          : null,
                     ),
                     FvRoundLiveButton(
                       icon: Icons.call_end_rounded,
