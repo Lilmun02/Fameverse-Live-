@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from './services/supabase.js'
+import { mayStartPolicyGatedLive } from './utils/media.js'
 import AuthScreen from './components/auth/AuthScreen.jsx'
 import PolicyAgreementGate from './components/auth/PolicyAgreementGate.jsx'
 import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
@@ -192,18 +193,13 @@ export default function App() {
     const roomTitle = liveSetup.active?.title || liveSetup.draft.title.trim() || 'Live session'
     // Authorize a NEW broadcast before opening camera or microphone. Ending
     // an existing broadcast must remain available regardless of policy status.
-    if (!wasLive && POLICY_ENABLED) {
-      try {
-        const { data, error } = await supabase.rpc('fv_policy_permissions')
-        if (error || data?.can_go_live !== true) {
-          setToast('Accept Fameverse policies before going Live')
-          return false
-        }
-      } catch {
-        setToast('Could not verify Go Live eligibility · please retry')
-        return false
-      }
-    }
+    const allowedToHost = await mayStartPolicyGatedLive({
+      enabled: POLICY_ENABLED,
+      alreadyLive: wasLive,
+      rpc: (name) => supabase.rpc(name),
+      onDenied: setToast,
+    })
+    if (!allowedToHost) return false
     const result = await live.startLive()
 
     if (wasLive) {
