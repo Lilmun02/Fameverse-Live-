@@ -577,13 +577,23 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       return;
     }
     setState(() => _selfCohostState = 'requested');
-    await activity.send('cohost-request', {
-      'viewerId': widget.identity.id,
-      'userId': widget.identity.id,
-      'displayName': widget.viewerProfile.displayName,
-      'avatarUrl': widget.viewerProfile.avatarUrl,
-    });
-    if (mounted) _showMessage('Co-host request sent.');
+    try {
+      await activity.send('cohost-request', {
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+        'displayName': widget.viewerProfile.displayName,
+        'avatarUrl': widget.viewerProfile.avatarUrl,
+      });
+      if (mounted) _showMessage('Co-host request sent.');
+    } catch (_) {
+      // A failed transport send must not leave the viewer permanently
+      // stuck in the pending state. Allow a fresh request after reconnect.
+      if (!mounted) return;
+      if (_selfCohostState == 'requested') {
+        setState(() => _selfCohostState = null);
+      }
+      _showMessage('Could not send co-host request. Please try again.');
+    }
   }
 
   Future<void> _handleCohostEvent(Map<String, dynamic> payload) async {
