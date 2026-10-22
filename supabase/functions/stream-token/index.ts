@@ -96,6 +96,22 @@ Deno.serve(async (req: Request) => {
     return response(403, { error: "host-role-forbidden" });
   }
 
+  // A live JWT is not permission to keep hosting after a policy change.
+  // When the owner enables the staged policy enforcement, reauthorize every
+  // HOST token request using the caller's authenticated Supabase identity.
+  // Viewer tokens remain available to declined and pending accounts.
+  if (role === "host" && Deno.env.get("FAMEVERSE_POLICY_GATE_ENABLED") === "true") {
+    const { data: permissions, error: policyError } = await userClient.rpc(
+      "fv_policy_permissions",
+    );
+    if (policyError || !permissions || typeof permissions !== "object") {
+      return response(503, { error: "policy-permissions-unavailable" });
+    }
+    if (permissions.can_go_live !== true) {
+      return response(403, { error: "policy-host-forbidden" });
+    }
+  }
+
   const callId = `fv_${room.id}`;
   const userToken = await signUserToken(streamApiSecret, user.id);
 
