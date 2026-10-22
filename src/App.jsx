@@ -54,6 +54,7 @@ export default function App() {
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
   const deepLinkHandledRef = useRef(false)
   const activityRef = useRef(null)
+  const policyLiveStartInProgressRef = useRef(false)
 
   const live = useLiveMedia(setToast)
   const liveSetup = useLiveSetup(setToast)
@@ -182,6 +183,12 @@ export default function App() {
 
   const startLive = async () => {
     const wasLive = live.isLive
+    // Coalesce simultaneous taps while an eligibility request is pending.
+    if (!wasLive && POLICY_ENABLED && policyLiveStartInProgressRef.current) {
+      return false
+    }
+    if (!wasLive && POLICY_ENABLED) policyLiveStartInProgressRef.current = true
+    try {
     const roomTitle = liveSetup.active?.title || liveSetup.draft.title.trim() || 'Live session'
     // Authorize a NEW broadcast before opening camera or microphone. Ending
     // an existing broadcast must remain available regardless of policy status.
@@ -226,6 +233,9 @@ export default function App() {
     sessionSummary.beginSession({ title: roomTitle })
     setToast("You're Live on Fameverse")
     return true
+    } finally {
+      if (!wasLive && POLICY_ENABLED) policyLiveStartInProgressRef.current = false
+    }
   }
 
   const submitComment = (event) => {
