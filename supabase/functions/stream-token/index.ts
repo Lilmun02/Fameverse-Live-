@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { evaluateHostPolicyAccess } from "./host-policy.ts";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -104,10 +105,16 @@ Deno.serve(async (req: Request) => {
     const { data: permissions, error: policyError } = await userClient.rpc(
       "fv_policy_permissions",
     );
-    if (policyError || !permissions || typeof permissions !== "object") {
+    const decision = evaluateHostPolicyAccess({
+      role,
+      enabled: true,
+      permissions,
+      error: policyError,
+    });
+    if (decision === "unavailable") {
       return response(503, { error: "policy-permissions-unavailable" });
     }
-    if (permissions.can_go_live !== true) {
+    if (decision !== "allow") {
       return response(403, { error: "policy-host-forbidden" });
     }
   }
