@@ -21,6 +21,7 @@ import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_build23.dart';
+import 'fameverse_vertical_live_feed.dart';
 
 class FameverseBuild23Shell extends StatefulWidget {
   const FameverseBuild23Shell({
@@ -526,6 +527,20 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       body: IndexedStack(
         index: _tab,
         children: [
+          if (_tab == 0 && _rooms.isNotEmpty)
+            FameverseVerticalLiveFeed(
+              backend: widget.backend,
+              liveBackend: widget.liveBackend,
+              identity: widget.identity,
+              profile: profile,
+              rooms: _rooms,
+              followingIds: _network.followingIds,
+              onOpenDiscover: () => _setTab(1),
+              onOpenStories: () => unawaited(_openStories(profile)),
+              onRefresh: _refreshRooms,
+              onLiveJoined: () => unawaited(_recordBetaMission('join_live')),
+            )
+          else if (_tab == 0)
           FameverseHomeBuild23Screen(
             profile: profile,
             network: _network,
@@ -543,6 +558,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onCreatorSelected: _openPublicProfile,
             followBusy: _followBusy,
           ),
+
+          else
+            const SizedBox.shrink(),
           FameverseDiscoverScreen(
             profile: profile,
             network: _network,
