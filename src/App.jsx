@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { supabase } from './services/supabase.js'
+import { mayStartPolicyGatedLive } from './utils/media.js'
 import AuthScreen from './components/auth/AuthScreen.jsx'
 import PolicyAgreementGate from './components/auth/PolicyAgreementGate.jsx'
 import DiscoverScreen from './components/discover/DiscoverScreen.jsx'
@@ -26,6 +28,7 @@ import { useLiveTapTotals } from './hooks/useLiveTapTotals.js'
 import { usePwaInstall } from './hooks/usePwaInstall.js'
 
 const SPLASH_MINIMUM_MS = 1800
+const POLICY_ENABLED = import.meta.env.VITE_FAMEVERSE_POLICY_GATE_ENABLED === 'true'
 
 function liveRoomFromUrl() {
   return new URL(window.location.href).searchParams.get('live')
@@ -52,6 +55,7 @@ export default function App() {
   const [splashMinimumElapsed, setSplashMinimumElapsed] = useState(false)
   const deepLinkHandledRef = useRef(false)
   const activityRef = useRef(null)
+  const policyLiveStartInProgressRef = useRef(false)
 
   const live = useLiveMedia(setToast)
   const liveSetup = useLiveSetup(setToast)
@@ -180,7 +184,22 @@ export default function App() {
 
   const startLive = async () => {
     const wasLive = live.isLive
+    // Coalesce simultaneous taps while an eligibility request is pending.
+    if (!wasLive && POLICY_ENABLED && policyLiveStartInProgressRef.current) {
+      return false
+    }
+    if (!wasLive && POLICY_ENABLED) policyLiveStartInProgressRef.current = true
+    try {
     const roomTitle = liveSetup.active?.title || liveSetup.draft.title.trim() || 'Live session'
+    // Authorize a NEW broadcast before opening camera or microphone. Ending
+    // an existing broadcast must remain available regardless of policy status.
+    const allowedToHost = await mayStartPolicyGatedLive({
+      enabled: POLICY_ENABLED,
+      alreadyLive: wasLive,
+      rpc: (name) => supabase.rpc(name),
+      onDenied: setToast,
+    })
+    if (!allowedToHost) return false
     const result = await live.startLive()
 
     if (wasLive) {
@@ -210,6 +229,9 @@ export default function App() {
     sessionSummary.beginSession({ title: roomTitle })
     setToast("You're Live on Fameverse")
     return true
+    } finally {
+      if (!wasLive && POLICY_ENABLED) policyLiveStartInProgressRef.current = false
+    }
   }
 
   const submitComment = (event) => {
