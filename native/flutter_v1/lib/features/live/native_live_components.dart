@@ -71,6 +71,16 @@ List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
   );
 }
 
+/// Longer watchdog for cinematic videos. Renderer completion normally advances
+/// the FIFO queue; watchdogs must never truncate a legitimate full animation.
+Duration fvGiftPlaybackWatchdog(FvGiftPlayback playback) {
+  final url = playback.gift.videoUrl?.trim() ?? '';
+  if (playback.gift.cinematic && url.isNotEmpty) {
+    return const Duration(seconds: 90);
+  }
+  return const Duration(seconds: 8);
+}
+
 class NativeGiftOverlay extends StatefulWidget {
   const NativeGiftOverlay({required this.playback, this.onFinished, super.key});
 
@@ -101,7 +111,9 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.playback.gift.id != widget.playback.gift.id ||
         oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.quantity != widget.playback.quantity) {
+        oldWidget.playback.quantity != widget.playback.quantity ||
+        oldWidget.playback.comboIndex != widget.playback.comboIndex ||
+        oldWidget.playback.comboTotal != widget.playback.comboTotal) {
       _reportedFinished = false;
       _finishTimer?.cancel();
       unawaited(_syncVideo());
@@ -130,7 +142,7 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     final gift = widget.playback.gift;
     final url = gift.videoUrl?.trim() ?? '';
 
-    if (!gift.cinematic || url.isEmpty) {
+    if (gift.cost < 100 || !gift.cinematic || url.isEmpty) {
       final previous = _controller;
       _controller = null;
       _loadedUrl = null;
@@ -224,6 +236,32 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.dispose();
   }
 
+  // Gift regression law: under-100 gifts must never obscure a Live broadcast.
+  // Present only a small, silent glyph; sender/description remain in Live chat.
+  Widget _lightweightGift(FvGiftPlayback playback) {
+    final description =
+        '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}';
+    return IgnorePointer(
+      child: Align(
+        alignment: const Alignment(-0.85, 0.1),
+        child: Semantics(
+          label: description,
+          child: SizedBox(
+            key: Key('lightweight-gift-${playback.gift.id}'),
+            width: 56,
+            height: 48,
+            child: Center(
+              child: Text(
+                playback.gift.symbol,
+                style: const TextStyle(fontSize: 32),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
     final size = MediaQuery.sizeOf(context);
     final premium = playback.gift.cost >= 100;
@@ -280,6 +318,10 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   Widget build(BuildContext context) {
     final playback = widget.playback;
+
+    if (playback.gift.cost < 100) {
+      return _lightweightGift(playback);
+    }
 
     if (!playback.gift.cinematic) {
       return _largeNativeGift(context, playback);
