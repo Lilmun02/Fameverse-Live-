@@ -46,6 +46,13 @@ function paypalBase(environment: string) {
     : "https://api-m.sandbox.paypal.com";
 }
 
+function configuredPaypalEnvironment() {
+  const value = (
+    Deno.env.get("PAYPAL_ENV") ?? Deno.env.get("PAYPAL_ENVIRONMENT") ?? ""
+  ).trim().toLowerCase();
+  return value === "live" || value === "sandbox" ? value : null;
+}
+
 async function paypalAccessToken(
   clientId: string,
   secret: string,
@@ -138,13 +145,13 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const paypalClientId = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
   const paypalSecret = Deno.env.get("PAYPAL_CLIENT_SECRET") ?? "";
-  const paypalEnvironment =
-    (Deno.env.get("PAYPAL_ENVIRONMENT") ?? "sandbox").toLowerCase() === "live"
-      ? "live"
-      : "sandbox";
+  const paypalEnvironment = configuredPaypalEnvironment();
 
   if (!supabaseUrl || !serviceRoleKey) {
     return json(503, { error: "backend-not-configured" });
+  }
+  if (!paypalEnvironment) {
+    return json(503, { error: "paypal-environment-not-configured" });
   }
   const paypalReturnUrl = `${supabaseUrl}/functions/v1/paypal-return`;
 

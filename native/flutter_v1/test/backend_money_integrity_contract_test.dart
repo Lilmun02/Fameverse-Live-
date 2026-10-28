@@ -91,6 +91,37 @@ void main() {
       expect(guard, contains("where status = 'failed'"));
     });
 
+    test('PayPal provider functions fail closed on unknown environment', () {
+      final process = File(
+        '../../supabase/functions/process-creator-payout/index.ts',
+      ).readAsStringSync();
+      final sync = File(
+        '../../supabase/functions/sync-creator-payout/index.ts',
+      ).readAsStringSync();
+
+      for (final source in <String>[process, sync]) {
+        expect(source, contains('paypal_environment_not_configured'));
+        expect(source, contains('paypalEnv !== "live"'));
+        expect(source, contains('paypalEnv !== "sandbox"'));
+        expect(source, isNot(contains('?? "sandbox"')));
+      }
+    });
+
+    test('Stripe pending order lock persists environment and blocks legacy ambiguity', () {
+      final checkout = File(
+        '../../supabase/functions/stripe-checkout-session/index.ts',
+      ).readAsStringSync();
+      final migration = File(
+        '../../supabase/migrations/20261023210000_build46_stripe_checkout_lock.sql',
+      ).readAsStringSync();
+
+      expect(checkout, contains('create_stripe_recharge_order'));
+      expect(migration, contains('stripe_environment'));
+      expect(migration, contains('legacy stripe order environment unresolved'));
+      expect(migration, contains('stripe_environment = p_environment'));
+      expect(migration, contains('pg_advisory_xact_lock'));
+    });
+
     test(
       'verification gates require 100 followers and 500k cash-backed coins',
       () {

@@ -1,0 +1,105 @@
+FAMEVERSE — PURCHASES AND PAYOUTS SAFER REPAIR REVIEW
+DATE: 2026-10-28
+STATUS: UNCOMMITTED / UNPUSHED / UNDEPLOYED — CTO REVIEW REQUIRED
+
+IMPORTANT CORRECTION
+The earlier Build 46 money patch did not have enough evidence to claim purchase or payout safety. That claim is withdrawn. This package records the stricter review and the additional repairs, but it does not claim that production purchases or payouts have been proven until staging database tests, provider sandbox tests, and Flutter/device tests pass.
+
+AUTHORIZED WORKTREE
+Repository worktree: /home/ubuntu/Fameverse-Build46-money
+Branch: build46/money-safety
+Base HEAD: 7bbe68c933d96d1e303b32521ac18bbad27d2d81
+
+No commit, push, merge, deploy, Supabase migration application, Stripe charge, PayPal payout, or live-money call was performed.
+
+CONFIRMED DEFECTS FOUND IN THE EARLIER PATCH
+
+1. Stripe advisory-lock scope was stronger than the row model. The lock key included test/live environment, but the order row did not persist environment. A pending order could therefore be ambiguous across configuration changes. The new repair persists stripe_environment and rejects legacy pending Stripe rows whose environment is unknown.
+
+2. The owner payout UI still forced expected_environment = sandbox and displayed “Send with PayPal sandbox.” That could conflict with backend live configuration and made the client an unsafe environment authority. The new repair removes the client-side environment override and label.
+
+3. PayPal process-creator-payout and sync-creator-payout silently defaulted an absent environment to sandbox. The new repair fails closed unless PAYPAL_ENV or PAYPAL_ENVIRONMENT explicitly resolves to live or sandbox.
+
+4. PayPal recharge used only PAYPAL_ENVIRONMENT while payout functions accepted PAYPAL_ENV first. The new repair aligns recharge with the same explicit environment precedence used by payout functions.
+
+5. Existing tests checked source markers but did not assert the new Stripe environment-isolation invariant or strict PayPal process/sync gates. New contract tests were added for those exact policies.
+
+PURCHASE REPAIR
+
+Changed:
+supabase/functions/stripe-checkout-session/index.ts
+supabase/migrations/20261023210000_build46_stripe_checkout_lock.sql
+
+The migration adds coin_recharge_orders.stripe_environment and an index for pending Stripe orders. The service-role-only create_stripe_recharge_order database function takes a user, pack, environment, amount, currency, and coin count. It serializes order creation with pg_advisory_xact_lock using user, pack, and environment. It reuses only a pending order with the same persisted environment and exact economic fields.
+
+If a legacy pending Stripe row has a null environment, the function raises a reconciliation-required error. The Checkout edge function returns HTTP 409 with stripe-legacy-order-reconciliation-required instead of guessing. If a matching pending row already has a provider session ID, the function returns HTTP 409 with stripe-checkout-already-pending rather than opening another provider session.
+
+The existing server-only fulfillment boundary remains unchanged: Checkout creation does not credit coins, the browser return page does not credit coins, and signed Stripe webhook fulfillment remains the crediting path.
+
+PAYOUT REPAIR
+
+Changed:
+supabase/functions/process-creator-payout/index.ts
+supabase/functions/sync-creator-payout/index.ts
+native/flutter_v1/lib/features/profile/owner_control_center_build23.dart
+
+Both PayPal provider functions now fail closed with paypal_environment_not_configured unless the configured value is exactly live or sandbox. The owner UI no longer injects expected_environment: sandbox and no longer claims that every payout is a sandbox payout. The backend remains the only environment authority.
+
+The existing payout reservation protections were reviewed and retained. begin_creator_payout_processing locks the payout row, permits only approved or explicitly recoverable unknown submissions, and moves the request to processing/SUBMITTING. PayPal requests use a deterministic payout ID as PayPal-Request-Id and sender_batch_id. Ambiguous network/provider outcomes stay processing and reserved. review_creator_payout rejects terminal failure without provider-confirmed failure and rejects paid unless PayPal SUCCESS is recorded. The ledger debit uses payout:<id> as a conflict-safe source key.
+
+REGRESSION CONTRACTS ADDED OR UPDATED
+
+Changed:
+native/flutter_v1/test/backend_money_integrity_contract_test.dart
+native/flutter_v1/test/build32_release_contract_test.dart
+native/flutter_v1/test/live_gift_and_owner_payout_contract_test.dart
+
+The tests now require:
+- strict PayPal environment gates in both process and sync functions;
+- no silent sandbox fallback in those functions;
+- Stripe environment persistence;
+- rejection of legacy Stripe pending rows with unknown environment;
+- advisory-lock presence;
+- no client-side sandbox override in the owner payout UI;
+- no sandbox-only payout label.
+
+VALIDATION EVIDENCE
+
+PASS:
+- npm run check:lines — 142 files checked, all <= 450 lines.
+- Architecture guard completed successfully.
+- git diff --check — PASS.
+- Focused Node source-contract harness — MONEY_SAFETY_CONTRACTS=PASS.
+- SQL structure contract — SQL_STRUCTURE_CONTRACT=PASS.
+
+NOT AVAILABLE / NOT PROVEN:
+- Dart/Flutter is unavailable in this sandbox, so Flutter tests and Dart formatting were not run.
+- Supabase CLI, Deno, and PostgreSQL client are unavailable, so the migration was not applied or executed against a database.
+- npm package validation could not run because npm failed before install with: “Cannot read properties of null (reading 'edgesOut')”. This is an environment/package-manager failure, not evidence of a passing build.
+- No Stripe test Checkout was created.
+- No Stripe signed webhook was delivered.
+- No duplicate concurrent Checkout test was run against PostgreSQL.
+- No PayPal sandbox payout was submitted.
+- No PayPal provider-status synchronization was run.
+- No ledger balance or payout reservation was inspected in a live/staging database.
+
+CTO STAGING TEST PLAN BEFORE MERGE
+
+1. Apply the migration to a disposable staging database only.
+2. Create a legacy pending Stripe row with null stripe_environment. Confirm Checkout returns 409 stripe-legacy-order-reconciliation-required and creates no new order.
+3. Run two concurrent Checkout create requests for the same user, pack, and environment. Confirm exactly one pending database order and exactly one Stripe session ID.
+4. Run concurrent requests for the same user and pack in test versus live configuration. Confirm they cannot reuse each other’s pending order.
+5. Deliver one valid signed Stripe checkout.session.completed event twice. Confirm one wallet credit and one ledger event.
+6. Deliver an invalid-signature event. Confirm no wallet or ledger change.
+7. Run recharge with missing, invalid, sandbox, and live environment settings. Confirm missing/invalid fail closed and valid settings use only their matching provider endpoint.
+8. Run payout processing with missing/invalid, sandbox, and live environment settings. Confirm missing/invalid fail closed and valid settings use only their matching provider endpoint.
+9. Simulate timeout after PayPal accepts a payout. Confirm the request remains processing/reserved and recovery uses the same deterministic request ID.
+10. Confirm a payout cannot become paid without provider SUCCESS and cannot be paid twice because payout:<id> is idempotent.
+11. Run Flutter contract tests and physical sandbox acceptance on an approved device.
+12. Inspect balances, ledger rows, payout status, provider batch ID, and reservation totals before and after each scenario.
+
+MERGE DECISION
+
+Do not merge yet. The source repair is safer and the prior overclaim has been corrected, but the financial system is not proven until the staging test plan produces database/provider evidence. The next safe gate is CTO review of this exact diff followed by disposable Supabase staging validation.
+
+PURCHASE/PAYOUT SAFER REPAIR REVIEW COMPLETE — NO COMMIT, PUSH, MERGE, DEPLOY, OR PROVIDER CALL PERFORMED

@@ -155,20 +155,39 @@ Deno.serve(async (req: Request) => {
     return json(503, { error: "stripe-price-not-configured", environment });
   }
 
-  const { data: recharge, error: rechargeError } = await admin
-    .from("coin_recharge_orders")
-    .insert({
-      user_id: user.id,
-      pack_id: pack.id,
-      provider: "stripe",
-      amount_cents: priceCents,
-      currency: pack.currency,
-      coins: pack.coins,
-      status: "created",
-    })
-    .select("id")
-    .single();
-  if (rechargeError || !recharge) return json(500, { error: "stripe-order-create-failed" });
+  const { data: orderRows, error: rechargeError } = await admin.rpc(
+    "create_stripe_recharge_order",
+    {
+      p_user_id: user.id,
+      p_pack_id: pack.id,
+      p_environment: environment,
+      p_amount_cents: priceCents,
+      p_currency: pack.currency,
+      p_coins: pack.coins,
+    },
+  );
+  const recharge = Array.isArray(orderRows) ? orderRows[0] : orderRows;
+  if (rechargeError) {
+    const legacyEnvironment = rechargeError.message.includes(
+      "legacy stripe order environment unresolved",
+    );
+    return json(legacyEnvironment ? 409 : 500, {
+      error: legacyEnvironment
+        ? "stripe-legacy-order-reconciliation-required"
+        : "stripe-order-create-failed",
+    });
+  }
+  if (!recharge?.recharge_id) {
+    return json(500, { error: "stripe-order-create-failed" });
+  }
+  if (recharge.provider_order_id) {
+    return json(409, {
+      error: "stripe-checkout-already-pending",
+      order_id: recharge.recharge_id,
+      checkout_session_id: recharge.provider_order_id,
+      environment,
+    });
+  }
 
   const returnBase = `${supabaseUrl}/functions/v1/stripe-return`;
   const form = new URLSearchParams();
@@ -184,11 +203,11 @@ Deno.serve(async (req: Request) => {
   form.set("cancel_url", `${returnBase}?status=cancelled`);
   form.set("submit_type", "pay");
   form.set("locale", "auto");
-  form.set("metadata[recharge_id]", recharge.id);
+  form.set("metadata[recharge_id]", recharge.recharge_id);
   form.set("metadata[user_id]", user.id);
   form.set("metadata[pack_id]", pack.id);
   form.set("metadata[coins]", String(pack.coins));
-  form.set("payment_intent_data[metadata][recharge_id]", recharge.id);
+  form.set("payment_intent_data[metadata][recharge_id]", recharge.recharge_id);
   form.set("payment_intent_data[metadata][user_id]", user.id);
   form.set("payment_intent_data[metadata][pack_id]", pack.id);
   if (user.email) form.set("customer_email", user.email);
@@ -199,7 +218,7 @@ Deno.serve(async (req: Request) => {
       headers: {
         Authorization: `Bearer ${secretKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
-        "Idempotency-Key": `fv-stripe-checkout-${recharge.id}`,
+        "Idempotency-Key": `fv-stripe-checkout-${recharge.recharge_id}`,
       },
       body: form.toString(),
     });
@@ -210,20 +229,20 @@ Deno.serve(async (req: Request) => {
       await admin
         .from("coin_recharge_orders")
         .update({ status: "failed", updated_at: new Date().toISOString() })
-        .eq("id", recharge.id);
+        .eq("id", recharge.recharge_id);
       return json(502, { error: "stripe-checkout-create-failed" });
     }
 
     await admin
       .from("coin_recharge_orders")
       .update({ provider_order_id: sessionId, updated_at: new Date().toISOString() })
-      .eq("id", recharge.id);
+      .eq("id", recharge.recharge_id);
 
     return json(201, {
       provider: "stripe",
       checkout: "hosted",
       environment,
-      order_id: recharge.id,
+      order_id: recharge.recharge_id,
       checkout_session_id: sessionId,
       checkout_url: checkoutUrl,
       coins: pack.coins,
@@ -234,7 +253,7 @@ Deno.serve(async (req: Request) => {
     await admin
       .from("coin_recharge_orders")
       .update({ status: "failed", updated_at: new Date().toISOString() })
-      .eq("id", recharge.id);
+      .eq("id", recharge.recharge_id);
     return json(502, { error: "stripe-checkout-create-failed" });
   }
 });

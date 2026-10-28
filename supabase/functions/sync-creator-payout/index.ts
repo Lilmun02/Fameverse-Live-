@@ -23,11 +23,14 @@ Deno.serve(async (req: Request) => {
   const paypalClientId = Deno.env.get("PAYPAL_CLIENT_ID") ?? "";
   const paypalClientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET") ?? "";
   const paypalEnv = (
-    Deno.env.get("PAYPAL_ENV") ?? Deno.env.get("PAYPAL_ENVIRONMENT") ?? "sandbox"
-  ).toLowerCase();
+    Deno.env.get("PAYPAL_ENV") ?? Deno.env.get("PAYPAL_ENVIRONMENT") ?? ""
+  ).trim().toLowerCase();
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey) return json({ error: "server_configuration_missing" }, 500);
   if (!paypalClientId || !paypalClientSecret) return json({ error: "paypal_credentials_missing" }, 503);
+  if (paypalEnv !== "live" && paypalEnv !== "sandbox") {
+    return json({ error: "paypal_environment_not_configured" }, 503);
+  }
 
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);

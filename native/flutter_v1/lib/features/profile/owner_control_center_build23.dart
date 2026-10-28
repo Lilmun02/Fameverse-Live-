@@ -317,7 +317,7 @@ class _Build23OwnerControlCenterScreenState
     try {
       final response = await _client.functions.invoke(
         'process-creator-payout',
-        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
+        body: {'payout_id': payoutId},
       );
       final data = response.data is Map
           ? Map<String, dynamic>.from(response.data as Map)
@@ -329,7 +329,7 @@ class _Build23OwnerControlCenterScreenState
         throw StateError(code);
       }
       final providerStatus = data['provider_status']?.toString() ?? 'PENDING';
-      _message('PayPal sandbox payout submitted: $providerStatus.');
+      _message('PayPal payout submitted: $providerStatus.');
       await _refresh();
     } catch (error) {
       final text = error.toString();
@@ -362,7 +362,7 @@ class _Build23OwnerControlCenterScreenState
     try {
       final response = await _client.functions.invoke(
         'sync-creator-payout',
-        body: {'payout_id': payoutId, 'expected_environment': 'sandbox'},
+        body: {'payout_id': payoutId},
       );
       final data = response.data is Map
           ? Map<String, dynamic>.from(response.data as Map)
@@ -928,7 +928,7 @@ class _PayoutCard extends StatelessWidget {
               key: const Key('owner-payout-begin-processing'),
               onPressed: busy ? null : onProcess,
               icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Send with PayPal sandbox'),
+              label: const Text('Send with PayPal'),
             )
           else if (status == 'processing' && needsProviderRecovery)
             FilledButton.icon(

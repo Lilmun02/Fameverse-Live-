@@ -61,8 +61,8 @@ void main() {
 
         expect(owner, contains("'process-creator-payout'"));
         expect(owner, contains("'sync-creator-payout'"));
-        expect(owner, contains("'expected_environment': 'sandbox'"));
-        expect(owner, contains("Text('Send with PayPal sandbox')"));
+        expect(owner, isNot(contains("'expected_environment': 'sandbox'")));
+        expect(owner, contains("Text('Send with PayPal')"));
         expect(owner, contains("Key('owner-payout-sync-provider')"));
         expect(owner, isNot(contains("Key('owner-payout-mark-paid')")));
       },
