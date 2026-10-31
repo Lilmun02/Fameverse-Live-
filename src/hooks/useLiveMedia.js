@@ -58,6 +58,8 @@ export function useLiveMedia(setToast) {
   const streamRef = useRef(null)
   const wakeLockRef = useRef(null)
   const flipLockRef = useRef(false)
+  const startLockRef = useRef(false)
+  const mountedRef = useRef(true)
 
   const getVideoElement = (slot) => (slot === 0 ? videoPrimaryRef.current : videoSecondaryRef.current)
 
@@ -70,6 +72,7 @@ export function useLiveMedia(setToast) {
   }, [mediaStream, cameraOff, activeVideoSlot])
 
   useEffect(() => () => {
+    mountedRef.current = false
     streamRef.current?.getTracks().forEach((track) => track.stop())
     wakeLockRef.current?.release?.().catch?.(() => {})
   }, [])
@@ -150,6 +153,8 @@ export function useLiveMedia(setToast) {
   }
 
   const startLive = async () => {
+    // Ignore rapid repeated taps while the initial camera permission request is pending.
+    if (startLockRef.current || flipLockRef.current) return false
     if (isLive) {
       stopMedia()
       setIsLive(false)
@@ -159,9 +164,14 @@ export function useLiveMedia(setToast) {
       return false
     }
 
+    startLockRef.current = true
     setIsStartingLive(true)
     try {
       const stream = await requestMedia(facingMode)
+      if (!mountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return false
+      }
       streamRef.current = stream
       setVideoSlotFacing((slots) => {
         const next = [...slots]
@@ -184,7 +194,8 @@ export function useLiveMedia(setToast) {
       else setToast('Could not start camera · try reopening the PWA')
       return false
     } finally {
-      setIsStartingLive(false)
+      startLockRef.current = false
+      if (mountedRef.current) setIsStartingLive(false)
     }
   }
 
