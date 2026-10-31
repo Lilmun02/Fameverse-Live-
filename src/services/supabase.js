@@ -4,6 +4,12 @@ const supabaseUrl = 'https://lwasmvzsagowgmiqssph.supabase.co'
 const supabasePublishableKey = 'sb_publishable_Zukw53JQ0R_rMuxxC1eeRg_28_QavNC'
 const AUTH_STARTUP_TIMEOUT_MS = 10000
 
+// Capture the recovery marker before Supabase consumes the URL fragment during startup.
+// A recovery marker alone never authorizes a password update; a valid session is also required.
+export const recoveryLinkPresented = window.location.pathname === '/reset-password' &&
+  new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery' &&
+  Boolean(new URLSearchParams(window.location.hash.slice(1)).get('access_token'))
+
 const client = createClient(supabaseUrl, supabasePublishableKey)
 
 // iOS standalone PWAs can occasionally stall while Supabase restores the
