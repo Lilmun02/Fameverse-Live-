@@ -17,6 +17,8 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   const [recoveryMode, setRecoveryMode] = useState(() => window.location.pathname === '/reset-password')
   const [recoveryPassword, setRecoveryPassword] = useState('')
   const [recoveryAuthorized, setRecoveryAuthorized] = useState(false)
+  const [resetRequestBusy, setResetRequestBusy] = useState(false)
+  const [resetCooldownUntil, setResetCooldownUntil] = useState(0)
   const [profileDraft, setProfileDraft] = useState({ display_name: '', username: '', bio: '' })
 
   useEffect(() => {
@@ -110,12 +112,35 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   }
 
   const requestPasswordReset = async () => {
+    if (resetRequestBusy) return
     const email = authForm.email.trim()
     if (!email) return setAuthMessage('Enter your email address first.')
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://fameverse.app/reset-password',
-    })
-    setAuthMessage(error ? 'Unable to request reset. Please try again.' : 'If that account exists, check your email for a reset link.')
+    const remaining = Math.ceil((resetCooldownUntil - Date.now()) / 1000)
+    if (remaining > 0) return setAuthMessage(`Please wait ${remaining} seconds before requesting another reset email.`)
+
+    setResetRequestBusy(true)
+    setAuthMessage('')
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://fameverse.app/reset-password',
+      })
+      if (error) {
+        if (error.status === 429 || error.code === 'over_email_send_rate_limit' || error.code === 'over_request_rate_limit') {
+          const retrySeconds = Number(error.message?.match(/after (\\d+) seconds?/i)?.[1]) || 60
+          setResetCooldownUntil(Date.now() + retrySeconds * 1000)
+          setAuthMessage(`Too many reset requests. Please wait ${retrySeconds} seconds before trying again.`)
+        } else {
+          setAuthMessage('Unable to send a reset email right now. Please try again later.')
+        }
+        return
+      }
+      setResetCooldownUntil(Date.now() + 60_000)
+      setAuthMessage('If that account exists, check your email (including spam) for a reset link. Wait 60 seconds before requesting another.')
+    } catch {
+      setAuthMessage('Network error while requesting reset. Check your connection and try again.')
+    } finally {
+      setResetRequestBusy(false)
+    }
   }
 
   const completePasswordReset = async (event) => {
@@ -189,7 +214,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   }
 
   return {
-    recoveryMode, recoveryPassword, setRecoveryPassword, requestPasswordReset, completePasswordReset,
+    recoveryMode, recoveryPassword, setRecoveryPassword, requestPasswordReset, resetRequestBusy, completePasswordReset,
     authReady,
     session,
     profile,
