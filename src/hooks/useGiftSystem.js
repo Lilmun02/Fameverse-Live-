@@ -25,6 +25,7 @@ export function useGiftSystem({
   const simpleGiftQueueRef = useRef([])
   const simpleGiftActiveRef = useRef(false)
   const premiumRepeatTimerRef = useRef(null)
+  const premiumDispatchTimersRef = useRef(new Set())
   const coinsRef = useRef(Math.max(0, Number(coins || 0)))
   const sendQueueRef = useRef(Promise.resolve())
 
@@ -37,6 +38,8 @@ export function useGiftSystem({
     simpleGiftQueueRef.current = []
     simpleGiftActiveRef.current = false
     clearTimeout(premiumRepeatTimerRef.current)
+    premiumDispatchTimersRef.current.forEach(clearTimeout)
+    premiumDispatchTimersRef.current.clear()
     window.FameverseGiftEngine?.stop?.()
     window.FameverseGiftEngine?.stopAudioSession?.()
   }, [])
@@ -92,12 +95,14 @@ export function useGiftSystem({
     clearTimeout(premiumRepeatTimerRef.current)
     premiumRepeatTimerRef.current = window.setTimeout(() => setPremiumRepeat(null), 6800)
 
-    window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
+      premiumDispatchTimersRef.current.delete(timer)
       window.FameverseGiftEngine?.primeAudio?.()
       document.dispatchEvent(new CustomEvent('fameverse:gift', {
         detail: { id: gift.rendererId, sender, quantity: Number(quantity) || 1 },
       }))
     }, 140)
+    premiumDispatchTimersRef.current.add(timer)
   }, [])
 
   const receiveGift = useCallback((gift, quantity = 1, sender = 'Fameverse viewer') => {
@@ -228,6 +233,8 @@ export function useGiftSystem({
   const stopGiftPlayback = () => {
     clearSimpleGiftPlayback()
     clearTimeout(premiumRepeatTimerRef.current)
+    premiumDispatchTimersRef.current.forEach(clearTimeout)
+    premiumDispatchTimersRef.current.clear()
     setPremiumRepeat(null)
     window.FameverseGiftEngine?.stop?.()
   }
