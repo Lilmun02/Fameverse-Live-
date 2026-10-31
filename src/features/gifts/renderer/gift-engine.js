@@ -42,6 +42,8 @@ const giftRegistry = Object.freeze({
 
 let activeGift = null
 let giftQueue = []
+const MAX_PENDING_GIFT_SCENES = 50
+const recentlySeenGiftEvents = new Map()
 const preparedGiftVideos = new Map()
 
 function isLiveActive() {
@@ -104,6 +106,7 @@ function destroyActiveScene() {
 
 function stopGiftEngine() {
   giftQueue = []
+  recentlySeenGiftEvents.clear()
   destroyActiveScene()
   document.documentElement.classList.remove('fv-gift-engine-active')
 }
@@ -228,7 +231,11 @@ function playGift(giftKey, meta = {}) {
   prepareGiftMedia(config.id)
   const requestedQuantity = Number(meta.quantity)
   const quantity = Number.isSafeInteger(requestedQuantity) && requestedQuantity > 0 ? requestedQuantity : 1
-  const entries = buildComboEntries(config, meta, quantity)
+  // Do not allocate an unbounded animation queue for large beta gift quantities.
+  // The confirmed coin transaction is separate from how many animations can play.
+  const availableSlots = Math.max(0, MAX_PENDING_GIFT_SCENES - giftQueue.length - (activeGift ? 0 : 1))
+  const entries = buildComboEntries(config, meta, Math.min(quantity, availableSlots + (activeGift ? 0 : 1)))
+  if (!entries.length) return false
 
   if (activeGift) {
     giftQueue.push(...entries)
@@ -242,7 +249,17 @@ function playGift(giftKey, meta = {}) {
 
 document.addEventListener('fameverse:gift', (event) => {
   const detail = event.detail || {}
-  if (detail.id) playGift(detail.id, detail)
+  if (!detail.id) return
+  const eventId = detail.eventId || detail.transactionId
+  if (eventId) {
+    if (recentlySeenGiftEvents.has(eventId)) return
+    recentlySeenGiftEvents.set(eventId, Date.now())
+    if (recentlySeenGiftEvents.size > 200) {
+      const oldest = recentlySeenGiftEvents.keys().next().value
+      recentlySeenGiftEvents.delete(oldest)
+    }
+  }
+  playGift(detail.id, detail)
 })
 
 window.FameverseGiftEngine = Object.freeze({
