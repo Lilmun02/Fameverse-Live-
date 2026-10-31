@@ -1,4 +1,4 @@
-export default function AuthScreen({ authMode, setAuthMode, authForm, setAuthForm, authMessage, setAuthMessage, submitAuth, requestPasswordReset }) {
+export default function AuthScreen({ authMode, setAuthMode, authForm, setAuthForm, authMessage, setAuthMessage, submitAuth, requestPasswordReset, resetRequestBusy }) {
   return (
     <div className="auth-shell">
       <div className="auth-brand"><span>FAMEVERSE</span> LIVE <b>BETA 0.2</b></div>
@@ -44,7 +44,7 @@ export default function AuthScreen({ authMode, setAuthMode, authForm, setAuthFor
           {authMessage && <div className="auth-message">{authMessage}</div>}
           <button className="auth-primary" type="submit">{authMode === 'signup' ? 'Create account' : 'Sign in'}</button>
         </form>
-        {authMode === 'signin' && <button className="auth-switch" type="button" onClick={requestPasswordReset}>Forgot password?</button>}
+        {authMode === 'signin' && <button className="auth-switch" type="button" onClick={requestPasswordReset} disabled={resetRequestBusy}>{resetRequestBusy ? "Sending reset email…" : "Forgot password?"}</button>}
         <button
           className="auth-switch"
           onClick={() => {
