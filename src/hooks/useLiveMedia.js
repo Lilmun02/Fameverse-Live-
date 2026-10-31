@@ -71,10 +71,13 @@ export function useLiveMedia(setToast) {
     video.play().catch(() => {})
   }, [mediaStream, cameraOff, activeVideoSlot])
 
-  useEffect(() => () => {
-    mountedRef.current = false
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    wakeLockRef.current?.release?.().catch?.(() => {})
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      streamRef.current?.getTracks().forEach((track) => track.stop())
+      wakeLockRef.current?.release?.().catch?.(() => {})
+    }
   }, [])
 
   useEffect(() => {
