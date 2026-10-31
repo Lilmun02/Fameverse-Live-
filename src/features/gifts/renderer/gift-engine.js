@@ -144,7 +144,7 @@ function buildVideoScene(config, meta) {
     <span class="fv-gift-meta-icon" aria-hidden="true">F</span>
     <div>
       <strong>${escapeText(meta.sender || 'Fameverse Creator')}</strong>
-      <small>sent ${escapeText(config.label)}${comboLabel(meta)}</small>
+      <small>sent ${escapeText(config.label)}${comboLabel(meta)} · 🟣 ${Number(config.cost).toLocaleString()} coins</small>
     </div>
   `
 
@@ -234,7 +234,7 @@ function playGift(giftKey, meta = {}) {
   // Do not allocate an unbounded animation queue for large beta gift quantities.
   // The confirmed coin transaction is separate from how many animations can play.
   const availableSlots = Math.max(0, MAX_PENDING_GIFT_SCENES - giftQueue.length - (activeGift ? 0 : 1))
-  const entries = buildComboEntries(config, meta, Math.min(quantity, availableSlots + (activeGift ? 0 : 1)))
+  const entries = buildComboEntries(config, meta, Math.min(quantity, availableSlots))
   if (!entries.length) return false
 
   if (activeGift) {
