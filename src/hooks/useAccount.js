@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { loadAccountRole } from '../services/accountRoles.js'
 import { uploadProfileAvatar } from '../services/profileAvatars.js'
-import { supabase } from '../services/supabase.js'
+import { recoveryLinkPresented, supabase } from '../services/supabase.js'
 import { cleanUsername } from '../utils/profile.js'
 
 const PROFILE_FIELDS = 'id, username, display_name, bio, avatar_url, created_at, updated_at'
@@ -30,7 +30,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     }).catch(() => setAuthReady(true))
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' || (recoveryLinkPresented && nextSession?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION'))) {
         setRecoveryAuthorized(true)
         setRecoveryMode(true)
       }
