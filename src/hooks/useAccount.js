@@ -16,6 +16,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   const [authMessage, setAuthMessage] = useState('')
   const [recoveryMode, setRecoveryMode] = useState(() => window.location.pathname === '/reset-password')
   const [recoveryPassword, setRecoveryPassword] = useState('')
+  const [recoveryAuthorized, setRecoveryAuthorized] = useState(false)
   const [profileDraft, setProfileDraft] = useState({ display_name: '', username: '', bio: '' })
 
   useEffect(() => {
@@ -27,7 +28,10 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     }).catch(() => setAuthReady(true))
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryAuthorized(true)
+        setRecoveryMode(true)
+      }
       setSession(nextSession)
       setAuthReady(true)
     })
@@ -117,10 +121,11 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   const completePasswordReset = async (event) => {
     event.preventDefault()
     if (recoveryPassword.length < 8) return setAuthMessage('Use at least 8 characters.')
-    if (!session?.user) return setAuthMessage('Reset link expired or invalid. Request a new password reset email.')
+    if (!session?.user || !recoveryAuthorized) return setAuthMessage('Reset link expired or invalid. Request a new password reset email.')
     const { error } = await supabase.auth.updateUser({ password: recoveryPassword })
     if (error) return setAuthMessage('Unable to update password. Request a fresh reset link.')
     setRecoveryPassword('')
+    setRecoveryAuthorized(false)
     setRecoveryMode(false)
     setAuthMessage('Password updated successfully.')
     window.history.replaceState({}, '', '/')
