@@ -298,6 +298,7 @@ export default function App() {
         setAuthMessage={account.setAuthMessage}
         submitAuth={account.submitAuth}
         requestPasswordReset={account.requestPasswordReset}
+        resetRequestBusy={account.resetRequestBusy}
       />
     )
   }
