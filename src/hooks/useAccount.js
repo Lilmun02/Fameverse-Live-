@@ -14,6 +14,8 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   const [authMode, setAuthMode] = useState('signin')
   const [authForm, setAuthForm] = useState({ email: '', password: '', displayName: '' })
   const [authMessage, setAuthMessage] = useState('')
+  const [recoveryMode, setRecoveryMode] = useState(false)
+  const [recoveryPassword, setRecoveryPassword] = useState('')
   const [profileDraft, setProfileDraft] = useState({ display_name: '', username: '', bio: '' })
 
   useEffect(() => {
@@ -24,7 +26,8 @@ export function useAccount({ setToast, onBeforeSignOut }) {
       setAuthReady(true)
     }).catch(() => setAuthReady(true))
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
       setSession(nextSession)
       setAuthReady(true)
     })
@@ -102,6 +105,26 @@ export function useAccount({ setToast, onBeforeSignOut }) {
     if (error) setAuthMessage(error.message)
   }
 
+  const requestPasswordReset = async () => {
+    const email = authForm.email.trim()
+    if (!email) return setAuthMessage('Enter your email address first.')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://fameverse.app/reset-password',
+    })
+    setAuthMessage(error ? 'Unable to request reset. Please try again.' : 'If that account exists, check your email for a reset link.')
+  }
+
+  const completePasswordReset = async (event) => {
+    event.preventDefault()
+    if (recoveryPassword.length < 8) return setAuthMessage('Use at least 8 characters.')
+    const { error } = await supabase.auth.updateUser({ password: recoveryPassword })
+    if (error) return setAuthMessage('Unable to update password. Request a fresh reset link.')
+    setRecoveryPassword('')
+    setRecoveryMode(false)
+    setAuthMessage('Password updated successfully.')
+    window.history.replaceState({}, '', '/')
+  }
+
   const saveProfile = async (event, avatarFile = null) => {
     event?.preventDefault?.()
     if (!session?.user?.id || profileBusy) return false
@@ -160,6 +183,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   }
 
   return {
+    recoveryMode, recoveryPassword, setRecoveryPassword, requestPasswordReset, completePasswordReset,
     authReady,
     session,
     profile,
