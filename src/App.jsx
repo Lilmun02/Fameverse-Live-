@@ -275,6 +275,18 @@ export default function App() {
     )
   }
 
+  if (account.recoveryMode) {
+    return <div className="auth-shell"><section className="auth-card">
+      <h1>Set a new password</h1>
+      <form className="auth-form" onSubmit={account.completePasswordReset}>
+        <label>New password<input type="password" autoComplete="new-password" minLength={8}
+          value={account.recoveryPassword}
+          onChange={(event) => account.setRecoveryPassword(event.target.value)} /></label>
+        {account.authMessage && <div className="auth-message">{account.authMessage}</div>}
+        <button className="auth-primary" type="submit">Update password</button>
+      </form></section></div>
+  }
+
   if (!account.session) {
     return (
       <AuthScreen
@@ -285,6 +297,7 @@ export default function App() {
         authMessage={account.authMessage}
         setAuthMessage={account.setAuthMessage}
         submitAuth={account.submitAuth}
+        requestPasswordReset={account.requestPasswordReset}
       />
     )
   }
