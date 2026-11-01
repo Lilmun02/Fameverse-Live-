@@ -9,10 +9,10 @@ function NavIcon({ name }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
 }
 
-export default function BottomNav({ tab, setTab }) {
-  const items = [['home', 'Home'], ['discover', 'Discover'], ['profile', 'Profile']]
+export default function BottomNav({ tab, setTab, isLive }) {
+  const items = [['home', 'Home'], ['discover', 'Discover'], ['live', 'Live'], ['profile', 'Profile']]
   return (
-    <nav className={`bottom-nav fv-bottom-nav`} aria-label="Primary">
+    <nav className={`bottom-nav fv-bottom-nav ${tab === 'live' && isLive ? 'nav-hidden-live' : ''}`} aria-label="Primary">
       {items.map(([key, label]) => (
         <button key={key} type="button" className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
           <NavIcon name={key} /><small>{label}</small>
