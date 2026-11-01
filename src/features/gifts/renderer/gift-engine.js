@@ -253,13 +253,17 @@ document.addEventListener('fameverse:gift', (event) => {
   const eventId = detail.eventId || detail.transactionId
   if (eventId) {
     if (recentlySeenGiftEvents.has(eventId)) return
+  }
+  // Only consume a receipt ID after the scene is accepted. A full queue or
+  // temporarily inactive Live must not permanently suppress a later retry.
+  if (!playGift(detail.id, detail)) return
+  if (eventId) {
     recentlySeenGiftEvents.set(eventId, Date.now())
     if (recentlySeenGiftEvents.size > 200) {
       const oldest = recentlySeenGiftEvents.keys().next().value
       recentlySeenGiftEvents.delete(oldest)
     }
   }
-  playGift(detail.id, detail)
 })
 
 window.FameverseGiftEngine = Object.freeze({
