@@ -10,7 +10,7 @@ export default function GiftOverlay({ giftOverlay }) {
       <span className="gift-overlay-emoji" aria-hidden="true">{giftOverlay.emoji || giftOverlay.activityEmoji || '✦'}</span>
       <div>
         <strong>{giftOverlay.sender}</strong>
-        <small>sent {giftOverlay.label}{count > 1 ? ` ×${count}` : ''}</small>
+        <small>sent {giftOverlay.label} ×{giftOverlay.count || 1}</small>
         <small aria-label={`${totalCoins.toLocaleString()} coins`}>🟣 {totalCoins.toLocaleString()} coins</small>
       </div>
     </div>
