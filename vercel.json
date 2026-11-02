@@ -45,6 +45,10 @@
     {
       "source": "/reset-password",
       "destination": "/index.html"
+    },
+    {
+      "source": "/coins",
+      "destination": "/index.html"
     }
   ]
 }
