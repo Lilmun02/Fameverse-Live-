@@ -236,25 +236,44 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     super.dispose();
   }
 
-  // Gift regression law: under-100 gifts must never obscure a Live broadcast.
-  // Present only a small, silent glyph; sender/description remain in Live chat.
+  // Small gifts stay compact, but sender identity must remain visible.
+  // Do not use subtitles, underlines, or a framed picture as the gift itself.
   Widget _lightweightGift(FvGiftPlayback playback) {
     final description =
         '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}';
     return IgnorePointer(
       child: Align(
-        alignment: const Alignment(-0.85, 0.1),
+        alignment: const Alignment(-0.78, 0.1),
         child: Semantics(
           label: description,
-          child: SizedBox(
+          child: Container(
             key: Key('lightweight-gift-${playback.gift.id}'),
-            width: 56,
-            height: 48,
-            child: Center(
-              child: Text(
-                playback.gift.symbol,
-                style: const TextStyle(fontSize: 32),
-              ),
+            constraints: const BoxConstraints(maxWidth: 260),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xD91B1029),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(playback.gift.symbol,
+                    style: const TextStyle(fontSize: 30)),
+                const SizedBox(width: 9),
+                Flexible(
+                  child: Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
