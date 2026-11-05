@@ -155,7 +155,3 @@ $function$;
 revoke all on function public.get_fameverse_rankings_v2(text, text, integer) from public;
 grant execute on function public.get_fameverse_rankings_v2(text, text, integer) to authenticated;
 grant execute on function public.get_fameverse_rankings_v2(text, text, integer) to service_role;
-
-revoke all on function public.get_fameverse_rankings_v2(text, text, integer) from public;
-grant execute on function public.get_fameverse_rankings_v2(text, text, integer) to authenticated;
-grant execute on function public.get_fameverse_rankings_v2(text, text, integer) to service_role;
