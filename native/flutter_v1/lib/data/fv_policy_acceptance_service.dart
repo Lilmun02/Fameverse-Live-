@@ -12,6 +12,30 @@ class FvPolicyAcceptanceService {
 
   static const requiredPolicyVersion = '2026-10';
 
+  /// Persists an explicit decision for the currently authenticated account.
+  /// RLS must bind user_id to auth.uid() and prohibit cross-account writes.
+  /// Do not treat the write response as permission to bypass server checks.
+  Future<FvPolicyAccess> submitDecision({
+    required bool accept,
+  }) async {
+    final user = client.auth.currentUser;
+    if (user == null) {
+      throw StateError('Sign in before responding to the policy.');
+    }
+    await client.from('policy_acceptances').upsert({
+      'user_id': user.id,
+      'policy_version': requiredPolicyVersion,
+      'decision': accept ? 'accepted' : 'declined',
+    }, onConflict: 'user_id,policy_version');
+    final verified = await loadCurrent();
+    if (!verified.verifiedForAccount ||
+        verified.decision !=
+            (accept ? FvPolicyDecision.accepted : FvPolicyDecision.declined)) {
+      throw StateError('Policy decision could not be verified.');
+    }
+    return verified;
+  }
+
   Future<FvPolicyAccess> loadCurrent() async {
     final user = client.auth.currentUser;
     if (user == null) {
