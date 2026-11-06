@@ -6,6 +6,7 @@ import './features/live/host-live-v2-resume.js'
 import { prepareFameverseBeforeMount } from './services/app/pwaUpdate.js'
 import App from './App.jsx'
 import GifterBadgeGallery from './components/profile/GifterBadgeGallery.jsx'
+import WebStore from './components/web/WebStore.jsx'
 import './styles/base/global.css'
 import './styles/gifts/base.css'
 import './styles/live/core.css'
@@ -43,12 +44,20 @@ import './styles/live/host-live-v2.css'
 import './styles/live/host-live-v2-cohost.css'
 import './styles/live/host-live-v2-video-lock.css'
 
+function isInstalledFameverseApp() {
+  const standaloneDisplay = window.matchMedia?.('(display-mode: standalone)').matches
+  const iosStandalone = window.navigator.standalone === true
+  return Boolean(standaloneDisplay || iosStandalone)
+}
+
 async function bootFameverse() {
   const canMount = await prepareFameverseBeforeMount()
   if (!canMount) return
 
   const params = new URLSearchParams(window.location.search)
-  const RootComponent = params.get('badge-gallery') === '1' ? GifterBadgeGallery : App
+  const RootComponent = params.get('badge-gallery') === '1'
+    ? GifterBadgeGallery
+    : isInstalledFameverseApp() ? App : WebStore
 
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
