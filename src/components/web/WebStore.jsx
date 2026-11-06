@@ -108,7 +108,7 @@ export default function WebStore() {
     setConfigMessage('')
     try {
       const { data, error } = await supabase.functions.invoke('stripe-checkout-session', {
-        body: { action: 'create', pack_id: pack.id },
+        body: { action: 'create', pack_id: pack.id, origin_context: 'web' },
       })
       if (error || !data?.checkout_url) {
         setConfigMessage('Stripe could not start checkout for this package. No purchase was completed. Please try another package or come back shortly.')
