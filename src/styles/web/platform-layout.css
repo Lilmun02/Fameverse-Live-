@@ -22,7 +22,6 @@
 .fv-platform-sidebar nav a.is-active { background: #ad68f41c; color: #d2abff; }
 .fv-platform-content { flex: 1; min-width: 0; padding: 28px 32px 0; }
 .fv-platform-hero { min-height: 358px; padding: 43px 39px; border: 1px solid #ffffff0c; border-radius: 17px; background: linear-gradient(105deg,#24152f,#1b112a 57%,#17101e); }
-.fv-platform-hero-art { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 78% 32%, #6b32904a, transparent 35%), linear-gradient(105deg, #24152f, #17101e); opacity: .93; }
 .fv-platform-hero .fv-web-eyebrow { font-size: 9px; color: #d0a8f7; letter-spacing: 2px; }
 .fv-platform-hero h1 { max-width: 470px; margin-top: 18px; font-size: clamp(38px, 4.3vw, 62px); line-height: 1.04; letter-spacing: -2.6px; }
 .fv-platform-hero h1 span { display: block; color: #c790fa; }
@@ -91,7 +90,7 @@
 .fv-profile-page-main { width: 100%; min-height: 530px; border: 1px solid #ffffff16; border-radius: 18px; overflow: hidden; background: #17111f; }
 .fv-profile-page-banner { height: clamp(155px, 23vw, 260px); background: radial-gradient(ellipse at 25% 30%, #a354d473, transparent 60%), linear-gradient(110deg,#42225c,#1c1329); }
 .fv-profile-page-details { padding: 0 clamp(20px, 4vw, 50px) 45px; }
-.fv-profile-page-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; margin-top: -65px; position: relative; }
+.fv-profile-page-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; margin-top: 24px; position: relative; }
 .fv-profile-page-avatar { position: relative; display: grid; place-items: center; width: 130px; height: 130px; flex: 0 0 130px; overflow: hidden; border: 6px solid #17111f; border-radius: 50%; background: #694094; color: #fff; font-size: 46px; font-weight: 800; }
 .fv-profile-page-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .fv-profile-page-account { padding-bottom: 15px; color: #c69beb; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; }
@@ -103,7 +102,7 @@
 .fv-profile-page-metrics strong { font-size: 23px; }
 .fv-profile-page-metrics span { color: #a99ab6; font-size: 13px; }
 .fv-profile-page-own-note { max-width: 620px; margin-top: 25px; color: #aa9bb6; font-size: 13px; line-height: 1.6; }
-@media (max-width: 540px) { .fv-profile-page-main { border-radius: 13px; } .fv-profile-page-banner { height: 160px; } .fv-profile-page-top { margin-top: -48px; } .fv-profile-page-avatar { width: 96px; height: 96px; flex-basis: 96px; font-size: 34px; } .fv-profile-page-account { font-size: 9px; } }
+@media (max-width: 540px) { .fv-profile-page-main { border-radius: 13px; } .fv-profile-page-banner { height: 160px; } .fv-profile-page-top { margin-top: 20px; } .fv-profile-page-avatar { width: 96px; height: 96px; flex-basis: 96px; font-size: 34px; } .fv-profile-page-account { font-size: 9px; } }
 
 .fv-profile-page-actions { display: flex; align-items: center; padding-bottom: 12px; }
 .fv-profile-page-actions button,.fv-profile-page-edit button { border: 1px solid #bd8bea; border-radius: 10px; padding: 11px 18px; background: #a45fdf; color: #fff; font-size: 13px; font-weight: 750; cursor: pointer; }
