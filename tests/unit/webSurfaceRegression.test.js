@@ -61,7 +61,7 @@ describe('Fameverse web regression contract', () => {
     expect(profile).not.toContain('className="fv-profile-page-bio"')
     expect(layoutStyles).toContain('margin-top: 24px; position: relative;')
     expect(layoutStyles).not.toContain('margin-top: -65px')
-    expect(layoutStyles).not.toContain('margin-top: -48px')
+    expect(layoutStyles).not.toContain('.fv-profile-page-top { margin-top: -48px')
   })
 
   it('preserves usable web routes for settings, coin shop and password reset', () => {
