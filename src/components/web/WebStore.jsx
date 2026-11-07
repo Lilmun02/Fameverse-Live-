@@ -7,6 +7,7 @@ import '../../styles/web/platform.css'
 import WebHeader from './WebHeader.jsx'
 import WebSidebar from './WebSidebar.jsx'
 import WebHero from './WebHero.jsx'
+import { WebBlackFridayBanner, WebBlackFridayPreview } from './WebBlackFriday.jsx'
 import WebCommunity from './WebCommunity.jsx'
 
 const FALLBACK_PACKS = [
@@ -166,11 +167,22 @@ export default function WebStore() {
   return (
     <main className="fv-web-shell">
       <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={setQuery} />
+      <WebBlackFridayBanner />
       <div className="fv-platform-layout">
       <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
       <div className="fv-platform-content">
       <WebHero />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
+      <WebBlackFridayPreview
+        salePacks={stripeConfig?.packs ?? []}
+        signedIn={signedIn}
+        isPreviewHost={isPreviewHost}
+        checkoutEnabled={Boolean(stripeConfig?.checkout_enabled)}
+        checkoutBusy={checkoutBusy}
+        configBusy={configBusy}
+        onCheckout={startCheckout}
+        onSignIn={() => setAuthOpen(true)}
+      />
 
       <section className="fv-web-store-section" id="coin-packs">
         <div className="fv-web-section-heading">
