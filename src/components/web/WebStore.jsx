@@ -9,6 +9,7 @@ import WebSidebar from './WebSidebar.jsx'
 import WebHero from './WebHero.jsx'
 import WebCommunity from './WebCommunity.jsx'
 import WebProfilePage from './WebProfilePage.jsx'
+import WebSettingsPage from './WebSettingsPage.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -64,6 +65,7 @@ export default function WebStore() {
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
   const profileId = new URLSearchParams(window.location.search).get('profile')
+  const settingsOpen = window.location.pathname === '/settings' && signedIn
 
   useEffect(() => {
     if (!signedIn) {
@@ -171,7 +173,7 @@ export default function WebStore() {
       <div className="fv-platform-layout">
       <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
       <div className="fv-platform-content">
-      {profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
+      {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
 
@@ -232,7 +234,7 @@ export default function WebStore() {
       </section>
 
       </>}
-      {!profileId && <footer className="fv-web-footer">
+      {!profileId && !settingsOpen && <footer className="fv-web-footer">
         <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
         <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
         <small>© {new Date().getFullYear()} Fameverse Live</small>
