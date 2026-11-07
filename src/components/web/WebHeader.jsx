@@ -37,7 +37,7 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
         <a href="/">Explore</a><a href="/#discover-creators">Creators</a><a href="/coins#coin-packs">Coins</a>
       </nav>
       {onQueryChange && <form className="fv-platform-search" role="search" onSubmit={(event) => { event.preventDefault(); document.getElementById('discover-creators')?.scrollIntoView({ behavior: 'smooth' }) }}>
-        <WebIcon name="search" size={18} /><input aria-label="Search creators and live titles" placeholder="Search creators, live titles…" value={query} onChange={(event) => onQueryChange(event.target.value)} /><kbd>↵</kbd>
+        <WebIcon name="search" size={18} /><input aria-label="Search creators" placeholder="Search creators…" value={query} onChange={(event) => onQueryChange(event.target.value)} /><kbd>↵</kbd>
       </form>}
       <div className="fv-platform-auth-state" aria-live="polite">
         {identity.state === 'checking' && <span className="fv-platform-auth-checking">Checking account…</span>}
