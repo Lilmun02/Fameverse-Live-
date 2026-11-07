@@ -5,6 +5,7 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
   const [profile, setProfile] = useState(null)
   const [followers, setFollowers] = useState(null)
   const [following, setFollowing] = useState(null)
+  const [friends, setFriends] = useState(null)
   const [isFollowing, setIsFollowing] = useState(false)
   const [status, setStatus] = useState('loading')
   const [busy, setBusy] = useState(false)
@@ -38,6 +39,7 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
     setProfile(null)
     setFollowers(null)
     setFollowing(null)
+    setFriends(null)
     setMessage('')
     async function load() {
       try {
@@ -54,6 +56,12 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
         if (cancelled) return
         setFollowers(a.error ? null : a.count)
         setFollowing(b.error ? null : b.count)
+        const [outgoing, incoming] = await Promise.all([supabase.from('follows').select('following_id').eq('follower_id', profileId), supabase.from('follows').select('follower_id').eq('following_id', profileId)])
+        if (cancelled) return
+        if (!outgoing.error && !incoming.error) {
+          const mutual = new Set((incoming.data || []).map((row) => row.follower_id))
+          setFriends((outgoing.data || []).filter((row) => mutual.has(row.following_id)).length)
+        }
         setIsFollowing(Boolean(c.data))
         setStatus('ready')
       } catch { if (!cancelled) setStatus('error') }
@@ -92,7 +100,7 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
     {status === 'loading' && <p role="status">Loading profile…</p>}
     {status === 'error' && <section role="alert"><h1>Profile unavailable</h1><p>We could not load this account.</p><button type="button" onClick={onBack}>Back to creators</button></section>}
     {profile && <article className="fv-profile-page-main">
-      <div className="fv-profile-page-banner" aria-hidden="true" />
+      
       <div className="fv-profile-page-details">
         <div className="fv-profile-page-top">
           <div className="fv-profile-page-avatar"><span>{Array.from(name.trim())[0]?.toUpperCase() || 'F'}</span>{profile.avatar_url && <img src={profile.avatar_url} alt="" onError={(e) => { e.currentTarget.hidden = true }} />}</div>
@@ -103,7 +111,7 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
         <h1>{name}</h1>
         {profile.username && <p className="fv-profile-page-handle">@{profile.username}</p>}
         <p className="fv-profile-page-bio">{profile.bio || 'No bio added yet.'}</p>
-        <div className="fv-profile-page-metrics"><div><strong>{followers === null ? '—' : followers.toLocaleString('en-US')}</strong><span>Followers</span></div><div><strong>{following === null ? '—' : following.toLocaleString('en-US')}</strong><span>Following</span></div></div>
+        <div className="fv-profile-page-metrics"><div><strong>{followers === null ? '—' : followers.toLocaleString('en-US')}</strong><span>Followers</span></div><div><strong>{following === null ? '—' : following.toLocaleString('en-US')}</strong><span>Following</span></div><div><strong>{friends === null ? '—' : friends.toLocaleString('en-US')}</strong><span>Friends (mutual follows)</span></div></div>
         {message && <p role="status" className="fv-profile-page-message">{message}</p>}
         {isOwn && editing && <form className="fv-profile-page-edit" onSubmit={saveProfile}>
           <label>Display name<input maxLength={60} required value={draft.display_name} onChange={(e) => setDraft({ ...draft, display_name: e.target.value })} /></label>
