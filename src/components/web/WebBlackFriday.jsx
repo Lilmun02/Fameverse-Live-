@@ -28,7 +28,7 @@ function TickerPhrase() {
   return <span className="fv-bf-ticker-phrase">
     <span className="fv-bf-ticker-star" aria-hidden="true">✦</span>
     <strong>BLACK FRIDAY 2026</strong>
-    <span>NOV 27 ONLY · MIDNIGHT TO MIDNIGHT ET</span>
+    <span>NOV 27–30 · WEEKEND SALE PREVIEW</span>
     <span>10K · 50K · 100K FAME COINS</span>
     <span>SALE NOT ACTIVE YET</span>
   </span>
@@ -36,7 +36,7 @@ function TickerPhrase() {
 
 export function WebBlackFridayBanner() {
   return (
-    <div className="fv-bf-ticker" role="note" aria-label="Black Friday 2026 sale is planned for November 27 only, midnight to midnight Eastern. The sale is not active yet.">
+    <div className="fv-bf-ticker" role="note" aria-label="Black Friday 2026 sale weekend is proposed for November 27 through November 30, pending owner approval. The sale is not active yet.">
       <span className="fv-bf-ticker-badge">BLACK FRIDAY</span>
       <div className="fv-bf-ticker-window" aria-hidden="true">
         <div className="fv-bf-ticker-track"><TickerPhrase /><TickerPhrase /></div>
@@ -51,11 +51,11 @@ export function WebBlackFridayPreview() {
     <section className="fv-bf-preview" id="black-friday-preview" aria-labelledby="fv-bf-heading">
       <div className="fv-bf-preview-heading">
         <div>
-          <span className="fv-bf-kicker">NOVEMBER 27 ONLY · 12 AM–11:59 PM ET · PREVIEW</span>
+          <span className="fv-bf-kicker">NOV 27–30 PROPOSED · BLACK FRIDAY WEEKEND PREVIEW</span>
           <h2 id="fv-bf-heading">Black Friday <span>2026</span></h2>
-          <p>All three Black Friday packs featured. Full advertised coin amounts included. Sale ends at midnight Eastern on November 28.</p>
+          <p>All three Black Friday packs featured. Full advertised coin amounts included. Final sale closing time subject to owner approval.</p>
         </div>
-        <div className="fv-bf-date" aria-label="Sale planned for November 27, 2026">
+        <div className="fv-bf-date" aria-label="Sale proposed to begin November 27, 2026; closing date subject to owner approval">
           <span>NOV</span><strong>27</strong>
         </div>
       </div>
