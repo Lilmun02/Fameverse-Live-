@@ -117,7 +117,6 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
         </div>
         <h1>{name}</h1>
         {profile.username && <p className="fv-profile-page-handle">@{profile.username}</p>}
-        <p className="fv-profile-page-bio">{profile.bio || 'No bio added yet.'}</p>
         <div className="fv-profile-page-metrics"><div><strong>{followers === null ? '—' : followers.toLocaleString('en-US')}</strong><span>Followers</span></div><div><strong>{following === null ? '—' : following.toLocaleString('en-US')}</strong><span>Following</span></div><div><strong>{friends === null ? '—' : friends.toLocaleString('en-US')}</strong><span>Friends (mutual follows)</span></div></div>
         {message && <p role="status" className="fv-profile-page-message">{message}</p>}
         {isOwn && editing && <form className="fv-profile-page-edit" onSubmit={saveProfile}>
@@ -125,7 +124,7 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
           <label>Bio<textarea maxLength={300} rows={4} value={draft.bio} onChange={(e) => setDraft({ ...draft, bio: e.target.value })} /></label>
           <button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
         </form>}
-        <section className="fv-profile-page-section"><h2>About this creator</h2><p>{profile.bio || 'No additional information yet.'}</p></section>
+        <section className="fv-profile-page-section"><h2>Bio</h2><p>{profile.bio?.trim() || 'This member hasn\'t added a bio yet.'}</p></section>
       </div>
     </article>}
   </main>
