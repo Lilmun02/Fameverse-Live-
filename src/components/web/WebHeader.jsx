@@ -34,10 +34,10 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
         <span className="fv-web-mark">F</span><span>fameverse<span className="fv-platform-brand-live">LIVE</span></span>
       </a>
       <nav className="fv-platform-topnav" aria-label="Main navigation">
-        <a href="/">Explore</a><a href="/#discover-creators">Creators</a><a href="/coins#coin-packs">Coins</a>
+        <span title="Planned for a future update">Announcements</span><span title="Planned for a future update">Features & benefits</span><span title="Planned for a future update">Upcoming updates</span><span title="Planned for a future update">Events</span><a href="/#discover-creators">Creators</a><a href="/coins#coin-packs">Coins</a>
       </nav>
       {onQueryChange && <form className="fv-platform-search" role="search" onSubmit={(event) => { event.preventDefault(); document.getElementById('discover-creators')?.scrollIntoView({ behavior: 'smooth' }) }}>
-        <WebIcon name="search" size={18} /><input aria-label="Search creators and live titles" placeholder="Search creators, live titles…" value={query} onChange={(event) => onQueryChange(event.target.value)} /><kbd>↵</kbd>
+        <WebIcon name="search" size={18} /><input aria-label="Search creators" placeholder="Search creators…" value={query} onChange={(event) => onQueryChange(event.target.value)} /><kbd>↵</kbd>
       </form>}
       <div className="fv-platform-auth-state" aria-live="polite">
         {identity.state === 'checking' && <span className="fv-platform-auth-checking">Checking account…</span>}
@@ -54,6 +54,8 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
             {identity.email && <span className="fv-platform-account-email">{identity.email}</span>}
             {identity.profileLoading && <small>Signed in. Your profile is still loading.</small>}
             <p>Coin purchases are attached to this account.</p>
+            <a href={`/?profile=${encodeURIComponent(account.session.user.id)}`}><WebIcon name="people" size={18} />My profile</a>
+            <a href="/settings"><WebIcon name="people" size={18} />Settings</a>
             <a href="/coins#coin-packs"><WebIcon name="coins" size={18} />Fame Coins</a>
             <button type="button" disabled={signingOut} onClick={signOut}><WebIcon name="logout" size={18} />{signingOut ? 'Signing out…' : 'Sign out'}</button>
             {signOutError && <small role="alert">{signOutError}</small>}

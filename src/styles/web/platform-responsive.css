@@ -14,8 +14,6 @@
   .fv-platform-topnav a { font-size: 12px; }
   .fv-platform-search { width: 220px; }
   .fv-platform-sidebar { flex-basis: 165px; padding-inline: 12px; }
-  .fv-platform-sidebar-note { padding: 16px 12px; }
-  .fv-platform-sidebar-note h3 { font-size: 16px; }
   .fv-platform-content { padding: 23px 22px 0; }
   .fv-platform-hero { padding: 38px 28px; }
   .fv-platform-hero h1 { font-size: 44px; }
@@ -27,8 +25,8 @@
 }
 @media (max-width: 760px) {
   .fv-platform-header { min-height: 72px; gap: 14px; flex-wrap: wrap; padding: 14px 18px; }
-  .fv-platform-topnav { display: none; }
-  .fv-platform-search { order: 3; width: 100%; margin: 0; min-height: 40px; }
+  .fv-platform-topnav { display: flex; order: 3; flex: 1 0 100%; width: 100%; min-height: 32px; gap: 17px; }
+  .fv-platform-search { order: 4; flex: 1 0 100%; width: 100%; margin: 0; min-height: 40px; }
   .fv-platform-auth-state { gap: 8px; }
   .fv-platform-sidebar { display: none; }
   .fv-platform-content { padding: 18px 18px 0; }
