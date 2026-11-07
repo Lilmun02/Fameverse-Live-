@@ -214,7 +214,7 @@ export function useAccount({ setToast, onBeforeSignOut }) {
   }
 
   return {
-    recoveryMode, recoveryPassword, setRecoveryPassword, requestPasswordReset, resetRequestBusy, completePasswordReset,
+    recoveryMode, recoveryAuthorized, recoveryPassword, setRecoveryPassword, requestPasswordReset, resetRequestBusy, completePasswordReset,
     authReady,
     session,
     profile,

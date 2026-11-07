@@ -24,12 +24,15 @@ export async function listRecommendedCreators({ excludeUserId } = {}) {
 
   if (excludeUserId) profilesQuery = profilesQuery.neq('id', excludeUserId)
 
-  const [{ data: profiles, error: profileError }, { data: follows, error: followsError }] = await Promise.all([
-    profilesQuery,
-    supabase.from('follows').select('following_id'),
-  ])
-
+  const { data: profiles, error: profileError } = await profilesQuery
   if (profileError) return { creators: [], error: profileError }
+  if (!profiles?.length) return { creators: [], error: null }
+
+  // Only read follow relationships for the profiles being displayed.
+  const { data: follows, error: followsError } = await supabase
+    .from('follows')
+    .select('following_id')
+    .in('following_id', profiles.map((profile) => profile.id))
   if (followsError) return { creators: [], error: followsError }
 
   const followerCounts = new Map()
