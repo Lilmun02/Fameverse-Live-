@@ -111,3 +111,17 @@
 .fv-profile-page-metrics span { color: #a99ab6; font-size: 13px; }
 .fv-profile-page-own-note { max-width: 620px; margin-top: 25px; color: #aa9bb6; font-size: 13px; line-height: 1.6; }
 @media (max-width: 540px) { .fv-profile-page-main { border-radius: 13px; } .fv-profile-page-banner { height: 160px; } .fv-profile-page-top { margin-top: -48px; } .fv-profile-page-avatar { width: 96px; height: 96px; flex-basis: 96px; font-size: 34px; } .fv-profile-page-account { font-size: 9px; } }
+
+.fv-profile-page-actions { display: flex; align-items: center; padding-bottom: 12px; }
+.fv-profile-page-actions button,.fv-profile-page-edit button { border: 1px solid #bd8bea; border-radius: 10px; padding: 11px 18px; background: #a45fdf; color: #fff; font-size: 13px; font-weight: 750; cursor: pointer; }
+.fv-profile-page-actions button:disabled,.fv-profile-page-edit button:disabled { opacity: .6; cursor: wait; }
+.fv-profile-page-actions span { color: #bca9cb; font-size: 12px; }
+.fv-profile-page-message { margin: 16px 0; color: #d8b5fa; font-size: 13px; }
+.fv-profile-page-edit { display: grid; gap: 15px; max-width: 500px; margin: 24px 0; padding: 20px; border: 1px solid #ffffff1a; border-radius: 12px; background: #21182b; }
+.fv-profile-page-edit label { display: grid; gap: 7px; color: #e9d8f5; font-size: 13px; }
+.fv-profile-page-edit input,.fv-profile-page-edit textarea { box-sizing: border-box; width: 100%; padding: 11px 12px; border: 1px solid #ffffff35; border-radius: 8px; background: #110d18; color: white; font: inherit; }
+.fv-profile-page-edit button { justify-self: start; }
+.fv-profile-page-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid #ffffff1a; }
+.fv-profile-page-section h2 { margin: 0 0 12px; font-size: 18px; }
+.fv-profile-page-section p { color: #c7b7d3; font-size: 14px; line-height: 1.65; }
+@media (max-width: 540px) { .fv-profile-page-actions button { padding: 10px 13px; font-size: 12px; } }
