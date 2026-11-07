@@ -65,7 +65,8 @@ export default function WebStore() {
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
   const profileId = new URLSearchParams(window.location.search).get('profile')
-  const settingsOpen = window.location.pathname === '/settings' && signedIn
+  const settingsRequested = window.location.pathname === '/settings'
+  const settingsOpen = settingsRequested && signedIn
 
   useEffect(() => {
     if (!signedIn) {
@@ -147,11 +148,11 @@ export default function WebStore() {
     return passwordRecovery(account)
   }
 
-  if (authOpen && !signedIn) {
+  if ((authOpen || settingsRequested) && !signedIn) {
     return (
       <main className="fv-web-shell">
         <WebHeader account={account} onSignIn={() => setAuthOpen(true)} />
-        <button className="fv-web-back" type="button" onClick={() => setAuthOpen(false)}>← Back to coin store</button>
+        <button className="fv-web-back" type="button" onClick={() => { if (settingsRequested) window.location.assign('/'); else setAuthOpen(false) }}>← Back to Fameverse</button>
         <AuthScreen
           authMode={account.authMode}
           setAuthMode={account.setAuthMode}
