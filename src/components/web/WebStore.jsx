@@ -8,6 +8,7 @@ import WebHeader from './WebHeader.jsx'
 import WebSidebar from './WebSidebar.jsx'
 import WebHero from './WebHero.jsx'
 import WebCommunity from './WebCommunity.jsx'
+import WebProfilePage from './WebProfilePage.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -62,6 +63,7 @@ export default function WebStore() {
   const account = useAccount({ setToast })
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
+  const profileId = new URLSearchParams(window.location.search).get('profile')
 
   useEffect(() => {
     if (!signedIn) {
@@ -169,6 +171,7 @@ export default function WebStore() {
       <div className="fv-platform-layout">
       <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
       <div className="fv-platform-content">
+      {profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
 
@@ -228,6 +231,7 @@ export default function WebStore() {
         </div>
       </section>
 
+      </>}
       <footer className="fv-web-footer">
         <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
         <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
