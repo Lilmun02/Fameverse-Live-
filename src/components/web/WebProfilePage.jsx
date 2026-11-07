@@ -26,10 +26,17 @@ export default function WebProfilePage({ profileId, ownUserId, onBack }) {
       ownUserId && ownUserId !== profileId
         ? supabase.from('follows').select('following_id').eq('follower_id', ownUserId).eq('following_id', profileId).maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      supabase.from('follows').select('following_id').eq('follower_id', profileId),
+      supabase.from('follows').select('follower_id').eq('following_id', profileId),
     ])
     setFollowers(results[0].error ? null : results[0].count)
     setFollowing(results[1].error ? null : results[1].count)
     setIsFollowing(Boolean(results[2].data))
+    if (results[3].error || results[4].error) setFriends(null)
+    else {
+      const incoming = new Set((results[4].data || []).map((row) => row.follower_id))
+      setFriends((results[3].data || []).filter((row) => incoming.has(row.following_id)).length)
+    }
     setStatus('ready')
   }, [profileId, ownUserId])
 
