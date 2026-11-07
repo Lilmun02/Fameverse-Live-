@@ -16,12 +16,11 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
     let active = true
     if (!userId) { setCoinBalance(null); setBalanceError(false); return undefined }
     const refreshBalance = async () => {
-      const { data, error } = await supabase.from('coin_funding_balances')
-        .select('cash_backed_coins,promo_coins').eq('user_id', userId).maybeSingle()
+      const { data, error } = await supabase.rpc('get_my_coin_funding_breakdown')
       if (!active) return
       if (error) { setBalanceError(true); setCoinBalance(null); return }
       setBalanceError(false)
-      setCoinBalance(Number(data?.cash_backed_coins || 0) + Number(data?.promo_coins || 0))
+      setCoinBalance(Number((Array.isArray(data) ? data[0] : data)?.total_balance ?? 0))
     }
     refreshBalance()
     const onFocus = () => { refreshBalance() }
