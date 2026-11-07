@@ -32,7 +32,7 @@ export default function WebWallet({ userId, accountRole }) {
     {wallet && <div className="fv-wallet-grid">
       <article><span>Fame Coins</span><strong>{format(wallet.cash_backed_coins)}</strong><small>Purchased coins</small></article>
       <article><span>Fame Rubies</span><strong>—</strong><small>Earned balance · awaiting verified Ruby conversion</small></article>
-      {isOwner && <article><span>Test Coins</span><strong>{format(wallet.promo_coins)}</strong><small>Owner-only testing balance</small></article>}
+      {isOwner && <article><span>Test Coins</span><strong aria-label="Not verified">—</strong><small>Owner-only balance pending dedicated ledger verification</small></article>}
     </div>}
   </section>
 }
