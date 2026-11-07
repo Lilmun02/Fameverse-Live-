@@ -4,7 +4,7 @@
 .fv-community-heading p { margin: 0; color: #8d809e; font-size: 12px; }
 .fv-community-label { flex-shrink: 0; padding: 7px 10px; border: 1px solid #a67ec529; border-radius: 5px; color: #9e8bad; font-size: 8px; font-weight: 750; letter-spacing: 1px; }
 .fv-community-guest { display: flex; align-items: center; gap: 30px; padding: 29px 30px; border: 1px solid #ffffff0c; border-radius: 13px; background: linear-gradient(115deg,#20142d,#151119 70%); }
-.fv-community-guest-symbol { display: grid; place-items: center; flex-shrink: 0; width: 85px; height: 100px; border: 1px solid #b987f125; border-radius: 25px; background: linear-gradient(145deg,#69428742,#301b4323); color: #c3a2e4; transform: rotate(-7deg); }
+.fv-community-guest-symbol { display: grid; place-items: center; flex-shrink: 0; width: 85px; height: 100px; border: 1px solid #b987f125; border-radius: 25px; background: linear-gradient(145deg,#69428742,#301b4323); color: #c3a2e4; }
 .fv-community-guest .fv-web-eyebrow { font-size: 8px; }
 .fv-community-guest h3 { margin: 9px 0 10px; color: #eee5f6; font-size: 24px; font-weight: 700; letter-spacing: -.7px; line-height: 1.25; }
 .fv-community-guest p { max-width: 400px; margin: 0 0 17px; color: #a08cba; font-size: 11px; line-height: 1.8; }
