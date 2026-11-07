@@ -1,12 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useCreatorDiscovery } from '../../hooks/useCreatorDiscovery.js'
 import WebCommunityCard from './WebCommunityCard.jsx'
-import WebCommunityDialog from './WebCommunityDialog.jsx'
 import WebIcon from './WebIcon.jsx'
 
 function AuthenticatedCommunity({ userId, query }) {
   const creators = useCreatorDiscovery({ userId })
-  const [selected, setSelected] = useState(null)
   const search = query.trim().toLowerCase()
   const creatorResults = useMemo(() => creators.creators.filter((creator) => `${creator.displayName} ${creator.username || ''} ${creator.bio || ''}`.toLowerCase().includes(search)), [creators.creators, search])
   const refresh = () => { void creators.refresh() }
@@ -15,9 +13,8 @@ function AuthenticatedCommunity({ userId, query }) {
     <div className="fv-community-toolbar"><p>Discover Fameverse creators</p><button className="fv-community-refresh" type="button" onClick={refresh}><WebIcon name="refresh" size={16} />Refresh</button></div>
     {creators.state === 'degraded' && <p className="fv-community-warning" role="status">Connection limited. {creatorResults.length ? 'Showing previously loaded creators.' : 'We could not load creators. Refresh to try again.'}</p>}
     {(creators.state === 'idle' || creators.state === 'loading') && <div className="fv-community-loading" role="status">Connecting to your creator community…</div>}
-    {creatorResults.length > 0 && <div className="fv-community-grid">{creatorResults.slice(0, 8).map((item) => <WebCommunityCard key={item.id} item={item} live={false} confirmed={creators.state === 'ready'} onSelect={() => setSelected({ item, live: false, confirmed: creators.state === 'ready' })} />)}</div>}
+    {creatorResults.length > 0 && <div className="fv-community-grid">{creatorResults.slice(0, 8).map((item) => <WebCommunityCard key={item.id} item={item} live={false} confirmed={creators.state === 'ready'} onSelect={() => { window.location.assign(`/?profile=${encodeURIComponent(item.id)}`) }} />)}</div>}
     {creators.state === 'ready' && creatorResults.length === 0 && <div className="fv-community-empty"><WebIcon name="people" size={30} /><h3>{search ? 'No matches for your search' : 'Your creator community is growing'}</h3><p>{search ? 'Try a different creator name.' : 'Creator profiles will appear as the community grows. Check back soon.'}</p></div>}
-    <WebCommunityDialog selected={selected} onClose={() => setSelected(null)} />
   </>
 }
 
