@@ -16,6 +16,8 @@ const community = source('src/components/web/WebCommunity.jsx')
 const profile = source('src/components/web/WebProfilePage.jsx')
 const layoutStyles = source('src/styles/web/platform-layout.css')
 const communityStyles = source('src/styles/web/platform-community.css')
+const blackFriday = source('src/components/web/WebBlackFriday.jsx')
+const blackFridayStyles = source('src/styles/web/black-friday.css')
 const rewrites = JSON.parse(source('vercel.json')).rewrites
 
 describe('Fameverse web regression contract', () => {
@@ -64,6 +66,24 @@ describe('Fameverse web regression contract', () => {
     expect(layoutStyles).toContain('margin-top: 24px; position: relative;')
     expect(layoutStyles).not.toContain('margin-top: -65px')
     expect(layoutStyles).not.toContain('.fv-profile-page-top { margin-top: -48px')
+  })
+
+  it('keeps the Black Friday marquee and 3 full-coin offers preview-only', () => {
+    expect(store).toContain('<WebBlackFridayBanner />')
+    expect(store).toContain('<WebBlackFridayPreview />')
+    expect(blackFriday).toContain('COMING NOVEMBER 27')
+    expect(blackFriday).toContain('SALE NOT ACTIVE YET')
+    expect(blackFriday).toContain("coins: '10,000'")
+    expect(blackFriday).toContain("coins: '50,000'")
+    expect(blackFriday).toContain("coins: '100,000'")
+    expect(blackFriday).toContain("discount: '50%'")
+    expect(blackFriday).toContain("discount: '60%'")
+    expect(blackFriday).toContain("discount: '80%'")
+    expect(blackFriday).toContain('FINAL PRICE COMING SOON')
+    expect(blackFriday).not.toContain('<button')
+    expect(blackFriday).not.toContain('startCheckout')
+    expect(blackFridayStyles).toContain('animation: fv-bf-marquee')
+    expect(blackFridayStyles).toContain('prefers-reduced-motion: reduce')
   })
 
   it('preserves usable web routes for settings, coin shop and password reset', () => {
