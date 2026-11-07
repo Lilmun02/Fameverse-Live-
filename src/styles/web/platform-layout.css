@@ -29,7 +29,7 @@
 .fv-platform-sidebar-footer a { color: #82728f; text-decoration: none; font-size: 10px; font-weight: 500; letter-spacing: 0; }
 .fv-platform-content { flex: 1; min-width: 0; padding: 28px 32px 0; }
 .fv-platform-hero { min-height: 358px; padding: 43px 39px; border: 1px solid #ffffff0c; border-radius: 17px; background: linear-gradient(105deg,#24152f,#1b112a 57%,#17101e); }
-.fv-platform-hero-art { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg,#1d1326 8%,#1d1326c4 42%,transparent 70%), url('/images/fameverse-broadcast-art.webp') center / cover no-repeat; opacity: .93; }
+.fv-platform-hero-art { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 78% 32%, #6b32904a, transparent 35%), linear-gradient(105deg, #24152f, #17101e); opacity: .93; }
 .fv-platform-hero .fv-web-eyebrow { font-size: 9px; color: #d0a8f7; letter-spacing: 2px; }
 .fv-platform-hero h1 { max-width: 470px; margin-top: 18px; font-size: clamp(38px, 4.3vw, 62px); line-height: 1.04; letter-spacing: -2.6px; }
 .fv-platform-hero h1 span { display: block; color: #c790fa; }
