@@ -12,7 +12,7 @@ function escapeHtml(value: string) {
 Deno.serve((req: Request) => {
   const url = new URL(req.url);
   const status = url.searchParams.get("status") === "success" ? "success" : "cancelled";
-  const title = status === "success" ? "Payment received" : "Checkout cancelled";
+  const title = status === "success" ? "Checkout complete — verification pending" : "Checkout cancelled";
   const body = status === "success"
     ? "Stripe is confirming your payment with Fameverse. Return to the app and your Fame Coin balance will refresh after the signed webhook is verified."
     : "No Fame Coins were purchased. You can return to Fameverse and try again whenever you are ready.";
@@ -35,7 +35,7 @@ Deno.serve((req: Request) => {
     h1 { margin: 16px 0 10px; font-size: 30px; }
     p { margin: 0; color: #cbbfd0; line-height: 1.55; }
     .return { display: block; margin-top: 22px; padding: 15px; border-radius: 14px; text-align: center; text-decoration: none; font-weight: 800; background: #9d55ff; color: #fff; }
-    .hint { margin-top: 20px; font-size: 13px; color: #9f94a4; }
+    .hint { margin-top: 20px; font-size: 13px; color: #9f94a4; }\n    .fallback { display: block; margin-top: 16px; color: #d9b6f6; text-align: center; }
   </style>
 </head>
 <body>
@@ -44,7 +44,7 @@ Deno.serve((req: Request) => {
     <h1>${escapeHtml(title)}</h1>
     <p>${escapeHtml(body)}</p>
     <a class="return" href="${escapeHtml(appReturnUrl)}">Return to Fameverse Live</a>
-    <p class="hint">If the app does not open automatically, tap Return to Fameverse Live. No additional purchase is needed.</p>
+    <p class="hint">If the app does not open automatically, tap Return to Fameverse Live. No additional purchase is needed.</p>\n    <a class="fallback" href="https://fameverse.app/coins?payment=${status}">Continue on the Fameverse website instead</a>
   </main>
   <script>
     // Best-effort app open; iOS may require a user tap, so the button stays visible.
