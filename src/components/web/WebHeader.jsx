@@ -34,7 +34,7 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
         <span className="fv-web-mark">F</span><span>fameverse<span className="fv-platform-brand-live">LIVE</span></span>
       </a>
       <nav className="fv-platform-topnav" aria-label="Main navigation">
-        <a href="/#announcements">News</a><a href="/#updates">Updates</a><a href="/#events">Events</a><a href="/#discover-creators">Creators</a><a href="/coins#coin-packs">Coins</a>
+        <span title="Planned for a future update">Announcements</span><span title="Planned for a future update">Features & benefits</span><span title="Planned for a future update">Upcoming updates</span><span title="Planned for a future update">Events</span><a href="/#discover-creators">Creators</a><a href="/coins#coin-packs">Coins</a>
       </nav>
       {onQueryChange && <form className="fv-platform-search" role="search" onSubmit={(event) => { event.preventDefault(); document.getElementById('discover-creators')?.scrollIntoView({ behavior: 'smooth' }) }}>
         <WebIcon name="search" size={18} /><input aria-label="Search creators" placeholder="Search creators…" value={query} onChange={(event) => onQueryChange(event.target.value)} /><kbd>↵</kbd>
