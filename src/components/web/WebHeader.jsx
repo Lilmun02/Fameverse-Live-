@@ -1,12 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
 import { webAccountIdentity } from '../../utils/webAccountIdentity.js'
 import WebIcon from './WebIcon.jsx'
+import { supabase } from '../../services/supabase.js'
 
 export default function WebHeader({ account, onSignIn, query = '', onQueryChange }) {
   const identity = webAccountIdentity(account)
   const menuRef = useRef(null)
   const [signingOut, setSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState('')
+  const [coinBalance, setCoinBalance] = useState(null)
+  const [balanceError, setBalanceError] = useState(false)
+  const userId = account.session?.user?.id
+
+  useEffect(() => {
+    let active = true
+    if (!userId) { setCoinBalance(null); setBalanceError(false); return undefined }
+    const refreshBalance = async () => {
+      const { data, error } = await supabase.from('coin_funding_balances')
+        .select('cash_backed_coins,promo_coins').eq('user_id', userId).maybeSingle()
+      if (!active) return
+      if (error) { setBalanceError(true); setCoinBalance(null); return }
+      setBalanceError(false)
+      setCoinBalance(Number(data?.cash_backed_coins || 0) + Number(data?.promo_coins || 0))
+    }
+    refreshBalance()
+    const onFocus = () => { refreshBalance() }
+    window.addEventListener('focus', onFocus)
+    const onVisibility = () => { if (document.visibilityState === 'visible') refreshBalance() }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => { active = false; window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onVisibility) }
+  }, [userId])
 
   useEffect(() => {
     if (menuRef.current) menuRef.current.open = false
@@ -33,6 +56,7 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
       <a className="fv-platform-brand" href="/" aria-label="Fameverse Live home">
         <span className="fv-web-mark">F</span><span>fameverse<span className="fv-platform-brand-live">LIVE</span></span>
       </a>
+      {userId && <div className="fv-header-coin-balance" role="status" aria-label="Available Fame Coin balance" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "6px 12px", border: "1px solid #76508f", borderRadius: 12, background: "#281432", color: "#f7effb", fontVariantNumeric: "tabular-nums" }}><small style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".06em" }}>AVAILABLE FAME COINS</small><strong style={{ fontSize: 18 }}>{balanceError ? "Unavailable" : coinBalance === null ? "Loading…" : coinBalance.toLocaleString("en-US")}</strong></div>}
       <nav className="fv-platform-topnav" aria-label="Main navigation">
         <a href="/">Explore</a><a href="/#discover-creators">Creators</a><a href="/coins#coin-packs">Coins</a>
       </nav>
