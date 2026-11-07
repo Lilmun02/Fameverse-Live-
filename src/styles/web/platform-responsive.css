@@ -14,8 +14,6 @@
   .fv-platform-topnav a { font-size: 12px; }
   .fv-platform-search { width: 220px; }
   .fv-platform-sidebar { flex-basis: 165px; padding-inline: 12px; }
-  .fv-platform-sidebar-note { padding: 16px 12px; }
-  .fv-platform-sidebar-note h3 { font-size: 16px; }
   .fv-platform-content { padding: 23px 22px 0; }
   .fv-platform-hero { padding: 38px 28px; }
   .fv-platform-hero h1 { font-size: 44px; }
