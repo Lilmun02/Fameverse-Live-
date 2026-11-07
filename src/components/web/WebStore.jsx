@@ -26,28 +26,50 @@ function formatPrice(cents, currency = 'USD') {
 }
 
 function passwordRecovery(account) {
+  const canUpdatePassword = account.recoveryAuthorized && Boolean(account.session?.user)
+
   return (
     <main className="fv-web-recovery">
       <WebHeader account={account} onSignIn={() => window.location.assign('/')} />
       <a className="fv-web-back" href="/">← Back to Fameverse</a>
       <section className="fv-web-auth-card">
         <span className="fv-web-eyebrow">ACCOUNT SECURITY</span>
-        <h1>Set a new password</h1>
-        <p>Choose a new password for your Fameverse account.</p>
-        <form className="auth-form" onSubmit={account.completePasswordReset}>
-          <label>
-            New password
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={8}
-              value={account.recoveryPassword}
-              onChange={(event) => account.setRecoveryPassword(event.target.value)}
-            />
-          </label>
-          {account.authMessage && <div className="auth-message">{account.authMessage}</div>}
-          <button className="auth-primary" type="submit">Update password</button>
-        </form>
+        <h1>{canUpdatePassword ? 'Set a new password' : 'Reset your password'}</h1>
+        <p>{canUpdatePassword ? 'Choose a new password for your Fameverse account.' : 'Enter your account email address to request a password reset link.'}</p>
+        {canUpdatePassword ? (
+          <form className="auth-form" onSubmit={account.completePasswordReset}>
+            <label>
+              New password
+              <input
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                value={account.recoveryPassword}
+                onChange={(event) => account.setRecoveryPassword(event.target.value)}
+              />
+            </label>
+            {account.authMessage && <div className="auth-message" role="status">{account.authMessage}</div>}
+            <button className="auth-primary" type="submit">Update password</button>
+          </form>
+        ) : (
+          <form className="auth-form" onSubmit={(event) => { event.preventDefault(); account.requestPasswordReset() }}>
+            <label>
+              Email address
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                value={account.authForm.email}
+                onChange={(event) => account.setAuthForm((current) => ({ ...current, email: event.target.value }))}
+              />
+            </label>
+            {account.authMessage && <div className="auth-message" role="status">{account.authMessage}</div>}
+            <button className="auth-primary" type="submit" disabled={account.resetRequestBusy}>
+              {account.resetRequestBusy ? 'Sending…' : 'Email me a reset link'}
+            </button>
+          </form>
+        )}
       </section>
     </main>
   )
