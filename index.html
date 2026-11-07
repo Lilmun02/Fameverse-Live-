@@ -17,6 +17,13 @@
         background: #07010d;
       }
       html, body { margin: 0; width: 100%; min-height: 100%; background: #07010d; }
+      /* Hide the Vercel-injected floating preview feedback controls. */
+      vercel-live-feedback,
+      iframe[src^="https://vercel.live/"] {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
       body { min-height: 100dvh; overflow-x: hidden; }
       #root { min-height: 100dvh; background: #07010d; }
       .boot-splash {
