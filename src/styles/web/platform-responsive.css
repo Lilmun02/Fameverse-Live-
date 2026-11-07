@@ -1,0 +1,95 @@
+@media (max-width: 1250px) {
+  .fv-platform-header { gap: 22px; padding-inline: 24px; }
+  .fv-platform-topnav { gap: 18px; }
+  .fv-platform-guest-label { display: none; }
+  .fv-platform-sidebar { flex-basis: 185px; padding-inline: 15px; }
+  .fv-platform-content { padding-inline: 26px; }
+  .fv-community-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .fv-community-guest-features { display: none; }
+}
+@media (max-width: 1000px) {
+  .fv-platform-header { gap: 17px; padding-inline: 20px; }
+  .fv-platform-brand { font-size: 19px; }
+  .fv-platform-topnav { gap: 15px; }
+  .fv-platform-topnav a { font-size: 12px; }
+  .fv-platform-search { width: 220px; }
+  .fv-platform-sidebar { flex-basis: 165px; padding-inline: 12px; }
+  .fv-platform-sidebar-note { padding: 16px 12px; }
+  .fv-platform-sidebar-note h3 { font-size: 16px; }
+  .fv-platform-content { padding: 23px 22px 0; }
+  .fv-platform-hero { padding: 38px 28px; }
+  .fv-platform-hero h1 { font-size: 44px; }
+  .fv-platform-hero p { max-width: 310px; }
+  .fv-community-label { display: none; }
+  .fv-community-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .fv-platform-account-copy strong { max-width: 120px; }
+  .fv-platform-account-copy small { max-width: 130px; }
+}
+@media (max-width: 760px) {
+  .fv-platform-header { min-height: 72px; gap: 14px; flex-wrap: wrap; padding: 14px 18px; }
+  .fv-platform-topnav { display: none; }
+  .fv-platform-search { order: 3; width: 100%; margin: 0; min-height: 40px; }
+  .fv-platform-auth-state { gap: 8px; }
+  .fv-platform-sidebar { display: none; }
+  .fv-platform-content { padding: 18px 18px 0; }
+  .fv-platform-hero { min-height: 350px; padding: 32px 25px; }
+  .fv-platform-hero-art { opacity: .5; background-position: 65% center; }
+  .fv-platform-hero h1 { font-size: 44px; letter-spacing: -2px; }
+  .fv-platform-hero-actions { gap: 18px; }
+  .fv-platform-hero-actions .fv-web-primary-link { padding: 12px 14px; font-size: 11px; }
+  .fv-platform-secondary-link { font-size: 11px; }
+  .fv-community-section { padding-top: 30px; }
+  .fv-community-heading h2 { font-size: 26px; }
+  .fv-community-guest { gap: 20px; padding: 25px 23px; }
+  .fv-community-guest-symbol { width: 64px; height: 78px; border-radius: 18px; }
+  .fv-community-guest h3 { font-size: 23px; }
+  .fv-web-shell .fv-web-pack-grid { max-width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+  .fv-web-shell .fv-web-pack { min-height: 245px; padding: 24px 13px 18px; }
+  .fv-web-shell .fv-web-pack h3 { font-size: 26px; }
+  .fv-web-shell .fv-web-footer { flex-direction: row; flex-wrap: wrap; gap: 18px; }
+  .fv-web-shell .fv-web-footer > div { gap: 10px; }
+  .fv-web-shell .fv-web-footer > small { width: 100%; }
+  .fv-web-shell .fv-web-back { margin-left: 20px; }
+  .fv-web-shell .fv-web-store-section, .fv-community-section { scroll-margin-top: 150px; }
+}
+@media (max-width: 480px) {
+  .fv-platform-header { padding: 12px 15px; gap: 9px; }
+  .fv-platform-brand { font-size: 17px; gap: 7px; }
+  .fv-platform-brand .fv-web-mark { width: 29px; height: 33px; font-size: 19px; }
+  .fv-platform-brand-live { font-size: 7px; }
+  .fv-platform-signin { min-height: 37px; padding-inline: 14px; font-size: 11px; }
+  .fv-platform-account summary { gap: 7px; }
+  .fv-platform-avatar { flex-basis: 29px; width: 29px; height: 29px; }
+  .fv-platform-account-copy strong { max-width: 100px; font-size: 10px; }
+  .fv-platform-account-copy small { max-width: 116px; font-size: 9px; }
+  .fv-platform-account summary > svg { display: none; }
+  .fv-platform-account-menu { right: -3px; width: min(280px,calc(100vw - 30px)); }
+  .fv-platform-content { padding: 15px 15px 0; }
+  .fv-platform-hero { min-height: 338px; padding: 28px 22px; }
+  .fv-platform-hero .fv-web-eyebrow { font-size: 8px; letter-spacing: 1.4px; }
+  .fv-platform-hero h1 { font-size: 38px; }
+  .fv-platform-hero p { font-size: 12px; }
+  .fv-platform-hero-actions { gap: 14px; }
+  .fv-platform-hero-footnote { max-width: 230px; font-size: 9px; }
+  .fv-community-heading h2 { font-size: 24px; }
+  .fv-community-heading p { font-size: 11px; }
+  .fv-community-guest { display: block; padding: 24px; }
+  .fv-community-guest-symbol { display: none; }
+  .fv-community-guest h3 { font-size: 25px; }
+  .fv-community-guest p { font-size: 12px; }
+  .fv-community-grid { gap: 12px; }
+  .fv-community-card-cover { height: 125px; }
+  .fv-community-card-info { padding: 12px; }
+  .fv-community-card-info > strong { font-size: 12px; }
+  .fv-web-shell .fv-web-pack-grid { grid-template-columns: 1fr; max-width: 460px; gap: 23px; }
+  .fv-web-shell .fv-web-pack { min-height: 255px; padding-inline: 24px; }
+  .fv-web-shell .fv-web-section-heading h2 { font-size: 28px; }
+  .fv-web-shell .fv-web-section-heading p { font-size: 11px; }
+  .fv-web-shell .fv-web-signin-note { padding: 14px; }
+  .fv-web-shell .fv-web-signin-note div { min-width: calc(100% - 50px); }
+  .fv-web-shell .fv-web-footer { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fv-community-card { transition: none; }
+  .fv-community-card:hover { transform: none; }
+}

@@ -3,6 +3,11 @@ import AuthScreen from '../auth/AuthScreen.jsx'
 import { useAccount } from '../../hooks/useAccount.js'
 import { supabase } from '../../services/supabase.js'
 import '../../styles/web/store.css'
+import '../../styles/web/platform.css'
+import WebHeader from './WebHeader.jsx'
+import WebSidebar from './WebSidebar.jsx'
+import WebHero from './WebHero.jsx'
+import WebCommunity from './WebCommunity.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -21,6 +26,7 @@ function formatPrice(cents, currency = 'USD') {
 function passwordRecovery(account) {
   return (
     <main className="fv-web-recovery">
+      <WebHeader account={account} onSignIn={() => window.location.assign('/')} />
       <a className="fv-web-back" href="/">← Back to Fameverse</a>
       <section className="fv-web-auth-card">
         <span className="fv-web-eyebrow">ACCOUNT SECURITY</span>
@@ -52,6 +58,7 @@ export default function WebStore() {
   const [stripeConfig, setStripeConfig] = useState(null)
   const [configBusy, setConfigBusy] = useState(false)
   const [configMessage, setConfigMessage] = useState('')
+  const [query, setQuery] = useState('')
   const account = useAccount({ setToast })
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
@@ -129,7 +136,7 @@ export default function WebStore() {
   }
 
   if (!account.authReady) {
-    return <main className="fv-web-shell"><div className="fv-web-loading">Opening Fameverse…</div></main>
+    return <main className="fv-web-shell"><WebHeader account={account} onSignIn={() => setAuthOpen(true)} /><div className="fv-web-loading">Opening Fameverse…</div></main>
   }
 
   if (window.location.pathname === '/reset-password' && account.recoveryMode) {
@@ -139,6 +146,7 @@ export default function WebStore() {
   if (authOpen && !signedIn) {
     return (
       <main className="fv-web-shell">
+        <WebHeader account={account} onSignIn={() => setAuthOpen(true)} />
         <button className="fv-web-back" type="button" onClick={() => setAuthOpen(false)}>← Back to coin store</button>
         <AuthScreen
           authMode={account.authMode}
@@ -157,29 +165,12 @@ export default function WebStore() {
 
   return (
     <main className="fv-web-shell">
-      <header className="fv-web-header">
-        <a className="fv-web-brand" href="/" aria-label="Fameverse Live home">
-          <span className="fv-web-mark">F</span>
-          <span>FAMEVERSE <b>LIVE</b></span>
-        </a>
-        <div className="fv-web-header-actions">
-          <a href="#coin-packs">Buy coins</a>
-          {signedIn ? (
-            <button type="button" onClick={account.signOut}>Sign out</button>
-          ) : (
-            <button type="button" onClick={() => setAuthOpen(true)}>Sign in</button>
-          )}
-        </div>
-      </header>
-
-      <section className="fv-web-hero">
-        <div className="fv-web-eyebrow">THE FAMEVERSE COIN STORE</div>
-        <h1>Make every moment <span>count.</span></h1>
-        <p>Get Fame Coins to send gifts and support the creators you love.</p>
-        <a className="fv-web-primary-link" href="#coin-packs">Explore coin packages <span>↓</span></a>
-        <div className="fv-web-orbit fv-web-orbit-one" />
-        <div className="fv-web-orbit fv-web-orbit-two" />
-      </section>
+      <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={setQuery} />
+      <div className="fv-platform-layout">
+      <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
+      <div className="fv-platform-content">
+      <WebHero />
+      <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
 
       <section className="fv-web-store-section" id="coin-packs">
         <div className="fv-web-section-heading">
@@ -242,6 +233,8 @@ export default function WebStore() {
         <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
         <small>© {new Date().getFullYear()} Fameverse Live</small>
       </footer>
+      </div>
+      </div>
       {toast && <div className="fv-web-toast" role="status">{toast}</div>}
     </main>
   )
