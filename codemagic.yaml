@@ -56,6 +56,15 @@ workflows:
             -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
             ios/Runner/Info.plist
 
+          # Register the Fameverse app return scheme in the generated iOS shell.
+          # This is navigation only; it cannot initiate a Stripe charge.
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.fameverse.live" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string fameverse" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :FlutterDeepLinkingEnabled bool false" ios/Runner/Info.plist
+
           bash tool/apply_ios_branding.sh
           bash tool/apply_android_branding.sh
 
@@ -273,6 +282,15 @@ workflows:
           /usr/libexec/PlistBuddy \
             -c "Add :NSMicrophoneUsageDescription string Fameverse Live uses the microphone for native live hosting." \
             ios/Runner/Info.plist
+
+          # Register the Fameverse app return scheme in the generated iOS shell.
+          # This is navigation only; it cannot initiate a Stripe charge.
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.fameverse.live" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string fameverse" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :FlutterDeepLinkingEnabled bool false" ios/Runner/Info.plist
 
           bash tool/apply_ios_branding.sh
 
