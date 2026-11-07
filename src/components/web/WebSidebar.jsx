@@ -15,7 +15,7 @@ export default function WebSidebar({ signedIn, onSignIn }) {
         <p>{signedIn ? 'One account for your community and creator support.' : 'Sign in to discover real creators and make the community yours.'}</p>
         {!signedIn && <button type="button" onClick={onSignIn}>Join the conversation<WebIcon name="arrow" size={17} /></button>}
       </div>
-      <div className="fv-platform-sidebar-footer"><span className="fv-platform-small-dot" />FAMEVERSE WEB<p>Live connection. Real community.</p><a href="/reset-password">Account recovery</a></div>
+      <div className="fv-platform-sidebar-footer"><span className="fv-platform-small-dot" />FAMEVERSE WEB<p>Real creators. Real community.</p><a href="/reset-password">Account recovery</a></div>
     </aside>
   )
 }
