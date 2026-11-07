@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../services/supabase.js'
+import WebWallet from './WebWallet.jsx'
 
 export default function WebSettingsPage({ account }) {
   const user = account.session?.user
@@ -34,6 +35,7 @@ export default function WebSettingsPage({ account }) {
 
   return <main className="fv-settings-page">
     <header><span className="fv-web-eyebrow">ACCOUNT CENTER</span><h1>Settings</h1><p>Manage the Fameverse account you are signed in to.</p></header>
+    <WebWallet userId={user?.id} accountRole={account.profile?.account_role} />
     <section className="fv-settings-section">
       <h2>Account identity</h2>
       <p>Signed in as <strong>{account.profile?.display_name || user?.email || 'Fameverse member'}</strong></p>
