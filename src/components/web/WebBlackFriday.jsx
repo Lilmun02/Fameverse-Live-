@@ -13,14 +13,14 @@ const PREVIEW_OFFERS = [
     discount: '60%',
     caption: 'Discount after taxes — pending checkout verification',
     label: 'BIG DROP',
-    featured: true,
+    featured: false,
   },
   {
     coins: '100,000',
     discount: '80%',
     caption: 'Discount and tax calculation pending approval',
     label: 'ULTIMATE DROP',
-    featured: false,
+    featured: true,
   },
 ]
 
@@ -63,6 +63,7 @@ export function WebBlackFridayPreview() {
         {PREVIEW_OFFERS.map((offer) => (
           <article className={offer.featured ? 'fv-bf-offer fv-bf-offer-featured' : 'fv-bf-offer'} key={offer.coins}>
             <span className="fv-bf-offer-label">{offer.label}</span>
+            {offer.featured && <span className="fv-bf-popular">POPULAR</span>}
             <strong className="fv-bf-offer-coins">{offer.coins}</strong>
             <span className="fv-bf-offer-unit">FAME COINS</span>
             <div className="fv-bf-offer-discount"><strong>{offer.discount}</strong><span>OFF</span></div>
