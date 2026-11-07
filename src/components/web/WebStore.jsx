@@ -11,7 +11,6 @@ import WebCommunity from './WebCommunity.jsx'
 import WebProfilePage from './WebProfilePage.jsx'
 import WebSettingsPage from './WebSettingsPage.jsx'
 import WebNewsHub from './WebNewsHub.jsx'
-import WebWallet from './WebWallet.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -178,7 +177,6 @@ export default function WebStore() {
       {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
       <WebNewsHub />
-      {signedIn && <WebWallet userId={account.session.user.id} accountRole={account.profile?.account_role} />}
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
 
       <section className="fv-web-store-section" id="coin-packs">
