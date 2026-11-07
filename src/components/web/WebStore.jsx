@@ -10,7 +10,6 @@ import WebHero from './WebHero.jsx'
 import WebCommunity from './WebCommunity.jsx'
 import WebProfilePage from './WebProfilePage.jsx'
 import WebSettingsPage from './WebSettingsPage.jsx'
-import WebNewsHub from './WebNewsHub.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -176,7 +175,6 @@ export default function WebStore() {
       <div className="fv-platform-content">
       {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
-      <WebNewsHub />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
 
       <section className="fv-web-store-section" id="coin-packs">
@@ -238,7 +236,7 @@ export default function WebStore() {
       </>}
       {!profileId && !settingsOpen && <footer className="fv-web-footer">
         <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
-        <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
+        <div className="fv-web-footer-links"><span title="Planned for a future update">Announcements</span><span title="Planned for a future update">Features & benefits</span><span title="Planned for a future update">Upcoming updates</span><span title="Planned for a future update">Events</span><a href="/reset-password">Password reset</a></div>
         <small>© {new Date().getFullYear()} Fameverse Live</small>
       </footer>}
       </div>
