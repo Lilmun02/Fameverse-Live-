@@ -13,7 +13,7 @@ function AuthenticatedCommunity({ userId, query }) {
     <div className="fv-community-toolbar"><p>Discover Fameverse creators</p><button className="fv-community-refresh" type="button" onClick={refresh}><WebIcon name="refresh" size={16} />Refresh</button></div>
     {creators.state === 'degraded' && <p className="fv-community-warning" role="status">Connection limited. {creatorResults.length ? 'Showing previously loaded creators.' : 'We could not load creators. Refresh to try again.'}</p>}
     {(creators.state === 'idle' || creators.state === 'loading') && <div className="fv-community-loading" role="status">Connecting to your creator community…</div>}
-    {creatorResults.length > 0 && <div className="fv-community-grid">{creatorResults.slice(0, 8).map((item) => <WebCommunityCard key={item.id} item={item} live={false} confirmed={creators.state === 'ready'} onSelect={() => { window.location.assign(`/?profile=${encodeURIComponent(item.id)}`) }} />)}</div>}
+    {creatorResults.length > 0 && <div className="fv-community-grid">{creatorResults.map((item) => <WebCommunityCard key={item.id} item={item} live={false} confirmed={creators.state === 'ready'} onSelect={() => { window.location.assign(`/?profile=${encodeURIComponent(item.id)}`) }} />)}</div>}
     {creators.state === 'ready' && creatorResults.length === 0 && <div className="fv-community-empty"><WebIcon name="people" size={30} /><h3>{search ? 'No matches for your search' : 'Your creator community is growing'}</h3><p>{search ? 'Try a different creator name.' : 'Creator profiles will appear as the community grows. Check back soon.'}</p></div>}
   </>
 }
