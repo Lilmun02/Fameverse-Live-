@@ -1,0 +1,127 @@
+/* Black Friday 2026: preview-only web campaign. No checkout affordances. */
+.fv-bf-ticker {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 42px;
+  overflow: hidden;
+  border-block: 1px solid #f0b95040;
+  background: linear-gradient(100deg, #23101f, #3d1830 50%, #22111f);
+  color: #ffecc7;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.fv-bf-ticker-badge,
+.fv-bf-ticker-coming {
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 16px;
+  background: #f9cc72;
+  color: #2b1530;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.fv-bf-ticker-coming {
+  border-left: 1px solid #f0b95040;
+  background: #2f1725;
+  color: #f5ca73;
+}
+.fv-bf-ticker-window { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.fv-bf-ticker-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: fv-bf-marquee 25s linear infinite;
+}
+.fv-bf-ticker-phrase {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 23px;
+  padding: 0 23px;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: .13em;
+}
+.fv-bf-ticker-phrase strong { font-size: 11px; color: #ffd991; }
+.fv-bf-ticker-star { color: #f6c35c; font-size: 18px; }
+@keyframes fv-bf-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.fv-bf-preview {
+  position: relative;
+  margin: 30px 0 36px;
+  padding: clamp(24px, 3.8vw, 42px);
+  overflow: hidden;
+  border: 1px solid #e8b8634f;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 90% 0%, #873e493d, transparent 50%), linear-gradient(145deg, #251321, #160e1b 70%);
+  box-shadow: 0 18px 46px #00000029;
+}
+.fv-bf-preview::after {
+  content: '';
+  position: absolute;
+  top: -98px;
+  right: -98px;
+  width: 220px;
+  height: 220px;
+  border: 1px solid #f3c46c27;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.fv-bf-preview-heading { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 25px; }
+.fv-bf-kicker { color: #f0c675; font-size: 10px; font-weight: 850; letter-spacing: .17em; }
+.fv-bf-preview-heading h2 { margin: 9px 0 8px; color: #fff1d9; font-size: clamp(29px,3vw,43px); letter-spacing: -.05em; line-height: 1.13; }
+.fv-bf-preview-heading h2 span { color: #e8ae58; }
+.fv-bf-preview-heading p { margin: 0; color: #c5aec1; font-size: 12px; line-height: 1.6; }
+.fv-bf-date { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 74px; min-height: 74px; border: 1px solid #e8b86367; border-radius: 12px; background: #422331; color: #ffd78c; }
+.fv-bf-date span { font-size: 10px; letter-spacing: .24em; font-weight: 850; }
+.fv-bf-date strong { font-size: 29px; line-height: 1.05; }
+.fv-bf-offers { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.fv-bf-offer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 254px;
+  padding: 22px;
+  border: 1px solid #edd0a124;
+  border-radius: 14px;
+  background: linear-gradient(150deg, #2e1a29, #1b121f);
+}
+.fv-bf-offer-featured {
+  border-color: #f2c56ca1;
+  background: linear-gradient(150deg, #4c2735, #251421);
+  box-shadow: inset 0 0 26px #dca6520b;
+}
+.fv-bf-offer-label { color: #e7b967; font-size: 9px; font-weight: 900; letter-spacing: .16em; }
+.fv-bf-offer-coins { margin: 24px 0 2px; color: #fff1e5; font-size: clamp(25px,3vw,36px); letter-spacing: -.04em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.fv-bf-offer-unit { color: #bda8b6; font-size: 9px; font-weight: 750; letter-spacing: .16em; }
+.fv-bf-offer-discount { display: flex; align-items: baseline; gap: 7px; margin-top: 18px; color: #f4c873; }
+.fv-bf-offer-discount strong { font-size: 29px; line-height: 1; }
+.fv-bf-offer-discount span { font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+.fv-bf-offer p { flex: 1; margin: 12px 0 16px; color: #c8b0c0; font-size: 11px; line-height: 1.6; }
+.fv-bf-offer-status { display: block; border-top: 1px solid #ffffff15; padding-top: 13px; color: #e8c891; font-size: 9px; font-weight: 850; letter-spacing: .09em; }
+.fv-bf-preview-note { margin: 20px 0 0; color: #c1abba; font-size: 11px; line-height: 1.6; }
+@media (max-width: 880px) {
+  .fv-bf-offers { grid-template-columns: 1fr; }
+  .fv-bf-offer { min-height: 0; }
+  .fv-bf-offer-coins { margin-top: 17px; }
+}
+@media (max-width: 560px) {
+  .fv-bf-ticker-badge { padding-inline: 10px; font-size: 8px; }
+  .fv-bf-ticker-coming { display: none; }
+  .fv-bf-ticker-phrase { gap: 15px; padding-inline: 15px; font-size: 9px; }
+  .fv-bf-preview { padding: 22px 18px; border-radius: 13px; }
+  .fv-bf-preview-heading { align-items: flex-start; }
+  .fv-bf-date { min-width: 55px; min-height: 60px; }
+  .fv-bf-date strong { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fv-bf-ticker-track { animation: none; }
+}
