@@ -194,7 +194,7 @@ export default function WebStore() {
     <main className="fv-web-shell">
       <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={setQuery} />
       <div className="fv-platform-layout">
-      <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
+      <WebSidebar />
       <div className="fv-platform-content">
       {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
