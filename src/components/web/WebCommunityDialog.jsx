@@ -20,7 +20,7 @@ export default function WebCommunityDialog({ selected, onClose }) {
         <span className="fv-web-eyebrow">{selected.live ? 'LIVE ROOM DETAILS' : 'FAMEVERSE CREATOR PROFILE'}</span>
         <h2 id="fv-community-dialog-title">{name}</h2>
         {creator?.username && <span className="fv-community-dialog-handle">@{creator.username}</span>}
-        {!selected.live && <div className="fv-creator-profile-stats"><div><strong>{Number.isFinite(followers) ? followers.toLocaleString('en-US') : '—'}</strong><span>Followers</span></div><div><strong>Fameverse</strong><span>Community</span></div></div>}
+        {!selected.live && <div className="fv-creator-profile-stats"><div><strong>{Number.isFinite(followers) ? followers.toLocaleString('en-US') : '—'}</strong><span>Followers</span></div></div>}
         <section className="fv-creator-profile-about" aria-label="About this creator">
           <h3>{selected.live ? selected.item.title || 'Live conversation' : 'About'}</h3>
           {selected.live ? <><p>{selected.confirmed ? 'This room appeared active when its details were opened. Its status may have changed.' : 'This is a previously loaded room. Live status is not confirmed.'}</p><p>Watch live streams in the Fameverse app.</p></> : <p>{creator?.bio || 'This creator has not added a bio yet.'}</p>}
