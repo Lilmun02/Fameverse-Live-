@@ -32,7 +32,7 @@
 .fv-community-card-info { flex: 1; display: flex; flex-direction: column; width: 100%; padding: 15px; }
 .fv-community-card-info > strong { overflow: hidden; color: #f0e6fa; font-size: 13px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .fv-community-card-info > span { margin-top: 4px; color: #a588b8; font-size: 10px; }
-.fv-community-card-info > p { display: -webkit-box; min-height: 34px; margin: 10px 0 15px; overflow: hidden; color: #897692; font-size: 10px; line-height: 1.7; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.fv-community-card-info > p { min-height: 34px; margin: 10px 0 15px; color: #bbaacb; font-size: 11px; line-height: 1.65; overflow-wrap: anywhere; }
 .fv-community-card-info > div { display: flex; align-items: center; justify-content: space-between; gap: 5px; margin-top: auto; color: #b292ca; }
 .fv-community-card-info small { color: #84768e; font-size: 9px; }
 .fv-community-loading, .fv-community-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 195px; padding: 30px; border: 1px dashed #aa77d127; border-radius: 12px; background: #ffffff02; color: #ad91bf; text-align: center; }
