@@ -125,3 +125,10 @@
 .fv-profile-page-section h2 { margin: 0 0 12px; font-size: 18px; }
 .fv-profile-page-section p { color: #c7b7d3; font-size: 14px; line-height: 1.65; }
 @media (max-width: 540px) { .fv-profile-page-actions button { padding: 10px 13px; font-size: 12px; } }
+
+/* Profile is a full content view, not a banner card. */
+.fv-profile-page-main { border: 0; border-radius: 0; background: transparent; min-height: 65dvh; }
+.fv-profile-page-details { padding: 28px clamp(12px,3vw,40px) 50px; }
+.fv-profile-page-top { margin-top: 0; align-items: center; }
+.fv-profile-page-avatar { border: 3px solid #75499b; }
+.fv-profile-page-metrics { flex-wrap: wrap; }
