@@ -56,6 +56,8 @@ describe('Fameverse web regression contract', () => {
   it('displays every recommended creator and presents bios without clipping profile pictures', () => {
     expect(community).toContain('creatorResults.map((item)')
     expect(community).not.toContain('creatorResults.slice(0, 8)')
+    expect(communityStyles).not.toContain('-webkit-line-clamp: 2')
+    expect(communityStyles).toContain('overflow-wrap: anywhere;')
     expect(profile).toContain('<h2>Bio</h2>')
     expect(profile).toContain('profile.bio?.trim()')
     expect(profile).not.toContain('className="fv-profile-page-bio"')
