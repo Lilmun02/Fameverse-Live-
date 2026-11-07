@@ -62,6 +62,13 @@ export default function WebStore() {
   const account = useAccount({ setToast })
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
+  const checkoutStatus = new URLSearchParams(window.location.search).get('checkout')
+  const paymentStatus = new URLSearchParams(window.location.search).get('payment')
+  const returnNotice = checkoutStatus === 'cancelled' || paymentStatus === 'cancelled'
+    ? 'Checkout was cancelled. No new purchase was completed.'
+    : checkoutStatus === 'success' || paymentStatus === 'success'
+      ? 'Stripe checkout returned successfully. Fame Coins are credited only after payment verification. Refresh your balance if it has not updated yet.'
+      : null
 
   useEffect(() => {
     if (!signedIn) {
@@ -166,6 +173,7 @@ export default function WebStore() {
   return (
     <main className="fv-web-shell">
       <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={setQuery} />
+      {returnNotice && <div className="fv-web-inline-message" role="status">{returnNotice}</div>}
       <div className="fv-platform-layout">
       <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
       <div className="fv-platform-content">
