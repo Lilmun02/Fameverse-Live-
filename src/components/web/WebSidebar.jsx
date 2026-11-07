@@ -7,6 +7,10 @@ export default function WebSidebar({ signedIn, onSignIn }) {
       <nav aria-label="Explore Fameverse">
         <span className="fv-platform-nav-label">DISCOVER</span>
         <a href="/" className={!coinsPage ? 'is-active' : ''}><WebIcon name="home" />For you</a>
+        <a href="/#announcements">Announcements</a>
+        <a href="/#features">Features & benefits</a>
+        <a href="/#updates">Upcoming updates</a>
+        <a href="/#events">Future events</a>
         <a href="/#discover-creators"><WebIcon name="people" />Creators</a>
         <a href="/coins#coin-packs" className={coinsPage ? 'is-active' : ''}><WebIcon name="coins" />Fame Coins</a>
       </nav>
