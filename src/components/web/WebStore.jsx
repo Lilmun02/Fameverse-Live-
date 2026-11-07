@@ -201,7 +201,16 @@ export default function WebStore() {
       {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
-      <WebBlackFridayPreview />
+      <WebBlackFridayPreview
+        salePacks={stripeConfig?.packs ?? []}
+        signedIn={signedIn}
+        isPreviewHost={isPreviewHost}
+        checkoutEnabled={Boolean(stripeConfig?.checkout_enabled)}
+        checkoutBusy={checkoutBusy}
+        configBusy={configBusy}
+        onCheckout={startCheckout}
+        onSignIn={() => setAuthOpen(true)}
+      />
 
       <section className="fv-web-store-section" id="coin-packs">
         <div className="fv-web-section-heading">
