@@ -11,6 +11,11 @@ const sidebar = source('src/components/web/WebSidebar.jsx')
 const settings = source('src/components/web/WebSettingsPage.jsx')
 const wallet = source('src/components/web/WebWallet.jsx')
 const account = source('src/hooks/useAccount.js')
+const hero = source('src/components/web/WebHero.jsx')
+const community = source('src/components/web/WebCommunity.jsx')
+const profile = source('src/components/web/WebProfilePage.jsx')
+const layoutStyles = source('src/styles/web/platform-layout.css')
+const communityStyles = source('src/styles/web/platform-community.css')
 const rewrites = JSON.parse(source('vercel.json')).rewrites
 
 describe('Fameverse web regression contract', () => {
@@ -38,6 +43,25 @@ describe('Fameverse web regression contract', () => {
     expect(sidebar).not.toContain('fv-platform-sidebar-note')
     expect(sidebar).not.toContain('fv-platform-sidebar-footer')
     expect(store).toContain('<WebSidebar />')
+  })
+
+  it('keeps one functioning hero action and no leftover decorative art layer', () => {
+    expect(hero).toContain('href="#discover-creators"')
+    expect(hero).not.toContain('Support a creator')
+    expect(hero).not.toContain('fv-platform-hero-art')
+    expect(layoutStyles).not.toContain('.fv-platform-hero-art')
+    expect(communityStyles).not.toContain('transform: rotate(-7deg)')
+  })
+
+  it('displays every recommended creator and presents bios without clipping profile pictures', () => {
+    expect(community).toContain('creatorResults.map((item)')
+    expect(community).not.toContain('creatorResults.slice(0, 8)')
+    expect(profile).toContain('<h2>Bio</h2>')
+    expect(profile).toContain('profile.bio?.trim()')
+    expect(profile).not.toContain('className="fv-profile-page-bio"')
+    expect(layoutStyles).toContain('margin-top: 24px; position: relative;')
+    expect(layoutStyles).not.toContain('margin-top: -65px')
+    expect(layoutStyles).not.toContain('margin-top: -48px')
   })
 
   it('preserves usable web routes for settings, coin shop and password reset', () => {
