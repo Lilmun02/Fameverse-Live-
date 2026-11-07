@@ -28,6 +28,18 @@ describe('Fameverse web regression contract', () => {
     expect(header).not.toContain('href="/#events"')
   })
 
+  it('ends the left sidebar after Fame Coins without extra promo or footer content', () => {
+    expect(sidebar).toContain('For you')
+    expect(sidebar).toContain('Creators')
+    expect(sidebar).toContain('Fame Coins')
+    expect(sidebar).not.toContain('Your people.')
+    expect(sidebar).not.toContain('Join the conversation')
+    expect(sidebar).not.toContain('Account recovery')
+    expect(sidebar).not.toContain('fv-platform-sidebar-note')
+    expect(sidebar).not.toContain('fv-platform-sidebar-footer')
+    expect(store).toContain('<WebSidebar />')
+  })
+
   it('preserves usable web routes for settings, coin shop and password reset', () => {
     for (const path of ['/settings', '/coins', '/reset-password']) {
       expect(rewrites).toContainEqual({ source: path, destination: '/index.html' })
