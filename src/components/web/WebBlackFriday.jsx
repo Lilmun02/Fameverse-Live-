@@ -3,8 +3,8 @@ import '../../styles/web/black-friday.css'
 const PREVIEW_OFFERS = [
   {
     coins: '10,000',
-    discount: '50%',
-    caption: 'Discount before applicable taxes',
+    discount: '25%',
+    caption: '$49.99 regular · $37.49 after discount, before tax',
     label: 'FIRST DROP',
     featured: false,
   },
@@ -28,7 +28,7 @@ function TickerPhrase() {
   return <span className="fv-bf-ticker-phrase">
     <span className="fv-bf-ticker-star" aria-hidden="true">✦</span>
     <strong>BLACK FRIDAY 2026</strong>
-    <span>COMING NOVEMBER 27</span>
+    <span>NOV 27 ONLY · MIDNIGHT TO MIDNIGHT ET</span>
     <span>10K · 50K · 100K FAME COINS</span>
     <span>SALE NOT ACTIVE YET</span>
   </span>
@@ -36,7 +36,7 @@ function TickerPhrase() {
 
 export function WebBlackFridayBanner() {
   return (
-    <div className="fv-bf-ticker" role="note" aria-label="Black Friday 2026 coin packs are coming November 27. The sale is not active yet.">
+    <div className="fv-bf-ticker" role="note" aria-label="Black Friday 2026 sale is planned for November 27 only, midnight to midnight Eastern. The sale is not active yet.">
       <span className="fv-bf-ticker-badge">BLACK FRIDAY</span>
       <div className="fv-bf-ticker-window" aria-hidden="true">
         <div className="fv-bf-ticker-track"><TickerPhrase /><TickerPhrase /></div>
@@ -51,9 +51,9 @@ export function WebBlackFridayPreview() {
     <section className="fv-bf-preview" id="black-friday-preview" aria-labelledby="fv-bf-heading">
       <div className="fv-bf-preview-heading">
         <div>
-          <span className="fv-bf-kicker">LIMITED-TIME SALE · PREVIEW ONLY</span>
+          <span className="fv-bf-kicker">NOVEMBER 27 ONLY · 12 AM–11:59 PM ET · PREVIEW</span>
           <h2 id="fv-bf-heading">Black Friday <span>2026</span></h2>
-          <p>Three Fame Coin drops. Every pack delivers the full amount of coins shown.</p>
+          <p>All three Black Friday packs featured. Full advertised coin amounts included. Sale ends at midnight Eastern on November 28.</p>
         </div>
         <div className="fv-bf-date" aria-label="Sale planned for November 27, 2026">
           <span>NOV</span><strong>27</strong>
