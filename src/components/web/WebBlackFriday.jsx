@@ -4,21 +4,27 @@ const PREVIEW_OFFERS = [
   {
     coins: '10,000',
     discount: '25%',
-    caption: '$49.99 regular · $37.49 after discount, before tax',
+    regularPrice: '$49.99',
+    saleSubtotal: '$37.49',
+    caption: '25% off the subtotal; applicable tax calculated at checkout',
     label: 'FIRST DROP',
     featured: false,
   },
   {
     coins: '50,000',
     discount: '60%',
-    caption: 'Discount after taxes — pending checkout verification',
+    regularPrice: '$499.99',
+    saleSubtotal: '$200.00',
+    caption: '60% discount estimate; final tax sequence verified at checkout',
     label: 'BIG DROP',
     featured: false,
   },
   {
     coins: '100,000',
     discount: '80%',
-    caption: 'Discount and tax calculation pending approval',
+    regularPrice: '$899.99',
+    saleSubtotal: '$180.00',
+    caption: '80% discount estimate; applicable tax calculated at checkout',
     label: 'ULTIMATE DROP',
     featured: true,
   },
@@ -67,12 +73,13 @@ export function WebBlackFridayPreview() {
             <strong className="fv-bf-offer-coins">{offer.coins}</strong>
             <span className="fv-bf-offer-unit">FAME COINS</span>
             <div className="fv-bf-offer-discount"><strong>{offer.discount}</strong><span>OFF</span></div>
+            <div className="fv-bf-pricing"><span className="fv-bf-original-price">{offer.regularPrice}</span><strong>{offer.saleSubtotal}</strong><small>Estimated discounted subtotal</small></div>
             <p>{offer.caption}</p>
-            <span className="fv-bf-offer-status">FINAL PRICE COMING SOON</span>
+            <span className="fv-bf-offer-status">BLACK FRIDAY CHECKOUT OPENS AFTER VERIFICATION</span>
           </article>
         ))}
       </div>
-      <p className="fv-bf-preview-note">Not available to purchase yet. Final prices, applicable tax and any disclosed checkout fees must be confirmed before the sale starts.</p>
+      <div className="fv-bf-preview-foot"><p className="fv-bf-preview-note">Sale packs are not active. The amounts shown are discounted subtotals; tax and any disclosed checkout fees appear before payment. Purchases will only be enabled after checkout and coin delivery are verified.</p><a className="fv-bf-shop-current" href="#coin-packs">View available Fame Coin packs</a></div>
     </section>
   )
 }
