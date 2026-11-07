@@ -75,3 +75,19 @@
 .fv-creator-profile-about h3 { margin: 0 0 9px; font-size: 15px; }
 .fv-creator-profile-about p { margin: 0 0 22px; color: #c1b3cb; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
 @media (max-width: 540px) { .fv-creator-profile-cover { height: 125px; } .fv-creator-profile-body { padding: 0 20px 24px; } .fv-creator-profile-avatar { width: 86px; height: 86px; margin-top: -43px; } .fv-creator-profile-stats { gap: 24px; } }
+
+/* Creator profile usability refinement: no artificial empty banner or internal scroll on typical screens. */
+.fv-creator-profile { box-sizing: border-box; width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-x: hidden; overflow-y: auto; }
+.fv-creator-profile-cover { box-sizing: border-box; height: 112px; padding: 17px 22px; }
+.fv-creator-profile-body { padding: 0 28px 24px; }
+.fv-creator-profile-avatar { width: 90px; height: 90px; margin-top: -45px; margin-bottom: 12px; }
+.fv-creator-profile .fv-web-eyebrow { font-size: 10px; letter-spacing: 1.4px; }
+.fv-creator-profile h2 { margin: 7px 0 2px; }
+.fv-creator-profile-stats { margin: 16px 0; padding: 12px 0; }
+.fv-creator-profile-about p { margin-bottom: 16px; }
+@media (max-width: 540px) {
+ .fv-creator-profile { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); border-radius: 16px; }
+ .fv-creator-profile-cover { height: 95px; }
+ .fv-creator-profile-body { padding: 0 20px 22px; }
+ .fv-creator-profile-avatar { width: 80px; height: 80px; margin-top: -40px; }
+}
