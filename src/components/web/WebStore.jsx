@@ -232,11 +232,11 @@ export default function WebStore() {
       </section>
 
       </>}
-      <footer className="fv-web-footer">
+      {!profileId && <footer className="fv-web-footer">
         <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
         <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
         <small>© {new Date().getFullYear()} Fameverse Live</small>
-      </footer>
+      </footer>}
       </div>
       </div>
       {toast && <div className="fv-web-toast" role="status">{toast}</div>}
