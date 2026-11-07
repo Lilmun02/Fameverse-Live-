@@ -7,6 +7,7 @@ import '../../styles/web/platform.css'
 import WebHeader from './WebHeader.jsx'
 import WebSidebar from './WebSidebar.jsx'
 import WebHero from './WebHero.jsx'
+import { WebBlackFridayBanner, WebBlackFridayPreview } from './WebBlackFriday.jsx'
 import WebCommunity from './WebCommunity.jsx'
 import WebProfilePage from './WebProfilePage.jsx'
 import WebSettingsPage from './WebSettingsPage.jsx'
@@ -193,12 +194,14 @@ export default function WebStore() {
   return (
     <main className="fv-web-shell">
       <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={setQuery} />
+      <WebBlackFridayBanner />
       <div className="fv-platform-layout">
       <WebSidebar />
       <div className="fv-platform-content">
       {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
+      <WebBlackFridayPreview />
 
       <section className="fv-web-store-section" id="coin-packs">
         <div className="fv-web-section-heading">
