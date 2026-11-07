@@ -87,6 +87,34 @@
   .fv-web-shell .fv-web-signin-note div { min-width: calc(100% - 50px); }
   .fv-web-shell .fv-web-footer { flex-direction: column; align-items: flex-start; }
 }
+/* Phone portrait and landscape must fit the physical viewport, without horizontal cropping. */
+@media (max-width: 760px) {
+  .fv-web-shell { box-sizing: border-box; width: 100%; max-width: 100%; overflow-x: clip; }
+  .fv-platform-header, .fv-platform-layout, .fv-platform-content { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; }
+  .fv-platform-topnav { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .fv-platform-hero, .fv-community-section, .fv-bf-preview, .fv-web-store-section, .fv-web-footer { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; }
+  .fv-web-shell .fv-web-pack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fv-web-shell .fv-web-pack { min-width: 0; }
+  .fv-bf-preview-heading p, .fv-bf-offer p, .fv-community-heading p { overflow-wrap: anywhere; }
+}
+@media (max-width: 600px) {
+  .fv-platform-hero { min-height: 0; }
+  .fv-platform-hero h1 { font-size: clamp(31px, 9vw, 42px); overflow-wrap: anywhere; }
+  .fv-community-grid { grid-template-columns: minmax(0, 1fr); }
+  .fv-community-card-cover { height: 170px; }
+  .fv-community-heading { align-items: flex-start; flex-direction: column; }
+  .fv-web-shell .fv-web-pack-grid { grid-template-columns: minmax(0, 1fr); max-width: 460px; }
+  .fv-bf-offers { grid-template-columns: minmax(0, 1fr); }
+  .fv-bf-offer, .fv-web-shell .fv-web-pack { box-sizing: border-box; width: 100%; min-width: 0; }
+  .fv-web-shell .fv-web-footer > div { max-width: 100%; overflow-wrap: anywhere; }
+}
+@media (orientation: landscape) and (min-width: 601px) and (max-width: 950px) {
+  .fv-platform-hero { min-height: 0; }
+  .fv-bf-offers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fv-community-grid, .fv-web-shell .fv-web-pack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fv-bf-offer { min-height: 250px; padding: 17px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fv-community-card { transition: none; }
   .fv-community-card:hover { transform: none; }
