@@ -132,3 +132,16 @@
 .fv-profile-page-top { margin-top: 0; align-items: center; }
 .fv-profile-page-avatar { border: 3px solid #75499b; }
 .fv-profile-page-metrics { flex-wrap: wrap; }
+
+.fv-settings-page { max-width: 850px; padding: clamp(20px,4vw,50px); color: #f4eafc; }
+.fv-settings-page header h1 { font-size: clamp(28px,4vw,42px); margin: 8px 0; }
+.fv-settings-page header p,.fv-settings-section p,.fv-settings-hint { color: #bcaacb; }
+.fv-settings-section { border-top: 1px solid #ffffff26; padding: 24px 0; margin-top: 20px; }
+.fv-settings-section h2 { margin: 0 0 18px; font-size: 20px; }
+.fv-settings-section form { display: grid; gap: 16px; }
+.fv-settings-section label { display: grid; gap: 7px; font-size: 13px; font-weight: 600; }
+.fv-settings-section input,.fv-settings-section textarea { width: 100%; max-width: 540px; box-sizing: border-box; background: #1b1424; color: white; border: 1px solid #ffffff3b; border-radius: 9px; padding: 12px; font: inherit; }
+.fv-settings-section input:read-only { opacity: .75; }
+.fv-settings-section button { justify-self: start; background: #9c55d8; color: white; border: 0; border-radius: 9px; padding: 12px 18px; font-weight: 700; cursor: pointer; }
+.fv-settings-section button:disabled { opacity: .5; cursor: wait; }
+.fv-settings-notice { color: #e5bafa; }
