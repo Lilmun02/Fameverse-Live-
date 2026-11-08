@@ -209,6 +209,9 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
     }
     const items=Array.isArray(v.items) ? v.items : []
     return <>
+      {section === 'finance' && <Notice kind="warning">Creator payouts remain paused. This panel is for viewing pending requests and validating review decisions; no payout can be issued or released here.</Notice>}
+      {section === 'badges' && <Notice kind="warning">This is the existing creator verification queue. Imported badge requests and screenshot evidence require a separate case intake before approval is possible.</Notice>}
+      {section === 'moderation' && <Notice>High-impact actions require case evidence, human review, notice and an appeal route. A refund or chargeback alone is not proof of fraud.</Notice>}
       {section === 'finance' && <div className="fv-oc-metrics">
         <Metric label="Unpaid creator earnings" value={money(overview?.creator_earnings_unpaid_cents)} />
         <Metric label="Payouts pending review" value={money(overview?.creator_payouts_in_review_cents)} />
