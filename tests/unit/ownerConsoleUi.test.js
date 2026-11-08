@@ -23,7 +23,7 @@ describe('Owner Command Center pages and controls',()=>{
   })
   it('provides direct moderation, live and finance buttons wired to protected validation',()=>{
     for(const label of ['Warn member','Suspend account','Permanent ban','Kick from live',
-      'End broadcast','Hold payout for review','Allocate reserve','Approve badge','Reject badge']){
+      'End broadcast','Hold payout for review','Prepare reserve allocation','Approve badge','Reject badge']){
       expect(page).toContain(label)
     }
     expect(page).toContain('Validate in preview')

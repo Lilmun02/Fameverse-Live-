@@ -56,7 +56,7 @@ describe('Owner Command Center protected operations',()=>{
   it('rejects unknown sections and unsupported methods',async()=>{
     const r=response()
     await ownerConsole(request({action:'read',section:'drop_table'}),r)
-    expect(r.code).toBe(400)
+    expect(r.code, JSON.stringify(r.body)).toBe(400)
     const g=response()
     await ownerConsole({...request({action:'read',section:'users'}),method:'GET'},g)
     expect(g.code).toBe(405)
@@ -64,14 +64,14 @@ describe('Owner Command Center protected operations',()=>{
   it('fetches real authorized member records',async()=>{
     const r=response()
     await ownerConsole(request({action:'read',section:'users',query:'creator'}),r)
-    expect(r.code).toBe(200)
+    expect(r.code, JSON.stringify(r.body)).toBe(200)
     expect(r.body.items[0].username).toBe('creator')
     expect(r.body.items[0]).not.toHaveProperty('email')
   })
   it('validates commands but does not mutate production',async()=>{
     const r=response()
     await ownerConsole(request({action:'preview_action',operation:'allocate_reserve',reason:'Review reserve coverage before approval.'}),r)
-    expect(r.code).toBe(200)
+    expect(r.code, JSON.stringify(r.body)).toBe(200)
     expect(r.body.mode).toBe('preview')
     expect(r.body.applied).toBe(false)
     expect(r.body.recorded).toBe(false)
@@ -81,20 +81,20 @@ describe('Owner Command Center protected operations',()=>{
     const a=response(),b=response()
     await ownerConsole(request({action:'preview_action',operation:'ban',reason:'bad'}),a)
     await ownerConsole(request({action:'preview_action',operation:'ban',reason:'Review repeated policy violations.'}),b)
-    expect(a.code).toBe(400)
-    expect(b.code).toBe(400)
+    expect(a.code, JSON.stringify(a.body)).toBe(400)
+    expect(b.code, JSON.stringify(b.body)).toBe(400)
   })
   it('does not permit owner self-enforcement',async()=>{
     const r=response()
     await ownerConsole(request({action:'preview_action',operation:'permanent_ban',
       targetId:'11111111-1111-4111-8111-111111111111',reason:'Review repeated policy violations.'}),r)
-    expect(r.code).toBe(400)
+    expect(r.code, JSON.stringify(r.body)).toBe(400)
   })
   it('does not invent support, audit and system records',async()=>{
     for(const section of ['support','audit','system']){
       const r=response()
       await ownerConsole(request({action:'read',section}),r)
-      expect(r.code).toBe(200)
+      expect(r.code, JSON.stringify(r.body)).toBe(200)
       expect(r.body.availability).toBe('requires_isolated_backend')
     }
   })
