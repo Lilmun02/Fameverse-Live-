@@ -1,64 +1,53 @@
-import { describe, it, expect } from 'vitest'
-import { scryptSync } from 'node:crypto'
-import { configuredOwnerGate, trustedRequestIP, ownerIPAllowed, ownerCodeMatches } from '../../src/server/ownerSecurity.mjs'
+import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { configuredOwnerGate, ownerIPAllowed, recentlyEmailVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
-const read = (name) => readFileSync(new URL('../../' + name, import.meta.url), 'utf8')
-const client = read('src/components/web/WebOwnerCommandCenter.jsx')
-const webStore = read('src/components/web/WebStore.jsx')
+const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8')
 const server = read('api/owner/control.js')
+const ownerPage = read('src/components/web/WebOwnerCommandCenter.jsx')
+const store = read('src/components/web/WebStore.jsx')
 const routes = JSON.parse(read('vercel.json'))
-const config = {
-  OWNER_ALLOWED_IPS: '203.0.113.8, 2001:db8::3',
-  OWNER_ACCESS_CODE_SALT: 'test-salt-0123456789',
-  OWNER_ACCESS_CODE_SCRYPT_HASH: scryptSync('strong-test-code-0123', 'test-salt-0123456789', 64).toString('hex'),
-}
 
-describe('Owner Command Center secure preview gate', () => {
-  it('fails closed when any security setting is absent or invalid', () => {
+describe('Owner Command Center sign-in / verified email / IP gate', () => {
+  it('fails closed without a single explicit IP allowlist', () => {
     expect(configuredOwnerGate({})).toBeNull()
-    expect(configuredOwnerGate({ ...config, OWNER_ALLOWED_IPS: '' })).toBeNull()
-    expect(configuredOwnerGate({ ...config, OWNER_ACCESS_CODE_SCRYPT_HASH: '0' })).toBeNull()
-    expect(configuredOwnerGate({ ...config, OWNER_ALLOWED_IPS: '*' })).toBeNull()
+    expect(configuredOwnerGate({OWNER_ALLOWED_IPS: '*'})).toBeNull()
+    expect(configuredOwnerGate({OWNER_ALLOWED_IPS: '203.0.113.6'})).toEqual({allowedIPs:['203.0.113.6']})
+    expect(ownerIPAllowed(configuredOwnerGate({OWNER_ALLOWED_IPS:'203.0.113.6'}),'203.0.113.7')).toBe(false)
+    expect(ownerIPAllowed(configuredOwnerGate({OWNER_ALLOWED_IPS:'203.0.113.6'}),'203.0.113.6')).toBe(true)
   })
-  it('accepts only trusted Vercel forwarded IP on the explicit owner allowlist', () => {
-    const gate = configuredOwnerGate(config)
-    expect(gate).toBeTruthy()
-    expect(trustedRequestIP({ 'x-vercel-forwarded-for': '203.0.113.8' })).toBe('203.0.113.8')
-    expect(ownerIPAllowed(gate, '203.0.113.8')).toBe(true)
-    expect(ownerIPAllowed(gate, '203.0.113.9')).toBe(false)
-    expect(trustedRequestIP({ 'x-forwarded-for': '203.0.113.8' })).toBeNull()
-    expect(trustedRequestIP({ 'x-vercel-forwarded-for': '203.0.113.8,10.0.0.1' })).toBeNull()
+  it('accepts only server-provided Vercel IP header', () => {
+    expect(trustedRequestIP({'x-vercel-forwarded-for':'203.0.113.6'})).toBe('203.0.113.6')
+    expect(trustedRequestIP({'x-forwarded-for':'203.0.113.6'})).toBeNull()
+    expect(trustedRequestIP({'x-vercel-forwarded-for':'203.0.113.6, 192.0.2.1'})).toBeNull()
   })
-  it('compares security code against a salted scrypt hash, never plaintext', () => {
-    const gate = configuredOwnerGate(config)
-    expect(ownerCodeMatches(gate, 'strong-test-code-0123')).toBe(true)
-    expect(ownerCodeMatches(gate, 'wrong-code-0123456')).toBe(false)
-    expect(ownerCodeMatches(gate, 'short')).toBe(false)
+  it('requires verified recent OTP or email-link login, not a mere password session', () => {
+    const now=1794000000
+    expect(recentlyEmailVerified({amr:[{method:'password',timestamp:now}]},now)).toBe(false)
+    expect(recentlyEmailVerified({amr:[{method:'otp',timestamp:now-60}]},now)).toBe(true)
+    expect(recentlyEmailVerified({amr:[{method:'magiclink',timestamp:now-60}]},now)).toBe(true)
+    expect(recentlyEmailVerified({amr:[{method:'otp',timestamp:now-1200}]},now)).toBe(false)
+    expect(recentlyEmailVerified(null,now)).toBe(false)
   })
-  it('protects server summary with account role, server code, IP and user JWT', () => {
-    expect(server).toContain('configuredOwnerGate()')
-    expect(server).toContain('ownerIPAllowed(gate, sourceIP)')
-    expect(server).toContain("client.auth.getUser(token)")
-    expect(server).toContain("accountRole?.role !== 'owner'")
-    expect(server).toContain('ownerCodeMatches(gate, body.code)')
+  it('enforces account email confirmation, owner role, verified JWT claims, IP before RPC', () => {
+    expect(server).toContain('auth.user.email_confirmed_at')
+    expect(server).toContain("role?.role !== 'owner'")
+    expect(server).toContain('client.auth.getUser(token)')
+    expect(server).toContain('client.auth.getClaims(token)')
+    expect(server).toContain('recentlyEmailVerified(claims)')
+    expect(server).toContain('ownerIPAllowed(gate, requestIP)')
     expect(server).toContain("client.rpc('get_owner_finance_control_summary')")
     expect(server).not.toContain('SERVICE_ROLE')
+    expect(server).not.toContain('ownerCodeMatches')
   })
-  it('exposes web-only standalone locked route without touching the native app', () => {
-    expect(routes.rewrites).toContainEqual({ source: '/owner', destination: '/index.html' })
-    expect(webStore).toContain("window.location.pathname === '/owner'")
-    expect(webStore).toContain('<WebOwnerCommandCenter account={account} />')
-    expect(client).toContain("account.profile?.account_role === 'owner'")
-    expect(client).toContain("setSummary(null)")
-    expect(client).toContain("credentials: 'omit'")
-    expect(client).toContain("const [gateStatus, setGateStatus] = useState('checking')")
-    expect(client).toContain("result.configured === true ? 'ready' : 'unconfigured'")
-    expect(client).toContain("gateStatus === 'unconfigured'")
-    expect(client).toContain('<OwnerSetup account={account}')
-    expect(client).toContain('Prepare secure setup')
-    expect(client).toContain('Open Fameverse environment settings')
-    expect(server).toContain("body.action === 'prepare'")
-    expect(server).toContain('prepareOwnerGateMaterial(body.code, sourceIP)')
+  it('supports email verification in web preview and has no security-code setup wizard', () => {
+    expect(routes.rewrites).toContainEqual({source:'/owner',destination:'/index.html'})
+    expect(store).toContain('<WebOwnerCommandCenter account={account} />')
+    expect(ownerPage).toContain('supabase.auth.signInWithOtp')
+    expect(ownerPage).toContain('supabase.auth.verifyOtp')
+    expect(ownerPage).toContain('shouldCreateUser: false')
+    expect(ownerPage).toContain('IP approval required')
+    expect(ownerPage).not.toContain('OWNER_ACCESS_CODE_')
+    expect(ownerPage).not.toContain('Prepare secure setup')
   })
 })

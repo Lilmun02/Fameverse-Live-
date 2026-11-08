@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { configuredOwnerGate, ownerCodeMatches, ownerIPAllowed, trustedRequestIP, prepareOwnerGateMaterial } from '../../src/server/ownerSecurity.mjs'
+import { configuredOwnerGate, ownerIPAllowed, recentlyEmailVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
 const BACKEND_URL = 'https://lwasmvzsagowgmiqssph.supabase.co'
 const BACKEND_PUBLISHABLE_KEY = 'sb_publishable_Zukw53JQ0R_rMuxxC1eeRg_28_QavNC'
@@ -10,30 +10,27 @@ const SUMMARY_FIELDS = [
   'platform_share_earned_cents',
 ]
 
-function reply(res, status, payload) {
+function reply(res, status, data) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0')
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('X-Robots-Tag', 'noindex, nofollow')
-  return res.status(status).json(payload)
+  return res.status(status).json(data)
 }
 
 export default async function ownerControl(req, res) {
-  // Public readiness is the only information returned by GET.
-  // Never ask anyone for an access code until owner-controlled setup exists.
   if (req.method === 'GET') {
+    // No authenticated owner information is returned by public readiness.
     return reply(res, 200, { configured: Boolean(configuredOwnerGate()) })
   }
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST')
     return reply(res, 405, { error: 'Method not allowed' })
   }
-
   const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {}
-  if (body.action !== 'summary' && body.action !== 'prepare') {
+  if (body.action !== 'status' && body.action !== 'summary') {
     return reply(res, 400, { error: 'Unsupported owner action' })
   }
 
-  // Exact-origin verification before any credential work.
   let origin
   try { origin = new URL(String(req.headers.origin || '')) }
   catch { return reply(res, 403, { error: 'Access denied' }) }
@@ -41,59 +38,61 @@ export default async function ownerControl(req, res) {
     return reply(res, 403, { error: 'Access denied' })
   }
 
-  const authHeader = String(req.headers.authorization || '')
-  const token = /^Bearer ([A-Za-z0-9._~-]+)$/.exec(authHeader)?.[1]
+  const token = /^Bearer ([A-Za-z0-9._~-]+)$/.exec(String(req.headers.authorization || ''))?.[1]
   if (!token) return reply(res, 403, { error: 'Access denied' })
 
+  // Deny summary requests immediately if no IP allowlist exists or source IP
+  // does not match. No secret, role data, or financial data leaves the server.
   const gate = configuredOwnerGate()
-  const sourceIP = trustedRequestIP(req.headers)
-  if (body.action === 'summary') {
-    if (!gate) return reply(res, 503, { error: 'Owner access is not configured' })
-    if (!ownerIPAllowed(gate, sourceIP)) return reply(res, 403, { error: 'Access denied' })
-  } else if (gate) {
-    // Setup cannot overwrite or reset existing access credentials.
-    return reply(res, 409, { error: 'Owner access is already configured' })
+  const requestIP = trustedRequestIP(req.headers)
+  if (body.action === 'summary' && !ownerIPAllowed(gate, requestIP)) {
+    return reply(res, 403, { error: 'Owner network not approved' })
   }
 
   try {
-    // Use verified Supabase auth and the existing owner role; no service role.
     const client = createClient(BACKEND_URL, BACKEND_PUBLISHABLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: { headers: { Authorization: `Bearer ${token}` } },
     })
     const { data: auth, error: authError } = await client.auth.getUser(token)
-    if (authError || !auth?.user?.id) return reply(res, 403, { error: 'Access denied' })
-
-    const { data: accountRole, error: roleError } = await client
-      .from('account_roles').select('role').eq('user_id', auth.user.id).maybeSingle()
-    if (roleError || accountRole?.role !== 'owner') {
-      return reply(res, 403, { error: 'Access denied' })
+    if (authError || !auth?.user?.id || !auth.user.email || !auth.user.email_confirmed_at) {
+      return reply(res, 403, { error: 'Verified Fameverse email sign-in required' })
     }
 
-    if (body.action === 'prepare') {
-      if (!sourceIP) {
-        return reply(res, 422, { error: 'Approved IP could not be detected. Setup remains locked.' })
-      }
-      const prepared = prepareOwnerGateMaterial(body.code, sourceIP)
-      if (!prepared) {
-        return reply(res, 400, { error: 'Choose a security code between 16 and 128 characters.' })
-      }
-      // Hash + salt are setup values only; owner must store them privately in Vercel.
-      // No plaintext code is returned, logged, stored or added to the repository.
-      return reply(res, 200, { prepared: true, ...prepared })
+    const { data: role, error: roleError } = await client.from('account_roles')
+      .select('role').eq('user_id', auth.user.id).maybeSingle()
+    if (roleError || role?.role !== 'owner') {
+      return reply(res, 403, { error: 'Owner access denied' })
     }
 
-    if (!ownerCodeMatches(gate, body.code)) {
-      return reply(res, 403, { error: 'Access denied' })
+    // The claims are verified by Supabase Auth and must match the getUser result.
+    const { data: claimResult, error: claimError } = await client.auth.getClaims(token)
+    const claims = !claimError && claimResult?.claims?.sub === auth.user.id ? claimResult.claims : null
+    const emailVerifiedRecently = recentlyEmailVerified(claims)
+
+    if (body.action === 'status') {
+      return reply(res, 200, {
+        verifiedAccount: true,
+        ipConfigured: Boolean(gate),
+        ipApproved: ownerIPAllowed(gate, requestIP),
+        observedIP: requestIP,
+        emailVerifiedRecently,
+      })
+    }
+    if (!emailVerifiedRecently) {
+      return reply(res, 403, { error: 'Fresh email verification required' })
     }
 
-    // Existing RPC independently verifies auth.uid() is the owner.
+    // Existing server-side RPC independently enforces auth.uid() = owner.
     const { data, error } = await client.rpc('get_owner_finance_control_summary')
     const row = Array.isArray(data) ? data[0] : data
-    if (error || !row) return reply(res, 503, { error: 'Owner summary is unavailable' })
-    const summary = Object.fromEntries(SUMMARY_FIELDS.map((key) => [key, row[key] ?? null]))
-    return reply(res, 200, { authorized: true, mode: 'read-only', summary })
+    if (error || !row) return reply(res, 503, { error: 'Owner summary unavailable' })
+    return reply(res, 200, {
+      authorized: true,
+      mode: 'read-only',
+      summary: Object.fromEntries(SUMMARY_FIELDS.map((name) => [name, row[name] ?? null])),
+    })
   } catch {
-    return reply(res, 503, { error: 'Owner access is temporarily unavailable' })
+    return reply(res, 503, { error: 'Owner access temporarily unavailable' })
   }
 }
