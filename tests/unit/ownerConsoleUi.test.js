@@ -39,6 +39,8 @@ describe('Owner Command Center pages and controls',()=>{
     expect(page).not.toContain('scrollIntoView')
     expect(page).toContain('No changes applied. No persistent audit event recorded.')
     expect(page).toContain("fetch('/api/owner/console'")
+    expect(page).toContain("v.summary?.creator_earnings_unpaid_cents")
+    expect(page).toContain("v.summary?.creator_payouts_in_review_cents")
     const gate=read('src/components/web/WebOwnerCommandCenter.jsx')
     expect(gate).toContain("body: JSON.stringify({ action: 'access' })")
     expect(gate).toContain("current.state === 'ready' ?")

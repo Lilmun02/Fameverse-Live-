@@ -74,8 +74,15 @@ async function ownerSummary(client) {
 
 async function ownerQueue(client, name) {
   if (name === 'finance') {
-    const r = await client.rpc('get_creator_payout_moderation_queue_v3',{ p_limit: 25 })
-    return { items: checked(r, 'Payout review'), total: null }
+    const [queue, summary] = await Promise.all([
+      client.rpc('get_creator_payout_moderation_queue_v3',{ p_limit: 25 }),
+      client.rpc('get_owner_finance_control_summary'),
+    ])
+    return {
+      items: checked(queue, 'Payout review'), total: null,
+      summary: summary.error ? null : flat(summary.data),
+      warnings: summary.error ? ['Financial totals unavailable'] : [],
+    }
   }
   if (name === 'badges') {
     const r = await client.rpc('get_creator_verification_moderation_queue',{ p_limit: 25 })
@@ -97,10 +104,10 @@ async function fetchRead(client, section, body) {
       return { summary: flat(checked(r, 'Owner funding summary')) }
     }
     case 'gifts': {
-      const r = await client.from('fameverse_gift_catalog')
-        .select('id,label,cost_coins,category,active,cinematic,sort_order')
-        .order('sort_order', { ascending: true }).limit(100)
-      return { items: checked(r, 'Gift catalog') }
+      // Direct table SELECT is not granted to authenticated. Reuse the
+      // existing published read-only catalog RPC instead of weakening RLS.
+      const r = await client.rpc('get_fameverse_gift_catalog')
+      return { items: checked(r, 'Gift catalog'), activeOnly: true }
     }
     case 'policy': {
       const r = await client.from('app_update_notices')

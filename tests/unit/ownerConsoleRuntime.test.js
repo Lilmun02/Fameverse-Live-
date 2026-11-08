@@ -98,6 +98,21 @@ describe('Owner Command Center protected operations',()=>{
     expect(r.body.items).toEqual([])
     expect(mocks.from).toHaveBeenCalledWith('app_release_state')
   })
+  it('uses the existing authorized catalog RPC rather than the RLS-blocked gift table',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'read',section:'gifts'}),r)
+    expect(r.code).toBe(200)
+    expect(mocks.rpc).toHaveBeenCalledWith('get_fameverse_gift_catalog')
+    expect(mocks.from).not.toHaveBeenCalledWith('fameverse_gift_catalog')
+  })
+  it('loads payout queue and real finance totals from independent owner RPCs',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'read',section:'finance'}),r)
+    expect(r.code).toBe(200)
+    expect(mocks.rpc).toHaveBeenCalledWith('get_creator_payout_moderation_queue_v3',{p_limit:25})
+    expect(mocks.rpc).toHaveBeenCalledWith('get_owner_finance_control_summary')
+    expect(r.body).toHaveProperty('summary')
+  })
   it('does not invent support or audit records',async()=>{
     for(const section of ['support','audit']){
       const r=response()

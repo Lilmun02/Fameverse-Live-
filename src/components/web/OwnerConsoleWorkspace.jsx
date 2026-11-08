@@ -274,11 +274,12 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       {section === 'badges' && <Notice kind="warning">This is the existing creator verification queue. Imported badge requests and screenshot evidence require a separate case intake before approval is possible.</Notice>}
       {section === 'moderation' && <Notice>High-impact actions require case evidence, human review, notice and an appeal route. A refund or chargeback alone is not proof of fraud.</Notice>}
       {section === 'finance' && <div className="fv-oc-metrics">
-        <Metric label="Unpaid creator earnings" value={money(overview?.creator_earnings_unpaid_cents)} />
-        <Metric label="Payouts pending review" value={money(overview?.creator_payouts_in_review_cents)} />
-        <Metric label="Creator share earned" value={money(overview?.creator_share_earned_cents)} />
-        <Metric label="Platform share earned" value={money(overview?.platform_share_earned_cents)} />
+        <Metric label="Unpaid creator earnings" value={money(v.summary?.creator_earnings_unpaid_cents)} />
+        <Metric label="Payouts pending review" value={money(v.summary?.creator_payouts_in_review_cents)} />
+        <Metric label="Creator share earned" value={money(v.summary?.creator_share_earned_cents)} />
+        <Metric label="Platform share earned" value={money(v.summary?.platform_share_earned_cents)} />
       </div>}
+      {v.warnings?.length > 0 && <Notice kind="warning">{v.warnings.join(' · ')}</Notice>
       {section === 'policy' && <Notice kind="warning">Active release notices are shown below. Policy acceptance history and appeal enforcement need a separate audited backend; no acceptance counts are invented.</Notice>}
       {section === 'gifts' && <Notice>Gift prices and activation are read from the existing catalog. Coin grants, cash-backed gifts and payout changes are disabled in preview.</Notice>}
       {section === 'system' && <Notice>Live release state is read-only. No CodeMagic, TestFlight, Supabase, Stripe or Vercel settings can be changed from this preview.</Notice>}

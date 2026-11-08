@@ -76,13 +76,13 @@ export default function WebOwnerCommandCenter({ account }) {
 
   const current = result.key === sessionKey ? result : { state: 'checking', summary: null, message: '' }
   return <section className="fv-owner-page fv-owner-full" aria-labelledby="fv-owner-title">
-    <header className="fv-owner-heading">
+    {current.state !== 'ready' && <header className="fv-owner-heading">
       <div><span className="fv-web-eyebrow">FAMEVERSE · WEB ONLY</span>
         <h1 id="fv-owner-title">Owner Command Center</h1>
         <p>Protected by your Fameverse account and one approved network IP. No additional sign-in code.</p>
       </div>
       <span className="fv-owner-readonly">OWNER ONLY</span>
-    </header>
+    </header>}
     {current.state === 'ready' ?
       <OwnerConsoleWorkspace token={token} overview={current.summary}
         onLock={() => setResult(prev => ({...prev,state:'locked',summary:null}))} />
