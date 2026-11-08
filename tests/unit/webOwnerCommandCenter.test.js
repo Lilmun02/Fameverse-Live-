@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { configuredOwnerGate, ownerIPAllowed, recentlyEmailVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
+import { configuredOwnerGate, ownerIPAllowed, recentlyEmailCodeVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8')
 const server = read('api/owner/control.js')
@@ -22,20 +22,20 @@ describe('Owner Command Center sign-in / verified email / IP gate', () => {
     expect(trustedRequestIP({'x-forwarded-for':'203.0.113.6'})).toBeNull()
     expect(trustedRequestIP({'x-vercel-forwarded-for':'203.0.113.6, 192.0.2.1'})).toBeNull()
   })
-  it('requires verified recent OTP or email-link login, not a mere password session', () => {
+  it('requires verified recent numeric OTP, not ordinary links or password', () => {
     const now=1794000000
-    expect(recentlyEmailVerified({amr:[{method:'password',timestamp:now}]},now)).toBe(false)
-    expect(recentlyEmailVerified({amr:[{method:'otp',timestamp:now-60}]},now)).toBe(true)
-    expect(recentlyEmailVerified({amr:[{method:'magiclink',timestamp:now-60}]},now)).toBe(true)
-    expect(recentlyEmailVerified({amr:[{method:'otp',timestamp:now-1200}]},now)).toBe(false)
-    expect(recentlyEmailVerified(null,now)).toBe(false)
+    expect(recentlyEmailCodeVerified({amr:[{method:'password',timestamp:now}]},now)).toBe(false)
+    expect(recentlyEmailCodeVerified({amr:[{method:'otp',timestamp:now-60}]},now)).toBe(true)
+    expect(recentlyEmailCodeVerified({amr:[{method:'magiclink',timestamp:now-60}]},now)).toBe(false)
+    expect(recentlyEmailCodeVerified({amr:[{method:'otp',timestamp:now-1200}]},now)).toBe(false)
+    expect(recentlyEmailCodeVerified(null,now)).toBe(false)
   })
   it('enforces account email confirmation, owner role, verified JWT claims, IP before RPC', () => {
     expect(server).toContain('auth.user.email_confirmed_at')
     expect(server).toContain("role?.role !== 'owner'")
     expect(server).toContain('client.auth.getUser(token)')
     expect(server).toContain('client.auth.getClaims(token)')
-    expect(server).toContain('recentlyEmailVerified(claims)')
+    expect(server).toContain('recentlyEmailCodeVerified(claims)')
     expect(server).toContain('ownerIPAllowed(gate, requestIP)')
     expect(server).toContain("client.rpc('get_owner_finance_control_summary')")
     expect(server).not.toContain('SERVICE_ROLE')

@@ -20,19 +20,6 @@ export function ownerIPAllowed(config, ip) {
   return Boolean(config && ip && config.allowedIPs.includes(ip))
 }
 
-// An email-confirmed account alone does not satisfy the fresh email step.
-// Require a verified Supabase JWT showing a recent OTP / email-link login.
-// The server must call auth.getClaims(token), never trust client-provided claims.
-export function recentlyEmailVerified(claims, nowSeconds = Math.floor(Date.now() / 1000)) {
-  if (!claims || claims.is_anonymous === true || !Array.isArray(claims.amr)) return false
-  return claims.amr.some((entry) =>
-    ['otp', 'magiclink'].includes(entry?.method) &&
-    Number.isFinite(entry?.timestamp) &&
-    entry.timestamp <= nowSeconds &&
-    entry.timestamp >= nowSeconds - 10 * 60
-  )
-}
-
 export function recentlyPasswordSignedIn(claims, nowSeconds = Math.floor(Date.now() / 1000)) {
   return Boolean(claims && claims.is_anonymous !== true && Array.isArray(claims.amr) &&
     claims.amr.some(entry => entry.method === 'password' && Number.isFinite(entry.timestamp) &&
