@@ -24,6 +24,7 @@ describe('standalone pages and perpetual ticker', () => {
     expect(blackFriday).toContain('href="/coins"')
     expect(blackFriday).not.toContain('#coin-packs')
     expect(store).not.toContain('scrollIntoView')
+    expect(store).toContain("if (window.location.pathname === '/reset-password')")
   })
   it('renders two equal width sequences long enough to cross the entire viewport', () => {
     expect(blackFriday).toContain('Array.from({ length: 4 }')
