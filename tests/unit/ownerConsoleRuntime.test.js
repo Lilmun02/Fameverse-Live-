@@ -90,8 +90,16 @@ describe('Owner Command Center protected operations',()=>{
       targetId:'11111111-1111-4111-8111-111111111111',reason:'Review repeated policy violations.'}),r)
     expect(r.code, JSON.stringify(r.body)).toBe(400)
   })
-  it('does not invent support, audit and system records',async()=>{
-    for(const section of ['support','audit','system']){
+  it('reads release state without exposing any system mutation endpoint',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'read',section:'system'}),r)
+    expect(r.code).toBe(200)
+    expect(r.body.authorized).toBe(true)
+    expect(r.body.items).toEqual([])
+    expect(mocks.from).toHaveBeenCalledWith('app_release_state')
+  })
+  it('does not invent support or audit records',async()=>{
+    for(const section of ['support','audit']){
       const r=response()
       await ownerConsole(request({action:'read',section}),r)
       expect(r.code, JSON.stringify(r.body)).toBe(200)
