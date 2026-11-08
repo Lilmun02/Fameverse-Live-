@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react'
 import '../../styles/web/platform-owner.css'
-
-function money(cents) {
-  if (cents === null || cents === undefined || !Number.isFinite(Number(cents))) return '—'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(cents) / 100)
-}
-function coins(value) {
-  if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—'
-  return Number(value).toLocaleString('en-US')
-}
+import OwnerConsoleWorkspace from './OwnerConsoleWorkspace.jsx'
 
 export default function WebOwnerCommandCenter({ account }) {
   const userId = account.session?.user?.id || null
@@ -83,7 +75,7 @@ export default function WebOwnerCommandCenter({ account }) {
   </section>
 
   const current = result.key === sessionKey ? result : { state: 'checking', summary: null, message: '' }
-  return <section className="fv-owner-page" aria-labelledby="fv-owner-title">
+  return <section className="fv-owner-page fv-owner-full" aria-labelledby="fv-owner-title">
     <header className="fv-owner-heading">
       <div><span className="fv-web-eyebrow">FAMEVERSE · WEB ONLY</span>
         <h1 id="fv-owner-title">Owner Command Center</h1>
@@ -91,18 +83,10 @@ export default function WebOwnerCommandCenter({ account }) {
       </div>
       <span className="fv-owner-readonly">OWNER ONLY</span>
     </header>
-    {current.state === 'ready' && current.summary ? <>
-      <div className="fv-owner-toolbar"><span>Owner identity and IP verified. Read-only overview.</span>
-        <button type="button" onClick={() => setResult(prev => ({ ...prev, state: 'locked', summary: null }))}>Lock dashboard</button>
-      </div>
-      <div className="fv-owner-metrics">
-        <article><span>Available reward reserve</span><strong>{money(current.summary.reward_reserve_cents)}</strong></article>
-        <article><span>Cash-backed coins outstanding</span><strong>{coins(current.summary.cash_backed_coins_outstanding)}</strong></article>
-        <article><span>Creator unpaid earnings</span><strong>{money(current.summary.creator_earnings_unpaid_cents)}</strong></article>
-        <article><span>Platform share earned</span><strong>{money(current.summary.platform_share_earned_cents)}</strong></article>
-      </div>
-      <p className="fv-owner-footnote">No payouts, bans, refunds, or account changes are available in this overview.</p>
-    </> : <div className="fv-owner-lock" role="status">
+    {current.state === 'ready' && current.summary ?
+      <OwnerConsoleWorkspace token={token} overview={current.summary}
+        onLock={() => setResult(prev => ({...prev,state:'locked',summary:null}))} />
+     : <div className="fv-owner-lock" role="status">
       <h2>{current.state === 'checking' ? 'Checking account and IP…' :
         current.state === 'network' ? 'Network blocked' :
         current.state === 'locked' ? 'Owner dashboard locked' :
