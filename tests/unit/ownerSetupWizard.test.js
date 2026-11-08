@@ -5,9 +5,9 @@ describe('removed unapproved security-code wizard',()=>{
   it('uses existing account and email verification with exact IP allowlist',()=>{
     const owner=read('src/components/web/WebOwnerCommandCenter.jsx')
     const server=read('src/server/ownerSecurity.mjs')
-    expect(owner).toContain('Email-code verification is not set up yet')
+    expect(owner).toContain('!status.emailOtpReady')
     expect(owner).not.toContain('Send verification email')
-    expect(owner).not.toContain('supabase.auth.signInWithOtp')
+    expect(owner).toContain('supabase.auth.signInWithOtp')
     expect(owner).not.toContain('Prepare secure setup')
     expect(server).toContain('OWNER_ALLOWED_IPS')
     expect(server).not.toContain('OWNER_ACCESS_CODE')

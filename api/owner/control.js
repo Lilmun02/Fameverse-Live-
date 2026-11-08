@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { configuredOwnerGate, ownerIPAllowed, recentlyEmailVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
+import { configuredOwnerGate, ownerIPAllowed, recentlyPasswordSignedIn, recentlyEmailCodeVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
 const BACKEND_URL = 'https://lwasmvzsagowgmiqssph.supabase.co'
 const BACKEND_PUBLISHABLE_KEY = 'sb_publishable_Zukw53JQ0R_rMuxxC1eeRg_28_QavNC'
@@ -45,6 +45,7 @@ export default async function ownerControl(req, res) {
   // does not match. No secret, role data, or financial data leaves the server.
   const gate = configuredOwnerGate()
   const requestIP = trustedRequestIP(req.headers)
+  const emailOtpReady = process.env.OWNER_EMAIL_OTP_ENABLED === 'true'
   if (body.action === 'summary' && !ownerIPAllowed(gate, requestIP)) {
     return reply(res, 403, { error: 'Owner network not approved' })
   }
@@ -65,10 +66,27 @@ export default async function ownerControl(req, res) {
       return reply(res, 403, { error: 'Owner access denied' })
     }
 
-    // The claims are verified by Supabase Auth and must match the getUser result.
+    // Verify both factors independently against Supabase Auth, with matching
+    // user IDs. Client-side session flags and ordinary magic links never count.
     const { data: claimResult, error: claimError } = await client.auth.getClaims(token)
     const claims = !claimError && claimResult?.claims?.sub === auth.user.id ? claimResult.claims : null
-    const emailVerifiedRecently = recentlyEmailVerified(claims)
+    const emailVerifiedRecently = recentlyEmailCodeVerified(claims)
+    let passwordVerifiedRecently = recentlyPasswordSignedIn(claims)
+
+    const proofToken = /^Bearer ([A-Za-z0-9._~-]+)$/.exec(
+      String(req.headers['x-owner-password-proof'] || '')
+    )?.[1]
+    if (proofToken && proofToken !== token) {
+      const [proofIdentity, proofClaims] = await Promise.all([
+        client.auth.getUser(proofToken),
+        client.auth.getClaims(proofToken),
+      ])
+      passwordVerifiedRecently = !proofIdentity.error && !proofClaims.error &&
+        proofIdentity.data?.user?.id === auth.user.id &&
+        proofIdentity.data?.user?.email === auth.user.email &&
+        proofClaims.data?.claims?.sub === auth.user.id &&
+        recentlyPasswordSignedIn(proofClaims.data.claims)
+    }
 
     if (body.action === 'status') {
       return reply(res, 200, {
@@ -76,11 +94,16 @@ export default async function ownerControl(req, res) {
         ipConfigured: Boolean(gate),
         ipApproved: ownerIPAllowed(gate, requestIP),
         observedIP: requestIP,
+        emailOtpReady,
+        passwordVerifiedRecently,
         emailVerifiedRecently,
       })
     }
-    if (!emailVerifiedRecently) {
-      return reply(res, 403, { error: 'Fresh email verification required' })
+    if (!emailOtpReady) {
+      return reply(res, 503, { error: 'Owner email-code verification is not activated' })
+    }
+    if (!passwordVerifiedRecently || !emailVerifiedRecently) {
+      return reply(res, 403, { error: 'Fresh password and email-code verification required' })
     }
 
     // Existing server-side RPC independently enforces auth.uid() = owner.

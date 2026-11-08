@@ -32,3 +32,16 @@ export function recentlyEmailVerified(claims, nowSeconds = Math.floor(Date.now()
     entry.timestamp >= nowSeconds - 10 * 60
   )
 }
+
+export function recentlyPasswordSignedIn(claims, nowSeconds = Math.floor(Date.now() / 1000)) {
+  return Boolean(claims && claims.is_anonymous !== true && Array.isArray(claims.amr) &&
+    claims.amr.some(entry => entry.method === 'password' && Number.isFinite(entry.timestamp) &&
+      entry.timestamp <= nowSeconds && entry.timestamp >= nowSeconds - 600))
+}
+
+// A Magic Link MUST NOT count as the owner's separately entered numeric email code.
+export function recentlyEmailCodeVerified(claims, nowSeconds = Math.floor(Date.now() / 1000)) {
+  return Boolean(claims && claims.is_anonymous !== true && Array.isArray(claims.amr) &&
+    claims.amr.some(entry => entry.method === 'otp' && Number.isFinite(entry.timestamp) &&
+      entry.timestamp <= nowSeconds && entry.timestamp >= nowSeconds - 600))
+}
