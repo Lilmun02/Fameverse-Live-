@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
 const store = read('src/components/web/WebStore.jsx')
+const accountHook = read('src/hooks/useAccount.js')
 const header = read('src/components/web/WebHeader.jsx')
 const community = read('src/components/web/WebCommunity.jsx')
 const settings = read('src/components/web/WebSettingsPage.jsx')
@@ -37,7 +38,13 @@ describe('web account and navigation repair contract', () => {
   })
   it('makes reset route work with or without validated recovery session', () => {
     expect(store).toContain('account.recoveryAuthorized && Boolean(account.session?.user)')
+    expect(accountHook).toContain('recoveryMode, recoveryAuthorized, recoveryPassword')
     expect(store).toContain('account.requestPasswordReset()')
     expect(settings).toContain("redirectTo: 'https://fameverse.app/reset-password'")
+  })
+  it('honors direct Coins and Creators links after the web shell mounts', () => {
+    expect(store).toContain("window.location.hash.slice(1)")
+    expect(store).toContain("window.location.pathname === '/coins'")
+    expect(store).toContain("document.getElementById(sectionId)?.scrollIntoView")
   })
 })
