@@ -27,6 +27,8 @@ describe('Owner Command Center pages and controls',()=>{
       expect(page).toContain(label)
     }
     expect(page).toContain('Validate in preview')
+    expect(page).toContain('role="dialog"')
+    expect(page).not.toContain('scrollIntoView')
     expect(page).toContain('No changes applied. No persistent audit event recorded.')
     expect(page).toContain("fetch('/api/owner/console'")
   })

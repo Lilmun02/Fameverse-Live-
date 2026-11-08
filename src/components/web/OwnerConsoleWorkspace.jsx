@@ -124,6 +124,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const options = ACTIONS[section] || []
   const [choice, setChoice] = useState({ operation:options[0]?.[0] || '', targetId:'', reason:'' })
   const [actionBusy, setActionBusy] = useState(false)
+  const [actionOpen, setActionOpen] = useState(false)
   const [actionResult, setActionResult] = useState(null)
   const [previewHistory, setPreviewHistory] = useState([])
   const currentLabel = useMemo(() => info?.[1] || 'Overview',[info])
@@ -150,7 +151,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const selectAction = (operation, targetId = '') => {
     setChoice({ operation, targetId:targetId || '', reason:'' })
     setActionResult(null)
-    document.getElementById('fv-owner-controls')?.scrollIntoView({ behavior:'smooth',block:'start' })
+    setActionOpen(true)
   }
   const submitAction = async (event) => {
     event.preventDefault()
@@ -255,8 +256,16 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <label>Time window<select value={windowName} onChange={(e)=>setWindowName(e.target.value)}><option value="daily">Past 24 hours</option><option value="weekly">Past 7 days</option><option value="all_time">All-time (pending)</option></select></label>
       </div>}
       <div className="fv-oc-section-content">{renderContent()}</div>
-      {options.length>0&&<div id="fv-owner-controls"><ControlForm section={section} choice={choice} setChoice={setChoice}
+      {options.length>0&&!actionOpen&&<div id="fv-owner-controls"><ControlForm section={section} choice={choice} setChoice={setChoice}
         onSubmit={submitAction} busy={actionBusy} result={actionResult}/></div>}
+      {actionOpen && <div className="fv-oc-modal-backdrop" onMouseDown={(event) => {if(event.target===event.currentTarget&&!actionBusy) setActionOpen(false)}}>
+        <div className="fv-oc-modal" role="dialog" aria-modal="true" aria-label="Review owner control"
+          onKeyDown={(event) => {if(event.key==='Escape'&&!actionBusy) setActionOpen(false)}}>
+          <div className="fv-oc-modal-close"><button type="button" disabled={actionBusy} onClick={() => setActionOpen(false)}>Close</button></div>
+          <ControlForm section={section} choice={choice} setChoice={setChoice}
+            onSubmit={submitAction} busy={actionBusy} result={actionResult}/>
+        </div>
+      </div>}
       {section==='audit'&& <section className="fv-oc-action-panel"><h3>Current-page validation history</h3>
         <p>These are temporary validation responses, not a permanent audit log. No database history is created in preview.</p>
         {previewHistory.length?previewHistory.map(x=><div key={x.id} className="fv-oc-history">{x.operation}: not applied</div>):

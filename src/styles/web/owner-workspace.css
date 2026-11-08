@@ -88,3 +88,10 @@
 
 .fv-oc-profile-link {font-size:13px;color:#ddb6ff;text-decoration:underline;text-underline-offset:3px}
 .fv-oc-profile-link:hover {color:#fff}
+
+.fv-oc-modal-backdrop {position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;background:#07030acf;overflow-y:auto}
+.fv-oc-modal {width:min(700px,100%);max-height:calc(100dvh - 40px);overflow:auto;background:#1d1229;border:1px solid #ba8be5;border-radius:16px;padding:16px;box-sizing:border-box;box-shadow:0 28px 90px #0009}
+.fv-oc-modal .fv-oc-action-panel {border:0;box-shadow:none;background:transparent;padding:6px}
+.fv-oc-modal-close {display:flex;justify-content:flex-end}
+.fv-oc-modal-close button {min-height:38px;border:1px solid #c390e3;border-radius:8px;background:#46255c;color:#fff;padding:7px 14px;font:inherit;cursor:pointer}
+.fv-oc-modal-close button:disabled {opacity:.5}
