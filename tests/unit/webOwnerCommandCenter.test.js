@@ -36,7 +36,7 @@ describe('Owner account + one-IP only preview security', () => {
     expect(page).toContain("fetch('/api/owner/control'")
     expect(page).toContain("credentials: 'same-origin'")
     expect(page).toContain('Authorization: `Bearer ${token}`')
-    expect(page).toContain("body: JSON.stringify({ action: 'summary' })")
+    expect(page).toContain("body: JSON.stringify({ action: 'access' })")
     expect(page).toContain("data?.code === 'NETWORK_DENIED'")
     expect(page).toContain('Network blocked')
     expect(page).not.toContain('supabase.auth.signInWithOtp')
