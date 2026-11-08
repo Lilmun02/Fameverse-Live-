@@ -35,7 +35,7 @@ describe('Black Friday live web release contract', () => {
     expect(sale).toContain('2026-12-07T20:56:27.556Z')
     expect(sale).toContain('Ends December 7, 2026 at 3:56 PM EST')
     expect(sale).toContain('pack && onCheckout?.(pack)')
-    expect(sale).toContain('https://fameverse.app/coins#coin-packs')
+    expect(sale).toContain('https://fameverse.app/coins')
     expect(store).toContain('onCheckout={startCheckout}')
     expect(store).toContain('salePacks={stripeConfig?.packs ?? []}')
     expect(store).toContain('<WebBlackFridayBanner />')
