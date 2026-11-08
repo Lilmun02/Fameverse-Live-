@@ -63,7 +63,7 @@ export default function WebOwnerCommandCenter({ account }) {
   }, [summary])
 
   const sendEmailVerification = async () => {
-    if (!status?.ipApproved || !account.session?.user?.email || emailBusy) return
+    if (!status?.verifiedAccount || !account.session?.user?.email || emailBusy) return
     setEmailBusy(true)
     setMessage('')
     try {
@@ -137,13 +137,6 @@ export default function WebOwnerCommandCenter({ account }) {
     </div><span className="fv-owner-readonly">OWNER ONLY</span></header>
     {!status ? <div className="fv-owner-lock" role="status"><h2>Checking secure access…</h2><p>Verifying your account and network.</p></div> :
     status.unavailable ? <div className="fv-owner-lock"><h2>Access unavailable</h2><p>The security check failed. Your information is protected.</p><button type="button" onClick={() => setRecheck((v) => v + 1)}>Retry verification</button></div> :
-    !status.ipApproved ? <div className="fv-owner-lock">
-      <h2>IP approval required</h2>
-      <p>Your dashboard is locked until your network IP has been approved. A signed-in account alone cannot bypass the IP restriction.</p>
-      {status.observedIP && <p className="fv-owner-ip"><strong>IP observed by the secure server:</strong> <code>{status.observedIP}</code></p>}
-      <p className="fv-owner-note">This IP is shown only after owner sign-in. Approve it before adding it to the preview allowlist; no IP is approved automatically.</p>
-      <button type="button" onClick={() => setRecheck((v) => v + 1)}>Check IP again</button>
-    </div> :
     !status.emailVerifiedRecently ? <div className="fv-owner-lock">
       <h2>Verify your email</h2>
       <p>We'll send a one-time verification message to the email on your signed-in Fameverse owner account. The code or link is only valid for a short period.</p>
@@ -156,6 +149,13 @@ export default function WebOwnerCommandCenter({ account }) {
         <p>If you received a verification link instead, open it to return here.</p>
       </form>}
       <button type="button" className="fv-owner-text-button" onClick={() => setRecheck((v) => v + 1)}>Check verification status</button>
+    </div> :
+    !status.ipApproved ? <div className="fv-owner-lock">
+      <h2>IP approval required</h2>
+      <p>Your dashboard is locked until your network IP has been approved. A signed-in account alone cannot bypass the IP restriction.</p>
+      {status.observedIP && <p className="fv-owner-ip"><strong>IP observed by the secure server:</strong> <code>{status.observedIP}</code></p>}
+      <p className="fv-owner-note">This IP is shown only after owner sign-in. Approve it before adding it to the preview allowlist; no IP is approved automatically.</p>
+      <button type="button" onClick={() => setRecheck((v) => v + 1)}>Check IP again</button>
     </div> :
     <div className="fv-owner-lock">
       <h2>Email and IP verified</h2>

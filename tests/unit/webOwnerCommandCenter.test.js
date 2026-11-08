@@ -12,6 +12,7 @@ describe('Owner Command Center sign-in / verified email / IP gate', () => {
   it('fails closed without a single explicit IP allowlist', () => {
     expect(configuredOwnerGate({})).toBeNull()
     expect(configuredOwnerGate({OWNER_ALLOWED_IPS: '*'})).toBeNull()
+    expect(configuredOwnerGate({OWNER_ALLOWED_IPS: '203.0.113.6,203.0.113.7'})).toBeNull()
     expect(configuredOwnerGate({OWNER_ALLOWED_IPS: '203.0.113.6'})).toEqual({allowedIPs:['203.0.113.6']})
     expect(ownerIPAllowed(configuredOwnerGate({OWNER_ALLOWED_IPS:'203.0.113.6'}),'203.0.113.7')).toBe(false)
     expect(ownerIPAllowed(configuredOwnerGate({OWNER_ALLOWED_IPS:'203.0.113.6'}),'203.0.113.6')).toBe(true)

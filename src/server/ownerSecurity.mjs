@@ -5,7 +5,7 @@ import { isIP } from 'node:net'
 export function configuredOwnerGate(env = process.env) {
   const allowedIPs = String(env.OWNER_ALLOWED_IPS || '')
     .split(',').map((entry) => entry.trim()).filter(Boolean)
-  if (!allowedIPs.length || !allowedIPs.every((ip) => isIP(ip) !== 0)) return null
+  if (allowedIPs.length !== 1 || !allowedIPs.every((ip) => isIP(ip) !== 0)) return null
   return { allowedIPs }
 }
 
