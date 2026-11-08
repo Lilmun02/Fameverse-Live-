@@ -109,4 +109,12 @@ describe('owner access: existing account AND approved IP',()=>{
     expect(r.headers['Cache-Control']).toContain('no-store')
     expect(mocks.rpc).toHaveBeenCalledWith('get_owner_finance_control_summary')
   })
+  it('opens management access without requiring the financial RPC', async () => {
+    mocks.rpc.mockRejectedValue(new Error('Finance RPC unavailable'))
+    const response=res()
+    await ownerControl(req('access'), response)
+    expect(response.code).toBe(200)
+    expect(response.body).toEqual({authorized:true,mode:'owner-access'})
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
 })
