@@ -95,3 +95,6 @@
 .fv-oc-modal-close {display:flex;justify-content:flex-end}
 .fv-oc-modal-close button {min-height:38px;border:1px solid #c390e3;border-radius:8px;background:#46255c;color:#fff;padding:7px 14px;font:inherit;cursor:pointer}
 .fv-oc-modal-close button:disabled {opacity:.5}
+
+.fv-oc-toolbar {display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px;border:1px solid #9467b852;border-radius:12px;background:#1c1424}
+.fv-oc-toolbar span {color:#bba5cc;font-size:13px}

@@ -27,6 +27,14 @@ describe('Owner Command Center pages and controls',()=>{
       expect(page).toContain(label)
     }
     expect(page).toContain('Validate in preview')
+    expect(page).toContain("window.history.pushState")
+    expect(page).toContain("window.addEventListener('popstate'")
+    expect(page).toContain("350)")
+    expect(page).toContain("cachedReads.current.get(requestKey)")
+    expect(page).toContain("window.clearTimeout(timer)")
+    expect(page).toContain("Review available {info[1].toLowerCase()} controls")
+    expect(page).not.toContain('options.length>0&&!actionOpen&&<div id="fv-owner-controls"><ControlForm')
+
     expect(page).toContain('role="dialog"')
     expect(page).not.toContain('scrollIntoView')
     expect(page).toContain('No changes applied. No persistent audit event recorded.')

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import WebIcon from './WebIcon.jsx'
 import '../../styles/web/owner-workspace.css'
 
@@ -111,16 +111,22 @@ function ControlForm({ section, choice, setChoice, onSubmit, busy, result }) {
   </section>
 }
 
+function sectionFromLocation() {
+  const key = window.location.pathname.split('/')[2] || 'overview'
+  return OWNER_SECTIONS.some(([name]) => name === key) ? key : 'overview'
+}
+
 export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
-  const fromPath = window.location.pathname.split('/')[2] || 'overview'
-  const section = OWNER_SECTIONS.some(([key]) => key === fromPath) ? fromPath : 'overview'
+  const [section, setSection] = useState(sectionFromLocation)
   const info = OWNER_SECTIONS.find(([key]) => key === section)
+  const [searchDraft, setSearchDraft] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
   const [version, setVersion] = useState(0)
   const [kind, setKind] = useState('creators')
   const [windowName, setWindowName] = useState('daily')
-  const [data, setData] = useState({ state:'loading', value:null, error:'' })
+  const [data, setData] = useState({ key:null, state:'loading', value:null, error:'' })
+  const cachedReads = useRef(new Map())
   const options = ACTIONS[section] || []
   const [choice, setChoice] = useState({ operation:options[0]?.[0] || '', targetId:'', reason:'' })
   const [actionBusy, setActionBusy] = useState(false)
@@ -128,25 +134,79 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const [actionResult, setActionResult] = useState(null)
   const [previewHistory, setPreviewHistory] = useState([])
   const currentLabel = useMemo(() => info?.[1] || 'Overview',[info])
+  const requestKey = JSON.stringify([section,page,query,kind,windowName,version])
+
+  // Section transitions stay inside one signed-in workspace. Browser Back/Forward
+  // updates the selected section without refreshing Supabase auth or remounting.
+  useEffect(() => {
+    const syncRoute = () => {
+      setSection(sectionFromLocation())
+      setPage(0)
+      setSearchDraft('')
+      setQuery('')
+      setActionOpen(false)
+      setActionResult(null)
+    }
+    window.addEventListener('popstate',syncRoute)
+    return () => window.removeEventListener('popstate',syncRoute)
+  }, [])
+
+  const navigate = (event, key) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    const destination = key === 'overview' ? '/owner' : '/owner/' + key
+    if (window.location.pathname !== destination) window.history.pushState({},'',destination)
+    setSection(key)
+    setPage(0)
+    setSearchDraft('')
+    setQuery('')
+    setActionOpen(false)
+    setActionResult(null)
+    window.scrollTo({top:0,behavior:'instant'})
+  }
+
+  // Search executes after the owner stops typing. Pressing Search below
+  // can commit it immediately, but entering each character never calls the API.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(0)
+      setQuery(searchDraft.trim())
+    }, 350)
+    return () => window.clearTimeout(timer)
+  }, [searchDraft])
 
   useEffect(() => {
+    const cached = cachedReads.current.get(requestKey)
+    if (cached && Date.now() - cached.time < 30000) {
+      setData({key:requestKey,state:'ready',value:cached.value,error:''})
+      return undefined
+    }
+
+    // An 80ms coalescing window avoids StrictMode's dev-only setup/cleanup
+    // cycle firing two real network requests. Abort cancels stale requests.
     const controller = new AbortController()
     let active = true
-    setData({state:'loading',value:null,error:''})
-    fetch('/api/owner/console', {
-      method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
-      headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
-      body:JSON.stringify({action:'read',section,page,query,kind,window:windowName}),
-    }).then(async (response) => {
-      if (!String(response.headers.get('content-type') || '').includes('application/json')) throw new Error('Secure preview session unavailable.')
-      const body = await response.json()
-      if (!response.ok || !body?.authorized) throw new Error(body?.error || 'Owner records unavailable.')
-      if (active) setData({state:'ready',value:body,error:''})
-    }).catch((error) => {
-      if (active && error.name !== 'AbortError') setData({state:'error',value:null,error:error.message})
-    })
-    return () => {active=false;controller.abort()}
-  }, [token,section,page,query,version,kind,windowName])
+    setData({key:requestKey,state:'loading',value:null,error:''})
+    const timer = window.setTimeout(() => {
+      fetch('/api/owner/console', {
+        method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
+        headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
+        body:JSON.stringify({action:'read',section,page,query,kind,window:windowName}),
+      }).then(async (response) => {
+        if (!String(response.headers.get('content-type') || '').includes('application/json')) throw new Error('Secure preview session unavailable.')
+        const body = await response.json()
+        if (!response.ok || !body?.authorized) throw new Error(body?.error || 'Owner records unavailable.')
+        if (active) {
+          cachedReads.current.set(requestKey,{time:Date.now(),value:body})
+          if (cachedReads.current.size > 25) cachedReads.current.delete(cachedReads.current.keys().next().value)
+          setData({key:requestKey,state:'ready',value:body,error:''})
+        }
+      }).catch((error) => {
+        if (active && error.name !== 'AbortError') setData({key:requestKey,state:'error',value:null,error:error.message})
+      })
+    }, 80)
+    return () => {active=false;window.clearTimeout(timer);controller.abort()}
+  }, [token,section,page,query,version,kind,windowName,requestKey])
 
   const selectAction = (operation, targetId = '') => {
     setChoice({ operation, targetId:targetId || '', reason:'' })
@@ -172,9 +232,10 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   }
 
   const renderContent = () => {
-    if (data.state === 'loading') return <div className="fv-oc-loading" role="status">Loading verified {currentLabel.toLowerCase()} data…</div>
-    if (data.state === 'error') return <Notice kind="error">{data.error} <button type="button" onClick={() => setVersion(n => n+1)}>Retry</button></Notice>
-    const v = data.value || {}
+    const shown = data.key === requestKey ? data : {state:'loading',value:null,error:''}
+    if (shown.state === 'loading') return <div className="fv-oc-loading" role="status">Loading verified {currentLabel.toLowerCase()} data…</div>
+    if (shown.state === 'error') return <Notice kind="error">{shown.error} <button type="button" onClick={() => setVersion(n => n+1)}>Retry</button></Notice>
+    const v = shown.value || {}
     if (v.availability) return <Notice kind="warning">{v.message || 'This source needs an audited backend before live access is allowed.'}</Notice>
     if (section === 'overview') {
       const o=v.overview || overview || {}
@@ -193,7 +254,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <div className="fv-oc-quick"><h3>Operate your platform</h3><div>
           {['users','live','moderation','finance','support','policy'].map(key => {
             const item=OWNER_SECTIONS.find(s=>s[0]===key)
-            return <a key={key} href={'/owner/'+key}><span>{item[2]}</span>{item[1]} <WebIcon name="arrow" size={16}/></a>
+            return <a key={key} href={'/owner/'+key} onClick={(event)=>navigate(event,key)}><span>{item[2]}</span>{item[1]} <WebIcon name="arrow" size={16}/></a>
           })}
         </div></div>
       </>
@@ -236,7 +297,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
     <aside className="fv-oc-sidebar" aria-label="Owner Command Center sections">
       <a href="/" className="fv-oc-return"><WebIcon name="home" size={17}/> Return to Fameverse Home</a>
       <span className="fv-oc-sidebar-label">OWNER OPERATIONS</span>
-      <nav>{OWNER_SECTIONS.map(([key,label,icon])=><a key={key} href={key==='overview'?'/owner':'/owner/'+key}
+      <nav>{OWNER_SECTIONS.map(([key,label,icon])=><a key={key} href={key==='overview'?'/owner':'/owner/'+key} onClick={(event)=>navigate(event,key)}
         aria-current={section===key?'page':undefined} className={section===key?'fv-oc-nav-active':''}><span aria-hidden="true">{icon}</span>{label}</a>)}</nav>
       <div className="fv-oc-sidebar-foot"><strong>Owner + approved IP</strong><span>All actions require server checks.</span></div>
     </aside>
@@ -249,9 +310,9 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
           <button type="button" onClick={onLock}>Lock</button></div>
       </div>
       {section !== 'overview' && <Notice kind="warning">Controlled preview. Data is read from existing authorized sources; all enforcement and money-changing operations are validated only, never applied to live accounts.</Notice>}
-      {(section==='users'||section==='moderation')&&<form className="fv-oc-search" onSubmit={(e)=>{e.preventDefault();setPage(0)}}>
+      {(section==='users'||section==='moderation')&&<form className="fv-oc-search" onSubmit={(e)=>{e.preventDefault();setPage(0);setQuery(searchDraft.trim())}}>
         <label htmlFor="fv-oc-user-search">Search member usernames</label>
-        <input id="fv-oc-user-search" value={query} onChange={(e)=>{setQuery(e.target.value);setPage(0)}} placeholder="Username..." />
+        <input id="fv-oc-user-search" value={searchDraft} onChange={(e)=>setSearchDraft(e.target.value)} placeholder="Username..." />
         <button type="submit">Search</button>
       </form>}
       {section==='reports'&&<div className="fv-oc-filters">
@@ -259,8 +320,12 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <label>Time window<select value={windowName} onChange={(e)=>setWindowName(e.target.value)}><option value="daily">Past 24 hours</option><option value="weekly">Past 7 days</option><option value="all_time">All-time (pending)</option></select></label>
       </div>}
       <div className="fv-oc-section-content">{renderContent()}</div>
-      {options.length>0&&!actionOpen&&<div id="fv-owner-controls"><ControlForm section={section} choice={choice} setChoice={setChoice}
-        onSubmit={submitAction} busy={actionBusy} result={actionResult}/></div>}
+      {options.length>0&&!actionOpen&&<div className="fv-oc-toolbar">
+        <button className="fv-oc-primary" type="button" onClick={()=>selectAction(options[0][0])}>
+          Review available {info[1].toLowerCase()} controls
+        </button>
+        <span>Preview validation only — no account or financial changes</span>
+      </div>}
       {actionOpen && <div className="fv-oc-modal-backdrop" onMouseDown={(event) => {if(event.target===event.currentTarget&&!actionBusy) setActionOpen(false)}}>
         <div className="fv-oc-modal" role="dialog" aria-modal="true" aria-label="Review owner control"
           onKeyDown={(event) => {if(event.key==='Escape'&&!actionBusy) setActionOpen(false)}}>
