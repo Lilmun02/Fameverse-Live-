@@ -9,6 +9,8 @@ import WebSidebar from './WebSidebar.jsx'
 import WebHero from './WebHero.jsx'
 import { WebBlackFridayBanner, WebBlackFridayPreview } from './WebBlackFriday.jsx'
 import WebCommunity from './WebCommunity.jsx'
+import WebProfilePage from './WebProfilePage.jsx'
+import WebSettingsPage from './WebSettingsPage.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -63,6 +65,9 @@ export default function WebStore() {
   const account = useAccount({ setToast })
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
+  const profileId = new URLSearchParams(window.location.search).get('profile')
+  const settingsRequested = window.location.pathname === '/settings'
+  const settingsOpen = settingsRequested && signedIn
 
   useEffect(() => {
     if (!signedIn) {
@@ -144,11 +149,11 @@ export default function WebStore() {
     return passwordRecovery(account)
   }
 
-  if (authOpen && !signedIn) {
+  if ((authOpen || settingsRequested) && !signedIn) {
     return (
       <main className="fv-web-shell">
         <WebHeader account={account} onSignIn={() => setAuthOpen(true)} />
-        <button className="fv-web-back" type="button" onClick={() => setAuthOpen(false)}>← Back to coin store</button>
+        <button className="fv-web-back" type="button" onClick={() => { if (settingsRequested) window.location.assign('/'); else setAuthOpen(false) }}>← Back to Fameverse</button>
         <AuthScreen
           authMode={account.authMode}
           setAuthMode={account.setAuthMode}
@@ -166,11 +171,12 @@ export default function WebStore() {
 
   return (
     <main className="fv-web-shell">
-      <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={setQuery} />
+      <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={!settingsOpen && !profileId ? setQuery : undefined} />
       <WebBlackFridayBanner />
       <div className="fv-platform-layout">
       <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
       <div className="fv-platform-content">
+      {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
       <WebHero />
       <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
       <WebBlackFridayPreview
@@ -240,11 +246,12 @@ export default function WebStore() {
         </div>
       </section>
 
-      <footer className="fv-web-footer">
+      </>}
+      {!settingsOpen && !profileId && <footer className="fv-web-footer">
         <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
         <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
         <small>© {new Date().getFullYear()} Fameverse Live</small>
-      </footer>
+      </footer>}
       </div>
       </div>
       {toast && <div className="fv-web-toast" role="status">{toast}</div>}

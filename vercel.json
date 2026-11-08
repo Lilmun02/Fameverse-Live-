@@ -47,6 +47,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/settings",
+      "destination": "/index.html"
+    },
+    {
       "source": "/coins",
       "destination": "/index.html"
     }
