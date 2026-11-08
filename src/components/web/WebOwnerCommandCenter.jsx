@@ -36,18 +36,23 @@ export default function WebOwnerCommandCenter({ account }) {
     setStatus(null)
     fetch('/api/owner/control', {
       method: 'POST',
-      credentials: 'omit',
+      credentials: 'same-origin',
       cache: 'no-store',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ action: 'status' }),
     }).then(async (response) => {
+      const contentType = String(response.headers.get('content-type') || '')
+      if (!contentType.includes('application/json')) {
+        throw new Error('The preview access session could not be verified. Refresh this page and sign in through Vercel if prompted.')
+      }
       const data = await response.json()
-      if (!response.ok) throw new Error(data?.error || 'Owner access unavailable')
+      if (!response.ok) throw new Error(data?.error || 'Owner verification was rejected.')
+      if (!data?.verifiedAccount) throw new Error('Owner identity verification was incomplete.')
       setStatus(data)
     }).catch((error) => {
       if (error.name !== 'AbortError') {
-        setMessage('The secure owner check could not be completed. Access remains locked.')
+        setMessage(error.message || 'The secure owner check could not be completed. Access remains locked.')
         setStatus({ unavailable: true })
       }
     })
@@ -103,7 +108,7 @@ export default function WebOwnerCommandCenter({ account }) {
     setMessage('')
     try {
       const response = await fetch('/api/owner/control', {
-        method: 'POST', credentials: 'omit', cache: 'no-store',
+        method: 'POST', credentials: 'same-origin', cache: 'no-store',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: 'summary' }),
       })
