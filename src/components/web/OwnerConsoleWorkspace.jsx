@@ -279,7 +279,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <Metric label="Creator share earned" value={money(v.summary?.creator_share_earned_cents)} />
         <Metric label="Platform share earned" value={money(v.summary?.platform_share_earned_cents)} />
       </div>}
-      {v.warnings?.length > 0 && <Notice kind="warning">{v.warnings.join(' · ')}</Notice>
+      {v.warnings?.length > 0 && <Notice kind="warning">{v.warnings.join(' · ')}</Notice>}
       {section === 'policy' && <Notice kind="warning">Active release notices are shown below. Policy acceptance history and appeal enforcement need a separate audited backend; no acceptance counts are invented.</Notice>}
       {section === 'gifts' && <Notice>Gift prices and activation are read from the existing catalog. Coin grants, cash-backed gifts and payout changes are disabled in preview.</Notice>}
       {section === 'system' && <Notice>Live release state is read-only. No CodeMagic, TestFlight, Supabase, Stripe or Vercel settings can be changed from this preview.</Notice>}
