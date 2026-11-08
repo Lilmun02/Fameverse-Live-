@@ -1,183 +1,117 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../services/supabase.js'
 import '../../styles/web/platform-owner.css'
 
-function formatMoney(cents) {
-  return Number.isFinite(Number(cents)) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(cents) / 100) : '—'
+function money(cents) {
+  if (cents === null || cents === undefined || !Number.isFinite(Number(cents))) return '—'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(cents) / 100)
 }
-function formatCoins(value) {
-  return Number.isFinite(Number(value)) ? Number(value).toLocaleString('en-US') : '—'
+function coins(value) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—'
+  return Number(value).toLocaleString('en-US')
 }
 
 export default function WebOwnerCommandCenter({ account }) {
   const userId = account.session?.user?.id || null
   const token = account.session?.access_token || null
-  const [status, setStatus] = useState(null)
-  const [busy, setBusy] = useState(false)
-  const [emailBusy, setEmailBusy] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
-  const [emailCode, setEmailCode] = useState('')
-  const [message, setMessage] = useState('')
-  const [summary, setSummary] = useState(null)
-  const [recheck, setRecheck] = useState(0)
   const owner = Boolean(userId && account.profile?.account_role === 'owner')
+  const sessionKey = userId && token ? `${userId}:${token}` : null
+  const [attempt, setAttempt] = useState(0)
+  const [result, setResult] = useState({ key: null, state: 'checking', summary: null, message: '' })
 
+  // Account sign-in and IP verification run automatically. No new code or
+  // Vercel setup form is ever shown to an authenticated owner.
   useEffect(() => {
-    setSummary(null)
-    setMessage('')
-    setEmailCode('')
-    setEmailSent(false)
-  }, [userId])
-
-  // Only call the owner API after the normal Fameverse account profile has loaded.
-  useEffect(() => {
-    if (!owner || !token) { setStatus(null); return undefined }
+    if (!owner || !token || !sessionKey) return undefined
     const controller = new AbortController()
-    setStatus(null)
+    let active = true
+    setResult({ key: sessionKey, state: 'checking', summary: null, message: '' })
+
     fetch('/api/owner/control', {
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: 'status' }),
+      body: JSON.stringify({ action: 'summary' }),
     }).then(async (response) => {
-      const contentType = String(response.headers.get('content-type') || '')
-      if (!contentType.includes('application/json')) {
-        throw new Error('The preview access session could not be verified. Refresh this page and sign in through Vercel if prompted.')
-      }
+      const type = String(response.headers.get('content-type') || '')
+      if (!type.includes('application/json')) throw new Error('The protected preview session could not be verified.')
       const data = await response.json()
-      if (!response.ok) throw new Error(data?.error || 'Owner verification was rejected.')
-      if (!data?.verifiedAccount) throw new Error('Owner identity verification was incomplete.')
-      setStatus(data)
+      if (!active) return
+      if (response.status === 403 && data?.code === 'NETWORK_DENIED') {
+        setResult({ key: sessionKey, state: 'network', summary: null, message: '' })
+      } else if (!response.ok || !data?.authorized || data?.mode !== 'read-only' || !data?.summary) {
+        setResult({ key: sessionKey, state: 'denied', summary: null, message: data?.error || 'Owner access was denied.' })
+      } else {
+        setResult({ key: sessionKey, state: 'ready', summary: data.summary, message: '' })
+      }
     }).catch((error) => {
-      if (error.name !== 'AbortError') {
-        setMessage(error.message || 'The secure owner check could not be completed. Access remains locked.')
-        setStatus({ unavailable: true })
+      if (active && error.name !== 'AbortError') {
+        setResult({ key: sessionKey, state: 'unavailable', summary: null, message: 'The secure owner check could not be completed.' })
       }
     })
-    return () => controller.abort()
-  }, [owner, token, recheck])
 
+    return () => { active = false; controller.abort() }
+  }, [owner, token, sessionKey, attempt])
+
+  // Prevent sensitive figures remaining on screen unattended. A retry requires
+  // fresh authentication and IP checks on the server.
   useEffect(() => {
-    if (!summary) return undefined
-    const expiry = window.setTimeout(() => setSummary(null), 5 * 60 * 1000)
-    const onHidden = () => { if (document.visibilityState === 'hidden') setSummary(null) }
-    document.addEventListener('visibilitychange', onHidden)
-    return () => { window.clearTimeout(expiry); document.removeEventListener('visibilitychange', onHidden) }
-  }, [summary])
-
-  const sendEmailCode = async () => {
-    // This is deliberately inaccessible until the preview server confirms
-    // that the shared email template actually sends a six-digit code.
-    if (!status?.emailOtpReady || !status?.passwordVerifiedRecently || !status?.ipApproved || emailBusy) return
-    if (!account.session?.user?.email) return
-    setEmailBusy(true)
-    setMessage('')
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: account.session.user.email,
-        options: { shouldCreateUser: false, emailRedirectTo: window.location.origin + '/owner' },
-      })
-      if (error) { setMessage('Unable to send an email code.'); return }
-      setEmailSent(true)
-      setMessage('Verification code requested for your Fameverse email.')
-    } catch {
-      setMessage('Could not send verification code.')
-    } finally { setEmailBusy(false) }
-  }
-
-  const loadSummary = async () => {
-    if (!status?.ipApproved || !status?.emailOtpReady ||
-        !status?.passwordVerifiedRecently || !/^[0-9]{6}$/.test(emailCode) ||
-        !token || busy) return
-    setBusy(true)
-    setSummary(null)
-    setMessage('')
-    try {
-      const response = await fetch('/api/owner/control', {
-        method: 'POST', credentials: 'same-origin', cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'summary', code: emailCode }),
-      })
-      const data = await response.json()
-      if (!response.ok || !data?.authorized || !data.summary) {
-        setMessage(data?.error || 'Owner verification failed; code may have expired.')
-        return
+    if (result.state !== 'ready') return undefined
+    const expiry = window.setTimeout(() => setResult(prev => ({ ...prev, state: 'locked', summary: null })), 5 * 60 * 1000)
+    const whenHidden = () => {
+      if (document.visibilityState === 'hidden') {
+        setResult(prev => ({ ...prev, state: 'locked', summary: null }))
       }
-      setEmailCode('')
-      setEmailSent(false)
-      setSummary(data.summary)
-    } catch {
-      setMessage('Unable to securely verify code. Owner data stays locked.')
-    } finally { setBusy(false) }
-  }
+    }
+    document.addEventListener('visibilitychange', whenHidden)
+    return () => { window.clearTimeout(expiry); document.removeEventListener('visibilitychange', whenHidden) }
+  }, [result.state])
 
   if (!userId) return <section className="fv-owner-denied">
     <h1>Sign in to Fameverse</h1>
-    <p>Use your existing Fameverse email and password in the account sign-in above. No new account or extra security password is required.</p>
+    <p>Use your existing Fameverse account in the sign-in menu above. No extra code or separate account is required.</p>
   </section>
-
   if (!account.profile) return <section className="fv-owner-denied" role="status">
-    <h1>Checking your account…</h1><p>Verifying your Fameverse owner permissions.</p>
+    <h1>Checking your Fameverse account…</h1>
+    <p>Verifying your account permissions.</p>
   </section>
-
   if (!owner) return <section className="fv-owner-denied" role="alert">
-    <h1>Owner access denied</h1><p>This account does not have verified Fameverse owner permissions.</p>
+    <h1>Owner account required</h1>
+    <p>This account doesn't have verified Fameverse owner permissions.</p>
     <a href="/">Return to Home</a>
   </section>
 
+  const current = result.key === sessionKey ? result : { state: 'checking', summary: null, message: '' }
   return <section className="fv-owner-page" aria-labelledby="fv-owner-title">
-    <header className="fv-owner-heading"><div>
-      <span className="fv-web-eyebrow">FAMEVERSE · WEB ONLY</span>
-      <h1 id="fv-owner-title">Owner Command Center</h1>
-      <p>Protected by your Fameverse account, email verification, and your approved IP address. No separate security code.</p>
-    </div><span className="fv-owner-readonly">OWNER ONLY</span></header>
-    {!status ? <div className="fv-owner-lock" role="status"><h2>Checking secure access…</h2><p>Verifying your account and network.</p></div> :
-    status.unavailable ? <div className="fv-owner-lock"><h2>Access unavailable</h2><p>The security check failed. Your information is protected.</p><button type="button" onClick={() => setRecheck((v) => v + 1)}>Retry verification</button></div> :
-    !status.emailOtpReady ? <div className="fv-owner-lock" role="status">
-      <h2>Owner email-code verification pending</h2>
-      <p>Your Fameverse account is recognized, but the extra email-code step is not activated yet. We disabled the previous button because it sent a regular website sign-in link.</p>
-      <p className="fv-owner-note">The email-code screen will only activate after the mail template is confirmed to send actual numeric codes. No changes were made to shared Supabase authentication.</p>
-      <h3>Network approval</h3>
-      <p>{status.ipApproved ? 'Your current network is approved.' : 'Your current network is not approved yet.'}</p>
-      {status.observedIP && <p className="fv-owner-ip"><strong>IP detected by the secure server:</strong> <code>{status.observedIP}</code></p>}
-      <p>This IP cannot approve itself. Owner access remains locked.</p>
-      <button type="button" onClick={() => setRecheck((i) => i + 1)}>Recheck owner access</button>
-    </div> :
-    !status.passwordVerifiedRecently ? <div className="fv-owner-lock">
-      <h2>Refresh your Fameverse password sign-in</h2>
-      <p>Use the existing account sign-in at the top of the page before entering an owner email code.</p>
-      <button type="button" onClick={() => setRecheck((i) => i + 1)}>Check password sign-in</button>
-    </div> :
-    !status.ipApproved ? <div className="fv-owner-lock">
-      <h2>IP approval required</h2>
-      <p>This Owner Command Center stays locked until your exact network IP is approved. The email code cannot bypass this rule.</p>
-      {status.observedIP && <p className="fv-owner-ip"><strong>IP observed by the server:</strong> <code>{status.observedIP}</code></p>}
-      <p className="fv-owner-note">Approval must happen separately; the site never approves an IP automatically.</p>
-      <button type="button" onClick={() => setRecheck((i) => i + 1)}>Check IP approval</button>
-    </div> :
-    <div className="fv-owner-lock">
-      <h2>{summary ? 'Owner dashboard' : 'Verify your email code'}</h2>
-      {!summary && <>
-        <p>Your Fameverse password sign-in and network are verified. Enter the six-digit code from your account email to open the secure dashboard.</p>
-        <button type="button" onClick={sendEmailCode} disabled={emailBusy || busy}>{emailBusy ? 'Sending…' : 'Send six-digit email code'}</button>
-        {emailSent && <form className="fv-owner-email-form" onSubmit={(event) => { event.preventDefault(); loadSummary() }}>
-          <label htmlFor="fv-owner-email-code">Six-digit email code</label>
-          <input id="fv-owner-email-code" type="text" inputMode="numeric" maxLength={6}
-            autoComplete="one-time-code" value={emailCode}
-            onChange={(e) => setEmailCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} />
-          <button type="submit" disabled={busy || emailCode.length !== 6}>{busy ? 'Verifying…' : 'Verify code and open dashboard'}</button>
-        </form>}
-      </>}
-      {summary && <div className="fv-owner-metrics">
-        <article><span>Available reward reserve</span><strong>{formatMoney(summary.reward_reserve_cents)}</strong></article>
-        <article><span>Cash-backed coins outstanding</span><strong>{formatCoins(summary.cash_backed_coins_outstanding)}</strong></article>
-        <article><span>Creator unpaid earnings</span><strong>{formatMoney(summary.creator_earnings_unpaid_cents)}</strong></article>
-        <article><span>Platform share earned</span><strong>{formatMoney(summary.platform_share_earned_cents)}</strong></article>
-        <button type="button" onClick={() => setSummary(null)}>Lock dashboard</button>
-      </div>}
+    <header className="fv-owner-heading">
+      <div><span className="fv-web-eyebrow">FAMEVERSE · WEB ONLY</span>
+        <h1 id="fv-owner-title">Owner Command Center</h1>
+        <p>Protected by your Fameverse account and one approved network IP. No additional sign-in code.</p>
+      </div>
+      <span className="fv-owner-readonly">OWNER ONLY</span>
+    </header>
+    {current.state === 'ready' && current.summary ? <>
+      <div className="fv-owner-toolbar"><span>Owner identity and IP verified. Read-only overview.</span>
+        <button type="button" onClick={() => setResult(prev => ({ ...prev, state: 'locked', summary: null }))}>Lock dashboard</button>
+      </div>
+      <div className="fv-owner-metrics">
+        <article><span>Available reward reserve</span><strong>{money(current.summary.reward_reserve_cents)}</strong></article>
+        <article><span>Cash-backed coins outstanding</span><strong>{coins(current.summary.cash_backed_coins_outstanding)}</strong></article>
+        <article><span>Creator unpaid earnings</span><strong>{money(current.summary.creator_earnings_unpaid_cents)}</strong></article>
+        <article><span>Platform share earned</span><strong>{money(current.summary.platform_share_earned_cents)}</strong></article>
+      </div>
+      <p className="fv-owner-footnote">No payouts, bans, refunds, or account changes are available in this overview.</p>
+    </> : <div className="fv-owner-lock" role="status">
+      <h2>{current.state === 'checking' ? 'Checking account and IP…' :
+        current.state === 'network' ? 'Network blocked' :
+        current.state === 'locked' ? 'Owner dashboard locked' :
+        current.state === 'denied' ? 'Access denied' : 'Access unavailable'}</h2>
+      <p>{current.state === 'checking' ? 'Verifying your existing Fameverse session and approved network.' :
+        current.state === 'network' ? 'This IP address is not approved for the Owner Command Center. No owner data was loaded.' :
+        current.state === 'locked' ? 'Your private overview is locked. Reopen it with fresh account and network checks.' :
+        current.message || 'Your owner information remains protected.'}</p>
+      {current.state !== 'checking' && <button type="button" onClick={() => setAttempt(n => n + 1)}>Retry secure access</button>}
     </div>}
-    {message && <p className="fv-owner-setup-message" role="status">{message}</p>}
   </section>
 }

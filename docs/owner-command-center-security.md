@@ -1,37 +1,19 @@
-# Fameverse Owner Command Center — preview-only access
+# Fameverse Owner Command Center — preview only
 
-Owner-requested workflow: **existing Fameverse account sign-in → fresh email verification → server-enforced approved IP**. There is no second owner security code, no hash generator, and no self-service environment-variable wizard.
+**Owner-approved workflow:** sign in with the existing Fameverse account; the server then verifies the account's confirmed email, the authoritative owner role and **exactly one approved public IP**. No security code, extra email one-time code, separate login, manual hash or setup wizard.
 
-The web-only `/owner` route is not linked from public or native navigation. Its server endpoint, `/api/owner/control`, checks authenticated Supabase JWT, `auth.users.email_confirmed_at`, the existing `public.account_roles.role = 'owner'`, an explicitly approved Vercel request IP from `x-vercel-forwarded-for`, and a fresh signed `amr` email OTP or email-link authentication method (last 10 minutes). No user metadata, browser storage, or self-reported IP is accepted for authorization.
+## Server gate
+- Vercel project environment variable `OWNER_ALLOWED_IPS` is encrypted, scoped to Preview and `feature/web-owner-command-center-gate-20261107`; currently set privately to the one address expressly supplied and approved by the owner. Never commit an address to source.
+- POST `/api/owner/control` is the **only** supported API operation. It rejects all requests without a valid IP allowlist or when the Vercel-provided `x-vercel-forwarded-for` header doesn't match, including requests without authentication. Missing or ambiguous IPs fail closed. Off-IP requests get HTTP 403 and **no data**.
+- From the approved IP, POST requires same-origin HTTPS, a valid Supabase access-token JWT authenticated by `auth.getUser(token)`, a confirmed account email, and an existing `public.account_roles.role = 'owner'` row. The server ignores browser-provided roles and user-editable metadata. No service-role credential is used.
+- Only the existing read-only `get_owner_finance_control_summary` RPC is called; its output is limited to four whitelisted fields. The API sends no-store headers. The browser locks read-only figures after five minutes or when its tab is hidden.
+- The web route `/owner` may still serve a public HTML shell (because it is a SPA). **The owner API and its sensitive data are blocked** from any unapproved IP. This is not a global Supabase-login or project-wide IP policy; it is the scoped web Owner Command Center protection.
 
-For email verification the owner selects **Send verification email**. The preview sends an email via Supabase `signInWithOtp({ options: { shouldCreateUser: false, emailRedirectTo: currentPreview + '/owner' }})`. If Supabase email template sends a magic link, the owner clicks it; if configured to send a numeric OTP, the page accepts that too. The current Supabase Auth redirect allowlist/email template may require verification for the preview origin. Check it without altering other auth emails. The backend requires a verified recent `amr` claim before any financial data returns.
+## Verification
+- Unit-test rejected IPs, missing IPs, missing allowlist, guest/invalid token, unconfirmed email, non-owner account, and allowed IP with verified owner account.
+- Check Vercel Preview build on this exact branch and test blocked API requests outside approved network. Verify live account sign-in and owner summary **from an approved IP** as final acceptance; do not call it end-to-end verified from tests alone.
+- Don't change production fameverse.app, Supabase email templates, Auth settings, database schema, native or TestFlight setup.
+- If the owner's public IP changes, access is denied until the new address is explicitly approved and the Preview environment variable is updated. Never auto-approve a new IP or enable allow-all.
 
-### Single IP approval
-
-The only owner access setting is `OWNER_ALLOWED_IPS`, an exact public IP (not a broad range). It is stored privately in Vercel **Preview only** and scoped to branch `feature/web-owner-command-center-gate-20261107`. The code does not set an IP automatically. While unset, the owner page shows `IP approval required` and the server-observed IP **only after verified Fameverse owner sign-in**; no dashboard access is granted. The owner must expressly approve that IP before the assistant can add it through Vercel. Never share it publicly, never infer it from geolocation, never default to allow-all, and never configure production.
-
-Public/human IPs can change with Wi-Fi, VPN or mobile connections, so any IP change must be re-approved through the normal owner-controlled change process. Vercel's platform-wide enterprise Trusted IPs feature is separate and is not required for protecting the owner API route. We protect the owner API at application level.
-
-No schema changes, service-role keys, payouts, refunds, bans, native app or production deployments. The owner finance RPC is read-only and independently enforces the owner role.
-
-### Acceptance testing
-
-- Verify unauthenticated/non-owner/unverified-email/unapproved-IP users cannot retrieve data.
-- Verify a password-only session cannot satisfy the email OTP step.
-- Verify actual emailed link or OTP arrives and issues `amr` suitable for server verification; do not claim until tested.
-- Verify only approved exact IP can see the owner summary.
-- Verify deployed preview /owner and /api/owner/control; no changes to fameverse.app.
-
-
-## Preview email verification blocker (2026-11-08)
-
-**Do not send a new owner magic link as if it were an email verification code.**
-The shared Supabase Magic Link email template currently delivers a sign-in link. The owner preview asked for a code it never generated, and opening the link led back to the regular Fameverse web login. Therefore the preview's owner code request control is deliberately disabled; the owner summary remains locked behind the server's fresh-email and single-IP rules.
-
-Completing a *real numeric code* requires validating the Supabase Magic Link / OTP template (use `{{ .Token }}` to include a 6-digit OTP), testing the `verifyOtp({email, token, type:'email'})` flow, and verifying session-bound server-side owner authorization. Any template edit applies to the **shared Supabase Auth project**, potentially changing production auth emails, so it is out of scope without explicit owner authorization and a carefully staged rollout. Redirect URL configuration likewise affects shared Auth. Do not modify production auth settings or ship a misleading UI as a workaround.
-
-## November 8, 2026 — server-side email code design
-
-The current draft code now handles numeric-code verification in the **Vercel owner API**, not in the browser. After a verified password sign-in and exact IP allowlist match, the owner supplies a six-digit email code. The server calls Supabase Auth `verifyOtp({ email, token: code, type: 'email' })`, verifies that the returned user ID and email match the original confirmed owner, and calls the existing read-only owner-finance RPC using the resulting Supabase session. Neither the email-code session token nor any privileged RPC data is returned unless all checks pass.
-
-The OTP send UI and the summary action remain fail-closed behind `OWNER_EMAIL_OTP_ENABLED === 'true'` on the preview deployment. That setting is **currently absent** and must not be enabled until the project's shared Auth email template is approved and confirmed to deliver actual numeric codes. The existing shared Auth template sends a magic sign-in link that can redirect to the normal Fameverse website; no shared template or production auth changes have been performed. The preview displays owner-only observed IP information during this blocker; the IP is never automatically approved.
+## Other owner credentials
+The database currently has multiple accounts carrying the owner role. This preview relies on that existing role table. Restricting the panel to just one user ID is a separate authorization decision and should not be guessed.
