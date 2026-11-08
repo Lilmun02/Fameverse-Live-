@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { configuredOwnerGate, ownerIPAllowed, recentlyPasswordSignedIn, recentlyEmailCodeVerified, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
+import { configuredOwnerGate, ownerIPAllowed, recentlyPasswordSignedIn, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
 const BACKEND_URL = 'https://lwasmvzsagowgmiqssph.supabase.co'
 const BACKEND_PUBLISHABLE_KEY = 'sb_publishable_Zukw53JQ0R_rMuxxC1eeRg_28_QavNC'
@@ -66,27 +66,12 @@ export default async function ownerControl(req, res) {
       return reply(res, 403, { error: 'Owner access denied' })
     }
 
-    // Verify both factors independently against Supabase Auth, with matching
-    // user IDs. Client-side session flags and ordinary magic links never count.
+    // The initial owner session must contain a recent password login.
+    // Separate email-code verification occurs only on the server and never
+    // returns an OTP login JWT to the browser.
     const { data: claimResult, error: claimError } = await client.auth.getClaims(token)
     const claims = !claimError && claimResult?.claims?.sub === auth.user.id ? claimResult.claims : null
-    const emailVerifiedRecently = recentlyEmailCodeVerified(claims)
-    let passwordVerifiedRecently = recentlyPasswordSignedIn(claims)
-
-    const proofToken = /^Bearer ([A-Za-z0-9._~-]+)$/.exec(
-      String(req.headers['x-owner-password-proof'] || '')
-    )?.[1]
-    if (proofToken && proofToken !== token) {
-      const [proofIdentity, proofClaims] = await Promise.all([
-        client.auth.getUser(proofToken),
-        client.auth.getClaims(proofToken),
-      ])
-      passwordVerifiedRecently = !proofIdentity.error && !proofClaims.error &&
-        proofIdentity.data?.user?.id === auth.user.id &&
-        proofIdentity.data?.user?.email === auth.user.email &&
-        proofClaims.data?.claims?.sub === auth.user.id &&
-        recentlyPasswordSignedIn(proofClaims.data.claims)
-    }
+    const passwordVerifiedRecently = recentlyPasswordSignedIn(claims)
 
     if (body.action === 'status') {
       return reply(res, 200, {
@@ -96,18 +81,42 @@ export default async function ownerControl(req, res) {
         observedIP: requestIP,
         emailOtpReady,
         passwordVerifiedRecently,
-        emailVerifiedRecently,
       })
     }
     if (!emailOtpReady) {
       return reply(res, 503, { error: 'Owner email-code verification is not activated' })
     }
-    if (!passwordVerifiedRecently || !emailVerifiedRecently) {
-      return reply(res, 403, { error: 'Fresh password and email-code verification required' })
+    if (!passwordVerifiedRecently) {
+      return reply(res, 403, { error: 'Recent Fameverse password sign-in required' })
     }
 
-    // Existing server-side RPC independently enforces auth.uid() = owner.
-    const { data, error } = await client.rpc('get_owner_finance_control_summary')
+    const code = typeof body.code === 'string' ? body.code : ''
+    if (!/^[0-9]{6}$/.test(code)) {
+      return reply(res, 400, { error: 'Six-digit email code required' })
+    }
+    const verifier = createClient(BACKEND_URL, BACKEND_PUBLISHABLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    })
+    // The code itself must be submitted to the Supabase verifier, not inferred
+    // from a new browser login or ambiguous JWT AMR method.
+    const { data: checked, error: otpError } = await verifier.auth.verifyOtp({
+      email: auth.user.email,
+      token: code,
+      type: 'email',
+    })
+    if (otpError || checked?.user?.id !== auth.user.id ||
+        checked?.user?.email !== auth.user.email ||
+        !checked?.session?.access_token) {
+      return reply(res, 403, { error: 'Invalid or expired email code' })
+    }
+
+    // The privileged summary RPC is called only with the fresh, Supabase-
+    // verified OTP session for the SAME confirmed owner identity.
+    const scopedClient = createClient(BACKEND_URL, BACKEND_PUBLISHABLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { headers: { Authorization: `Bearer ${checked.session.access_token}` } },
+    })
+    const { data, error } = await scopedClient.rpc('get_owner_finance_control_summary')
     const row = Array.isArray(data) ? data[0] : data
     if (error || !row) return reply(res, 503, { error: 'Owner summary unavailable' })
     return reply(res, 200, {

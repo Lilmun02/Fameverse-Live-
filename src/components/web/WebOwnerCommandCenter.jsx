@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../../services/supabase.js'
 import '../../styles/web/platform-owner.css'
 
@@ -17,7 +17,6 @@ export default function WebOwnerCommandCenter({ account }) {
   const [emailBusy, setEmailBusy] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailCode, setEmailCode] = useState('')
-  const passwordProof = useRef(null)
   const [message, setMessage] = useState('')
   const [summary, setSummary] = useState(null)
   const [recheck, setRecheck] = useState(0)
@@ -28,7 +27,6 @@ export default function WebOwnerCommandCenter({ account }) {
     setMessage('')
     setEmailCode('')
     setEmailSent(false)
-    passwordProof.current = null
   }, [userId])
 
   // Only call the owner API after the normal Fameverse account profile has loaded.
@@ -41,11 +39,7 @@ export default function WebOwnerCommandCenter({ account }) {
       credentials: 'same-origin',
       cache: 'no-store',
       signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(passwordProof.current ? { 'X-Owner-Password-Proof': `Bearer ${passwordProof.current}` } : {}),
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ action: 'status' }),
     }).then(async (response) => {
       const contentType = String(response.headers.get('content-type') || '')
@@ -55,7 +49,6 @@ export default function WebOwnerCommandCenter({ account }) {
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || 'Owner verification was rejected.')
       if (!data?.verifiedAccount) throw new Error('Owner identity verification was incomplete.')
-      if (data.passwordVerifiedRecently && !passwordProof.current) passwordProof.current = token
       setStatus(data)
     }).catch((error) => {
       if (error.name !== 'AbortError') {
@@ -77,7 +70,7 @@ export default function WebOwnerCommandCenter({ account }) {
   const sendEmailCode = async () => {
     // This is deliberately inaccessible until the preview server confirms
     // that the shared email template actually sends a six-digit code.
-    if (!status?.emailOtpReady || !status?.passwordVerifiedRecently || emailBusy) return
+    if (!status?.emailOtpReady || !status?.passwordVerifiedRecently || !status?.ipApproved || emailBusy) return
     if (!account.session?.user?.email) return
     setEmailBusy(true)
     setMessage('')
@@ -94,48 +87,29 @@ export default function WebOwnerCommandCenter({ account }) {
     } finally { setEmailBusy(false) }
   }
 
-  const verifyEmailCode = async (event) => {
-    event.preventDefault()
-    if (!status?.emailOtpReady || emailBusy || !/^[0-9]{6}$/.test(emailCode)) return
-    const originalId = userId
-    setEmailBusy(true)
-    setMessage('')
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: account.session.user.email, token: emailCode, type: 'email',
-      })
-      if (error || !data?.session?.access_token || data?.user?.id !== originalId) {
-        setMessage('Invalid code or account mismatch. Access remains locked.')
-        return
-      }
-      setEmailCode('')
-      setEmailSent(false)
-      setRecheck((i) => i + 1)
-    } catch {
-      setMessage('Unable to verify this code. Access remains locked.')
-    } finally { setEmailBusy(false) }
-  }
-
   const loadSummary = async () => {
-    if (!status?.ipApproved || !status?.emailVerifiedRecently || !token || busy) return
+    if (!status?.ipApproved || !status?.emailOtpReady ||
+        !status?.passwordVerifiedRecently || !/^[0-9]{6}$/.test(emailCode) ||
+        !token || busy) return
     setBusy(true)
     setSummary(null)
     setMessage('')
     try {
       const response = await fetch('/api/owner/control', {
         method: 'POST', credentials: 'same-origin', cache: 'no-store',
-        headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(passwordProof.current ? { 'X-Owner-Password-Proof': `Bearer ${passwordProof.current}` } : {}),
-      },
-        body: JSON.stringify({ action: 'summary' }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'summary', code: emailCode }),
       })
       const data = await response.json()
-      if (!response.ok || !data?.authorized) { setMessage('Owner verification expired or access denied.'); return }
+      if (!response.ok || !data?.authorized || !data.summary) {
+        setMessage(data?.error || 'Owner verification failed; code may have expired.')
+        return
+      }
+      setEmailCode('')
+      setEmailSent(false)
       setSummary(data.summary)
     } catch {
-      setMessage('Unable to load the Owner Command Center.')
+      setMessage('Unable to securely verify code. Owner data stays locked.')
     } finally { setBusy(false) }
   }
 
@@ -176,29 +150,26 @@ export default function WebOwnerCommandCenter({ account }) {
       <p>Use the existing account sign-in at the top of the page before entering an owner email code.</p>
       <button type="button" onClick={() => setRecheck((i) => i + 1)}>Check password sign-in</button>
     </div> :
-    !status.emailVerifiedRecently ? <div className="fv-owner-lock">
-      <h2>Verify your email</h2>
-      <p>Enter a six-digit code from your existing Fameverse email. This is not a new account or separate password.</p>
-      <button type="button" onClick={sendEmailCode} disabled={emailBusy}>{emailBusy ? 'Sending…' : 'Send email code'}</button>
-      {emailSent && <form className="fv-owner-email-form" onSubmit={verifyEmailCode}>
-        <label htmlFor="fv-owner-email-code">Six-digit email code</label>
-        <input id="fv-owner-email-code" type="text" inputMode="numeric" maxLength={6}
-          autoComplete="one-time-code" value={emailCode}
-          onChange={(e) => setEmailCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} />
-        <button type="submit" disabled={emailBusy || emailCode.length !== 6}>Verify email code</button>
-      </form>}
-    </div> :
     !status.ipApproved ? <div className="fv-owner-lock">
       <h2>IP approval required</h2>
-      <p>Your dashboard is locked until your network IP has been approved. A signed-in account alone cannot bypass the IP restriction.</p>
-      {status.observedIP && <p className="fv-owner-ip"><strong>IP observed by the secure server:</strong> <code>{status.observedIP}</code></p>}
-      <p className="fv-owner-note">This IP is shown only after owner sign-in. Approve it before adding it to the preview allowlist; no IP is approved automatically.</p>
-      <button type="button" onClick={() => setRecheck((v) => v + 1)}>Check IP again</button>
+      <p>This Owner Command Center stays locked until your exact network IP is approved. The email code cannot bypass this rule.</p>
+      {status.observedIP && <p className="fv-owner-ip"><strong>IP observed by the server:</strong> <code>{status.observedIP}</code></p>}
+      <p className="fv-owner-note">Approval must happen separately; the site never approves an IP automatically.</p>
+      <button type="button" onClick={() => setRecheck((i) => i + 1)}>Check IP approval</button>
     </div> :
     <div className="fv-owner-lock">
-      <h2>Email and IP verified</h2>
-      <p>Your owner account, recent email verification, and allowed IP have passed the server checks.</p>
-      {!summary && <button type="button" onClick={loadSummary} disabled={busy}>{busy ? 'Opening…' : 'Open Owner Command Center'}</button>}
+      <h2>{summary ? 'Owner dashboard' : 'Verify your email code'}</h2>
+      {!summary && <>
+        <p>Your Fameverse password sign-in and network are verified. Enter the six-digit code from your account email to open the secure dashboard.</p>
+        <button type="button" onClick={sendEmailCode} disabled={emailBusy || busy}>{emailBusy ? 'Sending…' : 'Send six-digit email code'}</button>
+        {emailSent && <form className="fv-owner-email-form" onSubmit={(event) => { event.preventDefault(); loadSummary() }}>
+          <label htmlFor="fv-owner-email-code">Six-digit email code</label>
+          <input id="fv-owner-email-code" type="text" inputMode="numeric" maxLength={6}
+            autoComplete="one-time-code" value={emailCode}
+            onChange={(e) => setEmailCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} />
+          <button type="submit" disabled={busy || emailCode.length !== 6}>{busy ? 'Verifying…' : 'Verify code and open dashboard'}</button>
+        </form>}
+      </>}
       {summary && <div className="fv-owner-metrics">
         <article><span>Available reward reserve</span><strong>{formatMoney(summary.reward_reserve_cents)}</strong></article>
         <article><span>Cash-backed coins outstanding</span><strong>{formatCoins(summary.cash_backed_coins_outstanding)}</strong></article>
