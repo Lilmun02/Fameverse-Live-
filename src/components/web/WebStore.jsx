@@ -96,7 +96,7 @@ export default function WebStore() {
   const settingsOpen = settingsRequested && signedIn
   const isDiscoverPage = window.location.pathname === '/discover'
   const isCoinsPage = window.location.pathname === '/coins'
-  const ownerRequested = window.location.pathname === '/owner'
+  const ownerRequested = window.location.pathname === '/owner' || window.location.pathname.startsWith('/owner/')
   const isHomePage = !settingsRequested && !profileId && !isDiscoverPage && !isCoinsPage && !ownerRequested
 
   useEffect(() => {

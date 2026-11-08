@@ -36,6 +36,8 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
       <nav className="fv-platform-topnav" aria-label="Main navigation">
         <a href="/" aria-current={window.location.pathname === '/' && !window.location.search ? 'page' : undefined}>Home</a>
         <a href="/discover" aria-current={window.location.pathname === '/discover' ? 'page' : undefined}>Discover</a>
+        {identity.state === 'signed-in' && account.profile?.account_role === 'owner' &&
+          <a href="/owner" className="fv-owner-nav-link" aria-current={window.location.pathname.startsWith('/owner') ? 'page' : undefined}>Owner Center</a>}
       </nav>
       {onQueryChange && <form className="fv-platform-search" role="search" onSubmit={(event) => { event.preventDefault(); window.location.assign('/discover?q=' + encodeURIComponent(query.trim())) }}>
         <WebIcon name="search" size={18} /><input aria-label="Search Fameverse members" placeholder="Search members..." value={query} onChange={(event) => onQueryChange(event.target.value)} /><kbd>↵</kbd>
@@ -57,6 +59,8 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
             <p>Coin purchases are attached to this account.</p>
             <a href={`/profile/${encodeURIComponent(account.session.user.id)}`}><WebIcon name="people" size={18} />My profile</a>
             <a href="/settings"><WebIcon name="people" size={18} />Settings</a>
+            {account.profile?.account_role === 'owner' &&
+              <a href="/owner"><WebIcon name="home" size={18} />Owner Command Center</a>}
             <button type="button" disabled={signingOut} onClick={signOut}><WebIcon name="logout" size={18} />{signingOut ? 'Signing out…' : 'Sign out'}</button>
             {signOutError && <small role="alert">{signOutError}</small>}
           </div>
