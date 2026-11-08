@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { configuredOwnerGate, ownerIPAllowed, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
-const URL = 'https://lwasmvzsagowgmiqssph.supabase.co'
-const KEY = 'sb_publishable_Zukw53JQ0R_rMuxxC1eeRg_28_QavNC'
+const SUPABASE_URL = 'https://lwasmvzsagowgmiqssph.supabase.co'
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Zukw53JQ0R_rMuxxC1eeRg_28_QavNC'
 const READ_SECTIONS = new Set(['overview','users','live','moderation','gifts','finance','funding','reports','policy','system','audit','support','badges'])
 const OPERATIONS = new Set([
   'warn','suspend','ban','permanent_ban','unban','kick_live','end_live','mute_live',
@@ -171,7 +171,7 @@ export default async function ownerConsole(req, res) {
   if (body.action === 'read' && !READ_SECTIONS.has(body.section)) return reply(res,400,{error:'Unsupported section'})
 
   try {
-    const client = createClient(URL,KEY,{
+    const client = createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
       auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
       global:{headers:{Authorization:`Bearer ${token}`}},
     })
