@@ -55,6 +55,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/profile/:id",
+      "destination": "/index.html"
+    },
+    {
       "source": "/coins",
       "destination": "/index.html"
     }

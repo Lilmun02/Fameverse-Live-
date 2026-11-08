@@ -79,13 +79,21 @@ function TickerPhrase({ sale }) {
   </span>
 }
 
+// Each equally sized sequence repeats enough content to fill even wide screens.
+// Duplicating the entire sequence makes the -50% reset match an identical frame.
+function TickerSequence({ sale }) {
+  return <span className="fv-bf-ticker-sequence" aria-hidden="true">
+    {Array.from({ length: 4 }, (_, index) => <TickerPhrase sale={sale} key={index} />)}
+  </span>
+}
+
 export function WebBlackFridayBanner() {
   const sale = useSaleClock()
   return (
     <div className="fv-bf-ticker" role="note" aria-label="Fameverse Black Friday sale runs November 7 through December 7, 2026.">
       <span className="fv-bf-ticker-badge">BLACK FRIDAY</span>
       <div className="fv-bf-ticker-window" aria-hidden="true">
-        <div className="fv-bf-ticker-track"><TickerPhrase sale={sale} /><TickerPhrase sale={sale} /></div>
+        <div className="fv-bf-ticker-track"><TickerSequence sale={sale} /><TickerSequence sale={sale} /></div>
       </div>
       <span className="fv-bf-ticker-coming">{sale.ended ? 'ENDED' : sale.before ? 'STARTING SOON' : 'LIVE NOW'}</span>
     </div>
@@ -119,7 +127,7 @@ export function WebBlackFridayPreview({ salePacks = [], signedIn = false, isPrev
               {sale.ended ? (
                 <span className="fv-bf-offer-status">SALE ENDED</span>
               ) : isPreviewHost ? (
-                <a className="fv-bf-buy" href="https://fameverse.app/coins#coin-packs">Buy on Fameverse</a>
+                <a className="fv-bf-buy" href="https://fameverse.app/coins">Buy on Fameverse</a>
               ) : (
                 <button type="button" className="fv-bf-buy" disabled={signedIn && !available || sale.before} onClick={() => signedIn ? (pack && onCheckout?.(pack)) : onSignIn?.()}>
                   {checkoutBusy === offer.packId ? 'Opening Stripe…' : !signedIn ? 'Sign in to buy' : !available ? 'Checkout unavailable' : 'Buy with Stripe'}
@@ -132,7 +140,7 @@ export function WebBlackFridayPreview({ salePacks = [], signedIn = false, isPrev
       </div>
       <div className="fv-bf-preview-foot">
         <p className="fv-bf-preview-note">Sale runs November 7–December 7, 2026, ending at 3:56 PM Eastern. The final amount due is shown in Stripe before you pay. No purchase changes the advertised number of coins.</p>
-        <a className="fv-bf-shop-current" href="/coins#coin-packs">See all coin packs</a>
+        <a className="fv-bf-shop-current" href="/coins">See all coin packs</a>
       </div>
     </section>
   )

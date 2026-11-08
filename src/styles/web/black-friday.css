@@ -35,7 +35,14 @@
   display: flex;
   align-items: center;
   width: max-content;
-  animation: fv-bf-marquee 25s linear infinite;
+  animation: fv-bf-marquee 18s linear infinite;
+  will-change: transform;
+}
+.fv-bf-ticker-sequence {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  width: max-content;
 }
 .fv-bf-ticker-phrase {
   display: inline-flex;
@@ -51,7 +58,7 @@
 .fv-bf-ticker-star { color: #f6c35c; font-size: 18px; }
 @keyframes fv-bf-marquee {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
 .fv-bf-preview {
   position: relative;

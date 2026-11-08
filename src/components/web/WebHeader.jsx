@@ -55,7 +55,7 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
             {identity.email && <span className="fv-platform-account-email">{identity.email}</span>}
             {identity.profileLoading && <small>Signed in. Your profile is still loading.</small>}
             <p>Coin purchases are attached to this account.</p>
-            <a href={`/?profile=${encodeURIComponent(account.session.user.id)}`}><WebIcon name="people" size={18} />My profile</a>
+            <a href={`/profile/${encodeURIComponent(account.session.user.id)}`}><WebIcon name="people" size={18} />My profile</a>
             <a href="/settings"><WebIcon name="people" size={18} />Settings</a>
             <button type="button" disabled={signingOut} onClick={signOut}><WebIcon name="logout" size={18} />{signingOut ? 'Signing out…' : 'Sign out'}</button>
             {signOutError && <small role="alert">{signOutError}</small>}
