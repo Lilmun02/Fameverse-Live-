@@ -11,15 +11,21 @@ This feature is **web-only**, read-only and currently intended for an isolated p
 
 No plaintext code, database service-role credential or owner IP is embedded in the browser, repository, test fixtures or preview response. API failures deny access without returning owner data. Never use user-controlled JWT user_metadata for authorization.
 
-### Setup (owner-controlled; not performed by the assistant)
+### Guided setup — private preview only
 
-Set the three `OWNER_*` variables **privately in Vercel for the intended preview branch**, not in chat. The salt must be a random value of at least 16 characters; the hash is lowercase hex of Node `scryptSync(accessCode, salt, 64)`. Use a strong unique code of at least 12 characters, and never store or commit the plaintext. Do not place the variables on production until its release is authorized.
+The preview `/owner` page now offers a three-step setup wizard once the user is signed in with an existing account whose `account_roles.role` is exactly `owner`. No login to a second account is required.
 
-If any variable is unset, malformed, or the current IP is not allowlisted, `POST /api/owner/control` returns a denied/unconfigured response and no data. `GET` is unsupported. The page is accessible only via the direct `/owner` URL, not the public or mobile navigation.
+1. Owner chooses their own unique **16–128 character** code, confirms it, and saves it in a password manager. The code is submitted over same-origin HTTPS to the preview API `POST /api/owner/control` with `action: "prepare"`. The API authenticates the Supabase JWT, re-verifies the `owner` role, checks Origin, detects the trusted Vercel IP header, and generates a random 24-byte salt and scrypt hash. **The plaintext code is never returned, persisted or logged**. The operation is denied if a valid owner gate is already configured.
+2. Wizard displays the three variables `OWNER_ALLOWED_IPS`, `OWNER_ACCESS_CODE_SALT`, and `OWNER_ACCESS_CODE_SCRYPT_HASH` with copy buttons and a link to the project's Environment Variables. Save **only** in Vercel → Settings → Environment Variables, environment **Preview**, restricted to the branch `feature/web-owner-command-center-gate-20261107`. Never send credentials to ChatGPT.
+3. Redeploy the preview branch so it picks up the newly provisioned environment variables, then refresh `/owner` and verify status. **Do not** configure or deploy Production.
+
+If the verified IP cannot be detected, preparation fails closed with an error; do not guess an IP. Changing public IP requires owner-controlled Vercel allowlist update and preview redeploy. No alternate bypass is available.
+
+No security code is active until the owner has completed the Vercel setup and preview redeploy. The dashboard remains locked by default.
 
 ### Preview behavior before setup
 
-GET /api/owner/control returns only `{ "configured": false }` until owner-controlled preview secrets are provided. The web UI displays "Owner access is not set up yet" with **no security code field**, no unnecessary sign-in prompt and no owner data. If the check fails, it stays locked. The code form appears only once GET reports the server is fully configured. Never ask the owner to invent or paste the code in chat.
+GET /api/owner/control returns only `{ "configured": false }` until owner-controlled preview secrets are provided. The web UI displays an owner-only guided setup with no operational dashboard or owner data. The security-code unlock form appears only after configuration is detected. If the check fails, it stays locked. The code form appears only once GET reports the server is fully configured. Never ask the owner to invent or paste the code in chat.
 
 ### Current functionality
 

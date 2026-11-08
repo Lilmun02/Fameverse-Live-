@@ -1,4 +1,4 @@
-import { scryptSync, timingSafeEqual } from 'node:crypto'
+import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 import { isIP } from 'node:net'
 
 // Server-only owner checks. No browser import and no authorization from user metadata.
@@ -32,4 +32,15 @@ export function ownerCodeMatches(config, code) {
   } catch {
     return false
   }
+}
+
+/**
+ * One-time setup material. Never returns the plaintext code and never persists
+ * any credential. This can only be invoked by the authenticated owner endpoint.
+ */
+export function prepareOwnerGateMaterial(code, ip) {
+  if (typeof code !== 'string' || code.length < 16 || code.length > 128 || !isIP(ip)) return null
+  const salt = randomBytes(24).toString('hex')
+  const hash = scryptSync(code, salt, 64).toString('hex')
+  return { allowedIP: ip, salt, hash }
 }
