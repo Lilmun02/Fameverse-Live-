@@ -109,19 +109,30 @@ async function fetchRead(client, section, body) {
       return { items: checked(r, 'Published notices') }
     }
     case 'reports': {
+      if (body.window === 'all_time') return {
+        availability: 'requires_isolated_backend',
+        message: 'All-time rankings need a separate verified backend query; the current ranking RPC only supports rolling 24-hour and 7-day windows.',
+      }
       const r = await client.rpc('get_fameverse_rankings_v2',{
         p_kind: body.kind === 'supporters' ? 'supporters' : 'creators',
-        p_window: ['daily','weekly','all_time'].includes(body.window) ? body.window : 'daily',
+        p_window: body.window === 'weekly' ? '7d' : '24h',
         p_limit: 20,
       })
-      return { items: checked(r, 'Rankings report') }
+      return { items: checked(r, 'Rankings report'), windowType: 'rolling' }
     }
     case 'support':
       return { availability: 'requires_isolated_backend', message: 'Support inbox needs an owner-only read policy and audited case workflow. Preview is connected to the production database; no unapproved policy changes were made.' }
     case 'audit':
       return { availability: 'requires_isolated_backend', message: 'Persistent owner audit log needs a protected case and audit table. No fabricated log entries are shown.' }
-    case 'system':
-      return { availability: 'requires_isolated_backend', message: 'Release management and system updates require an audited, separately approved backend.' }
+    case 'system': {
+      const r = await client.from('app_release_state')
+        .select('channel,backend_revision,release_label,updated_at')
+        .order('updated_at',{ascending:false}).limit(10)
+      return {
+        items: checked(r,'Release state'),
+        message: 'Current release state is read-only. Publishing or changing releases requires audited approval.',
+      }
+    }
     default: return { availability: 'unavailable' }
   }
 }

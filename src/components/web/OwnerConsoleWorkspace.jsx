@@ -54,7 +54,8 @@ function Row({ item, section, onChoose }) {
     item.status || item.category || item.update_type || item.verification_status || (id ? 'ID ' + id.slice(0, 10) : 'Fameverse')
   const amount = item.amount_cents != null ? money(item.amount_cents) :
     item.cost_coins != null ? number(item.cost_coins) + ' coins' :
-    item.coins_spent != null ? number(item.coins_spent) + ' coins' : null
+    item.coins_spent != null ? number(item.coins_spent) + ' coins' :
+    item.score != null ? 'Rank score: ' + number(item.score) : null
   const actions = ['gifts','policy'].includes(section) ? [] : (ACTIONS[section] || [])
   const targetFor = (operation) => section === 'live'
     ? (operation === 'end_live' ? item.id : (item.host_user_id || item.id))
@@ -212,7 +213,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <button type="button" disabled={page===0} onClick={()=>setPage(n=>Math.max(0,n-1))}>Previous</button>
         <button type="button" disabled={(page+1)*25>=v.total} onClick={()=>setPage(n=>n+1)}>Next</button>
       </div>}
-      {section === 'reports' && items.length > 0 && <Notice>Ranking totals come from the current Fameverse ranking function. Check the configured reset window before publishing reports.</Notice>}
+      {section === 'reports' && items.length > 0 && <Notice>This is a rolling 24-hour or 7-day report, not the planned UTC calendar-reset leaderboard. All-time rankings still need backend integration.</Notice>}
     </>
   }
 
@@ -240,7 +241,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       </form>}
       {section==='reports'&&<div className="fv-oc-filters">
         <label>Ranking type<select value={kind} onChange={(e)=>setKind(e.target.value)}><option value="creators">Creators</option><option value="supporters">Supporters</option></select></label>
-        <label>Time window<select value={windowName} onChange={(e)=>setWindowName(e.target.value)}><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="all_time">All-time</option></select></label>
+        <label>Time window<select value={windowName} onChange={(e)=>setWindowName(e.target.value)}><option value="daily">Past 24 hours</option><option value="weekly">Past 7 days</option><option value="all_time">All-time (pending)</option></select></label>
       </div>}
       <div className="fv-oc-section-content">{renderContent()}</div>
       {options.length>0&&<div id="fv-owner-controls"><ControlForm section={section} choice={choice} setChoice={setChoice}
