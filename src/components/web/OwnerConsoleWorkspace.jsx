@@ -55,10 +55,11 @@ function Row({ item, section, onChoose }) {
   const amount = item.amount_cents != null ? money(item.amount_cents) :
     item.cost_coins != null ? number(item.cost_coins) + ' coins' :
     item.coins_spent != null ? number(item.coins_spent) + ' coins' : null
-  const actions = ACTIONS[section] || []
-  const target = section === 'live' ? (item.host_user_id || item.id) :
-    section === 'finance' ? (item.payout_id || item.id) :
-    section === 'badges' ? item.user_id : id
+  const actions = ['gifts','policy'].includes(section) ? [] : (ACTIONS[section] || [])
+  const targetFor = (operation) => section === 'live'
+    ? (operation === 'end_live' ? item.id : (item.host_user_id || item.id))
+    : section === 'finance' ? (item.payout_id || item.id)
+    : section === 'badges' ? item.user_id : id
   return <article className="fv-oc-record">
     <div className="fv-oc-record-copy"><strong>{label}</strong><span>{sub}</span>
       {amount && <small>{amount}</small>}
@@ -67,8 +68,8 @@ function Row({ item, section, onChoose }) {
     </div>
     {actions.length > 0 && <div className="fv-oc-row-actions">
       {actions.slice(0, section === 'moderation' ? 4 : section === 'users' ? 3 : 2).map(([key,name]) =>
-        <button key={key} type="button" onClick={() => onChoose(key,target)}>{name}</button>)}
-      {actions.length > 2 && <button type="button" onClick={() => onChoose(actions[0][0],target)}>
+        <button key={key} type="button" onClick={() => onChoose(key,targetFor(key))}>{name}</button>)}
+      {actions.length > 2 && <button type="button" onClick={() => onChoose(actions[0][0],targetFor(actions[0][0]))}>
         More controls <WebIcon name="arrow" size={15} /></button>}
     </div>}
   </article>
@@ -175,7 +176,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       const o=v.overview || overview || {}
       return <>
         <div className="fv-oc-metrics">
-          <Metric label="Registered accounts" value={number(v.users)} />
+          <Metric label="Public profiles" value={number(v.users)} />
           <Metric label="Live right now" value={number(v.live)} />
           <Metric label="Reward reserve" value={money(o.reward_reserve_cents)} />
           <Metric label="Unpaid creator earnings" value={money(o.creator_earnings_unpaid_cents)} />
