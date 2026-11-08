@@ -197,7 +197,7 @@ export default function WebStore() {
     return <main className="fv-web-shell"><WebHeader account={account} onSignIn={() => setAuthOpen(true)} /><div className="fv-web-loading">Opening Fameverse…</div></main>
   }
 
-  if (window.location.pathname === '/reset-password' && account.recoveryMode) {
+  if (window.location.pathname === '/reset-password') {
     return passwordRecovery(account)
   }
 
