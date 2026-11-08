@@ -91,6 +91,20 @@ export default function WebStore() {
   const settingsRequested = window.location.pathname === '/settings'
   const settingsOpen = settingsRequested && signedIn
 
+  // Browser fragment navigation can occur before the React shell mounts.
+  // Restore the promised destination once the page actually exists.
+  useEffect(() => {
+    if (!account.authReady || settingsRequested || profileId || authOpen) return undefined
+    const fragment = window.location.hash.slice(1)
+    const sectionId = fragment === 'discover-creators' || fragment === 'coin-packs'
+      ? fragment : window.location.pathname === '/coins' ? 'coin-packs' : null
+    if (!sectionId) return undefined
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [account.authReady, settingsRequested, profileId, authOpen])
+
   useEffect(() => {
     if (!signedIn) {
       setStripeConfig(null)
