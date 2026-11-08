@@ -44,7 +44,7 @@ describe('owner access endpoint locked by default', () => {
       const response = mockResponse()
       await ownerHandler({
         method: 'POST',
-        headers: { host: 'example.test', origin: 'https://example.test', 'x-vercel-forwarded-for': '203.0.113.8' },
+        headers: { host: 'example.test', origin: 'https://example.test', 'x-vercel-forwarded-for': '203.0.113.8', authorization: 'Bearer fake.valid.token' },
         body: { action: 'summary', code: 'strong-test-code-0123' },
       }, response)
       expect(response.statusCode).toBe(503)
