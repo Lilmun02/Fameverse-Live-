@@ -85,3 +85,6 @@
 .fv-oc-record .fv-oc-row-actions button {padding:8px 10px;font-size:12px;min-height:38px;white-space:normal;text-align:center}
 .fv-oc-record .fv-oc-row-actions button:hover {background:#9d56cf}
 @media(max-width:580px){.fv-oc-row-actions{justify-content:flex-start;width:100%}}
+
+.fv-oc-profile-link {font-size:13px;color:#ddb6ff;text-decoration:underline;text-underline-offset:3px}
+.fv-oc-profile-link:hover {color:#fff}

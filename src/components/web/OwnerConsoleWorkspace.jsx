@@ -63,6 +63,8 @@ function Row({ item, section, onChoose }) {
     : section === 'badges' ? item.user_id : id
   return <article className="fv-oc-record">
     <div className="fv-oc-record-copy"><strong>{label}</strong><span>{sub}</span>
+      {section === 'users' && item.id && <a className="fv-oc-profile-link" href={'/profile/' + encodeURIComponent(item.id)}>Open member profile</a>}
+      {item.rank_position != null && <small>Rank #{item.rank_position}</small>}
       {amount && <small>{amount}</small>}
       {item.requested_at && <small>Requested: {new Date(item.requested_at).toLocaleDateString()}</small>}
       {item.started_at && <small>Started: {new Date(item.started_at).toLocaleString()}</small>}
@@ -206,6 +208,15 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
     }
     const items=Array.isArray(v.items) ? v.items : []
     return <>
+      {section === 'finance' && <div className="fv-oc-metrics">
+        <Metric label="Unpaid creator earnings" value={money(overview?.creator_earnings_unpaid_cents)} />
+        <Metric label="Payouts pending review" value={money(overview?.creator_payouts_in_review_cents)} />
+        <Metric label="Creator share earned" value={money(overview?.creator_share_earned_cents)} />
+        <Metric label="Platform share earned" value={money(overview?.platform_share_earned_cents)} />
+      </div>}
+      {section === 'policy' && <Notice kind="warning">Active release notices are shown below. Policy acceptance history and appeal enforcement need a separate audited backend; no acceptance counts are invented.</Notice>}
+      {section === 'gifts' && <Notice>Gift prices and activation are read from the existing catalog. Coin grants, cash-backed gifts and payout changes are disabled in preview.</Notice>}
+      {section === 'system' && <Notice>Live release state is read-only. No CodeMagic, TestFlight, Supabase, Stripe or Vercel settings can be changed from this preview.</Notice>}
       {items.length === 0 ? <Notice>No records are available to your current authorized view. This is not proof that there are no records elsewhere.</Notice> :
         <div className="fv-oc-records">{items.map((item,i)=><Row key={item.id || item.user_id || item.payout_id || i} item={item} section={section} onChoose={selectAction}/>)}</div>}
       {v.total != null && <div className="fv-oc-pagination">
