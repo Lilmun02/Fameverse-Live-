@@ -24,6 +24,6 @@ describe('Vercel-authenticated preview owner API requests', () => {
     expect(server).toContain('auth.user.email_confirmed_at')
     expect(server).toContain("role?.role !== 'owner'")
     expect(server).toContain('ownerIPAllowed(gate, requestIP)')
-    expect(server).toContain('recentlyEmailCodeVerified(claims)')
+    expect(server).toContain('recentlyPasswordSignedIn(claims)')
   })
 })
