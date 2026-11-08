@@ -44,9 +44,10 @@ describe('Owner Command Center sign-in / verified email / IP gate', () => {
   it('supports email verification in web preview and has no security-code setup wizard', () => {
     expect(routes.rewrites).toContainEqual({source:'/owner',destination:'/index.html'})
     expect(store).toContain('<WebOwnerCommandCenter account={account} />')
-    expect(ownerPage).toContain('supabase.auth.signInWithOtp')
-    expect(ownerPage).toContain('supabase.auth.verifyOtp')
-    expect(ownerPage).toContain('shouldCreateUser: false')
+    expect(ownerPage).not.toContain('supabase.auth.signInWithOtp')
+    expect(ownerPage).not.toContain('supabase.auth.verifyOtp')
+    expect(ownerPage).toContain('Email-code verification is not set up yet')
+    expect(ownerPage).toContain('disabled it rather than keep sending the wrong email')
     expect(ownerPage).toContain('IP approval required')
     expect(ownerPage).not.toContain('OWNER_ACCESS_CODE_')
     expect(ownerPage).not.toContain('Prepare secure setup')

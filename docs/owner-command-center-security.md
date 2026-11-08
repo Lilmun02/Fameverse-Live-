@@ -21,3 +21,11 @@ No schema changes, service-role keys, payouts, refunds, bans, native app or prod
 - Verify actual emailed link or OTP arrives and issues `amr` suitable for server verification; do not claim until tested.
 - Verify only approved exact IP can see the owner summary.
 - Verify deployed preview /owner and /api/owner/control; no changes to fameverse.app.
+
+
+## Preview email verification blocker (2026-11-08)
+
+**Do not send a new owner magic link as if it were an email verification code.**
+The shared Supabase Magic Link email template currently delivers a sign-in link. The owner preview asked for a code it never generated, and opening the link led back to the regular Fameverse web login. Therefore the preview's owner code request control is deliberately disabled; the owner summary remains locked behind the server's fresh-email and single-IP rules.
+
+Completing a *real numeric code* requires validating the Supabase Magic Link / OTP template (use `{{ .Token }}` to include a 6-digit OTP), testing the `verifyOtp({email, token, type:'email'})` flow, and verifying session-bound server-side owner authorization. Any template edit applies to the **shared Supabase Auth project**, potentially changing production auth emails, so it is out of scope without explicit owner authorization and a carefully staged rollout. Redirect URL configuration likewise affects shared Auth. Do not modify production auth settings or ship a misleading UI as a workaround.

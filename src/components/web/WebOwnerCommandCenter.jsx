@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../services/supabase.js'
 import '../../styles/web/platform-owner.css'
 
 function formatMoney(cents) {
@@ -14,9 +13,6 @@ export default function WebOwnerCommandCenter({ account }) {
   const token = account.session?.access_token || null
   const [status, setStatus] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [emailBusy, setEmailBusy] = useState(false)
-  const [code, setCode] = useState('')
-  const [emailSent, setEmailSent] = useState(false)
   const [message, setMessage] = useState('')
   const [summary, setSummary] = useState(null)
   const [recheck, setRecheck] = useState(0)
@@ -24,8 +20,6 @@ export default function WebOwnerCommandCenter({ account }) {
 
   useEffect(() => {
     setSummary(null)
-    setEmailSent(false)
-    setCode('')
     setMessage('')
   }, [userId])
 
@@ -66,40 +60,6 @@ export default function WebOwnerCommandCenter({ account }) {
     document.addEventListener('visibilitychange', onHidden)
     return () => { window.clearTimeout(expiry); document.removeEventListener('visibilitychange', onHidden) }
   }, [summary])
-
-  const sendEmailVerification = async () => {
-    if (!status?.verifiedAccount || !account.session?.user?.email || emailBusy) return
-    setEmailBusy(true)
-    setMessage('')
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: account.session.user.email,
-        options: { shouldCreateUser: false, emailRedirectTo: window.location.origin + '/owner' },
-      })
-      if (error) { setMessage('Verification email could not be sent. Check your email settings or try again later.'); return }
-      setEmailSent(true)
-      setMessage('Check your account email. Follow its one-time sign-in link, or enter the code if your email contains one.')
-    } catch {
-      setMessage('Could not request email verification. Please try again.')
-    } finally { setEmailBusy(false) }
-  }
-
-  const verifyEmailCode = async (event) => {
-    event.preventDefault()
-    if (!/^\d{6,8}$/.test(code) || emailBusy || !account.session?.user?.email) return
-    setEmailBusy(true)
-    setMessage('')
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: account.session.user.email, token: code, type: 'email',
-      })
-      if (error) { setMessage('Invalid or expired email code. Request a new verification email.'); return }
-      setCode('')
-      setRecheck((v) => v + 1)
-    } catch {
-      setMessage('Email verification failed. Please try again.')
-    } finally { setEmailBusy(false) }
-  }
 
   const loadSummary = async () => {
     if (!status?.ipApproved || !status?.emailVerifiedRecently || !token || busy) return
@@ -142,18 +102,12 @@ export default function WebOwnerCommandCenter({ account }) {
     </div><span className="fv-owner-readonly">OWNER ONLY</span></header>
     {!status ? <div className="fv-owner-lock" role="status"><h2>Checking secure access…</h2><p>Verifying your account and network.</p></div> :
     status.unavailable ? <div className="fv-owner-lock"><h2>Access unavailable</h2><p>The security check failed. Your information is protected.</p><button type="button" onClick={() => setRecheck((v) => v + 1)}>Retry verification</button></div> :
-    !status.emailVerifiedRecently ? <div className="fv-owner-lock">
-      <h2>Verify your email</h2>
-      <p>We'll send a one-time verification message to the email on your signed-in Fameverse owner account. The code or link is only valid for a short period.</p>
-      <button type="button" onClick={sendEmailVerification} disabled={emailBusy}>{emailBusy ? 'Sending…' : 'Send verification email'}</button>
-      {emailSent && <form onSubmit={verifyEmailCode} className="fv-owner-email-form">
-        <label htmlFor="fv-owner-email-otp">Email verification code (if provided)</label>
-        <input id="fv-owner-email-otp" inputMode="numeric" autoComplete="one-time-code" value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="6-digit code" />
-        <button type="submit" disabled={emailBusy || code.length < 6}>Verify email code</button>
-        <p>If you received a verification link instead, open it to return here.</p>
-      </form>}
-      <button type="button" className="fv-owner-text-button" onClick={() => setRecheck((v) => v + 1)}>Check verification status</button>
+    !status.emailVerifiedRecently ? <div className="fv-owner-lock" role="status">
+      <h2>Email-code verification is not set up yet</h2>
+      <p>Your Fameverse account may already have a confirmed email, but the extra owner verification needs a real one-time code.</p>
+      <p>The previous button sent a Supabase magic sign-in link. That link redirected to the regular Fameverse website instead of completing verification on this preview, so we've disabled it rather than keep sending the wrong email.</p>
+      <p className="fv-owner-note">The shared Supabase email template must be configured to provide a numeric code, then the code login and server verification must be tested. Until then, owner-only data stays locked.</p>
+      <button type="button" onClick={() => setRecheck((v) => v + 1)}>Recheck owner verification</button>
     </div> :
     !status.ipApproved ? <div className="fv-owner-lock">
       <h2>IP approval required</h2>
