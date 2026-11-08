@@ -132,7 +132,7 @@ export function WebBlackFridayPreview({ salePacks = [], signedIn = false, isPrev
       </div>
       <div className="fv-bf-preview-foot">
         <p className="fv-bf-preview-note">Sale runs November 7–December 7, 2026, ending at 3:56 PM Eastern. The final amount due is shown in Stripe before you pay. No purchase changes the advertised number of coins.</p>
-        <a className="fv-bf-shop-current" href="#coin-packs">See all coin packs</a>
+        <a className="fv-bf-shop-current" href="/coins#coin-packs">See all coin packs</a>
       </div>
     </section>
   )

@@ -5,12 +5,12 @@ import { supabase } from '../../services/supabase.js'
 import '../../styles/web/store.css'
 import '../../styles/web/platform.css'
 import WebHeader from './WebHeader.jsx'
-import WebSidebar from './WebSidebar.jsx'
 import WebHero from './WebHero.jsx'
 import { WebBlackFridayBanner, WebBlackFridayPreview } from './WebBlackFriday.jsx'
 import WebCommunity from './WebCommunity.jsx'
 import WebProfilePage from './WebProfilePage.jsx'
 import WebSettingsPage from './WebSettingsPage.jsx'
+import WebSupportMessenger from './WebSupportMessenger.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -83,13 +83,28 @@ export default function WebStore() {
   const [stripeConfig, setStripeConfig] = useState(null)
   const [configBusy, setConfigBusy] = useState(false)
   const [configMessage, setConfigMessage] = useState('')
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') || '')
   const account = useAccount({ setToast })
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
   const profileId = new URLSearchParams(window.location.search).get('profile')
   const settingsRequested = window.location.pathname === '/settings'
   const settingsOpen = settingsRequested && signedIn
+  const isDiscoverPage = window.location.pathname === '/discover'
+  const isCoinsPage = window.location.pathname === '/coins'
+  const isHomePage = !settingsRequested && !profileId && !isDiscoverPage && !isCoinsPage
+
+  useEffect(() => {
+    document.documentElement.classList.add('fv-web-mode')
+    return () => document.documentElement.classList.remove('fv-web-mode')
+  }, [])
+
+  // Keep old discovery bookmarks working while giving Discover its own page.
+  useEffect(() => {
+    if (window.location.pathname === '/' && window.location.hash === '#discover-creators') {
+      window.location.replace('/discover')
+    }
+  }, [])
 
   // Browser fragment navigation can occur before the React shell mounts.
   // Restore the promised destination once the page actually exists.
@@ -207,25 +222,18 @@ export default function WebStore() {
 
   return (
     <main className="fv-web-shell">
-      <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={!settingsOpen && !profileId ? setQuery : undefined} />
-      <WebBlackFridayBanner />
+      <WebHeader account={account} onSignIn={() => setAuthOpen(true)} query={query} onQueryChange={isDiscoverPage ? setQuery : undefined} />
+      {isHomePage && <WebBlackFridayBanner />}
       <div className="fv-platform-layout">
-      <WebSidebar signedIn={signedIn} onSignIn={() => setAuthOpen(true)} />
-      <div className="fv-platform-content">
-      {settingsOpen ? <WebSettingsPage account={account} /> : profileId ? <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/#discover-creators')} /> : <>
-      <WebHero />
-      <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
-      <WebBlackFridayPreview
-        salePacks={stripeConfig?.packs ?? []}
-        signedIn={signedIn}
-        isPreviewHost={isPreviewHost}
-        checkoutEnabled={Boolean(stripeConfig?.checkout_enabled)}
-        checkoutBusy={checkoutBusy}
-        configBusy={configBusy}
-        onCheckout={startCheckout}
-        onSignIn={() => setAuthOpen(true)}
-      />
-
+        <div className="fv-platform-content">
+          {settingsOpen ? (
+            <WebSettingsPage account={account} />
+          ) : profileId ? (
+            <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/discover')} />
+          ) : isDiscoverPage ? (
+            <WebCommunity userId={signedIn ? account.session.user.id : null} query={query} onSignIn={() => setAuthOpen(true)} />
+          ) : isCoinsPage ? (
+            <>
       <section className="fv-web-store-section" id="coin-packs">
         <div className="fv-web-section-heading">
           <div>
@@ -281,15 +289,34 @@ export default function WebStore() {
           <p>Payments are processed by Stripe. Fame Coins are credited to your account after Fameverse verifies the payment. Never share your password or payment details in chat.</p>
         </div>
       </section>
-
-      </>}
-      {!settingsOpen && !profileId && <footer className="fv-web-footer">
-        <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
-        <div><a href="/reset-password">Password reset</a><span>Support is available in your account.</span></div>
-        <small>© {new Date().getFullYear()} Fameverse Live</small>
-      </footer>}
+            </>
+          ) : (
+            <>
+              <WebHero />
+              <WebBlackFridayPreview
+                salePacks={stripeConfig?.packs ?? []}
+                signedIn={signedIn}
+                isPreviewHost={isPreviewHost}
+                checkoutEnabled={Boolean(stripeConfig?.checkout_enabled)}
+                checkoutBusy={checkoutBusy}
+                configBusy={configBusy}
+                onCheckout={startCheckout}
+                onSignIn={() => setAuthOpen(true)}
+              />
+              {configBusy && <p className="fv-web-inline-message" role="status">Loading available Black Friday offers…</p>}
+              {configMessage && <p className="fv-web-inline-message fv-web-inline-error" role="status">{configMessage}</p>}
+            </>
+          )}
+          {!settingsOpen && !profileId && (
+            <footer className="fv-web-footer">
+              <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
+              <div><a href="/reset-password">Password reset</a><span>Use the message icon for support.</span></div>
+              <small>© {new Date().getFullYear()} Fameverse Live</small>
+            </footer>
+          )}
+        </div>
       </div>
-      </div>
+      <WebSupportMessenger userId={account.session?.user?.id || null} onSignIn={() => setAuthOpen(true)} />
       {toast && <div className="fv-web-toast" role="status">{toast}</div>}
     </main>
   )
