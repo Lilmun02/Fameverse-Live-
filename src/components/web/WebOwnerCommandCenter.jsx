@@ -22,7 +22,17 @@ export default function WebOwnerCommandCenter({ account }) {
     setCode('')
     setSummary(null)
     setNotice('')
-  }, [account.session?.user?.id])
+  }, [account.session?.user?.id, account.session?.access_token])
+
+  // Short-lived read-only display: close it when the tab is hidden or the user
+  // leaves the machine unattended. Any later access must pass all checks again.
+  useEffect(() => {
+    if (!summary) return undefined
+    const expiry = window.setTimeout(() => setSummary(null), 5 * 60 * 1000)
+    const lockWhenHidden = () => { if (document.visibilityState === 'hidden') setSummary(null) }
+    document.addEventListener('visibilitychange', lockWhenHidden)
+    return () => { window.clearTimeout(expiry); document.removeEventListener('visibilitychange', lockWhenHidden) }
+  }, [summary])
 
   if (!owner) return <section className="fv-owner-denied" role="alert">
     <span className="fv-web-eyebrow">RESTRICTED WEB AREA</span>
