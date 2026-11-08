@@ -65,9 +65,12 @@ function Row({ item, section, onChoose }) {
       {item.requested_at && <small>Requested: {new Date(item.requested_at).toLocaleDateString()}</small>}
       {item.started_at && <small>Started: {new Date(item.started_at).toLocaleString()}</small>}
     </div>
-    {actions.length > 0 && <button type="button" onClick={() => onChoose(actions[0][0],target)}>
-      Review controls <WebIcon name="arrow" size={15} />
-    </button>}
+    {actions.length > 0 && <div className="fv-oc-row-actions">
+      {actions.slice(0, section === 'moderation' ? 4 : section === 'users' ? 3 : 2).map(([key,name]) =>
+        <button key={key} type="button" onClick={() => onChoose(key,target)}>{name}</button>)}
+      {actions.length > 2 && <button type="button" onClick={() => onChoose(actions[0][0],target)}>
+        More controls <WebIcon name="arrow" size={15} /></button>}
+    </div>}
   </article>
 }
 

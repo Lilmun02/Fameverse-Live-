@@ -80,3 +80,8 @@
   .fv-oc-search input {min-width:0;width:100%}
   .fv-owner-page.fv-owner-full {padding-top:17px}
 }
+
+.fv-oc-row-actions {display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px}
+.fv-oc-record .fv-oc-row-actions button {padding:8px 10px;font-size:12px;min-height:38px;white-space:normal;text-align:center}
+.fv-oc-record .fv-oc-row-actions button:hover {background:#9d56cf}
+@media(max-width:580px){.fv-oc-row-actions{justify-content:flex-start;width:100%}}
