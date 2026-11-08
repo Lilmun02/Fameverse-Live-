@@ -38,7 +38,7 @@ describe('Owner Command Center secure preview gate', () => {
   })
   it('protects server summary with account role, server code, IP and user JWT', () => {
     expect(server).toContain('configuredOwnerGate()')
-    expect(server).toContain('ownerIPAllowed(gate, trustedRequestIP(req.headers))')
+    expect(server).toContain('ownerIPAllowed(gate, sourceIP)')
     expect(server).toContain("client.auth.getUser(token)")
     expect(server).toContain("accountRole?.role !== 'owner'")
     expect(server).toContain('ownerCodeMatches(gate, body.code)')
