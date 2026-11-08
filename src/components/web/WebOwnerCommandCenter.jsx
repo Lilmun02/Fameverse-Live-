@@ -24,7 +24,7 @@ export default function WebOwnerCommandCenter({ account }) {
       cache: 'no-store',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: 'summary' }),
+      body: JSON.stringify({ action: 'access' }),
     }).then(async (response) => {
       const type = String(response.headers.get('content-type') || '')
       if (!type.includes('application/json')) throw new Error('The protected preview session could not be verified.')
@@ -32,10 +32,10 @@ export default function WebOwnerCommandCenter({ account }) {
       if (!active) return
       if (response.status === 403 && data?.code === 'NETWORK_DENIED') {
         setResult({ key: sessionKey, state: 'network', summary: null, message: '' })
-      } else if (!response.ok || !data?.authorized || data?.mode !== 'read-only' || !data?.summary) {
+      } else if (!response.ok || !data?.authorized || data?.mode !== 'owner-access') {
         setResult({ key: sessionKey, state: 'denied', summary: null, message: data?.error || 'Owner access was denied.' })
       } else {
-        setResult({ key: sessionKey, state: 'ready', summary: data.summary, message: '' })
+        setResult({ key: sessionKey, state: 'ready', summary: null, message: '' })
       }
     }).catch((error) => {
       if (active && error.name !== 'AbortError') {
@@ -83,7 +83,7 @@ export default function WebOwnerCommandCenter({ account }) {
       </div>
       <span className="fv-owner-readonly">OWNER ONLY</span>
     </header>
-    {current.state === 'ready' && current.summary ?
+    {current.state === 'ready' ?
       <OwnerConsoleWorkspace token={token} overview={current.summary}
         onLock={() => setResult(prev => ({...prev,state:'locked',summary:null}))} />
      : <div className="fv-owner-lock" role="status">

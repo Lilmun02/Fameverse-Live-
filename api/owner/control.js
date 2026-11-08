@@ -31,7 +31,9 @@ export default async function ownerControl(req, res) {
     return reply(res, 405, { error: 'Method not allowed' })
   }
   const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {}
-  if (body.action !== 'summary') return reply(res, 400, { error: 'Unsupported owner action' })
+  if (body.action !== 'summary' && body.action !== 'access') {
+    return reply(res, 400, { error: 'Unsupported owner action' })
+  }
 
   let origin
   try { origin = new URL(String(req.headers.origin || '')) }
@@ -60,6 +62,12 @@ export default async function ownerControl(req, res) {
       .select('role').eq('user_id', auth.user.id).maybeSingle()
     if (roleError || role?.role !== 'owner') {
       return reply(res, 403, { error: 'Owner account required' })
+    }
+
+    // Access must not depend on financial RPC availability; management and
+    // moderation pages can still load if the finance summary is unavailable.
+    if (body.action === 'access') {
+      return reply(res, 200, { authorized: true, mode: 'owner-access' })
     }
 
     // Existing read-only RPC also independently enforces the owner role.
