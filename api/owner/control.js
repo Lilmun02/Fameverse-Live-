@@ -18,8 +18,13 @@ function reply(res, status, payload) {
 }
 
 export default async function ownerControl(req, res) {
+  // Public readiness is the only information returned by GET.
+  // Never ask anyone for an access code until owner-controlled setup exists.
+  if (req.method === 'GET') {
+    return reply(res, 200, { configured: Boolean(configuredOwnerGate()) })
+  }
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
+    res.setHeader('Allow', 'GET, POST')
     return reply(res, 405, { error: 'Method not allowed' })
   }
 

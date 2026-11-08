@@ -17,6 +17,10 @@ Set the three `OWNER_*` variables **privately in Vercel for the intended preview
 
 If any variable is unset, malformed, or the current IP is not allowlisted, `POST /api/owner/control` returns a denied/unconfigured response and no data. `GET` is unsupported. The page is accessible only via the direct `/owner` URL, not the public or mobile navigation.
 
+### Preview behavior before setup
+
+GET /api/owner/control returns only `{ "configured": false }` until owner-controlled preview secrets are provided. The web UI displays "Owner access is not set up yet" with **no security code field**, no unnecessary sign-in prompt and no owner data. If the check fails, it stays locked. The code form appears only once GET reports the server is fully configured. Never ask the owner to invent or paste the code in chat.
+
 ### Current functionality
 
 After the complete gate succeeds, the API uses the caller's JWT and the preexisting `get_owner_finance_control_summary` Supabase RPC. It returns a whitelist of read-only fields. The RPC itself independently enforces `owner` role authorization. There are no payouts, refunds, bans, coin grants, role edits or moderation actions in this feature.

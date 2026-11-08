@@ -16,6 +16,7 @@ export default function WebOwnerCommandCenter({ account }) {
   const [busy, setBusy] = useState(false)
   const [summary, setSummary] = useState(null)
   const [notice, setNotice] = useState('')
+  const [gateStatus, setGateStatus] = useState('checking')
   const owner = account.session?.user?.id && account.profile?.account_role === 'owner'
 
   useEffect(() => {
@@ -23,6 +24,26 @@ export default function WebOwnerCommandCenter({ account }) {
     setSummary(null)
     setNotice('')
   }, [account.session?.user?.id, account.session?.access_token])
+
+  // Query only whether the server is configured. No credentials, code or
+  // privileged data are requested. If unavailable, never display a code form.
+  useEffect(() => {
+    const controller = new AbortController()
+    setGateStatus('checking')
+    fetch('/api/owner/control', {
+      method: 'GET',
+      credentials: 'omit',
+      cache: 'no-store',
+      signal: controller.signal,
+    }).then(async (response) => {
+      if (!response.ok) throw new Error('Owner configuration status unavailable')
+      const result = await response.json()
+      setGateStatus(result.configured === true ? 'ready' : 'unconfigured')
+    }).catch((error) => {
+      if (error.name !== 'AbortError') setGateStatus('unavailable')
+    })
+    return () => controller.abort()
+  }, [])
 
   // Short-lived read-only display: close it when the tab is hidden or the user
   // leaves the machine unattended. Any later access must pass all checks again.
@@ -33,6 +54,17 @@ export default function WebOwnerCommandCenter({ account }) {
     document.addEventListener('visibilitychange', lockWhenHidden)
     return () => { window.clearTimeout(expiry); document.removeEventListener('visibilitychange', lockWhenHidden) }
   }, [summary])
+
+  if (gateStatus !== 'ready') return <section className="fv-owner-denied" role="status">
+    <span className="fv-web-eyebrow">OWNER COMMAND CENTER · PREVIEW</span>
+    <h1>{gateStatus === 'checking' ? 'Checking setup…' : 'Owner access is not set up yet'}</h1>
+    <p>{gateStatus === 'checking'
+      ? 'Checking whether the private owner security settings have been configured.'
+      : gateStatus === 'unconfigured'
+        ? 'No owner security code or approved IP list has been configured. This preview is locked, and you do not need to enter a code or sign in to an unfinished dashboard.'
+        : 'The owner access setup could not be checked. To keep your information safe, this preview remains locked.'}</p>
+    <a href="/">Return to Home</a>
+  </section>
 
   if (!owner) return <section className="fv-owner-denied" role="alert">
     <span className="fv-web-eyebrow">RESTRICTED WEB AREA</span>
