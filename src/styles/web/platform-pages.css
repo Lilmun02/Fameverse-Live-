@@ -1,0 +1,30 @@
+/* Isolated web-only account pages. No checkout, native or owner-panel styles. */
+.fv-settings-page,.fv-profile-page {width:min(100%,1000px);margin:0 auto;padding:30px 0 64px;color:#f3e7fc}
+.fv-settings-page > header,.fv-profile-page-nav {padding:8px 0 24px;border-bottom:1px solid #ffffff20}
+.fv-settings-page h1,.fv-profile-page h1 {margin:10px 0;font-size:clamp(30px,4vw,42px);letter-spacing:-.04em}
+.fv-settings-page > header p,.fv-settings-hint,.fv-profile-page p {color:#b5a2c5;line-height:1.65}
+.fv-settings-section,.fv-profile-page-main {margin-top:24px;padding:24px;border:1px solid #ad80d12c;border-radius:15px;background:linear-gradient(130deg,#22142e,#130e1b)}
+.fv-settings-section h2,.fv-profile-page-section h2 {margin:0 0 15px;font-size:19px;color:#eee0fb}
+.fv-settings-section form,.fv-profile-page-edit {display:grid;gap:16px}
+.fv-settings-section label,.fv-profile-page-edit label {display:grid;gap:7px;color:#d4bee4;font-size:12px;font-weight:650}
+.fv-settings-section input,.fv-settings-section textarea,.fv-profile-page-edit input,.fv-profile-page-edit textarea {box-sizing:border-box;width:100%;min-width:0;border:1px solid #ad85c745;border-radius:8px;padding:12px;background:#0e0a16;color:#fff;font:inherit}
+.fv-settings-section input[readonly] {color:#baacc5;background:#1a1222}
+.fv-settings-section button,.fv-profile-page button {min-height:40px;padding:9px 16px;border:1px solid #bb89f16b;border-radius:8px;background:#8643b8;color:#fff;font:inherit;font-size:12px;cursor:pointer}
+.fv-settings-section button:disabled,.fv-profile-page button:disabled {opacity:.5;cursor:wait}
+.fv-settings-notice,.fv-profile-page-message {padding:12px 16px;border:1px solid #9874bc56;border-radius:10px;background:#a072d518;color:#e7d0f3}
+.fv-wallet-panel {padding:24px;margin-top:24px;border:1px solid #ad80d12c;border-radius:15px;background:#1a1124}
+.fv-wallet-panel h2 {margin:8px 0 20px}
+.fv-wallet-grid,.fv-profile-page-metrics {display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.fv-wallet-grid article,.fv-profile-page-metrics > div {display:flex;flex-direction:column;gap:8px;border:1px solid #ffffff24;border-radius:12px;background:#ffffff09;padding:18px}
+.fv-wallet-grid strong,.fv-profile-page-metrics strong {font-size:26px;font-variant-numeric:tabular-nums;color:#fff}
+.fv-wallet-grid small,.fv-profile-page-metrics span {color:#bba7ca;font-size:11px}
+.fv-profile-page-nav {display:flex;justify-content:space-between;align-items:center;gap:10px}
+.fv-profile-page-nav span {color:#bba1d2;font-size:11px;letter-spacing:.15em}
+.fv-profile-page-top {display:flex;align-items:center;justify-content:space-between;gap:24px}
+.fv-profile-page-avatar {position:relative;display:grid;place-items:center;width:106px;height:106px;overflow:hidden;border:2px solid #a871dd88;border-radius:50%;background:#3c2455;color:#e5c6fa;font-size:40px}
+.fv-profile-page-avatar img {position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fv-profile-page-handle {color:#b78ee7}
+.fv-profile-page-metrics {margin:24px 0}
+.fv-profile-page-section {padding-top:18px;border-top:1px solid #ffffff20}
+.fv-profile-page-edit {margin:20px 0}
+@media(max-width:600px){.fv-settings-page,.fv-profile-page {padding-top:18px}.fv-settings-section,.fv-profile-page-main,.fv-wallet-panel{padding:16px}.fv-profile-page-avatar{width:78px;height:78px;font-size:30px}}
