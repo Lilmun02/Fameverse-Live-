@@ -25,7 +25,7 @@ describe('web Home / Discover / Support functional contract', () => {
     expect(store).toContain('isCoinsPage ? (')
     expect(store).toContain('id="coin-packs"')
     expect(banner).toContain('2026-12-07T20:56:27.556Z')
-    expect(banner).toContain('href="/coins#coin-packs"')
+    expect(banner).toContain('href="/coins"')
     expect(store).toContain('onCheckout={startCheckout}')
   })
   it('Discover lists all public profiles by pages, including the current user', () => {
@@ -35,7 +35,7 @@ describe('web Home / Discover / Support functional contract', () => {
     expect(directory).not.toContain('RECOMMENDED_LIMIT')
     expect(directory).not.toContain('excludeUserId')
     expect(directory).not.toContain('.slice(0, 8)')
-    expect(directory).toContain('window.location.assign(`/?profile=')
+    expect(directory).toContain('window.location.assign(`/profile/')
     expect(routes.rewrites).toEqual(expect.arrayContaining([{ source: '/discover', destination: '/index.html' }]))
   })
   it('the floating speech icon submits real support messages through existing protected backend', () => {

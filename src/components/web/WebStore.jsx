@@ -87,7 +87,10 @@ export default function WebStore() {
   const account = useAccount({ setToast })
   const signedIn = Boolean(account.session?.user?.id)
   const isPreviewHost = window.location.hostname !== 'fameverse.app'
-  const profileId = new URLSearchParams(window.location.search).get('profile')
+  const legacyProfileId = new URLSearchParams(window.location.search).get('profile')
+  const pathProfileId = window.location.pathname.startsWith('/profile/')
+    ? window.location.pathname.slice('/profile/'.length).split('/')[0] : null
+  const profileId = pathProfileId || legacyProfileId
   const settingsRequested = window.location.pathname === '/settings'
   const settingsOpen = settingsRequested && signedIn
   const isDiscoverPage = window.location.pathname === '/discover'
@@ -99,26 +102,24 @@ export default function WebStore() {
     return () => document.documentElement.classList.remove('fv-web-mode')
   }, [])
 
-  // Keep old discovery bookmarks working while giving Discover its own page.
+  // Legacy section bookmarks now redirect to their dedicated pages.
   useEffect(() => {
-    if (window.location.pathname === '/' && window.location.hash === '#discover-creators') {
-      window.location.replace('/discover')
+    if (legacyProfileId && !pathProfileId) {
+      window.location.replace(`/profile/${encodeURIComponent(legacyProfileId)}`)
+      return
     }
-  }, [])
-
-  // Browser fragment navigation can occur before the React shell mounts.
-  // Restore the promised destination once the page actually exists.
-  useEffect(() => {
-    if (!account.authReady || settingsRequested || profileId || authOpen) return undefined
-    const fragment = window.location.hash.slice(1)
-    const sectionId = fragment === 'discover-creators' || fragment === 'coin-packs'
-      ? fragment : window.location.pathname === '/coins' ? 'coin-packs' : null
-    if (!sectionId) return undefined
-    const frame = window.requestAnimationFrame(() => {
-      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' })
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [account.authReady, settingsRequested, profileId, authOpen])
+    const fragment = window.location.hash
+    if (fragment === '#discover-creators') {
+      window.location.replace('/discover')
+    } else if (fragment === '#coin-packs') {
+      if (window.location.pathname === '/coins') {
+        window.history.replaceState(null, '', '/coins')
+        window.scrollTo(0, 0)
+      } else {
+        window.location.replace('/coins')
+      }
+    }
+  }, [legacyProfileId, pathProfileId])
 
   useEffect(() => {
     if (!signedIn) {
@@ -196,7 +197,7 @@ export default function WebStore() {
     return <main className="fv-web-shell"><WebHeader account={account} onSignIn={() => setAuthOpen(true)} /><div className="fv-web-loading">Opening Fameverse…</div></main>
   }
 
-  if (window.location.pathname === '/reset-password' && account.recoveryMode) {
+  if (window.location.pathname === '/reset-password') {
     return passwordRecovery(account)
   }
 

@@ -87,7 +87,7 @@ export default function WebCommunity({ userId, query = '', onSignIn }) {
         username: member.username,
         bio: member.bio || '',
         avatarUrl: member.avatar_url || null,
-      }} live={false} confirmed onSelect={() => window.location.assign(`/?profile=${encodeURIComponent(member.id)}`)} />)}
+      }} live={false} confirmed onSelect={() => window.location.assign(`/profile/${encodeURIComponent(member.id)}`)} />)}
     </div>}
     {!loading && !error && members.length === 0 && <div className="fv-community-empty">
       <WebIcon name="people" size={30} /><h2>No members found</h2><p>{query ? 'Try a different name or username.' : 'No public member profiles are available.'}</p>

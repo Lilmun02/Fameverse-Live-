@@ -25,7 +25,7 @@ describe('web account and navigation repair contract', () => {
     expect(store).toContain('settingsRequested) && !signedIn')
   })
   it('opens creator profiles instead of details-only dialog and preserves the real follow action', () => {
-    expect(community).toContain('window.location.assign(`/?profile=')
+    expect(community).toContain('window.location.assign(`/profile/')
     expect(store).toContain('<WebProfilePage profileId={profileId}')
     expect(profile).toContain("supabase.from('follows')")
   })
@@ -42,9 +42,11 @@ describe('web account and navigation repair contract', () => {
     expect(store).toContain('account.requestPasswordReset()')
     expect(settings).toContain("redirectTo: 'https://fameverse.app/reset-password'")
   })
-  it('honors direct Coins and Creators links after the web shell mounts', () => {
-    expect(store).toContain("window.location.hash.slice(1)")
-    expect(store).toContain("window.location.pathname === '/coins'")
-    expect(store).toContain("document.getElementById(sectionId)?.scrollIntoView")
+  it('redirects legacy section links to standalone pages instead of scrolling', () => {
+    expect(store).toContain("fragment === '#coin-packs'")
+    expect(store).toContain("fragment === '#discover-creators'")
+    expect(store).toContain("window.location.replace('/coins')")
+    expect(store).toContain("window.location.replace('/discover')")
+    expect(store).not.toContain('scrollIntoView')
   })
 })
