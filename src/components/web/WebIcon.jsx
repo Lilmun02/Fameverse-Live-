@@ -8,6 +8,7 @@ const PATHS = {
   close: 'm6 6 12 12M6 18 18 6',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   refresh: 'M20 7v5h-5M4 17v-5h5M6.09 6.09a8 8 0 0 1 13.64 4.32M17.91 17.91a8 8 0 0 1-13.64-4.32',
+  message: 'M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.9-1L3 21l2-5.6a8.5 8.5 0 1 1 16-3.9Z',
 }
 
 export default function WebIcon({ name, size = 20 }) {
