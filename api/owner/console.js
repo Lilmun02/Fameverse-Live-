@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
+import { LIVE_PRESENCE_STALE_MS } from '../../src/services/live/livePresenceConfig.js'
 import { configuredOwnerGate, ownerIPAllowed, trustedRequestIP } from '../../src/server/ownerSecurity.mjs'
 
 const SUPABASE_URL = 'https://lwasmvzsagowgmiqssph.supabase.co'
@@ -48,17 +49,23 @@ async function listProfiles(client, body) {
 
 async function listLive(client, body) {
   const { page, start, end } = pagination(body)
+  // A status flag alone cannot prove a broadcast is still online.
+  // Use exactly the same heartbeat expiry as the native live feed.
+  const cutoff = new Date(Date.now() - LIVE_PRESENCE_STALE_MS).toISOString()
   const r = await client.from('live_rooms')
     .select('id,host_user_id,title,status,started_at,heartbeat_at,created_at', { count: 'exact' })
-    .eq('status', 'live').order('started_at', { ascending: false }).range(start, end)
+    .eq('status', 'live').gte('heartbeat_at', cutoff)
+    .order('started_at', { ascending: false }).range(start, end)
   return { items: checked(r, 'Live rooms'), total: r.count ?? null, page }
 }
 
 async function ownerSummary(client) {
+  const cutoff = new Date(Date.now() - LIVE_PRESENCE_STALE_MS).toISOString()
   const [finance, countUsers, countLive] = await Promise.all([
     client.rpc('get_owner_finance_control_summary'),
     client.from('profiles').select('id', { count: 'exact', head: true }),
-    client.from('live_rooms').select('id', { count: 'exact', head: true }).eq('status','live'),
+    client.from('live_rooms').select('id', { count: 'exact', head: true })
+      .eq('status', 'live').gte('heartbeat_at', cutoff),
   ])
   const warnings = []
   if (finance.error) warnings.push('Financial summary unavailable')

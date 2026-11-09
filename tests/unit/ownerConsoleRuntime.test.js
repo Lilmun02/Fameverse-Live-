@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ createClient:vi.fn(),getUser:vi.fn(),role:vi.fn(),rpc:vi.fn(),members:vi.fn(),live:vi.fn(),from:vi.fn() }))
+const mocks = vi.hoisted(() => ({ createClient:vi.fn(),getUser:vi.fn(),role:vi.fn(),rpc:vi.fn(),members:vi.fn(),live:vi.fn(),from:vi.fn(),gte:vi.fn() }))
 vi.mock('@supabase/supabase-js',()=>({
   createClient:(...args)=>{
     mocks.createClient(...args)
@@ -10,7 +10,9 @@ vi.mock('@supabase/supabase-js',()=>({
         if(table==='account_roles')return {select:()=>({eq:()=>({maybeSingle:mocks.role})})}
         const value=table==='profiles' ? mocks.members : mocks.live
         const chain={select:()=>chain,order:()=>chain,ilike:()=>chain,eq:()=>chain,
-          limit:()=>Promise.resolve({data:[],error:null}),range:()=>value()}
+          gte:(field,value)=>{mocks.gte(table,field,value);return chain},
+          limit:()=>Promise.resolve({data:[],error:null}),range:()=>value(),
+          then:(resolve,reject)=>Promise.resolve({data:[],count:0,error:null}).then(resolve,reject)}
         return chain
       },
       rpc:mocks.rpc,
@@ -60,6 +62,24 @@ describe('Owner Command Center protected operations',()=>{
     const g=response()
     await ownerConsole({...request({action:'read',section:'users'}),method:'GET'},g)
     expect(g.code).toBe(405)
+  })
+  it('excludes stale live rooms using the same 45-second heartbeat threshold as live presence',async()=>{
+    const started=Date.now()
+    const r=response()
+    await ownerConsole(request({action:'read',section:'live'}),r)
+    expect(r.code,JSON.stringify(r.body)).toBe(200)
+    const filters=mocks.gte.mock.calls.filter(([table,field])=>table==='live_rooms'&&field==='heartbeat_at')
+    expect(filters).toHaveLength(1)
+    const expiry=Date.parse(filters[0][2])
+    expect(expiry).toBeGreaterThanOrEqual(started-45000)
+    expect(expiry).toBeLessThanOrEqual(Date.now()-45000)
+  })
+  it('uses the same live heartbeat cutoff for the owner overview count',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'read',section:'overview'}),r)
+    expect(r.code,JSON.stringify(r.body)).toBe(200)
+    expect(mocks.gte).toHaveBeenCalledWith('live_rooms','heartbeat_at',expect.any(String))
+    expect(r.body.live).toBe(0)
   })
   it('fetches real authorized member records',async()=>{
     const r=response()
