@@ -8,7 +8,14 @@ const routes=JSON.parse(read('vercel.json'))
 describe('Owner Command Center pages and controls',()=>{
   it('returns to the owner center from Home and the account menu',()=>{
     expect(header).toContain('Owner Command Center')
-    expect(header).toContain('Owner Center')
+    const topNavigation = header.split('<nav className="fv-platform-topnav"')[1]?.split('</nav>')[0]
+    expect(topNavigation).toContain('Home')
+    expect(topNavigation).toContain('Discover')
+    expect(topNavigation).not.toContain('href="/owner"')
+    expect(header).not.toContain('fv-owner-nav-link')
+    // The owner entry remains private to the signed-in account menu,
+    // and backend owner + IP verification continues to protect /owner.
+    expect(header).toContain('Owner Command Center')
     expect(header).toContain("account.profile?.account_role === 'owner'")
     expect(page).toContain('Return to Fameverse Home')
   })
