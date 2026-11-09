@@ -25,16 +25,9 @@ describe('Build 47 UTC ranking backend regression contract', () => {
     expect(sql).toContain('least(coalesce(p_limit, 100), 100)')
   })
 
-  it('Supporters scores eligible taps, not gift purchases', () => {
+  it('Supporters measures cash-backed gifting and excludes self- and promo-only gifts', () => {
     const section = branchSql('supporters', 'pulse')
-    expect(section).toContain('public.live_tap_batches')
-    expect(section).toContain('b.eligible_tap_count')
-    expect(section).toContain('t.ranked_score > 0')
-    expect(section).not.toContain('public.gift_events')
-  })
-
-  it('Pulse scores cash-backed gifts, never promo-only gifts or self-gifts', () => {
-    const section = branchSql('pulse', 'creators')
+    expect(section).toContain('public.gift_events')
     expect(section).toContain('public.gift_funding_breakdowns')
     expect(section).toContain('f.cash_backed_coins > 0')
     expect(section).toContain('g.sender_user_id <> g.recipient_user_id')
@@ -42,13 +35,22 @@ describe('Build 47 UTC ranking backend regression contract', () => {
     expect(section).not.toContain('public.live_tap_batches')
   })
 
-  it('Creators require positive eligible taps from their hosted live rooms', () => {
+  it('Pulse scores eligible Fame taps, not purchase or gifting events', () => {
+    const section = branchSql('pulse', 'creators')
+    expect(section).toContain('public.live_tap_batches')
+    expect(section).toContain('b.eligible_tap_count')
+    expect(section).toContain('t.ranked_score > 0')
+    expect(section).not.toContain('public.gift_events')
+  })
+
+  it('Creators require positive eligible host taps and show follower count as secondary', () => {
     const section = branchSql('creators')
     expect(section).toContain('public.live_rooms')
     expect(section).toContain('b.room_id = lr.id')
     expect(section).toContain('b.eligible_tap_count')
     expect(section).toContain('t.ranked_score > 0')
-    expect(section).not.toContain('follower_count')
+    expect(section).toContain('follower_count')
+    expect(section).toContain('coalesce(f.follower_count, 0)::bigint')
   })
 
   it('is an authenticated read-only ranking function with no purchase mutations', () => {
