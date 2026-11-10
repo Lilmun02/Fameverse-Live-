@@ -13,6 +13,13 @@ const OPERATIONS = new Set([
   'publish_notice','staff_permission','system_maintenance','review_support',
 ])
 const MAX_PAGE = 25
+// Phase-one commands require the protected audit schema and a separately
+// approved server-side activation. Never expose this secret to the browser.
+const AUDITED_COMMANDS = new Set(['approve_badge','reject_badge','review_support'])
+const ownerWritesActive = () =>
+  process.env.FAMEVERSE_OWNER_COMMANDS_ENABLED === 'verified-v1' &&
+  Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+
 
 function reply(res, status, data) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0')
@@ -248,7 +255,7 @@ export default async function ownerConsole(req, res) {
   const token = /^Bearer ([A-Za-z0-9._~-]+)$/.exec(String(req.headers.authorization||''))?.[1]
   if (!token) return reply(res,403,{error:'Fameverse sign-in required'})
   const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {}
-  if (!['read','preview_action'].includes(body.action)) return reply(res,400,{error:'Unsupported action'})
+  if (!['read','preview_action','execute_action'].includes(body.action)) return reply(res,400,{error:'Unsupported action'})
   if (body.action === 'read' && !READ_SECTIONS.has(body.section)) return reply(res,400,{error:'Unsupported section'})
   if (body.action === 'read' && ['caseId','targetId'].some(key => body[key] != null && body[key] !== '' && !validId(body[key]))) {
     return reply(res,400,{error:'Case and target filters must be valid UUIDs'})
@@ -270,8 +277,47 @@ export default async function ownerConsole(req, res) {
       const result = await prepareAction(client,body,auth.user.id)
       return result.error ? reply(res,400,{error:result.error}) : reply(res,200,{authorized:true,...result})
     }
+    if (body.action === 'execute_action') {
+      if (!ownerWritesActive()) return reply(res,409,{
+        error:'Owner command execution has not been separately approved and activated.',
+        code:'OWNER_WRITE_INACTIVE',
+      })
+      if (!AUDITED_COMMANDS.has(body.operation)) return reply(res,409,{
+        error:'This operation has no approved audited backend implementation.',
+        code:'OWNER_OPERATION_UNAVAILABLE',
+      })
+      if (body.confirmed !== true || !validId(body.idempotencyKey)) return reply(res,400,{
+        error:'An explicit confirmation and unique UUID command key are required.',
+      })
+      const checked = await prepareAction(client,body,auth.user.id)
+      if (checked.error) return reply(res,400,{error:checked.error})
+      const server = createClient(SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{
+        auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
+      })
+      // This SQL RPC has no authenticated-client EXECUTE permission. The
+      // protected Vercel gateway supplies the verified actor identity.
+      const {data:result,error:writeError} = await server.rpc('owner_apply_control_v1',{
+        p_actor_user_id:auth.user.id,
+        p_idempotency_key:body.idempotencyKey,
+        p_operation:body.operation,
+        p_target_id:body.targetId,
+        p_reason:checked.reason,
+      })
+      if (writeError || result?.applied !== true || result?.recorded !== true) {
+        return reply(res,503,{error:'Owner command was not confirmed as applied and audited.',
+          code:'OWNER_COMMAND_UNCONFIRMED'})
+      }
+      return reply(res,200,{authorized:true,...result})
+    }
     const result = await fetchRead(client,body.section,body)
-    return reply(res,200,{authorized:true,section:body.section,...result})
+    return reply(res,200,{
+      authorized:true,section:body.section,
+      controls:{
+        mode:ownerWritesActive() ? 'restricted-execution' : 'preview',
+        executable:ownerWritesActive() ? [...AUDITED_COMMANDS] : [],
+      },
+      ...result,
+    })
   } catch {
     return reply(res,503,{error:'Protected owner records are temporarily unavailable'})
   }

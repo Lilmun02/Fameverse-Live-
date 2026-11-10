@@ -94,6 +94,71 @@ describe('Owner Command Center protected operations',()=>{
     expect(r.body.items[0].username).toBe('creator')
     expect(r.body.items[0]).not.toHaveProperty('email')
   })
+  it('locks actual owner control execution until a separately approved server rollout',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'execute_action',operation:'approve_badge',
+      targetId:'22222222-2222-4222-8222-222222222222',
+      reason:'Verified supporting creator evidence.',confirmed:true,
+      idempotencyKey:'77777777-7777-4777-8777-777777777777'}),r)
+    expect(r.code).toBe(409)
+    expect(r.body.code).toBe('OWNER_WRITE_INACTIVE')
+    expect(mocks.createClient).toHaveBeenCalledTimes(1)
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+  it('never executes high-risk payouts, gift grants, live moderation, or system operations through phase one',async()=>{
+    vi.stubEnv('FAMEVERSE_OWNER_COMMANDS_ENABLED','verified-v1')
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','test-only-internal-key')
+    for(const operation of ['ban','end_live','release_payout','grant_test_coins','allocate_reserve','system_maintenance']){
+      const r=response()
+      await ownerConsole(request({action:'execute_action',operation,
+        targetId:'22222222-2222-4222-8222-222222222222',
+        reason:'Documented review evidence for owner.',confirmed:true,
+        idempotencyKey:'77777777-7777-4777-8777-777777777777'}),r)
+      expect(r.code,operation).toBe(409)
+      expect(r.body.code).toBe('OWNER_OPERATION_UNAVAILABLE')
+    }
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+  it('requires explicit confirmation and an idempotency key before an active badge change',async()=>{
+    vi.stubEnv('FAMEVERSE_OWNER_COMMANDS_ENABLED','verified-v1')
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','test-only-internal-key')
+    const r=response()
+    await ownerConsole(request({action:'execute_action',operation:'approve_badge',
+      targetId:'22222222-2222-4222-8222-222222222222',
+      reason:'Documented verified creator evidence.'}),r)
+    expect(r.code).toBe(400)
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+  it('accepts an active action only when server RPC confirms both application and audit',async()=>{
+    vi.stubEnv('FAMEVERSE_OWNER_COMMANDS_ENABLED','verified-v1')
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','test-only-internal-key')
+    mocks.rpc.mockResolvedValueOnce({data:{applied:true,recorded:true,auditId:'99999999-9999-4999-8999-999999999999'},error:null})
+    const r=response()
+    await ownerConsole(request({action:'execute_action',operation:'approve_badge',
+      targetId:'22222222-2222-4222-8222-222222222222',
+      reason:'Documented verified creator evidence.',confirmed:true,
+      idempotencyKey:'77777777-7777-4777-8777-777777777777'}),r)
+    expect(r.code,JSON.stringify(r.body)).toBe(200)
+    expect(r.body).toMatchObject({authorized:true,applied:true,recorded:true})
+    expect(mocks.rpc).toHaveBeenCalledWith('owner_apply_control_v1',expect.objectContaining({
+      p_operation:'approve_badge',p_target_id:'22222222-2222-4222-8222-222222222222',
+      p_actor_user_id:'11111111-1111-4111-8111-111111111111',
+      p_idempotency_key:'77777777-7777-4777-8777-777777777777',
+    }))
+    expect(r.body).not.toHaveProperty('SUPABASE_SERVICE_ROLE_KEY')
+  })
+  it('fails closed if an active backend call cannot confirm the durable audit',async()=>{
+    vi.stubEnv('FAMEVERSE_OWNER_COMMANDS_ENABLED','verified-v1')
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','test-only-internal-key')
+    mocks.rpc.mockResolvedValueOnce({data:{applied:true,recorded:false},error:null})
+    const r=response()
+    await ownerConsole(request({action:'execute_action',operation:'review_support',
+      targetId:'22222222-2222-4222-8222-222222222222',
+      reason:'Documented support case follow-up.',confirmed:true,
+      idempotencyKey:'77777777-7777-4777-8777-777777777777'}),r)
+    expect(r.code).toBe(503)
+    expect(r.body.code).toBe('OWNER_COMMAND_UNCONFIRMED')
+  })
   it('validates commands but does not mutate production',async()=>{
     const r=response()
     await ownerConsole(request({action:'preview_action',operation:'allocate_reserve',reason:'Review reserve coverage before approval.'}),r)
