@@ -36,6 +36,7 @@ describe('Build 47 existing TestFlight workflow regression contract', () => {
 
   it('fails closed when requested top-100 or UTC native ranking source is missing', () => {
     expect(nativeTestFlight).toContain('BLOCKED: native Fameboard is not requesting top 100.')
+    expect(nativeTestFlight).toContain('BLOCKED: host End Live confirmation missing.')
     expect(nativeTestFlight).toContain('BLOCKED: native UTC daily ranking copy missing.')
     expect(nativeTestFlight).toContain('BLOCKED: native UTC weekly ranking copy missing.')
     expect(nativeTestFlight).toContain('BLOCKED: paired Build 47 UTC ranking SQL is absent.')
