@@ -18,32 +18,41 @@ export default function WebOwnerCommandCenter({ account }) {
     let active = true
     setResult({ key: sessionKey, state: 'checking', summary: null, message: '' })
 
-    fetch('/api/owner/control', {
-      method: 'POST',
-      credentials: 'same-origin',
-      cache: 'no-store',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: 'access' }),
-    }).then(async (response) => {
-      const type = String(response.headers.get('content-type') || '')
-      if (!type.includes('application/json')) throw new Error('The protected preview session could not be verified.')
-      const data = await response.json()
-      if (!active) return
-      if (response.status === 403 && data?.code === 'NETWORK_DENIED') {
-        setResult({ key: sessionKey, state: 'network', summary: null, message: '' })
-      } else if (!response.ok || !data?.authorized || data?.mode !== 'owner-access') {
-        setResult({ key: sessionKey, state: 'denied', summary: null, message: data?.error || 'Owner access was denied.' })
-      } else {
-        setResult({ key: sessionKey, state: 'ready', summary: null, message: '' })
-      }
-    }).catch((error) => {
-      if (active && error.name !== 'AbortError') {
-        setResult({ key: sessionKey, state: 'unavailable', summary: null, message: 'The secure owner check could not be completed.' })
-      }
-    })
+    let deadline
+    // Coalesce StrictMode setup/cleanup without caching an authorization result.
+    const start = window.setTimeout(() => {
+      deadline = window.setTimeout(() => {
+        if (!active) return
+        controller.abort()
+        setResult({key:sessionKey,state:'unavailable',summary:null,message:'The secure owner check timed out. Retry to verify access again.'})
+      }, 10000)
+      fetch('/api/owner/control', {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'access' }),
+      }).then(async (response) => {
+        const type = String(response.headers.get('content-type') || '')
+        if (!type.includes('application/json')) throw new Error('The protected preview session could not be verified.')
+        const data = await response.json()
+        if (!active || controller.signal.aborted) return
+        if (response.status === 403 && data?.code === 'NETWORK_DENIED') {
+          setResult({ key: sessionKey, state: 'network', summary: null, message: '' })
+        } else if (!response.ok || !data?.authorized || data?.mode !== 'owner-access') {
+          setResult({ key: sessionKey, state: 'denied', summary: null, message: data?.error || 'Owner access was denied.' })
+        } else {
+          setResult({ key: sessionKey, state: 'ready', summary: null, message: '' })
+        }
+      }).catch((error) => {
+        if (active && error.name !== 'AbortError') {
+          setResult({ key: sessionKey, state: 'unavailable', summary: null, message: 'The secure owner check could not be completed.' })
+        }
+      }).finally(() => window.clearTimeout(deadline))
+    }, 80)
 
-    return () => { active = false; controller.abort() }
+    return () => { active = false; window.clearTimeout(start); window.clearTimeout(deadline); controller.abort() }
   }, [owner, token, sessionKey, attempt])
 
   // Prevent sensitive figures remaining on screen unattended. A retry requires
