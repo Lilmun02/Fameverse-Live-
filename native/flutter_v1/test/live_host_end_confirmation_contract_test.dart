@@ -36,7 +36,10 @@ void main() {
       expect(host, contains('Navigator.of(dialogContext).pop(false)'));
       expect(host, contains("Key('native-confirm-end-live')"));
       expect(host, contains('Navigator.of(dialogContext).pop(true)'));
-      expect(host, contains('if (confirmed == true && mounted) await _endLive();'));
+      expect(
+        host,
+        contains('if (confirmed == true && mounted) await _endLive();'),
+      );
       expect(RegExp(r'_endLive\(\)').allMatches(host).length, 2);
       expect(host, contains('await call.stopLive();'));
       expect(host, contains('await widget.liveBackend.endLiveRoom('));
