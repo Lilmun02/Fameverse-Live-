@@ -190,6 +190,7 @@ workflows:
           grep -Fq "profile-fame-coins-card" "$PROFILE" || { echo "BLOCKED: full Fame Coins card tap fix missing."; exit 1; }
           grep -Fq "owner-host-gift-button" "$HOST_SURFACE" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
           grep -Fq "bool _flipCameraBusy = false;" "$HOST_SURFACE" || { echo "BLOCKED: host camera anti-spam repair missing."; exit 1; }
+          grep -Fq "if (confirmed == true && mounted) await _endLive();" "$HOST_SURFACE" || { echo "BLOCKED: host End Live confirmation missing."; exit 1; }
           grep -Fq "bool _cohostFlipBusy = false;" "$VIEWER_SURFACE" || { echo "BLOCKED: co-host camera anti-spam repair missing."; exit 1; }
           grep -Fq "record_beta_gift" "$HOST_WRAPPER" || { echo "BLOCKED: owner QA gift RPC path missing."; exit 1; }
           grep -Fq "onFinished" "$LIVE_COMPONENTS" || { echo "BLOCKED: completion-driven gift playback missing."; exit 1; }
