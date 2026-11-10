@@ -51,5 +51,8 @@ jobs:
       - name: Install Chromium for browser QA
         run: npx playwright install --with-deps chromium
 
+      - name: Owner access, case links and control-race browser regressions
+        run: npx playwright test --config=playwright.owner.config.js
+
       - name: Mobile browser smoke test
         run: npm run test:e2e
