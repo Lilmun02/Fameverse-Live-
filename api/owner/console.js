@@ -109,10 +109,13 @@ async function ownerSupport(client, body) {
     availability: 'requires_isolated_backend',
     message: 'The protected owner case schema and feedback read policy have not been deployed. No support records were guessed.',
   }
-  const r = await client.from('beta_feedback')
-    .select('id,user_id,category,message,created_at,current_screen', { count: 'exact' })
+  const relation = body.caseId ? 'owner_cases!inner' : 'owner_cases'
+  let query = client.from('beta_feedback')
+    .select(`id,user_id,category,message,created_at,current_screen,case:${relation}(id,subject_user_id,case_type,status,summary,created_at,updated_at)`, { count: 'exact' })
     .eq('current_screen', 'web_support')
-    .order('created_at', { ascending: false }).range(start, end)
+  if (body.caseId) query = query.eq('case.id', body.caseId)
+  if (body.targetId) query = query.eq('user_id', body.targetId)
+  const r = await query.order('created_at', { ascending: false }).order('id').range(start, end)
   if (r.error) return {
     availability: 'requires_isolated_backend',
     message: 'Owner support intake is inaccessible under current permissions. The inbox has not been declared empty.',
@@ -124,9 +127,11 @@ async function ownerSupport(client, body) {
 // Until the protected audit table is deployed, show a clear unavailable state.
 async function ownerAudit(client, body) {
   const { page, start, end } = pagination(body)
-  const r = await client.from('owner_audit_events')
+  let query = client.from('owner_audit_events')
     .select('id,actor_user_id,case_id,section,operation,target_type,target_id,reason,outcome,created_at', { count: 'exact' })
-    .order('created_at', { ascending: false }).range(start, end)
+  if (body.caseId) query = query.eq('case_id', body.caseId)
+  if (body.targetId) query = query.eq('target_id', body.targetId)
+  const r = await query.order('created_at', { ascending: false }).order('id').range(start, end)
   if (r.error) return {
     availability: 'requires_isolated_backend',
     message: 'Persistent owner audit storage has not been deployed. No preview history is presented as real audit evidence.',
@@ -228,6 +233,9 @@ export default async function ownerConsole(req, res) {
   const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {}
   if (!['read','preview_action'].includes(body.action)) return reply(res,400,{error:'Unsupported action'})
   if (body.action === 'read' && !READ_SECTIONS.has(body.section)) return reply(res,400,{error:'Unsupported section'})
+  if (body.action === 'read' && ['caseId','targetId'].some(key => body[key] != null && body[key] !== '' && !validId(body[key]))) {
+    return reply(res,400,{error:'Case and target filters must be valid UUIDs'})
+  }
 
   try {
     const client = createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import WebIcon from './WebIcon.jsx'
+import OwnerCaseRecord from './OwnerCaseRecords.jsx'
 import '../../styles/web/owner-workspace.css'
 
 // Each menu destination is a real URL, not an anchor that scrolls through Home.
@@ -116,12 +117,18 @@ function sectionFromLocation() {
   return OWNER_SECTIONS.some(([name]) => name === key) ? key : 'overview'
 }
 
+function filtersFromLocation() {
+  const params = new URLSearchParams(window.location.search)
+  return {caseId:params.get('caseId') || '',targetId:params.get('targetId') || ''}
+}
+
 export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const [section, setSection] = useState(sectionFromLocation)
   const info = OWNER_SECTIONS.find(([key]) => key === section)
   const [searchDraft, setSearchDraft] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [filters, setFilters] = useState(filtersFromLocation)
   const [version, setVersion] = useState(0)
   const [kind, setKind] = useState('creators')
   const [windowName, setWindowName] = useState('daily')
@@ -135,13 +142,14 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const [actionResult, setActionResult] = useState(null)
   const [previewHistory, setPreviewHistory] = useState([])
   const currentLabel = useMemo(() => info?.[1] || 'Overview',[info])
-  const requestKey = JSON.stringify([section,page,query,kind,windowName,version])
+  const requestKey = JSON.stringify([section,page,query,kind,windowName,version,filters.caseId,filters.targetId])
 
   // Section transitions stay inside one signed-in workspace. Browser Back/Forward
   // updates the selected section without refreshing Supabase auth or remounting.
   useEffect(() => {
     const syncRoute = () => {
       setSection(sectionFromLocation())
+      setFilters(filtersFromLocation())
       setPage(0)
       setSearchDraft('')
       setQuery('')
@@ -155,9 +163,10 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const navigate = (event, key) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    const destination = key === 'overview' ? '/owner' : '/owner/' + key
-    if (window.location.pathname !== destination) window.history.pushState({},'',destination)
+    const destination = event.currentTarget.getAttribute('href') || (key === 'overview' ? '/owner' : '/owner/' + key)
+    if (window.location.pathname + window.location.search !== destination) window.history.pushState({},'',destination)
     setSection(key)
+    setFilters(filtersFromLocation())
     setPage(0)
     setSearchDraft('')
     setQuery('')
@@ -196,7 +205,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       fetch('/api/owner/console', {
         method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
         headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
-        body:JSON.stringify({action:'read',section,page,query,kind,window:windowName}),
+        body:JSON.stringify({action:'read',section,page,query,kind,window:windowName,...filters}),
       }).then(async (response) => {
         if (response.status === 401 || response.status === 403) {
           if (active) lockWorkspace()
@@ -294,8 +303,12 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       {section === 'policy' && <Notice kind="warning">Active release notices are shown below. Policy acceptance history and appeal enforcement need a separate audited backend; no acceptance counts are invented.</Notice>}
       {section === 'gifts' && <Notice>Gift prices and activation are read from the existing catalog. Coin grants, cash-backed gifts and payout changes are disabled in preview.</Notice>}
       {section === 'system' && <Notice>Live release state is read-only. No CodeMagic, TestFlight, Supabase, Stripe or Vercel settings can be changed from this preview.</Notice>}
+      {section === 'support' && <Notice>Protected support intake and linked cases are read-only. Case lifecycle changes require a separately approved backend.</Notice>}
+      {section === 'audit' && <Notice>These are durable records returned by protected audit storage. Preview validations do not create audit events.</Notice>}
       {items.length === 0 ? <Notice>No records are available to your current authorized view. This is not proof that there are no records elsewhere.</Notice> :
-        <div className="fv-oc-records">{items.map((item,i)=><Row key={item.id || item.user_id || item.payout_id || i} item={item} section={section} onChoose={selectAction}/>)}</div>}
+        <div className="fv-oc-records">{items.map((item,i)=>['support','audit'].includes(section) ?
+          <OwnerCaseRecord key={item.id} item={item} section={section} onNavigate={navigate} onChoose={selectAction}/> :
+          <Row key={item.id || item.user_id || item.payout_id || i} item={item} section={section} onChoose={selectAction}/>)}</div>}
       {v.total != null && <div className="fv-oc-pagination">
         <span>Page {page+1} · {number(v.total)} total records</span>
         <button type="button" disabled={page===0} onClick={()=>setPage(n=>Math.max(0,n-1))}>Previous</button>
@@ -332,6 +345,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <label>Time window<select value={windowName} onChange={(e)=>setWindowName(e.target.value)}><option value="daily">Past 24 hours</option><option value="weekly">Past 7 days</option><option value="all_time">All-time (pending)</option></select></label>
       </div>}
       <div className="fv-oc-section-content">{renderContent()}</div>
+      {(filters.caseId || filters.targetId) && <Notice>Filtered by {filters.caseId ? 'case ' + filters.caseId : 'target ' + filters.targetId}. <a href={'/owner/'+section} onClick={event=>navigate(event,section)}>Clear filter</a></Notice>}
       {options.length>0&&!actionOpen&&<div className="fv-oc-toolbar">
         <button className="fv-oc-primary" type="button" onClick={()=>selectAction(options[0][0])}>
           Review available {info[1].toLowerCase()} controls

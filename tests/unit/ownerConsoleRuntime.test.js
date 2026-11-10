@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ createClient:vi.fn(),getUser:vi.fn(),role:vi.fn(),rpc:vi.fn(),members:vi.fn(),live:vi.fn(),from:vi.fn(),gte:vi.fn(),cases:vi.fn(),support:vi.fn(),audit:vi.fn() }))
+const mocks = vi.hoisted(() => ({ createClient:vi.fn(),getUser:vi.fn(),role:vi.fn(),rpc:vi.fn(),members:vi.fn(),live:vi.fn(),from:vi.fn(),gte:vi.fn(),eq:vi.fn(),cases:vi.fn(),support:vi.fn(),audit:vi.fn() }))
 vi.mock('@supabase/supabase-js',()=>({
   createClient:(...args)=>{
     mocks.createClient(...args)
@@ -12,7 +12,7 @@ vi.mock('@supabase/supabase-js',()=>({
           table==='owner_cases' ? mocks.cases :
           table==='beta_feedback' ? mocks.support :
           table==='owner_audit_events' ? mocks.audit : mocks.live
-        const chain={select:()=>chain,order:()=>chain,ilike:()=>chain,eq:()=>chain,
+        const chain={select:()=>chain,order:()=>chain,ilike:()=>chain,eq:(field,value)=>{mocks.eq(table,field,value);return chain},
           gte:(field,value)=>{mocks.gte(table,field,value);return chain},
           limit:()=>table==='owner_cases' ? value() : Promise.resolve({data:[],error:null}),range:()=>value(),
           then:(resolve,reject)=>Promise.resolve({data:[],count:0,error:null}).then(resolve,reject)}
@@ -176,5 +176,43 @@ describe('Owner Command Center protected operations',()=>{
       expect(r.code, JSON.stringify(r.body)).toBe(200)
       expect(r.body.availability).toBe('requires_isolated_backend')
     }
+  })
+})
+
+
+describe('Owner case and audit cross-section filters', () => {
+  const caseId='55555555-5555-4555-8555-555555555555'
+  const targetId='66666666-6666-4666-8666-666666666666'
+  it('passes case and subject filters to protected support intake', async () => {
+    mocks.cases.mockResolvedValue({data:[],error:null})
+    const r=response()
+    await ownerConsole(request({action:'read',section:'support',caseId,targetId}),r)
+    expect(r.code).toBe(200)
+    expect(mocks.eq).toHaveBeenCalledWith('beta_feedback','case.id',caseId)
+    expect(mocks.eq).toHaveBeenCalledWith('beta_feedback','user_id',targetId)
+  })
+  it('filters durable audit events by actual case and target IDs', async () => {
+    mocks.audit.mockResolvedValue({data:[],count:0,error:null})
+    const r=response()
+    await ownerConsole(request({action:'read',section:'audit',caseId,targetId}),r)
+    expect(r.code).toBe(200)
+    expect(mocks.eq).toHaveBeenCalledWith('owner_audit_events','case_id',caseId)
+    expect(mocks.eq).toHaveBeenCalledWith('owner_audit_events','target_id',targetId)
+    expect(r.body.source).toBe('protected_owner_audit')
+  })
+  it('rejects malformed filters instead of silently returning unrelated records', async () => {
+    const r=response()
+    await ownerConsole(request({action:'read',section:'audit',caseId:'not-a-case'}),r)
+    expect(r.code).toBe(400)
+    expect(mocks.from).not.toHaveBeenCalled()
+  })
+  it('rejects a revoked role before reading any of the thirteen sections', async () => {
+    mocks.role.mockResolvedValue({data:{role:'member'},error:null})
+    for(const section of ['overview','users','live','moderation','gifts','finance','funding','reports','badges','support','policy','system','audit']){
+      const r=response()
+      await ownerConsole(request({action:'read',section}),r)
+      expect(r.code,section).toBe(403)
+    }
+    expect(mocks.from.mock.calls.every(([table])=>table==='account_roles')).toBe(true)
   })
 })
