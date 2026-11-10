@@ -34,6 +34,8 @@ describe('Build 47 UTC ranking backend regression contract', () => {
     expect(native).toContain("'creators' => '${_compact(entry.score)} live taps'")
     expect(native).toContain("'get_fameverse_rankings_v2'")
     expect(native).toContain("'p_window': _window")
+    expect(native).toContain("'p_limit': 100")
+    expect(native).not.toContain("'p_limit': 50")
     expect(sql).toContain("if v_kind = 'supporters' then")
     expect(sql).toContain('f.cash_backed_coins > 0')
     expect(sql).toContain("if v_kind = 'pulse' then")
