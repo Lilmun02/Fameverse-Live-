@@ -1,6 +1,7 @@
 -- Build 47 UTC leaderboard correction: isolated ranking read API only.
 -- Legacy '24h' and '7d' clients now mean UTC calendar day / Sunday-start week.
--- Preserve existing app meanings: Supporters = legitimate cash-backed gifts; Pulse = eligible Fametaps.\n-- Creators = eligible host Fametaps; follower count is secondary. Owner approval is required to change category meanings.
+-- Preserve existing app meanings: Supporters = legitimate cash-backed gifts; Pulse = eligible Fametaps.
+-- Creators = eligible host Fametaps; follower count is secondary. Owner approval is required to change category meanings.
 -- No wallet, payout, ledger, gift issuance, or tap issuance mutations.
 create or replace function public.get_fameverse_rankings_v2(
   p_kind text,
