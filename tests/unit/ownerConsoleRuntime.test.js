@@ -116,6 +116,26 @@ describe('Owner Command Center protected operations',()=>{
       targetId:'11111111-1111-4111-8111-111111111111',reason:'Review repeated policy violations.'}),r)
     expect(r.code, JSON.stringify(r.body)).toBe(400)
   })
+  it('does not validate enforcement when RLS hides the target role',async()=>{
+    mocks.role.mockResolvedValueOnce({data:{role:'owner'},error:null})
+      .mockResolvedValueOnce({data:null,error:null})
+    const r=response()
+    await ownerConsole(request({action:'preview_action',operation:'suspend',
+      targetId:'22222222-2222-4222-8222-222222222222',reason:'Review the reported account evidence.'}),r)
+    expect(r.code).toBe(400)
+    expect(r.body.error).toBe('Privileged-role verification required before this action')
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+  it('only validates an explicitly verified non-owner target, without executing a write',async()=>{
+    mocks.role.mockResolvedValueOnce({data:{role:'owner'},error:null})
+      .mockResolvedValueOnce({data:{role:'member'},error:null})
+    const r=response()
+    await ownerConsole(request({action:'preview_action',operation:'suspend',
+      targetId:'22222222-2222-4222-8222-222222222222',reason:'Review the reported account evidence.'}),r)
+    expect(r.code).toBe(200)
+    expect(r.body).toMatchObject({applied:false,recorded:false,mode:'preview'})
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
   it('reads release state without exposing any system mutation endpoint',async()=>{
     const r=response()
     await ownerConsole(request({action:'read',section:'system'}),r)

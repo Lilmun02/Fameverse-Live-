@@ -206,7 +206,7 @@ async function prepareAction(client, body, actorId) {
     const r = await client.from('account_roles').select('role').eq('user_id',targetId).maybeSingle()
     // RLS only exposes the current owner's own role. Never pretend a missing
     // row proves the target is not another owner.
-    if (r.error || r.data?.role === 'owner') return { error: 'Privileged-role verification required before this action' }
+    if (r.error || !r.data?.role || r.data.role === 'owner') return { error: 'Privileged-role verification required before this action' }
   }
   return {
     id: randomUUID(), operation, targetId: targetId || null,
