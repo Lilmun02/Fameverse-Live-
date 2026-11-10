@@ -53,7 +53,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
         params: <String, dynamic>{
           'p_kind': _kind,
           'p_window': _window,
-          'p_limit': 50,
+          'p_limit': 100,
         },
       );
       final rows = (data as List? ?? const [])
