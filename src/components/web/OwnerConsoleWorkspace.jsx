@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import WebIcon from './WebIcon.jsx'
 import '../../styles/web/owner-workspace.css'
 
@@ -126,7 +126,8 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const [kind, setKind] = useState('creators')
   const [windowName, setWindowName] = useState('daily')
   const [data, setData] = useState({ key:null, state:'loading', value:null, error:'' })
-  const cachedReads = useRef(new Map())
+  // Never reuse owner records after navigation: an IP or role can change
+  // between requests, so each section requires a fresh protected server read.
   const options = ACTIONS[section] || []
   const [choice, setChoice] = useState({ operation:options[0]?.[0] || '', targetId:'', reason:'' })
   const [actionBusy, setActionBusy] = useState(false)
@@ -175,13 +176,17 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
     return () => window.clearTimeout(timer)
   }, [searchDraft])
 
-  useEffect(() => {
-    const cached = cachedReads.current.get(requestKey)
-    if (cached && Date.now() - cached.time < 30000) {
-      setData({key:requestKey,state:'ready',value:cached.value,error:''})
-      return undefined
-    }
+  // A revoked owner session or changed IP must invalidate all private UI state.
+  // The parent removes this workspace and requires a fresh server access check.
+  const lockWorkspace = () => {
+    setData({key:null,state:'loading',value:null,error:''})
+    setActionResult(null)
+    setPreviewHistory([])
+    setActionOpen(false)
+    onLock()
+  }
 
+  useEffect(() => {
     // An 80ms coalescing window avoids StrictMode's dev-only setup/cleanup
     // cycle firing two real network requests. Abort cancels stale requests.
     const controller = new AbortController()
@@ -193,12 +198,14 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
         body:JSON.stringify({action:'read',section,page,query,kind,window:windowName}),
       }).then(async (response) => {
+        if (response.status === 401 || response.status === 403) {
+          if (active) lockWorkspace()
+          return
+        }
         if (!String(response.headers.get('content-type') || '').includes('application/json')) throw new Error('Secure preview session unavailable.')
         const body = await response.json()
         if (!response.ok || !body?.authorized) throw new Error(body?.error || 'Owner records unavailable.')
         if (active) {
-          cachedReads.current.set(requestKey,{time:Date.now(),value:body})
-          if (cachedReads.current.size > 25) cachedReads.current.delete(cachedReads.current.keys().next().value)
           setData({key:requestKey,state:'ready',value:body,error:''})
         }
       }).catch((error) => {
@@ -223,6 +230,10 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
         body:JSON.stringify({action:'preview_action',...choice}),
       })
+      if (response.status === 401 || response.status === 403) {
+        lockWorkspace()
+        return
+      }
       const body = await response.json()
       if (!response.ok || !body.authorized) { setActionResult({error:body.error || 'Validation failed'});return }
       setActionResult(body)
