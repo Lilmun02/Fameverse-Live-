@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ createClient:vi.fn(),getUser:vi.fn(),role:vi.fn(),rpc:vi.fn(),members:vi.fn(),live:vi.fn(),from:vi.fn(),gte:vi.fn() }))
+const mocks = vi.hoisted(() => ({ createClient:vi.fn(),getUser:vi.fn(),role:vi.fn(),rpc:vi.fn(),members:vi.fn(),live:vi.fn(),from:vi.fn(),gte:vi.fn(),cases:vi.fn(),support:vi.fn(),audit:vi.fn() }))
 vi.mock('@supabase/supabase-js',()=>({
   createClient:(...args)=>{
     mocks.createClient(...args)
@@ -8,10 +8,13 @@ vi.mock('@supabase/supabase-js',()=>({
       from:(table)=>{
         mocks.from(table)
         if(table==='account_roles')return {select:()=>({eq:()=>({maybeSingle:mocks.role})})}
-        const value=table==='profiles' ? mocks.members : mocks.live
+        const value=table==='profiles' ? mocks.members :
+          table==='owner_cases' ? mocks.cases :
+          table==='beta_feedback' ? mocks.support :
+          table==='owner_audit_events' ? mocks.audit : mocks.live
         const chain={select:()=>chain,order:()=>chain,ilike:()=>chain,eq:()=>chain,
           gte:(field,value)=>{mocks.gte(table,field,value);return chain},
-          limit:()=>Promise.resolve({data:[],error:null}),range:()=>value(),
+          limit:()=>table==='owner_cases' ? value() : Promise.resolve({data:[],error:null}),range:()=>value(),
           then:(resolve,reject)=>Promise.resolve({data:[],count:0,error:null}).then(resolve,reject)}
         return chain
       },
@@ -38,6 +41,9 @@ beforeEach(()=>{
   mocks.rpc.mockResolvedValue({data:[{reward_reserve_cents:1000}],error:null})
   mocks.members.mockResolvedValue({data:[{id:'22222222-2222-4222-8222-222222222222',username:'creator',display_name:'Creator'}],count:1,error:null})
   mocks.live.mockResolvedValue({data:[],count:0,error:null})
+  mocks.cases.mockResolvedValue({data:null,error:{message:'unavailable'}})
+  mocks.support.mockResolvedValue({data:[],count:0,error:null})
+  mocks.audit.mockResolvedValue({data:null,count:null,error:{message:'unavailable'}})
 })
 afterEach(()=>vi.unstubAllEnvs())
 describe('Owner Command Center protected operations',()=>{
@@ -132,6 +138,36 @@ describe('Owner Command Center protected operations',()=>{
     expect(mocks.rpc).toHaveBeenCalledWith('get_creator_payout_moderation_queue_v3',{p_limit:25})
     expect(mocks.rpc).toHaveBeenCalledWith('get_owner_finance_control_summary')
     expect(r.body).toHaveProperty('summary')
+  })
+  it('does not treat RLS-hidden support records as an empty owner inbox',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'read',section:'support'}),r)
+    expect(r.code,JSON.stringify(r.body)).toBe(200)
+    expect(r.body.availability).toBe('requires_isolated_backend')
+    expect(mocks.from).not.toHaveBeenCalledWith('beta_feedback')
+  })
+  it('lists existing web support intake only after protected owner schema is available',async()=>{
+    mocks.cases.mockResolvedValue({data:[],error:null})
+    mocks.support.mockResolvedValue({data:[{id:'22222222-2222-4222-8222-222222222222',
+      user_id:'33333333-3333-4333-8333-333333333333',
+      category:'other',message:'Help with my account',created_at:'2026-11-10T12:00:00Z'}],count:1,error:null})
+    const r=response()
+    await ownerConsole(request({action:'read',section:'support'}),r)
+    expect(r.code,JSON.stringify(r.body)).toBe(200)
+    expect(r.body.source).toBe('verified_web_feedback')
+    expect(r.body.items).toHaveLength(1)
+    expect(r.body.total).toBe(1)
+    expect(mocks.from).toHaveBeenCalledWith('beta_feedback')
+  })
+  it('lists persistent audit records only when the protected table is accessible',async()=>{
+    mocks.audit.mockResolvedValue({data:[{id:'44444444-4444-4444-8444-444444444444',
+      section:'moderation',operation:'warn',outcome:'applied'}],count:1,error:null})
+    const r=response()
+    await ownerConsole(request({action:'read',section:'audit'}),r)
+    expect(r.code,JSON.stringify(r.body)).toBe(200)
+    expect(r.body.source).toBe('protected_owner_audit')
+    expect(r.body.items).toHaveLength(1)
+    expect(r.body.total).toBe(1)
   })
   it('does not invent support or audit records',async()=>{
     for(const section of ['support','audit']){

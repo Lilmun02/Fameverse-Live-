@@ -98,6 +98,42 @@ async function ownerQueue(client, name) {
   return { items: [], total: 0 }
 }
 
+
+// The support inbox already stores real intake in beta_feedback. Owner-wide
+// access is NOT present in production RLS; require the reviewed case foundation
+// before attempting to list it. Never mistake RLS-hidden rows for an empty inbox.
+async function ownerSupport(client, body) {
+  const { page, start, end } = pagination(body)
+  const gate = await client.from('owner_cases').select('id', { head: true }).limit(1)
+  if (gate.error) return {
+    availability: 'requires_isolated_backend',
+    message: 'The protected owner case schema and feedback read policy have not been deployed. No support records were guessed.',
+  }
+  const r = await client.from('beta_feedback')
+    .select('id,user_id,category,message,created_at,current_screen', { count: 'exact' })
+    .eq('current_screen', 'web_support')
+    .order('created_at', { ascending: false }).range(start, end)
+  if (r.error) return {
+    availability: 'requires_isolated_backend',
+    message: 'Owner support intake is inaccessible under current permissions. The inbox has not been declared empty.',
+  }
+  return { items: r.data || [], page, total: r.count ?? null, source: 'verified_web_feedback' }
+}
+
+// No browser-local or preview action history may masquerade as an audit log.
+// Until the protected audit table is deployed, show a clear unavailable state.
+async function ownerAudit(client, body) {
+  const { page, start, end } = pagination(body)
+  const r = await client.from('owner_audit_events')
+    .select('id,actor_user_id,case_id,section,operation,target_type,target_id,reason,outcome,created_at', { count: 'exact' })
+    .order('created_at', { ascending: false }).range(start, end)
+  if (r.error) return {
+    availability: 'requires_isolated_backend',
+    message: 'Persistent owner audit storage has not been deployed. No preview history is presented as real audit evidence.',
+  }
+  return { items: r.data || [], page, total: r.count ?? null, source: 'protected_owner_audit' }
+}
+
 async function fetchRead(client, section, body) {
   switch(section) {
     case 'overview': return ownerSummary(client)
@@ -134,10 +170,8 @@ async function fetchRead(client, section, body) {
       })
       return { items: checked(r, 'Rankings report'), windowType: 'rolling' }
     }
-    case 'support':
-      return { availability: 'requires_isolated_backend', message: 'Support inbox needs an owner-only read policy and audited case workflow. Preview is connected to the production database; no unapproved policy changes were made.' }
-    case 'audit':
-      return { availability: 'requires_isolated_backend', message: 'Persistent owner audit log needs a protected case and audit table. No fabricated log entries are shown.' }
+    case 'support': return ownerSupport(client, body)
+    case 'audit': return ownerAudit(client, body)
     case 'system': {
       const r = await client.from('app_release_state')
         .select('channel,backend_revision,release_label,updated_at')
