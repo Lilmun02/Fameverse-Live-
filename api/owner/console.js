@@ -186,7 +186,7 @@ async function fetchRead(client, section, body) {
         message: 'All-time rankings need a separate verified backend query; the current ranking RPC only supports rolling 24-hour and 7-day windows.',
       }
       const r = await client.rpc('get_fameverse_rankings_v2',{
-        p_kind: body.kind === 'supporters' ? 'supporters' : 'creators',
+        p_kind: ['creators','supporters','pulse'].includes(body.kind) ? body.kind : 'creators',
         p_window: body.window === 'weekly' ? '7d' : '24h',
         p_limit: 20,
       })

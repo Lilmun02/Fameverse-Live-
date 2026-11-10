@@ -151,6 +151,25 @@ describe('Owner Command Center protected operations',()=>{
     expect(mocks.rpc).toHaveBeenCalledWith('get_fameverse_gift_catalog')
     expect(mocks.from).not.toHaveBeenCalledWith('fameverse_gift_catalog')
   })
+  it('routes Pulse, Supporters and Creators to their distinct authoritative ranking categories',async()=>{
+    for (const kind of ['pulse','supporters','creators']) {
+      mocks.rpc.mockClear()
+      const r=response()
+      await ownerConsole(request({action:'read',section:'reports',kind,window:'weekly'}),r)
+      expect(r.code,JSON.stringify(r.body)).toBe(200)
+      expect(mocks.rpc).toHaveBeenCalledWith('get_fameverse_rankings_v2',{
+        p_kind:kind,p_window:'7d',p_limit:20,
+      })
+    }
+  })
+  it('does not allow unrecognized ranking categories to flow into the backend RPC',async()=>{
+    const r=response()
+    await ownerConsole(request({action:'read',section:'reports',kind:'invented',window:'daily'}),r)
+    expect(r.code).toBe(200)
+    expect(mocks.rpc).toHaveBeenCalledWith('get_fameverse_rankings_v2',{
+      p_kind:'creators',p_window:'24h',p_limit:20,
+    })
+  })
   it('loads payout queue and real finance totals from independent owner RPCs',async()=>{
     const r=response()
     await ownerConsole(request({action:'read',section:'finance'}),r)
