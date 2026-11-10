@@ -7,6 +7,7 @@
 - Staged Build 47 candidate: PR #101, branch `build47/backend-utc-rankings-nov05`; stays DRAFT. Source revisions now include Top 100, regression tests, and the owner-approved existing Codemagic workflow metadata repair.
 - Native baseline: `build47/native-safe-review-nov04`; separate policy schema draft: `build47/policy-acceptance-gate-nov05`.
 - Native Fameboard display now calls legacy parameter values `24h`/`7d` but labels them Daily/Weekly, awaiting the paired UTC migration.
+- Native host End Live button and hardware/system back route now require an affirmative confirmation dialog; unconfirmed exits retain the live session. Static Flutter regression assertions and existing Codemagic source guard are committed, but no device test has run.
 - Rankings preserved without owner-invented category remapping: Supporters = legitimate cash-backed gift sends, Pulse = eligible Fametaps, Creators = eligible host Fametaps (followers secondary).
 - All shopping/purchase/Stripe checkout-session/webhook integrations are **frozen** and out of scope.
 
@@ -14,7 +15,7 @@
 
 - SELECT-only Supabase UTC boundary check: 5/5 passed, including Sunday 00:00 UTC, Monday, US daylight-saving change, year rollover.
 - Vercel preview build: READY for rank/native-label commits (web quality only; it does NOT run Flutter, iOS signing or TestFlight).
-- Regression checks: native Flutter source contract, cross-backend ranking Vitest contracts, and existing TestFlight workflow Vitest contracts committed. Static source checks passed; the latest Vercel preview status is SUCCESS, but this is **not** evidence of Flutter runtime execution, signed iOS build or device acceptance.
+- Regression checks: native Flutter source contracts (Fameboard Top 100 and host End Live confirmation), cross-backend ranking Vitest contracts, and existing TestFlight workflow Vitest contracts committed. Static source checks passed. Vercel build logs confirm the ranking Vitest suite (6 tests) and TestFlight workflow Vitest suite (4 tests) passed at verified preview commit `c21de43`; **this is not** evidence of Flutter runtime execution, signed iOS build or device acceptance. Additional commits require their own refreshed checks.
 
 ## Release blockers / QA to clear
 
