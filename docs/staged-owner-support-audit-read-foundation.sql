@@ -86,6 +86,79 @@ create policy "Owner reads web support intake"
     )
   );
 
+-- Service-only writes: no anonymous or authenticated client can insert,
+-- update, or remove owner cases and audit events directly.
+grant select, insert, update on public.owner_cases to service_role;
+grant select, insert on public.owner_audit_events to service_role;
+
+-- Invariant: audit records cannot be edited or deleted, including by service
+-- roles. A reversal is recorded by APPENDING a new event, not changing history.
+create or replace function public.owner_audit_immutable_v1()
+returns trigger
+language plpgsql
+set search_path = ''
+as $audit_lock$
+begin
+  raise exception 'Owner audit events are immutable' using errcode = '42501';
+end;
+$audit_lock$;
+
+revoke all on function public.owner_audit_immutable_v1()
+  from public, anon, authenticated;
+
+drop trigger if exists owner_audit_immutable_before_change on public.owner_audit_events;
+create trigger owner_audit_immutable_before_change
+before update or delete on public.owner_audit_events
+for each row execute function public.owner_audit_immutable_v1();
+
+-- New web support feedback gets linked to a reviewable owner case without
+-- duplicating the member's private message in a public-facing summary.
+-- This trigger MUST be proven in an isolated environment before production:
+-- failed case creation must not silently lose support intake.
+create or replace function public.owner_case_from_feedback_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $intake$
+begin
+  if new.current_screen = 'web_support' then
+    insert into public.owner_cases(
+      source_feedback_id, subject_user_id, case_type, status, summary, created_at
+    ) values (
+      new.id,
+      (select p.id from public.profiles p where p.id = new.user_id),
+      'support',
+      'open',
+      'Web support: ' || left(coalesce(nullif(trim(new.category), ''), 'other'), 80),
+      new.created_at
+    ) on conflict (source_feedback_id) do nothing;
+  end if;
+  return new;
+end;
+$intake$;
+
+revoke all on function public.owner_case_from_feedback_v1()
+  from public, anon, authenticated;
+
+drop trigger if exists owner_case_from_feedback_after_insert on public.beta_feedback;
+create trigger owner_case_from_feedback_after_insert
+after insert on public.beta_feedback
+for each row execute function public.owner_case_from_feedback_v1();
+
+-- One-time idempotent case intake backfill. Review existing support-message
+-- volume and retention before ANY approval to apply this to production.
+insert into public.owner_cases(
+  source_feedback_id, subject_user_id, case_type, status, summary, created_at
+)
+select f.id, p.id, 'support', 'open',
+  'Web support: ' || left(coalesce(nullif(trim(f.category), ''), 'other'), 80),
+  f.created_at
+from public.beta_feedback f
+left join public.profiles p on p.id = f.user_id
+where f.current_screen = 'web_support'
+on conflict (source_feedback_id) do nothing;
+
 -- No client insert, update or delete on owner_cases/owner_audit_events.
 -- Administrative writes need a separately reviewed, atomic, audited,
 -- server-authorized implementation. Client preview_actions remain no-op.
