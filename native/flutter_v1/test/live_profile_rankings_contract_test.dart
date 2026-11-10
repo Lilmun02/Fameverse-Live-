@@ -39,7 +39,8 @@ void main() {
       expect(rankings, contains("'supporters' => '${_compact(entry.score)} coins sent'"));
       expect(rankings, contains("'pulse' => '${_compact(entry.score)} Fame taps'"));
       expect(rankings, contains("'creators' => '${_compact(entry.score)} live taps'"));
-      expect(rankings, contains("'p_limit': 50"));
+      expect(rankings, contains("'p_limit': 100"));
+      expect(rankings, isNot(contains("'p_limit': 50")));
       expect(rankings, isNot(contains('fake')));
     });
 
