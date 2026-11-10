@@ -81,14 +81,14 @@ function Row({ item, section, onChoose }) {
   </article>
 }
 
-function ControlForm({ section, choice, setChoice, onSubmit, busy, result }) {
+function ControlForm({ section, choice, setChoice, onSubmit, busy, result, canApply }) {
   const commands = ACTIONS[section]
   if (!commands?.length) return null
   const mustTarget = NEEDS_ID.has(choice.operation)
   return <section className="fv-oc-action-panel" aria-label="Owner action review">
     <div className="fv-oc-panel-heading"><div><span className="fv-oc-eyebrow">REVIEW & VALIDATE</span><h3>Owner controls</h3></div>
-      <span className="fv-oc-pill">PREVIEW • NO WRITES</span></div>
-    <p>Choose an operation and enter a reason. Validation is connected to the protected owner API, but changes are <strong>not applied</strong> to real members or funds in this preview.</p>
+      <span className="fv-oc-pill">{canApply ? 'AUDITED ACTION • LIVE' : 'PREVIEW • NO WRITES'}</span></div>
+    <p>{canApply ? 'This operation can update a real Fameverse record after explicit confirmation. The server must record an audit event in the same transaction. Only creator verification and existing support-case reviews are eligible in this first audited rollout.' : 'This control is NOT activated. The protected API can check input requirements, but no changes will be applied to Fameverse. Other operations require separate audited backend activation.'}</p>
     <form className="fv-oc-form" onSubmit={onSubmit}>
       <label htmlFor="fv-oc-operation">Control
         <select id="fv-oc-operation" value={choice.operation} disabled={busy}
@@ -105,12 +105,14 @@ function ControlForm({ section, choice, setChoice, onSubmit, busy, result }) {
           minLength={12} maxLength={600} required rows={4} placeholder="Explain the evidence, notice and intended review…" />
       </label>
       <button className="fv-oc-primary" type="submit" disabled={busy || choice.reason.trim().length < 12 || (mustTarget && !choice.targetId)}>
-        {busy ? 'Validating…' : 'Validate in preview'}
+        {busy ? (canApply ? 'Applying…' : 'Validating…') : (canApply ? 'Apply audited change' : 'Validate in preview')}
       </button>
     </form>
     {result && <Notice kind={result.error ? 'error' : 'warning'}>
       {result.error || result.message}
-      {!result.error && <p><strong>No changes applied. No persistent audit event recorded.</strong></p>}
+      {!result.error && (result.applied && result.recorded
+        ? <p><strong>Applied and recorded. Audit ID: {result.auditId}</strong></p>
+        : <p><strong>No changes applied. No persistent audit event recorded.</strong></p>)}
     </Notice>}
   </section>
 }
@@ -145,12 +147,17 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const [actionResult, setActionResult] = useState(null)
   const [previewHistory, setPreviewHistory] = useState([])
   const pendingAction = useRef(null)
+  const pendingCommandKey = useRef(null)
   const currentLabel = useMemo(() => info?.[1] || 'Overview',[info])
   const requestKey = JSON.stringify([section,page,query,kind,windowName,version,filters.caseId,filters.targetId])
+  const currentControls = data.key === requestKey && data.state === 'ready' ? data.value?.controls : null
+  const canApply = currentControls?.mode === 'restricted-execution' &&
+    Array.isArray(currentControls.executable) && currentControls.executable.includes(choice.operation)
 
   const cancelAction = () => {
     pendingAction.current?.abort()
     pendingAction.current = null
+    pendingCommandKey.current = null
     setActionBusy(false)
   }
   useEffect(() => () => {
@@ -242,6 +249,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   }, [token,section,page,query,version,kind,windowName,requestKey])
 
   const selectAction = (operation, targetId = '', targetIds = {}) => {
+    pendingCommandKey.current = null
     setChoice({ operation, targetId:targetId || '', targetIds, reason:'' })
     setActionResult(null)
     setActionOpen(true)
@@ -249,6 +257,14 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const submitAction = async (event) => {
     event.preventDefault()
     if (pendingAction.current) return
+    if (canApply && !window.confirm('Apply this change to the Fameverse backend and record an audit event?')) return
+    if (canApply && !pendingCommandKey.current) {
+      pendingCommandKey.current = window.crypto?.randomUUID?.() || null
+      if (!pendingCommandKey.current) {
+        setActionResult({error:'Secure command ID generation is not available in this browser.'})
+        return
+      }
+    }
     const controller = new AbortController()
     pendingAction.current = controller
     setActionBusy(true)
@@ -257,7 +273,11 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       const response = await fetch('/api/owner/console',{
         method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
         headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
-        body:JSON.stringify({action:'preview_action',operation:choice.operation,targetId:choice.targetId,reason:choice.reason}),
+        body:JSON.stringify({
+          action:canApply ? 'execute_action' : 'preview_action',
+          operation:choice.operation,targetId:choice.targetId,reason:choice.reason,
+          confirmed:canApply,idempotencyKey:canApply ? pendingCommandKey.current : undefined,
+        }),
       })
       if (pendingAction.current !== controller) return
       if (response.status === 401 || response.status === 403) {
@@ -266,9 +286,18 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       }
       const body = await response.json()
       if (pendingAction.current !== controller) return
-      if (!response.ok || !body.authorized) { setActionResult({error:body.error || 'Validation failed'});return }
+      if (!response.ok || !body.authorized) { setActionResult({error:body.error || 'Owner operation failed'});return }
+      if (canApply && (!body.applied || !body.recorded || !body.auditId)) {
+        setActionResult({error:'The backend did not confirm an applied and audited change.'})
+        return
+      }
       setActionResult(body)
-      setPreviewHistory(h => [{id:body.id,operation:body.operation,reason:body.reason,applied:false},...h].slice(0,12))
+      if (canApply) {
+        pendingCommandKey.current = null
+        setVersion(n => n + 1)
+      } else {
+        setPreviewHistory(h => [{id:body.id,operation:body.operation,reason:body.reason,applied:false},...h].slice(0,12))
+      }
     } catch (error) {
       if (pendingAction.current === controller && error.name !== 'AbortError') setActionResult({error:'Could not reach protected validation service.'})
     } finally {
@@ -359,14 +388,16 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
           <button type="button" onClick={()=>setVersion(n=>n+1)}><WebIcon name="refresh" size={16}/>Refresh</button>
           <button type="button" onClick={onLock}>Lock</button></div>
       </div>
-      {section !== 'overview' && <Notice kind="warning">Controlled preview. Data is read from existing authorized sources; all enforcement and money-changing operations are validated only, never applied to live accounts.</Notice>}
+      {section !== 'overview' && <Notice kind="warning">{currentControls?.mode === 'restricted-execution'
+        ? 'Audited execution is active for creator-verification and existing support-case reviews only. All other controls remain preview-only. Payouts, bans, gifts, live moderation, system operations and checkout are NOT enabled.'
+        : 'Controlled preview. Live owner commands are NOT activated. Actions validate requirements only and never modify accounts or funds.'}</Notice>}
       {(section==='users'||section==='moderation')&&<form className="fv-oc-search" onSubmit={(e)=>{e.preventDefault();setPage(0);setQuery(searchDraft.trim())}}>
         <label htmlFor="fv-oc-user-search">{section==='moderation' ? 'Search case summaries' : 'Search member usernames'}</label>
         <input id="fv-oc-user-search" value={searchDraft} onChange={(e)=>setSearchDraft(e.target.value)} placeholder={section==='moderation' ? 'Case summary...' : 'Username...'} />
         <button type="submit">Search</button>
       </form>}
       {section==='reports'&&<div className="fv-oc-filters">
-        <label>Ranking type<select value={kind} onChange={(e)=>setKind(e.target.value)}><option value="creators">Creators</option><option value="supporters">Supporters</option></select></label>
+        <label>Ranking type<select value={kind} onChange={(e)=>setKind(e.target.value)}><option value="creators">Creators</option><option value="supporters">Supporters</option><option value="pulse">Pulse</option></select></label>
         <label>Time window<select value={windowName} onChange={(e)=>setWindowName(e.target.value)}><option value="daily">Past 24 hours</option><option value="weekly">Past 7 days</option><option value="all_time">All-time (pending)</option></select></label>
       </div>}
       <div className="fv-oc-section-content">{renderContent()}</div>
@@ -375,14 +406,14 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <button className="fv-oc-primary" type="button" onClick={()=>selectAction(options[0][0])}>
           Review available {info[1].toLowerCase()} controls
         </button>
-        <span>Preview validation only — no account or financial changes</span>
+        <span>{currentControls?.mode === 'restricted-execution' ? 'Only approved verification and support reviews can apply; all other operations are dry-run.' : 'Preview validation only — no account or financial changes'}</span>
       </div>}
       {actionOpen && <div className="fv-oc-modal-backdrop" onMouseDown={(event) => {if(event.target===event.currentTarget&&!actionBusy) setActionOpen(false)}}>
         <div className="fv-oc-modal" role="dialog" aria-modal="true" aria-label="Review owner control"
           onKeyDown={(event) => {if(event.key==='Escape'&&!actionBusy) setActionOpen(false)}}>
           <div className="fv-oc-modal-close"><button type="button" disabled={actionBusy} onClick={() => setActionOpen(false)}>Close</button></div>
-          <ControlForm section={section} choice={choice} setChoice={value=>{setChoice(value);setActionResult(null)}}
-            onSubmit={submitAction} busy={actionBusy} result={actionResult}/>
+          <ControlForm section={section} choice={choice} setChoice={value=>{pendingCommandKey.current=null;setChoice(value);setActionResult(null)}}
+            onSubmit={submitAction} busy={actionBusy} result={actionResult} canApply={canApply}/>
         </div>
       </div>}
       {section==='audit'&& <section className="fv-oc-action-panel"><h3>Current-page validation history</h3>
