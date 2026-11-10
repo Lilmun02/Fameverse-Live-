@@ -139,11 +139,28 @@ async function ownerAudit(client, body) {
   return { items: r.data || [], page, total: r.count ?? null, source: 'protected_owner_audit' }
 }
 
+async function ownerModeration(client, body) {
+  const { page, start, end } = pagination(body)
+  let query = client.from('owner_cases')
+    .select('id,source_feedback_id,subject_user_id,case_type,status,summary,created_at,updated_at', { count: 'exact' })
+    .in('case_type', ['moderation','appeal','gift_integrity','policy','security'])
+  const q = safeQuery(body.query)
+  if (q) query = query.ilike('summary', '%' + q + '%')
+  if (body.caseId) query = query.eq('id', body.caseId)
+  if (body.targetId) query = query.eq('subject_user_id', body.targetId)
+  const r = await query.order('created_at', { ascending: false }).order('id').range(start, end)
+  if (r.error) return {
+    availability:'requires_isolated_backend',
+    message:'Protected moderation cases are not accessible. The staged case backend must be activated separately; the member directory is not an enforcement queue.',
+  }
+  return { items:r.data || [], page, total:r.count ?? null, source:'protected_owner_cases' }
+}
+
 async function fetchRead(client, section, body) {
   switch(section) {
     case 'overview': return ownerSummary(client)
     case 'users': return listProfiles(client, body)
-    case 'moderation': return listProfiles(client, body)
+    case 'moderation': return ownerModeration(client, body)
     case 'live': return listLive(client, body)
     case 'badges': return ownerQueue(client, 'badges')
     case 'finance': return ownerQueue(client, 'finance')

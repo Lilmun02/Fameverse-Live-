@@ -11,6 +11,17 @@ function Link({ section, filter, id, children, onNavigate }) {
 
 export default function OwnerCaseRecord({ item, section, onNavigate, onChoose }) {
   const related = Array.isArray(item.case) ? item.case[0] : item.case
+  if (section === 'moderation') return <article className="fv-oc-record">
+    <div className="fv-oc-record-copy">
+      <strong>{item.summary}</strong><span>{item.case_type} · {item.status}</span>
+      <span>Case ID: {item.id}</span>
+      <span>Opened: {timestamp(item.created_at)} · Updated: {timestamp(item.updated_at)}</span>
+      {item.subject_user_id && <a href={'/profile/'+encodeURIComponent(item.subject_user_id)}>Subject profile · {item.subject_user_id}</a>}
+      <Link section="audit" filter="caseId" id={item.id} onNavigate={onNavigate}>Audit for this case</Link>
+      {item.source_feedback_id && <Link section="support" filter="caseId" id={item.id} onNavigate={onNavigate}>Related support intake</Link>}
+      <span>This staged store supplies case summaries, not sanction execution, evidence attachments or appeal decisions.</span>
+    </div>
+  </article>
   if (section === 'support') return <article className="fv-oc-record">
     <div className="fv-oc-record-copy">
       <strong>Support intake · {item.category || 'Uncategorized'}</strong>

@@ -12,7 +12,7 @@ shares a production database. No database changes or purchase code are authorize
 | Overview | Profile count, live count with the shared 45-second heartbeat cutoff, finance RPC | Case, badge, policy, operational totals and reconciled detail links missing |
 | User Management | Paginated/searchable profiles | Full role/standing/history and joined cases missing; enforcement validates only |
 | Live Operations | Live room metadata with the same freshness cutoff | Co-host/incident joins missing; kick/mute/end validate only |
-| Moderation | Profile directory, **not** an enforcement queue | Cases, appeals, sanctions, reversals and authoritative write gates missing |
+| Moderation | Read adapter for staged owner_cases (moderation, appeals, policy, integrity, security) | Schema unactivated; evidence, sanctions, reversals and authoritative write gates missing |
 | Gifts & Coins | Existing published gift-catalog RPC | Evidence/receipt/balance/provenance investigation missing; grants validate only; purchases frozen |
 | Finance & Payouts | Existing moderation queue and owner finance summary RPCs | Holds/releases validate only; no live payouts or transfers |
 | Owner Funding | Owner reward-control summary RPC | Allocations validate only; no wallet credits or transfers |
@@ -55,3 +55,16 @@ Live verification still needs allowed backend egress and a real authorized owner
 session on the approved Preview IP. Schema activation requires separate CEO
 approval for an isolated database, including cost review; never apply this SQL to
 production or describe undeployed features as working.
+
+## Repairs after the CTO starting point
+
+Support/Audit render actual contracted fields and carry protected case/target
+filters across links and browser history. Moderation now uses the staged case
+store instead of relabeling the profile directory as an enforcement queue. It
+reports unavailable when the store is absent. All three remain deployment-blocked.
+
+Control changes preserve room/member/payout target identity. Pending validations
+cannot be submitted twice or leak a late result across navigation; cancellation
+and session cleanup discard them. Target roles hidden by RLS fail closed rather
+than qualifying as verified non-owners. The secure access handshake is coalesced
+under StrictMode, bounded to ten seconds, and never cached across a retry.

@@ -331,7 +331,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       {section === 'support' && <Notice>Protected support intake and linked cases are read-only. Case lifecycle changes require a separately approved backend.</Notice>}
       {section === 'audit' && <Notice>These are durable records returned by protected audit storage. Preview validations do not create audit events.</Notice>}
       {items.length === 0 ? <Notice>No records are available to your current authorized view. This is not proof that there are no records elsewhere.</Notice> :
-        <div className="fv-oc-records">{items.map((item,i)=>['support','audit'].includes(section) ?
+        <div className="fv-oc-records">{items.map((item,i)=>['support','audit','moderation'].includes(section) ?
           <OwnerCaseRecord key={item.id} item={item} section={section} onNavigate={navigate} onChoose={selectAction}/> :
           <Row key={item.id || item.user_id || item.payout_id || i} item={item} section={section} onChoose={selectAction}/>)}</div>}
       {v.total != null && <div className="fv-oc-pagination">
@@ -361,8 +361,8 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
       </div>
       {section !== 'overview' && <Notice kind="warning">Controlled preview. Data is read from existing authorized sources; all enforcement and money-changing operations are validated only, never applied to live accounts.</Notice>}
       {(section==='users'||section==='moderation')&&<form className="fv-oc-search" onSubmit={(e)=>{e.preventDefault();setPage(0);setQuery(searchDraft.trim())}}>
-        <label htmlFor="fv-oc-user-search">Search member usernames</label>
-        <input id="fv-oc-user-search" value={searchDraft} onChange={(e)=>setSearchDraft(e.target.value)} placeholder="Username..." />
+        <label htmlFor="fv-oc-user-search">{section==='moderation' ? 'Search case summaries' : 'Search member usernames'}</label>
+        <input id="fv-oc-user-search" value={searchDraft} onChange={(e)=>setSearchDraft(e.target.value)} placeholder={section==='moderation' ? 'Case summary...' : 'Username...'} />
         <button type="submit">Search</button>
       </form>}
       {section==='reports'&&<div className="fv-oc-filters">

@@ -12,7 +12,7 @@ vi.mock('@supabase/supabase-js',()=>({
           table==='owner_cases' ? mocks.cases :
           table==='beta_feedback' ? mocks.support :
           table==='owner_audit_events' ? mocks.audit : mocks.live
-        const chain={select:()=>chain,order:()=>chain,ilike:()=>chain,eq:(field,value)=>{mocks.eq(table,field,value);return chain},
+        const chain={select:()=>chain,order:()=>chain,ilike:()=>chain,in:()=>chain,eq:(field,value)=>{mocks.eq(table,field,value);return chain},
           gte:(field,value)=>{mocks.gte(table,field,value);return chain},
           limit:()=>table==='owner_cases' ? value() : Promise.resolve({data:[],error:null}),range:()=>value(),
           then:(resolve,reject)=>Promise.resolve({data:[],count:0,error:null}).then(resolve,reject)}
@@ -235,4 +235,26 @@ describe('Owner case and audit cross-section filters', () => {
     }
     expect(mocks.from.mock.calls.every(([table])=>table==='account_roles')).toBe(true)
   })
+})
+
+
+describe('Staged moderation case read',()=>{
+ it('never substitutes member profiles when the case store is unavailable',async()=>{
+  const r=response()
+  await ownerConsole(request({action:'read',section:'moderation'}),r)
+  expect(r.code).toBe(200)
+  expect(r.body.availability).toBe('requires_isolated_backend')
+  expect(mocks.from).not.toHaveBeenCalledWith('profiles')
+ })
+ it('returns authorized case rows with shared case and subject filters',async()=>{
+  const caseId='55555555-5555-4555-8555-555555555555'
+  const subject='66666666-6666-4666-8666-666666666666'
+  mocks.cases.mockResolvedValue({data:[{id:caseId,subject_user_id:subject,status:'under_review',case_type:'moderation',summary:'Reported conduct'}],count:1,error:null})
+  const r=response()
+  await ownerConsole(request({action:'read',section:'moderation',caseId,targetId:subject}),r)
+  expect(r.body.source).toBe('protected_owner_cases')
+  expect(r.body.items[0].id).toBe(caseId)
+  expect(mocks.eq).toHaveBeenCalledWith('owner_cases','id',caseId)
+  expect(mocks.eq).toHaveBeenCalledWith('owner_cases','subject_user_id',subject)
+ })
 })

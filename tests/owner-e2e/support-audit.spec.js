@@ -34,7 +34,7 @@ test('support shows actual intake and preserves the case across audit navigation
   expect(reads).toHaveLength(3)
 })
 
-for (const section of ['support','audit']) {
+for (const section of ['support','audit','moderation']) {
   test(`${section} remains unavailable when the staged backend is absent`, async ({ page }) => {
     await page.route('**/api/owner/console', route => route.fulfill({json:{authorized:true,
       availability:'requires_isolated_backend',message:'Protected storage is not deployed.'}}))
@@ -43,3 +43,15 @@ for (const section of ['support','audit']) {
     await expect(page.locator('.fv-oc-record')).toHaveCount(0)
   })
 }
+
+test('moderation renders case identity and subject links, never a profile as a case',async({page})=>{
+  await page.route('**/api/owner/console',route=>route.fulfill({json:{authorized:true,source:'protected_owner_cases',total:1,
+    items:[{id:caseId,subject_user_id:subject,source_feedback_id:'22222222-2222-4222-8222-222222222222',
+      case_type:'appeal',status:'under_review',summary:'Review the account appeal',created_at:'2026-11-10T12:00:00Z'}]}}))
+  await page.goto('/tests/fixtures/owner.html?section=moderation')
+  await expect(page.getByText('Review the account appeal',{exact:true})).toBeVisible()
+  await expect(page.getByText('appeal · under_review',{exact:true})).toBeVisible()
+  await expect(page.getByRole('link',{name:'Subject profile · '+subject})).toHaveAttribute('href','/profile/'+subject)
+  await expect(page.getByRole('link',{name:'Audit for this case',exact:true})).toHaveAttribute('href','/owner/audit?caseId='+caseId)
+  await expect(page.getByLabel('Search case summaries')).toBeVisible()
+})
