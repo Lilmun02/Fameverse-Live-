@@ -59,9 +59,11 @@ function Row({ item, section, onChoose }) {
     item.score != null ? 'Rank score: ' + number(item.score) : null
   const actions = ['gifts','policy'].includes(section) ? [] : (ACTIONS[section] || [])
   const targetFor = (operation) => section === 'live'
-    ? (operation === 'end_live' ? item.id : (item.host_user_id || item.id))
-    : section === 'finance' ? (item.payout_id || item.id)
+    ? (operation === 'end_live' ? item.id : item.host_user_id || '')
+    : section === 'finance' ? (['hold_payout','release_payout'].includes(operation)
+      ? item.payout_id || item.id : item.user_id || item.creator_user_id || '')
     : section === 'badges' ? item.user_id : id
+  const targetIds = Object.fromEntries(actions.map(([operation]) => [operation,targetFor(operation)]))
   return <article className="fv-oc-record">
     <div className="fv-oc-record-copy"><strong>{label}</strong><span>{sub}</span>
       {section === 'users' && item.id && <a className="fv-oc-profile-link" href={'/profile/' + encodeURIComponent(item.id)}>Open member profile</a>}
@@ -72,8 +74,8 @@ function Row({ item, section, onChoose }) {
     </div>
     {actions.length > 0 && <div className="fv-oc-row-actions">
       {actions.slice(0, section === 'moderation' ? 4 : section === 'users' ? 3 : 2).map(([key,name]) =>
-        <button key={key} type="button" onClick={() => onChoose(key,targetFor(key))}>{name}</button>)}
-      {actions.length > 2 && <button type="button" onClick={() => onChoose(actions[0][0],targetFor(actions[0][0]))}>
+        <button key={key} type="button" onClick={() => onChoose(key,targetFor(key),targetIds)}>{name}</button>)}
+      {actions.length > 2 && <button type="button" onClick={() => onChoose(actions[0][0],targetFor(actions[0][0]),targetIds)}>
         More controls <WebIcon name="arrow" size={15} /></button>}
     </div>}
   </article>
@@ -89,16 +91,17 @@ function ControlForm({ section, choice, setChoice, onSubmit, busy, result }) {
     <p>Choose an operation and enter a reason. Validation is connected to the protected owner API, but changes are <strong>not applied</strong> to real members or funds in this preview.</p>
     <form className="fv-oc-form" onSubmit={onSubmit}>
       <label htmlFor="fv-oc-operation">Control
-        <select id="fv-oc-operation" value={choice.operation} onChange={(e) => setChoice({ ...choice, operation: e.target.value })}>
+        <select id="fv-oc-operation" value={choice.operation} disabled={busy}
+          onChange={(e) => setChoice({ ...choice, operation:e.target.value, targetId:choice.targetIds?.[e.target.value] || '' })}>
           {commands.map(([key,label]) => <option key={key} value={key}>{label}</option>)}
         </select>
       </label>
       {mustTarget && <label htmlFor="fv-oc-target">Target user / room / request ID
-        <input id="fv-oc-target" value={choice.targetId} onChange={(e) => setChoice({ ...choice, targetId: e.target.value.trim() })}
+        <input id="fv-oc-target" value={choice.targetId} disabled={busy} onChange={(e) => setChoice({ ...choice, targetId: e.target.value.trim() })}
           placeholder="Select an item above, or enter its UUID" required />
       </label>}
       <label htmlFor="fv-oc-reason">Reason and supporting context
-        <textarea id="fv-oc-reason" value={choice.reason} onChange={(e) => setChoice({ ...choice, reason: e.target.value })}
+        <textarea id="fv-oc-reason" value={choice.reason} disabled={busy} onChange={(e) => setChoice({ ...choice, reason: e.target.value })}
           minLength={12} maxLength={600} required rows={4} placeholder="Explain the evidence, notice and intended review…" />
       </label>
       <button className="fv-oc-primary" type="submit" disabled={busy || choice.reason.trim().length < 12 || (mustTarget && !choice.targetId)}>
@@ -224,8 +227,8 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
     return () => {active=false;window.clearTimeout(timer);controller.abort()}
   }, [token,section,page,query,version,kind,windowName,requestKey])
 
-  const selectAction = (operation, targetId = '') => {
-    setChoice({ operation, targetId:targetId || '', reason:'' })
+  const selectAction = (operation, targetId = '', targetIds = {}) => {
+    setChoice({ operation, targetId:targetId || '', targetIds, reason:'' })
     setActionResult(null)
     setActionOpen(true)
   }
@@ -356,7 +359,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         <div className="fv-oc-modal" role="dialog" aria-modal="true" aria-label="Review owner control"
           onKeyDown={(event) => {if(event.key==='Escape'&&!actionBusy) setActionOpen(false)}}>
           <div className="fv-oc-modal-close"><button type="button" disabled={actionBusy} onClick={() => setActionOpen(false)}>Close</button></div>
-          <ControlForm section={section} choice={choice} setChoice={setChoice}
+          <ControlForm section={section} choice={choice} setChoice={value=>{setChoice(value);setActionResult(null)}}
             onSubmit={submitAction} busy={actionBusy} result={actionResult}/>
         </div>
       </div>}
