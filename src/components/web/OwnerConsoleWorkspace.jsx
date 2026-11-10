@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import WebIcon from './WebIcon.jsx'
 import OwnerCaseRecord from './OwnerCaseRecords.jsx'
 import '../../styles/web/owner-workspace.css'
@@ -144,13 +144,25 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const [actionOpen, setActionOpen] = useState(false)
   const [actionResult, setActionResult] = useState(null)
   const [previewHistory, setPreviewHistory] = useState([])
+  const pendingAction = useRef(null)
   const currentLabel = useMemo(() => info?.[1] || 'Overview',[info])
   const requestKey = JSON.stringify([section,page,query,kind,windowName,version,filters.caseId,filters.targetId])
+
+  const cancelAction = () => {
+    pendingAction.current?.abort()
+    pendingAction.current = null
+    setActionBusy(false)
+  }
+  useEffect(() => () => {
+    pendingAction.current?.abort()
+    pendingAction.current = null
+  }, [token])
 
   // Section transitions stay inside one signed-in workspace. Browser Back/Forward
   // updates the selected section without refreshing Supabase auth or remounting.
   useEffect(() => {
     const syncRoute = () => {
+      cancelAction()
       setSection(sectionFromLocation())
       setFilters(filtersFromLocation())
       setPage(0)
@@ -166,6 +178,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   const navigate = (event, key) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
+    cancelAction()
     const destination = event.currentTarget.getAttribute('href') || (key === 'overview' ? '/owner' : '/owner/' + key)
     if (window.location.pathname + window.location.search !== destination) window.history.pushState({},'',destination)
     setSection(key)
@@ -191,6 +204,7 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   // A revoked owner session or changed IP must invalidate all private UI state.
   // The parent removes this workspace and requires a fresh server access check.
   const lockWorkspace = () => {
+    cancelAction()
     setData({key:null,state:'loading',value:null,error:''})
     setActionResult(null)
     setPreviewHistory([])
@@ -234,24 +248,32 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
   }
   const submitAction = async (event) => {
     event.preventDefault()
+    if (pendingAction.current) return
+    const controller = new AbortController()
+    pendingAction.current = controller
     setActionBusy(true)
     setActionResult(null)
     try {
       const response = await fetch('/api/owner/console',{
-        method:'POST',credentials:'same-origin',cache:'no-store',
+        method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
         headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
-        body:JSON.stringify({action:'preview_action',...choice}),
+        body:JSON.stringify({action:'preview_action',operation:choice.operation,targetId:choice.targetId,reason:choice.reason}),
       })
+      if (pendingAction.current !== controller) return
       if (response.status === 401 || response.status === 403) {
         lockWorkspace()
         return
       }
       const body = await response.json()
+      if (pendingAction.current !== controller) return
       if (!response.ok || !body.authorized) { setActionResult({error:body.error || 'Validation failed'});return }
       setActionResult(body)
       setPreviewHistory(h => [{id:body.id,operation:body.operation,reason:body.reason,applied:false},...h].slice(0,12))
-    } catch {setActionResult({error:'Could not reach protected validation service.'})}
-    finally {setActionBusy(false)}
+    } catch (error) {
+      if (pendingAction.current === controller && error.name !== 'AbortError') setActionResult({error:'Could not reach protected validation service.'})
+    } finally {
+      if (pendingAction.current === controller) {pendingAction.current=null;setActionBusy(false)}
+    }
   }
 
   const renderContent = () => {
