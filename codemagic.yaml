@@ -25,6 +25,9 @@ workflows:
         - pattern: 'native/flutter-v1'
           include: true
           source: true
+        - pattern: 'build47/backend-utc-rankings-nov05'
+          include: true
+          source: true
       cancel_previous_builds: true
 
     scripts:
