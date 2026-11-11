@@ -9,7 +9,7 @@
 - Native Fameboard display now calls legacy parameter values `24h`/`7d` but labels them Daily/Weekly, awaiting the paired UTC migration.
 - Native host End Live button and hardware/system back route now require an affirmative confirmation dialog; unconfirmed exits retain the live session. Static Flutter regression assertions and existing Codemagic source guard are committed, but no device test has run.
 - Rankings preserved without owner-invented category remapping: Supporters = legitimate cash-backed gift sends, Pulse = eligible Fametaps, Creators = eligible host Fametaps (followers secondary).
-- Owner First Verse Settings and entry are hidden; non-owners retain their progress only while beta enrolled and policy accepted. On 2026-11-11 the sole `verse_pioneer` award was removed from `@dj_sosoboyzz` by an account-specific, single-row production database action, and a follow-up read verified zero remaining Pioneer records. No native Pioneer badge rendering code was deleted.
+- Owner First Verse Settings and entry are hidden; non-owners retain their progress only while beta enrolled and policy accepted. The formerly unapproved purple FV badge mockup on the First Verse page has been replaced with an explicit `ART PENDING` placeholder; no final badge design was selected. A widget regression test checks this placeholder. On 2026-11-11 the sole `verse_pioneer` award was removed from `@dj_sosoboyzz` by an account-specific, single-row production database action, and a follow-up read verified zero remaining Pioneer records. No native Pioneer badge rendering code was deleted.
 - All shopping/purchase/Stripe checkout-session/webhook integrations are **frozen** and out of scope.
 
 ## Verification completed so far
