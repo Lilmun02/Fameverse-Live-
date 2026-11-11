@@ -9,6 +9,7 @@ import '../../data/fameverse_beta_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import '../../data/fameverse_story_backend.dart';
+import '../../data/fv_policy_access.dart';
 import '../live/livekit_live_screen.dart';
 import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_build23.dart';
@@ -27,12 +28,16 @@ class FameverseBuild23Shell extends StatefulWidget {
     required this.backend,
     required this.liveBackend,
     required this.identity,
+    this.policyAccess,
+    this.onReviewPolicy,
     super.key,
   });
 
   final FameverseBackend backend;
   final FameverseLiveBackend liveBackend;
   final FvIdentity identity;
+  final FvPolicyAccess? policyAccess;
+  final VoidCallback? onReviewPolicy;
 
   @override
   State<FameverseBuild23Shell> createState() => _FameverseBuild23ShellState();
@@ -66,6 +71,10 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   FvBetaProgramStatus _betaStatus = FvBetaProgramStatus.notEnrolled;
 
   bool get _isOwner => _accountRole == 'owner';
+  bool get _canGoLive =>
+      widget.policyAccess?.permits(FvPolicyFeature.goLive) ?? false;
+  bool get _canUseBetaBadges =>
+      widget.policyAccess?.permits(FvPolicyFeature.betaBadges) ?? false;
 
   @override
   void initState() {
@@ -558,12 +567,40 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onOpenProfile: () => _setTab(3),
             onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
           ),
-          NativeCameraScreen(
-            liveBackend: widget.liveBackend,
-            identity: widget.identity,
-            profile: profile,
-            onLiveEnded: _refreshAll,
-          ),
+          if (_canGoLive)
+            NativeCameraScreen(
+              liveBackend: widget.liveBackend,
+              identity: widget.identity,
+              profile: profile,
+              onLiveEnded: _refreshAll,
+            )
+          else
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.lock_outline_rounded,
+                      color: Color(0xFFD29BFF),
+                      size: 42,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Live hosting requires policy acceptance.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      key: const Key('build47-review-policy-from-live'),
+                      onPressed: widget.onReviewPolicy,
+                      child: const Text('Review policy'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           NativeProfileBuild23Screen(
             profile: profile,
             identity: widget.identity,
@@ -574,7 +611,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onChangePhoto: _pickProfilePhoto,
             onEdit: () => _openEdit(profile),
             onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
-            onFirstVerse: !_isOwner && _betaStatus.enrolled
+            onFirstVerse:
+                _canUseBetaBadges && !_isOwner && _betaStatus.enrolled
                 ? _openFirstVerse
                 : null,
             onPolicies: _openPolicies,
