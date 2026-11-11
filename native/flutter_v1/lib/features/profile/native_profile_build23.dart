@@ -770,7 +770,7 @@ class _Build23SettingsScreen extends StatelessWidget {
             ),
             // First Verse is an external beta-tester milestone, never an
             // owner-profile reward. Preserve the card for eligible testers.
-            if (!isOwner) ...[
+            if (!isOwner && onFirstVerse != null) ...[
               const SizedBox(height: 22),
               const Text(
                 'FIRST VERSE',
