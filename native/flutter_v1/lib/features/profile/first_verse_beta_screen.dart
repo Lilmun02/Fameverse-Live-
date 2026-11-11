@@ -241,33 +241,32 @@ class _BadgePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // First Verse artwork is not yet owner-approved. This is explicitly a
+    // neutral placeholder, not a claimed final/earned badge design.
     final badge = Container(
       key: const Key('first-verse-badge-art'),
       width: 84,
       height: 84,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const RadialGradient(
-          colors: [Color(0xFFC679FF), Color(0xFF6C2CB8), Color(0xFF24102F)],
-        ),
-        border: Border.all(color: const Color(0xFFE1B7FF), width: 2),
-        boxShadow: const [
-          BoxShadow(color: Color(0x665C1B8A), blurRadius: 18, spreadRadius: 2),
-        ],
+        color: const Color(0xFF23192B),
+        border: Border.all(color: const Color(0xFF78668A), width: 2),
       ),
-      child: const Stack(
-        alignment: Alignment.center,
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 36),
-          Positioned(
-            bottom: 12,
-            child: Text(
-              'FV',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-              ),
+          Icon(
+            Icons.shield_outlined,
+            color: Color(0xFFC9B6D4),
+            size: 25,
+          ),
+          SizedBox(height: 5),
+          Text(
+            'ART PENDING',
+            style: TextStyle(
+              fontSize: 8,
+              color: Color(0xFFD0BCD9),
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

@@ -51,6 +51,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   bool _connecting = true;
   bool _ending = false;
+  bool _confirmingEnd = false;
   bool _ended = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
@@ -574,6 +575,36 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     } catch (_) {}
   }
 
+  Future<void> _confirmEndLive() async {
+    if (!mounted || _ending || _confirmingEnd) return;
+    setState(() => _confirmingEnd = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('End this live?'),
+          content: const Text('Everyone watching will be disconnected.'),
+          actions: [
+            TextButton(
+              key: const Key('native-keep-live'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Keep streaming'),
+            ),
+            FilledButton(
+              key: const Key('native-confirm-end-live'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('End Live'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true && mounted) await _endLive();
+    } finally {
+      if (mounted) setState(() => _confirmingEnd = false);
+    }
+  }
+
   Future<void> _endLive() async {
     if (_ending) return;
     setState(() => _ending = true);
@@ -934,7 +965,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     return PopScope(
       canPop: _ended,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && !_ending) unawaited(_endLive());
+        if (!didPop && !_ending) unawaited(_confirmEndLive());
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -1057,7 +1088,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         const SizedBox(width: 6),
                         FilledButton(
                           key: const Key('native-end-live'),
-                          onPressed: _ending ? null : _endLive,
+                          onPressed: _ending || _confirmingEnd
+                              ? null
+                              : _confirmEndLive,
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFE62952),
                             foregroundColor: Colors.white,

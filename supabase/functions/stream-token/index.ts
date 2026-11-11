@@ -96,6 +96,23 @@ Deno.serve(async (req: Request) => {
     return response(403, { error: "host-role-forbidden" });
   }
 
+  if (role === "host") {
+    // Cross-check authorization with an authenticated per-user policy RPC.
+    // No notice row means a legacy client has not received the update yet.
+    // An explicit decline or expired notice is denied before token signing.
+    const { data: statusRows, error: policyError } = await userClient.rpc(
+      "get_my_fameverse_policy_status",
+      { p_policy_version: "2026-10" },
+    );
+    if (policyError) {
+      return response(503, { error: "policy-status-unavailable" });
+    }
+    const status = Array.isArray(statusRows) ? statusRows[0] : statusRows;
+    if (status && status.can_use_restricted !== true) {
+      return response(403, { error: "policy-restricted-host" });
+    }
+  }
+
   const callId = `fv_${room.id}`;
   const userToken = await signUserToken(streamApiSecret, user.id);
 
