@@ -960,6 +960,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Widget build(BuildContext context) {
     final call = _call;
     final cohostActive = _activeCohostUserId != null;
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
 
     return PopScope(
@@ -968,6 +969,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         if (!didPop && !_ending) unawaited(_confirmEndLive());
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
@@ -987,7 +989,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!cohostActive) ...[
+                    if (!cohostActive && !keyboardVisible) ...[
                       const Center(child: _FameverseLiveWordmark()),
                       const SizedBox(height: 14),
                     ],
@@ -1121,34 +1123,44 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           text: _error!,
                         ),
                     ],
-                    if (cohostActive)
-                      SizedBox(height: cohostCameraHeight + 32)
+                    if (!keyboardVisible) ...[
+                      if (cohostActive)
+                        SizedBox(height: cohostCameraHeight + 32)
+                      else
+                        const Spacer(),
+                      if (widget.room.goal.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: .44),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0x556F35C5)),
+                          ),
+                          child: Text(
+                            'Goal · ${widget.room.goal}',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                    ],
+                    if (keyboardVisible)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          reverse: true,
+                          child: FvLiveChatList(messages: _chat),
+                        ),
+                      )
                     else
-                      const Spacer(),
-                    if (widget.room.goal.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: .44),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0x556F35C5)),
-                        ),
-                        child: Text(
-                          'Goal · ${widget.room.goal}',
-                          style: const TextStyle(fontSize: 11),
+                      SizedBox(
+                        height: cohostActive ? 230 : 245,
+                        child: SingleChildScrollView(
+                          reverse: true,
+                          child: FvLiveChatList(messages: _chat),
                         ),
                       ),
-                    SizedBox(
-                      height: cohostActive ? 230 : 245,
-                      child: SingleChildScrollView(
-                        reverse: true,
-                        child: FvLiveChatList(messages: _chat),
-                      ),
-                    ),
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
