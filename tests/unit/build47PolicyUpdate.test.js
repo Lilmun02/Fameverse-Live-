@@ -34,7 +34,7 @@ describe('Build 47 policy update source safety contract', () => {
     expect(consent).toContain("Key('build47-accept-policy')")
     expect(consent).toContain("Key('build47-decline-policy')")
     expect(consent).toContain("Key('build47-limited-browsing')")
-    expect(consent).toContain('A failed save does not count as acceptance.')
+    expect(consent).toContain('A failed save never counts as acceptance.')
   })
 
   it('only trusts server-verified account-bound acceptance', () => {
@@ -65,12 +65,29 @@ describe('Build 47 policy update source safety contract', () => {
     expect(settings).toContain("key: const Key('settings-owner-premium-card')")
   })
 
-  it('stages RLS and account ownership, without pretending DB is deployed', () => {
-    expect(migration).toContain('REVIEW ONLY: do not apply to production')
+  it('locks original notice timestamp, grace, expiry and server-scoped rights', () => {
+    expect(service).toContain('ignoreDuplicates: true')
+    expect(service).toContain('get_my_fameverse_policy_status')
+    expect(service).toContain('can_use_restricted')
+    expect(service).toContain('requires_support')
+    expect(service).toContain('grace_starts_at')
+    expect(policy).toContain('withinNoticeWindow')
+    expect(policy).toContain('bool get canUseRestrictedFeatures => hasAccepted || hasTemporaryAccess')
+    expect(consent).toContain('You are in the 3-day grace period.')
+    expect(consent).toContain('Fameverse support Monday–Friday.')
+    expect(consent).toContain("Key('build47-policy-deadline-message')")
+  })
+
+  it('locks RLS and account ownership for the 10-day migration', () => {
+    expect(migration).toContain("interval '7 days'")
+    expect(migration).toContain("interval '10 days'")
+    expect(migration).toContain('get_my_fameverse_policy_status')
+    expect(migration).toContain('security invoker')
+    expect(migration).toContain('new.notice_started_at := old.notice_started_at')
     expect(migration).toContain('enable row level security')
-    expect(migration).toContain('revoke all on public.policy_acceptances from anon')
+    expect(migration).toContain('revoke all on public.policy_acceptances from public, anon, authenticated')
     expect(migration).toContain('with check ((select auth.uid()) = user_id)')
     expect(migration).toContain('using ((select auth.uid()) = user_id)')
-    expect(migration).toContain('Sensitive backend entrypoints must verify accepted decision/version')
+    expect(migration).toContain('existing Live/Stripe server entrypoints are')
   })
 })
