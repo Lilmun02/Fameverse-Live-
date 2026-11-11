@@ -110,7 +110,9 @@ class _FameversePolicyConsentScreenState
               onPressed: _readAndAgree && !widget.busy
                   ? widget.onAccept
                   : null,
-              child: Text(widget.busy ? 'Saving decision…' : 'Accept and continue'),
+              child: Text(
+                widget.busy ? 'Saving decision…' : 'Accept and continue',
+              ),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
