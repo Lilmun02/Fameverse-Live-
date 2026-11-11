@@ -768,18 +768,22 @@ class _Build23SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 22),
-            const Text(
-              'FIRST VERSE',
-              style: TextStyle(
-                color: Color(0xFF8D8191),
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.15,
+            // First Verse is an external beta-tester milestone, never an
+            // owner-profile reward. Preserve the card for eligible testers.
+            if (!isOwner) ...[
+              const SizedBox(height: 22),
+              const Text(
+                'FIRST VERSE',
+                style: TextStyle(
+                  color: Color(0xFF8D8191),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.15,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _FirstVerseSettingsCard(status: betaStatus, onTap: onFirstVerse),
+              const SizedBox(height: 8),
+              _FirstVerseSettingsCard(status: betaStatus, onTap: onFirstVerse),
+            ],
             const SizedBox(height: 22),
             _Section(
               title: 'SAFETY & ACCOUNT',
