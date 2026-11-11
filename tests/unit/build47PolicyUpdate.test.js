@@ -12,6 +12,7 @@ const service = file('native/flutter_v1/lib/data/fv_policy_acceptance_service.da
 const consent = file('native/flutter_v1/lib/features/profile/fameverse_policy_consent_screen.dart')
 const migration = file('supabase/migrations/20261105220000_policy_acceptances_review_only.sql')
 const liveGate = file('supabase/migrations/20261111165000_build47_live_room_policy_enforcement.sql')
+const streamToken = file('supabase/functions/stream-token/index.ts')
 
 describe('Build 47 policy update source safety contract', () => {
   it('prompts signed-in users after the normal splash/update notice', () => {
@@ -91,6 +92,20 @@ describe('Build 47 policy update source safety contract', () => {
     expect(liveGate).toContain("status <> 'live'")
     expect(liveGate).toContain('grant execute on function public.fv_policy_allows_restricted()')
     expect(liveGate).not.toContain('security definer')
+  })
+
+  it('checks host access before Stream Video signing, without blocking viewers', () => {
+    const host = streamToken.indexOf('if (role === "host") {')
+    const policyLookup = streamToken.indexOf('"get_my_fameverse_policy_status"', host)
+    const forbidden = streamToken.indexOf('"policy-restricted-host"', host)
+    const signedToken = streamToken.indexOf('await signUserToken(', host)
+    expect(host).toBeGreaterThan(0)
+    expect(policyLookup).toBeGreaterThan(host)
+    expect(forbidden).toBeGreaterThan(policyLookup)
+    expect(signedToken).toBeGreaterThan(forbidden)
+    expect(streamToken).toContain('"policy-status-unavailable"')
+    expect(streamToken).toContain('status.can_use_restricted !== true')
+    expect(streamToken).toContain('role === "host" && !isHost')
   })
 
   it('locks RLS and account ownership for the 10-day migration', () => {
