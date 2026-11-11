@@ -49,6 +49,49 @@ void main() {
     }
   });
 
+  test('unsigned users retain access during the 7+3-day server window', () {
+    const access = FvPolicyAccess(
+      accountId: 'account-1',
+      policyVersion: '2026-10',
+      decision: FvPolicyDecision.unsigned,
+      verifiedForAccount: true,
+      withinNoticeWindow: true,
+    );
+    for (final feature in restricted) {
+      expect(access.permits(feature), isTrue);
+    }
+  });
+
+  test('grace period ends without accepting or resetting the notice', () {
+    const grace = FvPolicyAccess(
+      accountId: 'account-1',
+      policyVersion: '2026-10',
+      decision: FvPolicyDecision.unsigned,
+      verifiedForAccount: true,
+      withinNoticeWindow: true,
+      isGracePeriod: true,
+    );
+    const expired = FvPolicyAccess(
+      accountId: 'account-1',
+      policyVersion: '2026-10',
+      decision: FvPolicyDecision.unsigned,
+      verifiedForAccount: true,
+      requiresSupport: true,
+    );
+    const declined = FvPolicyAccess(
+      accountId: 'account-1',
+      policyVersion: '2026-10',
+      decision: FvPolicyDecision.declined,
+      verifiedForAccount: true,
+      withinNoticeWindow: true,
+    );
+    for (final feature in restricted) {
+      expect(grace.permits(feature), isTrue);
+      expect(expired.permits(feature), isFalse);
+      expect(declined.permits(feature), isFalse);
+    }
+  });
+
   test('missing account or policy version fails closed', () {
     for (final access in [
       const FvPolicyAccess(
