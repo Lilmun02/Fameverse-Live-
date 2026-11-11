@@ -1,12 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
-// Read-only Build 47 safety contract: never triggers Codemagic, changes
-// signing credentials, touches purchases, or uploads a build.
+// Read-only Build 47 safety contract. The existing native-foundation
+// workflow may run on this branch, but never signs or publishes an IPA.
 const yaml = readFileSync(new URL('../../codemagic.yaml', import.meta.url), 'utf8')
 const nativeTestFlight = yaml.split(/^  native-testflight:\s*$/m)[1]
+const nativeFoundation = yaml.split(/^  native-foundation:\s*$/m)[1]?.split(/^  native-testflight:\s*$/m)[0]
 
 describe('Build 47 existing TestFlight workflow regression contract', () => {
+  it('runs Build 47 only in the existing non-publishing native preflight on pushes', () => {
+    expect(nativeFoundation).toBeDefined()
+    expect(nativeFoundation).toContain("pattern: 'native/flutter-v1'")
+    expect(nativeFoundation).toContain("pattern: 'build47/backend-utc-rankings-nov05'")
+    expect(nativeFoundation).toContain('cancel_previous_builds: true')
+    expect(nativeFoundation).toContain('flutter analyze')
+    expect(nativeFoundation).toContain('flutter test')
+    expect(nativeFoundation).toContain('flutter build apk --debug')
+    expect(nativeFoundation).toContain('flutter build ios --debug --no-codesign')
+    expect(nativeFoundation).not.toContain('app_store_connect:')
+    expect(nativeFoundation).not.toContain('publishing:')
+    expect(nativeTestFlight).not.toMatch(/^    triggering:/m)
+  })
+
   it('keeps the original workflow and distinct signed-IPA delivery path', () => {
     expect(yaml).toContain('  native-foundation:')
     expect(nativeTestFlight).toBeDefined()
