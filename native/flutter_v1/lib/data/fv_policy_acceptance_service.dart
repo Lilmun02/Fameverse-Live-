@@ -2,9 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'fv_policy_access.dart';
 
-/// Reads the authoritative account-linked policy decision.
-/// A missing table, network failure or mismatched account must never unlock
-/// restricted features. Backend actions must independently enforce this rule.
+/// Per-account notice and policy decision. The first notice, 7-day warning,
+/// 3-day grace and 10-day restriction are calculated in Supabase server time.
 class FvPolicyAcceptanceService {
   const FvPolicyAcceptanceService(this.client);
 
@@ -12,9 +11,6 @@ class FvPolicyAcceptanceService {
 
   static const requiredPolicyVersion = '2026-10';
 
-  /// Persists an explicit decision for the currently authenticated account.
-  /// RLS must bind user_id to auth.uid() and prohibit cross-account writes.
-  /// Do not treat the write response as permission to bypass server checks.
   Future<FvPolicyAccess> submitDecision({
     required bool accept,
   }) async {
@@ -22,11 +18,14 @@ class FvPolicyAcceptanceService {
     if (user == null) {
       throw StateError('Sign in before responding to the policy.');
     }
+    // This upsert never changes the original notice_started_at: SQL trigger
+    // guards that timestamp and blocks late acceptance without support.
     await client.from('policy_acceptances').upsert({
       'user_id': user.id,
       'policy_version': requiredPolicyVersion,
       'decision': accept ? 'accepted' : 'declined',
     }, onConflict: 'user_id,policy_version');
+
     final verified = await loadCurrent();
     if (!verified.verifiedForAccount ||
         verified.decision !=
@@ -47,27 +46,53 @@ class FvPolicyAcceptanceService {
       );
     }
     try {
-      final record = await client
-          .from('policy_acceptances')
-          .select('user_id, policy_version, decision')
-          .eq('user_id', user.id)
-          .eq('policy_version', requiredPolicyVersion)
-          .maybeSingle();
+      // Inserts only if the account has never received this notice.
+      // A subsequent login can never restart the 10-day countdown.
+      await client.from('policy_acceptances').upsert({
+        'user_id': user.id,
+        'policy_version': requiredPolicyVersion,
+        'decision': 'unsigned',
+      },
+          onConflict: 'user_id,policy_version',
+          ignoreDuplicates: true);
+
+      final raw = await client.rpc(
+        'get_my_fameverse_policy_status',
+        params: {'p_policy_version': requiredPolicyVersion},
+      );
+      Map<String, dynamic>? record;
+      if (raw is List && raw.isNotEmpty && raw.first is Map) {
+        record = Map<String, dynamic>.from(raw.first as Map);
+      } else if (raw is Map) {
+        record = Map<String, dynamic>.from(raw);
+      }
+
       final matched = record != null &&
-          record['user_id'] == user.id &&
+          record['user_id']?.toString() == user.id &&
           record['policy_version'] == requiredPolicyVersion;
       final decision = switch (record?['decision']) {
         'accepted' => FvPolicyDecision.accepted,
         'declined' => FvPolicyDecision.declined,
-        _ => FvPolicyDecision.unsigned,
+        'unsigned' => FvPolicyDecision.unsigned,
+        _ => FvPolicyDecision.unavailable,
       };
+      final phase = record?['phase']?.toString();
       return FvPolicyAccess(
         accountId: user.id,
         policyVersion: requiredPolicyVersion,
         decision: decision,
         verifiedForAccount: matched,
+        withinNoticeWindow: matched &&
+            decision == FvPolicyDecision.unsigned &&
+            record?['can_use_restricted'] == true,
+        isGracePeriod: matched && phase == 'grace',
+        requiresSupport: matched && record?['requires_support'] == true,
+        noticeStartedAt: _parseDate(record?['notice_started_at']),
+        graceStartsAt: _parseDate(record?['grace_starts_at']),
+        noticeEndsAt: _parseDate(record?['notice_ends_at']),
       );
     } catch (_) {
+      // Never manufacture a 10-day extension when the backend is unreachable.
       return FvPolicyAccess(
         accountId: user.id,
         policyVersion: requiredPolicyVersion,
@@ -76,4 +101,7 @@ class FvPolicyAcceptanceService {
       );
     }
   }
+
+  static DateTime? _parseDate(Object? raw) =>
+      raw == null ? null : DateTime.tryParse(raw.toString())?.toUtc();
 }
