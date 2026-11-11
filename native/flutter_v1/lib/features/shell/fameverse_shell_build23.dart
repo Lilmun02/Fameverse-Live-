@@ -446,7 +446,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   }
 
   Future<void> _openFirstVerse() async {
-    if (!_betaStatus.enrolled || !_ensureSupplementalBackends()) return;
+    if (_isOwner || !_betaStatus.enrolled || !_ensureSupplementalBackends()) {
+      return;
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => FirstVerseBetaScreen(backend: _betaBackend!),
@@ -572,7 +574,9 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onChangePhoto: _pickProfilePhoto,
             onEdit: () => _openEdit(profile),
             onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
-            onFirstVerse: _betaStatus.enrolled ? _openFirstVerse : null,
+            onFirstVerse: !_isOwner && _betaStatus.enrolled
+                ? _openFirstVerse
+                : null,
             onPolicies: _openPolicies,
             onSignOut: widget.backend.signOut,
           ),
