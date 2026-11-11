@@ -203,30 +203,35 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
-    setState(() {
-      _chat.add(
-        FvLiveChatMessage(
-          id:
-              payload['id']?.toString() ??
-              '${DateTime.now().microsecondsSinceEpoch}',
-          user: sender,
-          userId: payload['senderId'] as String?,
-          gifterLevel: level,
-          kind: 'gift',
-          giftId: gift.id,
-          quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
-        ),
-      );
-    });
-    // The owner wrapper already renders QA gifts. Prevent a second audible
-    // player on the same host device while retaining the gift chat receipt.
+    final eventId = payload['id']?.toString() ??
+        '${DateTime.now().microsecondsSinceEpoch}';
+    final receipt = FvLiveChatMessage(
+      id: eventId,
+      user: sender,
+      userId: payload['senderId'] as String?,
+      gifterLevel: level,
+      kind: 'gift',
+      giftId: gift.id,
+      quantity: quantity,
+      text: quantity > 1
+          ? '${gift.symbol} ${gift.label} · ${quantity}x combo · ${gift.cost * quantity} coins'
+          : '${gift.symbol} sent ${gift.label}',
+    );
+    // Owner QA previews already have their own renderer.
     final ownerLocalPreview =
         payload['qaHostPreview'] == true &&
         payload['senderId'] == widget.identity.id;
+    if (quantity == 1 || ownerLocalPreview) {
+      setState(() => _chat.add(receipt));
+    }
     if (!ownerLocalPreview) {
       _enqueueGift(
-        FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+        FvGiftPlayback(
+          gift: gift,
+          quantity: quantity,
+          sender: sender,
+          completionMessage: quantity > 1 ? receipt : null,
+        ),
       );
     }
   }
@@ -236,8 +241,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (_giftPlayback == null) _playNextGift();
   }
 
-  void _playNextGift() {
+  void _playNextGift({int? expectedSerial}) {
+    // Ignore a late video callback or watchdog from an older gift.
+    if (expectedSerial != null && expectedSerial != _giftSerial) return;
     _giftTimer?.cancel();
+    final completedReceipt = _giftPlayback?.completionMessage;
+    if (completedReceipt != null && mounted) {
+      setState(() => _chat.add(completedReceipt));
+    }
     if (_giftQueue.isEmpty) {
       if (mounted) setState(() => _giftPlayback = null);
       return;
@@ -249,8 +260,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         _giftSerial += 1;
       });
     }
-    // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
+    final serial = _giftSerial;
+    _giftTimer = Timer(
+      fvGiftPlaybackWatchdog(next),
+      () => _playNextGift(expectedSerial: serial),
+    );
   }
 
   Future<void> _postComment() async {
@@ -959,6 +973,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final call = _call;
+    final playbackSerial = _giftSerial;
     final cohostActive = _activeCohostUserId != null;
     final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
 
@@ -1203,7 +1218,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               NativeGiftOverlay(
                 key: ValueKey<String>('host-gift-$_giftSerial'),
                 playback: _giftPlayback!,
-                onFinished: _playNextGift,
+                onFinished: () =>
+                    _playNextGift(expectedSerial: playbackSerial),
               ),
           ],
         ),
