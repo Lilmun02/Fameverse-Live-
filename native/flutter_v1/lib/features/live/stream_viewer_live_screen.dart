@@ -235,24 +235,29 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
-    setState(() {
-      _chat.add(
-        FvLiveChatMessage(
-          id:
-              payload['id']?.toString() ??
-              '${DateTime.now().microsecondsSinceEpoch}',
-          user: sender,
-          userId: payload['senderId'] as String?,
-          gifterLevel: level,
-          kind: 'gift',
-          giftId: gift.id,
-          quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
-        ),
-      );
-    });
+    final receipt = FvLiveChatMessage(
+      id: payload['id']?.toString() ??
+          '${DateTime.now().microsecondsSinceEpoch}',
+      user: sender,
+      userId: payload['senderId'] as String?,
+      gifterLevel: level,
+      kind: 'gift',
+      giftId: gift.id,
+      quantity: quantity,
+      text: quantity > 1
+          ? '${gift.symbol} ${gift.label} · ${quantity}x combo · ${gift.cost * quantity} coins'
+          : '${gift.symbol} sent ${gift.label}',
+    );
+    if (quantity == 1) {
+      setState(() => _chat.add(receipt));
+    }
     _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      FvGiftPlayback(
+        gift: gift,
+        quantity: quantity,
+        sender: sender,
+        completionMessage: quantity > 1 ? receipt : null,
+      ),
     );
   }
 
@@ -261,8 +266,13 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     if (_giftPlayback == null) _playNextGift();
   }
 
-  void _playNextGift() {
+  void _playNextGift({int? expectedSerial}) {
+    if (expectedSerial != null && expectedSerial != _giftSerial) return;
     _giftTimer?.cancel();
+    final completedReceipt = _giftPlayback?.completionMessage;
+    if (completedReceipt != null && mounted) {
+      setState(() => _chat.add(completedReceipt));
+    }
     if (_giftQueue.isEmpty) {
       if (mounted) setState(() => _giftPlayback = null);
       return;
@@ -274,8 +284,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _giftSerial += 1;
       });
     }
-    // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
+    final serial = _giftSerial;
+    _giftTimer = Timer(
+      fvGiftPlaybackWatchdog(next),
+      () => _playNextGift(expectedSerial: serial),
+    );
   }
 
   Future<void> _postComment() async {
@@ -379,13 +392,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         kind: 'gift',
         giftId: gift.id,
         quantity: quantity,
-        text: '${gift.symbol} sent ${gift.label} ×$quantity',
+        text: quantity > 1
+            ? '${gift.symbol} ${gift.label} · ${quantity}x combo · ${gift.cost * quantity} coins'
+            : '${gift.symbol} sent ${gift.label}',
       );
       if (mounted) {
         setState(() {
           _walletBalance = result.walletBalance;
           _gifterLevel = result.level;
-          _chat.add(message);
+          if (quantity == 1) _chat.add(message);
         });
       }
       _enqueueGift(
@@ -393,6 +408,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           gift: gift,
           quantity: quantity,
           sender: widget.viewerProfile.displayName,
+          completionMessage: quantity > 1 ? message : null,
         ),
       );
       await _broadcastGiftReceipt(<String, dynamic>{
@@ -1131,6 +1147,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final call = _call;
+    final playbackSerial = _giftSerial;
     final cohostActive = _activeCohostUserId != null;
     final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
 
@@ -1367,7 +1384,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                 NativeGiftOverlay(
                   key: ValueKey('viewer-gift-$_giftSerial'),
                   playback: _giftPlayback!,
-                  onFinished: _playNextGift,
+                  onFinished: () =>
+                      _playNextGift(expectedSerial: playbackSerial),
                 ),
             ],
           ),

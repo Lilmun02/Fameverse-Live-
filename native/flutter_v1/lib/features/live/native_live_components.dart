@@ -36,6 +36,7 @@ class FvGiftPlayback {
     required this.sender,
     this.comboIndex = 1,
     this.comboTotal = 1,
+    this.completionMessage,
   });
 
   final FvGiftDefinition gift;
@@ -43,6 +44,9 @@ class FvGiftPlayback {
   final String sender;
   final int comboIndex;
   final int comboTotal;
+
+  /// Render one combined chat receipt only after the last combo animation.
+  final FvLiveChatMessage? completionMessage;
 
   String get visualCountLabel {
     if (comboTotal > 1) return ' · Combo ×$comboIndex';
@@ -66,6 +70,9 @@ List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
       sender: playback.sender,
       comboIndex: index + 1,
       comboTotal: playback.quantity,
+      completionMessage: index == playback.quantity - 1
+          ? playback.completionMessage
+          : null,
     ),
     growable: false,
   );
