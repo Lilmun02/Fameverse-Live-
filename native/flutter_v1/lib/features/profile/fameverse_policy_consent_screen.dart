@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/fv_policy_access.dart';
 import '../../data/fv_policy_acceptance_service.dart';
 import 'fameverse_policy_screen.dart';
 
@@ -11,6 +12,7 @@ class FameversePolicyConsentScreen extends StatefulWidget {
     required this.onDecline,
     required this.onBrowseRestricted,
     required this.busy,
+    required this.access,
     this.error,
     super.key,
   });
@@ -19,6 +21,7 @@ class FameversePolicyConsentScreen extends StatefulWidget {
   final VoidCallback onDecline;
   final VoidCallback onBrowseRestricted;
   final bool busy;
+  final FvPolicyAccess access;
   final String? error;
 
   @override
@@ -29,6 +32,32 @@ class FameversePolicyConsentScreen extends StatefulWidget {
 class _FameversePolicyConsentScreenState
     extends State<FameversePolicyConsentScreen> {
   bool _readAndAgree = false;
+
+  String _displayDate(DateTime? date) {
+    if (date == null) return 'pending server verification';
+    final local = date.toLocal();
+    return '${local.month}/${local.day}/${local.year}';
+  }
+
+  String get _phaseMessage {
+    final access = widget.access;
+    if (access.requiresSupport) {
+      return 'Your 7-day notice and 3-day grace period have expired. '
+          'Restricted features stay unavailable until you contact '
+          'Fameverse support Monday–Friday.';
+    }
+    if (access.isGracePeriod) {
+      return 'You are in the 3-day grace period. Sign by '
+          '${_displayDate(access.noticeEndsAt)} to avoid restrictions.';
+    }
+    if (access.withinNoticeWindow) {
+      return 'You have 7 days of notice followed by 3 days of grace. '
+          'Your deadline is ${_displayDate(access.noticeEndsAt)}. '
+          'You can continue using Fameverse during this period.';
+    }
+    return 'Your account policy status could not be verified. '
+        'Restricted features are temporarily unavailable.';
+  }
 
   void _openFullPolicies() {
     Navigator.of(context).push<void>(
@@ -60,7 +89,7 @@ class _FameversePolicyConsentScreenState
             ),
             const SizedBox(height: 8),
             const Text(
-              'Review the agreement before using restricted Fameverse features.',
+              'Please review and sign the policy within the 10-day notice window.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Color(0xFFC5B5CE)),
             ),
@@ -69,6 +98,13 @@ class _FameversePolicyConsentScreenState
               'Policy version: ${FvPolicyAcceptanceService.requiredPolicyVersion}',
               textAlign: TextAlign.center,
               style: TextStyle(color: Color(0xFFA99AAF), fontSize: 12),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              _phaseMessage,
+              key: const Key('build47-policy-deadline-message'),
+              style: const TextStyle(color: Color(0xFFE2C5F6)),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 22),
             const Text(
@@ -107,7 +143,9 @@ class _FameversePolicyConsentScreenState
             const SizedBox(height: 12),
             FilledButton(
               key: const Key('build47-accept-policy'),
-              onPressed: _readAndAgree && !widget.busy
+              onPressed: _readAndAgree && !widget.busy &&
+                      !widget.access.requiresSupport &&
+                      widget.access.verifiedForAccount
                   ? widget.onAccept
                   : null,
               child: Text(
@@ -124,14 +162,21 @@ class _FameversePolicyConsentScreenState
             TextButton(
               key: const Key('build47-limited-browsing'),
               onPressed: widget.busy ? null : widget.onBrowseRestricted,
-              child: const Text('Browse with restricted access'),
+              child: Text(
+                widget.access.withinNoticeWindow
+                    ? 'Continue during notice period'
+                    : 'Browse with restricted access',
+              ),
             ),
             const SizedBox(height: 12),
             const Text(
-              'Without verified acceptance you may still browse, search, '
-              'watch lives, view profiles, and contact support. Going live, '
-              'coin purchases, beta badges, and badge transfers remain '
-              'restricted. A failed save does not count as acceptance.',
+              'During the first 7 days and 3-day grace, unsigned accounts '
+              'retain temporary access. Explicitly declining immediately '
+              'restricts Go Live, purchases, beta badges and badge transfers. '
+              'After 10 days, unsigned accounts lose those features until '
+              'reviewed by support Monday–Friday. Browsing, profiles, '
+              'watching lives, search and support remain available. '
+              'A failed save never counts as acceptance.',
               style: TextStyle(color: Color(0xFFB2A5BB), fontSize: 12),
               textAlign: TextAlign.center,
             ),
