@@ -6,8 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
+import '../data/fv_policy_access.dart';
+import '../data/fv_policy_acceptance_service.dart';
 import '../data/startup_update_service.dart';
 import '../features/auth/auth_screen.dart';
+import '../features/profile/fameverse_policy_consent_screen.dart';
 import '../features/shell/fameverse_shell_build23.dart';
 
 /// Build 23 native Fameverse app shell.
@@ -45,13 +48,23 @@ class _FameverseAppState extends State<FameverseApp> {
   bool _splashComplete = false;
   bool _updateCheckComplete = false;
   bool _noticeAcknowledged = false;
+  bool _policyLoaded = false;
+  bool _policyPromptDismissed = false;
+  bool _policyBusy = false;
+  String? _policyError;
+  FvPolicyAccess? _policyAccess;
+  int _policyLoadEpoch = 0;
 
   @override
   void initState() {
     super.initState();
     _identity = widget.backend.currentIdentity;
+    unawaited(_loadPolicyForIdentity(_identity));
     _subscription = widget.backend.authChanges.listen((identity) {
-      if (mounted) setState(() => _identity = identity);
+      if (!mounted) return;
+      final changedAccount = _identity?.id != identity?.id;
+      setState(() => _identity = identity);
+      if (changedAccount) unawaited(_loadPolicyForIdentity(identity));
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _splashTimer != null) return;
@@ -60,6 +73,95 @@ class _FameverseAppState extends State<FameverseApp> {
       });
     });
     unawaited(_loadStartupNotice());
+  }
+
+  FvPolicyAccess _unavailablePolicy(String accountId) => FvPolicyAccess(
+    accountId: accountId,
+    policyVersion: FvPolicyAcceptanceService.requiredPolicyVersion,
+    decision: FvPolicyDecision.unavailable,
+    verifiedForAccount: false,
+  );
+
+  Future<void> _loadPolicyForIdentity(FvIdentity? identity) async {
+    final epoch = ++_policyLoadEpoch;
+    if (mounted) {
+      setState(() {
+        _policyLoaded = false;
+        _policyAccess = null;
+        _policyPromptDismissed = false;
+        _policyError = null;
+      });
+    }
+
+    if (identity == null) {
+      if (mounted) setState(() => _policyLoaded = true);
+      return;
+    }
+
+    FvPolicyAccess? result;
+    try {
+      result = await FvPolicyAcceptanceService(
+        Supabase.instance.client,
+      ).loadCurrent();
+    } catch (_) {
+      // A failed backend query cannot unlock restricted features.
+    }
+    if (!mounted ||
+        epoch != _policyLoadEpoch ||
+        _identity?.id != identity.id) {
+      return;
+    }
+
+    final access = result?.accountId == identity.id
+        ? result!
+        : _unavailablePolicy(identity.id);
+    setState(() {
+      _policyAccess = access;
+      _policyLoaded = true;
+      _policyPromptDismissed =
+          access.verifiedForAccount &&
+          access.decision == FvPolicyDecision.declined;
+    });
+  }
+
+  Future<void> _submitPolicyDecision({required bool accept}) async {
+    final identity = _identity;
+    if (identity == null || _policyBusy) return;
+    setState(() {
+      _policyBusy = true;
+      _policyError = null;
+    });
+    try {
+      final verified = await FvPolicyAcceptanceService(
+        Supabase.instance.client,
+      ).submitDecision(accept: accept);
+      if (!mounted || _identity?.id != identity.id) return;
+      if (verified.accountId != identity.id) {
+        throw StateError('Policy account mismatch');
+      }
+      setState(() {
+        _policyAccess = verified;
+        _policyPromptDismissed = !accept;
+      });
+    } catch (_) {
+      if (mounted && _identity?.id == identity.id) {
+        setState(() {
+          _policyError = 'The decision could not be saved. Check your '
+              'connection. You can still browse with restricted access.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _policyBusy = false);
+    }
+  }
+
+  void _reviewPolicy() {
+    if (mounted) {
+      setState(() {
+        _policyPromptDismissed = false;
+        _policyError = null;
+      });
+    }
   }
 
   Future<void> _loadStartupNotice() async {
@@ -178,15 +280,33 @@ class _FameverseAppState extends State<FameverseApp> {
       );
     }
 
-    if (_identity == null) {
+    final identity = _identity;
+    if (identity == null) {
       return AuthScreen(backend: widget.backend);
     }
 
+    if (!_policyLoaded) return const _BrandSplash();
+    final policy = _policyAccess ?? _unavailablePolicy(identity.id);
+    if (!policy.hasAccepted && !_policyPromptDismissed) {
+      return FameversePolicyConsentScreen(
+        key: const Key('build47-startup-policy-gate'),
+        busy: _policyBusy,
+        error: _policyError,
+        onAccept: () => unawaited(_submitPolicyDecision(accept: true)),
+        onDecline: () => unawaited(_submitPolicyDecision(accept: false)),
+        onBrowseRestricted: () {
+          setState(() => _policyPromptDismissed = true);
+        },
+      );
+    }
+
     return FameverseBuild23Shell(
-      key: ValueKey(_identity!.id),
+      key: ValueKey(identity.id),
       backend: widget.backend,
       liveBackend: widget.liveBackend,
-      identity: _identity!,
+      identity: identity,
+      policyAccess: policy,
+      onReviewPolicy: _reviewPolicy,
     );
   }
 }
