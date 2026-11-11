@@ -30,6 +30,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
   final TextEditingController _title = TextEditingController();
   final TextEditingController _goal = TextEditingController();
   CameraController? _permissionProbe;
+  CameraController? _previewController;
+  Future<void>? _previewInitialization;
+  String? _previewError;
   bool _loadingDraft = true;
   bool _liveBusy = false;
   String? _error;
@@ -47,6 +50,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     final controller = _permissionProbe;
     _permissionProbe = null;
     if (controller != null) unawaited(controller.dispose());
+    final preview = _previewController;
+    _previewController = null;
+    if (preview != null) unawaited(preview.dispose());
     super.dispose();
   }
 
@@ -99,6 +105,73 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     await controller.initialize();
     _permissionProbe = null;
     await controller.dispose();
+  }
+
+  // Preview is opt-in: the Live tab lives inside an IndexedStack, so camera
+  // permission must never be requested simply because the app has launched.
+  Future<void> _startPreview() async {
+    if (_liveBusy || _previewController?.value.isInitialized == true) return;
+    final pending = _previewInitialization;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final task = _initializePreview();
+    _previewInitialization = task;
+    try {
+      await task;
+    } finally {
+      _previewInitialization = null;
+    }
+  }
+
+  Future<void> _initializePreview() async {
+    CameraController? controller;
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) throw StateError('no-camera-available');
+      var selected = cameras.first;
+      for (final camera in cameras) {
+        if (camera.lensDirection == CameraLensDirection.front) {
+          selected = camera;
+          break;
+        }
+      }
+      controller = CameraController(
+        selected,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+      _previewController = controller;
+      await controller.initialize();
+      if (!mounted || _liveBusy) {
+        _previewController = null;
+        await controller.dispose();
+        return;
+      }
+      setState(() => _previewError = null);
+    } catch (_) {
+      if (_previewController == controller) _previewController = null;
+      if (controller != null) {
+        try {
+          await controller.dispose();
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(() => _previewError =
+            'Camera preview is unavailable. Check camera permission.');
+      }
+    }
+  }
+
+  Future<void> _stopPreview() async {
+    try {
+      await _previewInitialization;
+    } catch (_) {}
+    final controller = _previewController;
+    _previewController = null;
+    if (controller != null) await controller.dispose();
+    if (mounted) setState(() {});
   }
 
   Future<bool> _confirmGoLive() async {
@@ -157,6 +230,8 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         draft: draft,
       );
 
+      // Release the preview before Stream Video acquires the camera.
+      await _stopPreview();
       // Request/check both camera and microphone before any Live room is opened.
       await _verifyCameraAccess();
 
@@ -293,6 +368,46 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    Container(
+                      key: const Key('native-live-camera-preview'),
+                      height: 208,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFF654580)),
+                      ),
+                      child: _previewController?.value.isInitialized == true
+                          ? CameraPreview(_previewController!)
+                          : const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.videocam_off_outlined, size: 32),
+                                  SizedBox(height: 8),
+                                  Text('Camera preview is off'),
+                                ],
+                              ),
+                            ),
+                    ),
+                    if (_previewController?.value.isInitialized != true)
+                      TextButton.icon(
+                        key: const Key('native-enable-camera-preview'),
+                        onPressed: _liveBusy
+                            ? null
+                            : () => unawaited(_startPreview()),
+                        icon: const Icon(Icons.camera_front_rounded),
+                        label: const Text('Preview camera'),
+                      ),
+                    if (_previewError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _previewError!,
+                          style: const TextStyle(color: Color(0xFFFFCFDF)),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
