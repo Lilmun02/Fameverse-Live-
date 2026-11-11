@@ -291,6 +291,7 @@ class _FameverseAppState extends State<FameverseApp> {
       return FameversePolicyConsentScreen(
         key: const Key('build47-startup-policy-gate'),
         busy: _policyBusy,
+        access: policy,
         error: _policyError,
         onAccept: () => unawaited(_submitPolicyDecision(accept: true)),
         onDecline: () => unawaited(_submitPolicyDecision(accept: false)),
