@@ -1,7 +1,5 @@
-/// Fameverse policy-access decision rules.
-///
-/// This file deliberately has no local persistence or client-side authority.
-/// A verified, account-bound server decision must be supplied by the caller.
+/// Fameverse policy-access decisions: an authenticated, server-computed
+/// 7-day notice followed by 3-day grace. No client-side timer grants rights.
 enum FvPolicyDecision { accepted, declined, unsigned, unavailable }
 
 enum FvPolicyFeature {
@@ -22,21 +20,43 @@ class FvPolicyAccess {
     required this.policyVersion,
     required this.decision,
     required this.verifiedForAccount,
+    this.withinNoticeWindow = false,
+    this.isGracePeriod = false,
+    this.requiresSupport = false,
+    this.noticeStartedAt,
+    this.graceStartsAt,
+    this.noticeEndsAt,
   });
 
   final String accountId;
   final String policyVersion;
   final FvPolicyDecision decision;
 
-  /// True only after backend verification for the signed-in account and
-  /// required policy version. Never derive this from device preferences.
+  /// Only true after server verification of the authenticated account.
   final bool verifiedForAccount;
+
+  /// Calculated by the database server, never by the phone clock.
+  final bool withinNoticeWindow;
+  final bool isGracePeriod;
+  final bool requiresSupport;
+  final DateTime? noticeStartedAt;
+  final DateTime? graceStartsAt;
+  final DateTime? noticeEndsAt;
 
   bool get hasAccepted =>
       verifiedForAccount &&
       accountId.isNotEmpty &&
       policyVersion.isNotEmpty &&
       decision == FvPolicyDecision.accepted;
+
+  bool get hasTemporaryAccess =>
+      verifiedForAccount &&
+      accountId.isNotEmpty &&
+      policyVersion.isNotEmpty &&
+      decision == FvPolicyDecision.unsigned &&
+      withinNoticeWindow;
+
+  bool get canUseRestrictedFeatures => hasAccepted || hasTemporaryAccess;
 
   bool permits(FvPolicyFeature feature) {
     switch (feature) {
@@ -50,7 +70,7 @@ class FvPolicyAccess {
       case FvPolicyFeature.purchaseCoins:
       case FvPolicyFeature.betaBadges:
       case FvPolicyFeature.bringYourBadge:
-        return hasAccepted;
+        return canUseRestrictedFeatures;
     }
   }
 }
