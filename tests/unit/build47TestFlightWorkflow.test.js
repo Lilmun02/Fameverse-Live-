@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 // Read-only Build 47 safety contract. The existing native-foundation
 // workflow may run on this branch, but never signs or publishes an IPA.
 const yaml = readFileSync(new URL('../../codemagic.yaml', import.meta.url), 'utf8')
+const nativeContract = readFileSync(new URL('../../native/flutter_v1/tool/check_native_contract.dart', import.meta.url), 'utf8')
 const nativeTestFlight = yaml.split(/^  native-testflight:\s*$/m)[1]
 const nativeFoundation = yaml.split(/^  native-foundation:\s*$/m)[1]?.split(/^  native-testflight:\s*$/m)[0]
 
@@ -47,6 +48,18 @@ describe('Build 47 existing TestFlight workflow regression contract', () => {
     expect(nativeTestFlight).toContain('git checkout --detach "$CM_COMMIT"')
     expect(nativeTestFlight).toContain('if [ "$SOURCE_SHA" != "$CM_COMMIT" ]; then')
     expect(nativeTestFlight).toContain('FAMEVERSE_SOURCE_SHA=$SOURCE_SHA')
+  })
+
+  it('keeps native foundation law in sync with the existing Build 47 TestFlight workflow', () => {
+    expect(nativeContract).toContain('FAMEVERSE_BUILD_FAMILY: "47"')
+    expect(nativeContract).toContain('FAMEVERSE_BUILD_FAMILY=47')
+    expect(nativeContract).not.toContain('FAMEVERSE_BUILD_FAMILY: "32"')
+    expect(nativeContract).not.toContain('FAMEVERSE_BUILD_FAMILY=32')
+    expect(nativeContract).toContain('git checkout --detach')
+    expect(nativeContract).toContain('FAMEVERSE_SOURCE_SHA=')
+    expect(nativeContract).toContain('xcode-project use-profiles')
+    expect(nativeContract).toContain('APP_STORE_CONNECT_PRIVATE_KEY')
+    expect(nativeContract).toContain('Build 47 release source')
   })
 
   it('fails closed when requested top-100 or UTC native ranking source is missing', () => {
