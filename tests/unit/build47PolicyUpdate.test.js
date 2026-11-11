@@ -11,6 +11,7 @@ const policy = file('native/flutter_v1/lib/data/fv_policy_access.dart')
 const service = file('native/flutter_v1/lib/data/fv_policy_acceptance_service.dart')
 const consent = file('native/flutter_v1/lib/features/profile/fameverse_policy_consent_screen.dart')
 const migration = file('supabase/migrations/20261105220000_policy_acceptances_review_only.sql')
+const liveGate = file('supabase/migrations/20261111165000_build47_live_room_policy_enforcement.sql')
 
 describe('Build 47 policy update source safety contract', () => {
   it('prompts signed-in users after the normal splash/update notice', () => {
@@ -76,6 +77,20 @@ describe('Build 47 policy update source safety contract', () => {
     expect(consent).toContain('You are in the 3-day grace period.')
     expect(consent).toContain('Fameverse support Monday–Friday.')
     expect(consent).toContain("Key('build47-policy-deadline-message')")
+  })
+
+  it('enforces policy at live_rooms Data API boundary', () => {
+    expect(liveGate).toContain('security invoker')
+    expect(liveGate).toContain('from public.policy_acceptances as p')
+    expect(liveGate).toContain("p.policy_version = '2026-10'")
+    expect(liveGate).toContain("p.decision = 'accepted'")
+    expect(liveGate).toContain("p.decision = 'unsigned'")
+    expect(liveGate).toContain("p.notice_started_at + interval '10 days'")
+    expect(liveGate).toContain('alter policy "hosts can create own live room"')
+    expect(liveGate).toContain('alter policy "hosts can update own live room"')
+    expect(liveGate).toContain("status <> 'live'")
+    expect(liveGate).toContain('grant execute on function public.fv_policy_allows_restricted()')
+    expect(liveGate).not.toContain('security definer')
   })
 
   it('locks RLS and account ownership for the 10-day migration', () => {
