@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:fameverse_live/data/fv_policy_access.dart';
 import 'package:fameverse_live/features/profile/fameverse_policy_consent_screen.dart';
 
 void main() {
@@ -8,10 +9,18 @@ void main() {
     required VoidCallback onAccept,
     required VoidCallback onDecline,
     bool busy = false,
+    FvPolicyAccess access = const FvPolicyAccess(
+      accountId: 'test-account',
+      policyVersion: '2026-10',
+      decision: FvPolicyDecision.unsigned,
+      verifiedForAccount: true,
+      withinNoticeWindow: true,
+    ),
   }) {
     return MaterialApp(
       home: FameversePolicyConsentScreen(
         busy: busy,
+        access: access,
         onAccept: onAccept,
         onDecline: onDecline,
         onBrowseRestricted: () {},
@@ -60,6 +69,27 @@ void main() {
     await tester.tap(decline);
     expect(accepts, 0);
     expect(declines, 1);
+  });
+
+  testWidgets('expired notice needs support, not self-acceptance', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      screen(
+        onAccept: () {},
+        onDecline: () {},
+        access: const FvPolicyAccess(
+          accountId: 'test-account',
+          policyVersion: '2026-10',
+          decision: FvPolicyDecision.unsigned,
+          verifiedForAccount: true,
+          requiresSupport: true,
+        ),
+      ),
+    );
+    final accept = find.byKey(const Key('build47-accept-policy'));
+    expect(tester.widget<FilledButton>(accept).onPressed, isNull);
+    expect(find.textContaining('Monday'), findsWidgets);
   });
 
   testWidgets('busy state disables every decision control', (tester) async {
