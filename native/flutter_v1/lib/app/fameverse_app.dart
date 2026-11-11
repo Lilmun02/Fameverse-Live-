@@ -37,12 +37,14 @@ class FameverseApp extends StatefulWidget {
   State<FameverseApp> createState() => _FameverseAppState();
 }
 
-class _FameverseAppState extends State<FameverseApp> {
+class _FameverseAppState extends State<FameverseApp>
+    with WidgetsBindingObserver {
   static const _lastAcknowledgedNoticeKey =
       'fameverse.last_acknowledged_update_notice_id';
 
   StreamSubscription<FvIdentity?>? _subscription;
   Timer? _splashTimer;
+  Timer? _policyRefreshTimer;
   FvIdentity? _identity;
   FvStartupUpdateNotice? _startupNotice;
   bool _splashComplete = false;
@@ -58,7 +60,11 @@ class _FameverseAppState extends State<FameverseApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _identity = widget.backend.currentIdentity;
+    _policyRefreshTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+      unawaited(_refreshPolicyStatus());
+    });
     unawaited(_loadPolicyForIdentity(_identity));
     _subscription = widget.backend.authChanges.listen((identity) {
       if (!mounted) return;
@@ -155,6 +161,36 @@ class _FameverseAppState extends State<FameverseApp> {
     }
   }
 
+  Future<void> _refreshPolicyStatus() async {
+    final identity = _identity;
+    final epoch = _policyLoadEpoch;
+    if (identity == null || _policyBusy || !_policyLoaded) return;
+    final access = await FvPolicyAcceptanceService(
+      Supabase.instance.client,
+    ).loadCurrent();
+    if (!mounted ||
+        epoch != _policyLoadEpoch ||
+        _identity?.id != identity.id ||
+        access.accountId != identity.id) {
+      return;
+    }
+    setState(() {
+      final previouslyExpired = _policyAccess?.requiresSupport == true;
+      _policyAccess = access;
+      if (access.requiresSupport && !previouslyExpired) {
+        // Surface the support-only restriction on first expiry.
+        _policyPromptDismissed = false;
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshPolicyStatus());
+    }
+  }
+
   void _reviewPolicy() {
     if (mounted) {
       setState(() {
@@ -214,6 +250,8 @@ class _FameverseAppState extends State<FameverseApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _policyRefreshTimer?.cancel();
     _splashTimer?.cancel();
     _subscription?.cancel();
     super.dispose();
