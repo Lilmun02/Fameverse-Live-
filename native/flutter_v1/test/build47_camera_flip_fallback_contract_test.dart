@@ -15,7 +15,7 @@ void main() {
 
     test('existing Live room activity carries best-effort flip events', () {
       expect(backend, contains("'camera-flip'"));
-      expect(backend, contains("onCohost(_broadcastPayload(payload)"));
+      expect(backend, contains("onCohost({...data, '_event': event});"));
     });
 
     test('host and cohost show and clear their own fallback around a flip', () {
