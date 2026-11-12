@@ -21,7 +21,7 @@ class NativeLiveRankingsSheet extends StatefulWidget {
 }
 
 class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
-  static const _windows = <(String, String)>[('24h', '24H'), ('7d', '7D')];
+  static const _windows = <(String, String)>[('24h', 'Daily'), ('7d', 'Weekly')];
   static const _kinds = <(String, String, IconData)>[
     ('supporters', 'Supporters', Icons.card_giftcard_rounded),
     ('pulse', 'Pulse', Icons.bolt_rounded),
@@ -53,7 +53,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
         params: <String, dynamic>{
           'p_kind': _kind,
           'p_window': _window,
-          'p_limit': 50,
+          'p_limit': 100,
         },
       );
       final rows = (data as List? ?? const [])
@@ -98,8 +98,8 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
   }
 
   String _windowCopy() => _window == '24h'
-      ? 'Momentum from the last 24 hours'
-      : 'Momentum from the last 7 days';
+      ? 'Daily ranking · resets at 00:00 UTC'
+      : 'Weekly ranking · resets Sunday at 00:00 UTC';
 
   String _scoreCopy(_RankingEntry entry) {
     return switch (_kind) {

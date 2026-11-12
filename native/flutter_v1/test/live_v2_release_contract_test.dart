@@ -229,17 +229,10 @@ void main() {
       },
     );
 
-    test('TestFlight candidate is source-locked to Build 32', () async {
+    test('TestFlight builds the triggering commit', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
-      expect(
-        codemagic,
-        contains('TARGET_BRANCH="integration/sep27-big-update"'),
-      );
-      expect(
-        codemagic,
-        contains('git checkout --detach "refs/remotes/origin/\$TARGET_BRANCH"'),
-      );
+      expect(codemagic, contains('git checkout --detach "\$CM_COMMIT"'));
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
       expect(codemagic, contains('build32_source_identity.txt'));
       expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
@@ -249,6 +242,10 @@ void main() {
         contains(
           '--dart-define="FAMEVERSE_SOURCE_SHA=\${FAMEVERSE_SOURCE_SHA}"',
         ),
+      );
+      expect(
+        codemagic,
+        isNot(contains('TARGET_BRANCH="integration/sep27-big-update"')),
       );
     });
 

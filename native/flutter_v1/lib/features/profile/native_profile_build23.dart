@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
+import 'profile_recognition_badges.dart';
 import '../../data/fameverse_beta_backend.dart';
 import 'fame_coin_store_screen.dart';
 
@@ -138,6 +139,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          ProfileRecognitionBadges(userId: profile.id),
           if (isOwner) ...[
             const SizedBox(height: 8),
             const Text(
@@ -766,18 +768,22 @@ class _Build23SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 22),
-            const Text(
-              'FIRST VERSE',
-              style: TextStyle(
-                color: Color(0xFF8D8191),
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.15,
+            // First Verse is an external beta-tester milestone, never an
+            // owner-profile reward. Preserve the card for eligible testers.
+            if (!isOwner && onFirstVerse != null) ...[
+              const SizedBox(height: 22),
+              const Text(
+                'FIRST VERSE',
+                style: TextStyle(
+                  color: Color(0xFF8D8191),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.15,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _FirstVerseSettingsCard(status: betaStatus, onTap: onFirstVerse),
+              const SizedBox(height: 8),
+              _FirstVerseSettingsCard(status: betaStatus, onTap: onFirstVerse),
+            ],
             const SizedBox(height: 22),
             _Section(
               title: 'SAFETY & ACCOUNT',

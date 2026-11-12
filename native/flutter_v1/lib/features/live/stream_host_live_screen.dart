@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -39,6 +40,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -49,6 +51,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   bool _connecting = true;
   bool _ending = false;
+  bool _confirmingEnd = false;
   bool _ended = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
@@ -193,6 +196,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
@@ -215,9 +219,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     });
-    _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
-    );
+    // The owner wrapper already renders QA gifts. Prevent a second audible
+    // player on the same host device while retaining the gift chat receipt.
+    final ownerLocalPreview =
+        payload['qaHostPreview'] == true &&
+        payload['senderId'] == widget.identity.id;
+    if (!ownerLocalPreview) {
+      _enqueueGift(
+        FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      );
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -239,7 +250,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       });
     }
     // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    _giftTimer = Timer(fvGiftPlaybackWatchdog(next), _playNextGift);
   }
 
   Future<void> _postComment() async {
@@ -320,7 +331,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _toggleCamera() async {
     final call = _call;
-    if (call == null || _connecting || _ending) return;
+    if (call == null || _connecting || _ending || _flipCameraBusy) {
+      return;
+    }
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _flipCameraBusy = true);
+    } else {
+      _flipCameraBusy = true;
+    }
+
     final next = !_cameraEnabled;
     try {
       fvRequireSuccess(
@@ -330,6 +351,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) setState(() => _cameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _flipCameraBusy = false);
+      } else {
+        _flipCameraBusy = false;
+      }
     }
   }
 
@@ -546,6 +573,36 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     try {
       await StreamVideo.reset(disconnect: true);
     } catch (_) {}
+  }
+
+  Future<void> _confirmEndLive() async {
+    if (!mounted || _ending || _confirmingEnd) return;
+    setState(() => _confirmingEnd = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('End this live?'),
+          content: const Text('Everyone watching will be disconnected.'),
+          actions: [
+            TextButton(
+              key: const Key('native-keep-live'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Keep streaming'),
+            ),
+            FilledButton(
+              key: const Key('native-confirm-end-live'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('End Live'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true && mounted) await _endLive();
+    } finally {
+      if (mounted) setState(() => _confirmingEnd = false);
+    }
   }
 
   Future<void> _endLive() async {
@@ -854,10 +911,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ? Icons.videocam_rounded
                         : Icons.videocam_off_rounded,
                     label: _cameraEnabled ? 'Camera' : 'Camera on',
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      unawaited(_toggleCamera());
-                    },
+                    onPressed: !_flipCameraBusy
+                        ? () {
+                            Navigator.of(context).pop();
+                            unawaited(_toggleCamera());
+                          }
+                        : null,
                   ),
                   FvRoundLiveButton(
                     icon: Icons.group_add_rounded,
@@ -901,14 +960,16 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Widget build(BuildContext context) {
     final call = _call;
     final cohostActive = _activeCohostUserId != null;
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
 
     return PopScope(
       canPop: _ended,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && !_ending) unawaited(_endLive());
+        if (!didPop && !_ending) unawaited(_confirmEndLive());
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
@@ -928,7 +989,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!cohostActive) ...[
+                    if (!cohostActive && !keyboardVisible) ...[
                       const Center(child: _FameverseLiveWordmark()),
                       const SizedBox(height: 14),
                     ],
@@ -1029,7 +1090,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         const SizedBox(width: 6),
                         FilledButton(
                           key: const Key('native-end-live'),
-                          onPressed: _ending ? null : _endLive,
+                          onPressed: _ending || _confirmingEnd
+                              ? null
+                              : _confirmEndLive,
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFE62952),
                             foregroundColor: Colors.white,
@@ -1060,34 +1123,44 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                           text: _error!,
                         ),
                     ],
-                    if (cohostActive)
-                      SizedBox(height: cohostCameraHeight + 32)
+                    if (!keyboardVisible) ...[
+                      if (cohostActive)
+                        SizedBox(height: cohostCameraHeight + 32)
+                      else
+                        const Spacer(),
+                      if (widget.room.goal.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: .44),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0x556F35C5)),
+                          ),
+                          child: Text(
+                            'Goal · ${widget.room.goal}',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                    ],
+                    if (keyboardVisible)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          reverse: true,
+                          child: FvLiveChatList(messages: _chat),
+                        ),
+                      )
                     else
-                      const Spacer(),
-                    if (widget.room.goal.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: .44),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0x556F35C5)),
-                        ),
-                        child: Text(
-                          'Goal · ${widget.room.goal}',
-                          style: const TextStyle(fontSize: 11),
+                      SizedBox(
+                        height: cohostActive ? 230 : 245,
+                        child: SingleChildScrollView(
+                          reverse: true,
+                          child: FvLiveChatList(messages: _chat),
                         ),
                       ),
-                    SizedBox(
-                      height: cohostActive ? 230 : 245,
-                      child: SingleChildScrollView(
-                        reverse: true,
-                        child: FvLiveChatList(messages: _chat),
-                      ),
-                    ),
                     const SizedBox(height: 8),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,

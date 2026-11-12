@@ -25,6 +25,9 @@ workflows:
         - pattern: 'native/flutter-v1'
           include: true
           source: true
+        - pattern: 'build47/backend-utc-rankings-nov05'
+          include: true
+          source: true
       cancel_previous_builds: true
 
     scripts:
@@ -131,7 +134,7 @@ workflows:
       vars:
         FAMEVERSE_NATIVE_STAGE: "testflight"
         FAMEVERSE_APP_NAME: "Fameverse"
-        FAMEVERSE_BUILD_FAMILY: "32"
+        FAMEVERSE_BUILD_FAMILY: "47"
         BUNDLE_ID: "com.fameverse.live"
 
     cache:
@@ -139,25 +142,36 @@ workflows:
         - ~/.pub-cache
 
     scripts:
-      - name: Checkout locked Build 32 repair source
+      - name: Verify exact triggered branch source
         script: |
           set -euo pipefail
-          TARGET_BRANCH="integration/sep27-big-update"
+          : "${CM_BRANCH:?BLOCKED: Codemagic branch is missing}"
+          : "${CM_COMMIT:?BLOCKED: Codemagic commit is missing}"
+          : "${CM_ENV:?BLOCKED: Codemagic environment file is missing}"
           REPO_ROOT="$(git rev-parse --show-toplevel)"
           cd "$REPO_ROOT"
-          git fetch --no-tags origin "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH"
-          git checkout --detach "refs/remotes/origin/$TARGET_BRANCH"
+          # Pin the build to the exact commit that triggered Codemagic.
+          git fetch --no-tags origin "+refs/heads/$CM_BRANCH:refs/remotes/origin/$CM_BRANCH"
+          git cat-file -e "$CM_COMMIT^{commit}"
+          git checkout --detach "$CM_COMMIT"
           SOURCE_SHA="$(git rev-parse HEAD)"
-          TARGET_SHA="$(git rev-parse refs/remotes/origin/$TARGET_BRANCH)"
-          if [ "$SOURCE_SHA" != "$TARGET_SHA" ]; then
-            echo "BLOCKED: checked-out source does not match $TARGET_BRANCH."
+          if [ "$SOURCE_SHA" != "$CM_COMMIT" ]; then
+            echo "BLOCKED: checked-out source differs from the triggering commit."
             exit 1
           fi
+          if ! git merge-base --is-ancestor "$CM_COMMIT" "refs/remotes/origin/$CM_BRANCH"; then
+            echo "BLOCKED: triggering commit is not on the selected branch."
+            exit 1
+          fi
+          if [ "$CM_BRANCH" = "feature/verse-pioneer-profile-oct11" ]; then
+            grep -Fq "ProfileRecognitionBadges(userId: profile.id)" native/flutter_v1/lib/features/profile/fameverse_public_profile_screen.dart || { echo "BLOCKED: public profile recognition widget missing."; exit 1; }
+            grep -Fq "verse-pioneer-profile-badge" native/flutter_v1/lib/features/profile/profile_recognition_badges.dart || { echo "BLOCKED: Pioneer badge widget missing."; exit 1; }
+          fi
           echo "FAMEVERSE_SOURCE_SHA=$SOURCE_SHA" >> "$CM_ENV"
-          printf '%s\n' "Build 32 repair candidate" "source_branch=$TARGET_BRANCH" "source_commit=$SOURCE_SHA" "trigger_branch=${CM_BRANCH:-unknown}" > "$REPO_ROOT/native/flutter_v1/build32_source_identity.txt"
-          echo "Verified locked repair source: $TARGET_BRANCH@$SOURCE_SHA"
+          printf '%s\n' "TestFlight candidate" "source_branch=$CM_BRANCH" "source_commit=$SOURCE_SHA" > "$REPO_ROOT/native/flutter_v1/build47_source_identity.txt"
+          echo "Verified exact TestFlight source: $CM_BRANCH@$SOURCE_SHA"
 
-      - name: Verify Build 32 fixes and Fameboard exist in locked source
+      - name: Verify Build 47 baseline and Fameboard exist in locked source
         script: |
           set -euo pipefail
           SHELL="lib/features/shell/fameverse_shell_build23.dart"
@@ -179,6 +193,7 @@ workflows:
           grep -Fq "profile-fame-coins-card" "$PROFILE" || { echo "BLOCKED: full Fame Coins card tap fix missing."; exit 1; }
           grep -Fq "owner-host-gift-button" "$HOST_SURFACE" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
           grep -Fq "bool _flipCameraBusy = false;" "$HOST_SURFACE" || { echo "BLOCKED: host camera anti-spam repair missing."; exit 1; }
+          grep -Fq "if (confirmed == true && mounted) await _endLive();" "$HOST_SURFACE" || { echo "BLOCKED: host End Live confirmation missing."; exit 1; }
           grep -Fq "bool _cohostFlipBusy = false;" "$VIEWER_SURFACE" || { echo "BLOCKED: co-host camera anti-spam repair missing."; exit 1; }
           grep -Fq "record_beta_gift" "$HOST_WRAPPER" || { echo "BLOCKED: owner QA gift RPC path missing."; exit 1; }
           grep -Fq "onFinished" "$LIVE_COMPONENTS" || { echo "BLOCKED: completion-driven gift playback missing."; exit 1; }
@@ -201,6 +216,13 @@ workflows:
           grep -Fq "discover-fameboard-card" "$DISCOVER" || { echo "BLOCKED: Discover Fameboard entry missing."; exit 1; }
           grep -Fq "showNativeLiveRankings(context)" "$DISCOVER" || { echo "BLOCKED: Discover Fameboard is not wired."; exit 1; }
 
+          # Build 47 must display the full owner-approved top 100 and UTC reset copy.
+          # This source check does NOT assert that the matching Supabase migration is deployed.
+          grep -Fq "'p_limit': 100" "$RANKINGS" || { echo "BLOCKED: native Fameboard is not requesting top 100."; exit 1; }
+          grep -Fq "Daily ranking · resets at 00:00 UTC" "$RANKINGS" || { echo "BLOCKED: native UTC daily ranking copy missing."; exit 1; }
+          grep -Fq "Weekly ranking · resets Sunday at 00:00 UTC" "$RANKINGS" || { echo "BLOCKED: native UTC weekly ranking copy missing."; exit 1; }
+          test -f "../../supabase/migrations/20261105_build47_utc_rankings_top100.sql" || { echo "BLOCKED: paired Build 47 UTC ranking SQL is absent."; exit 1; }
+
           grep -Fq "managed_payments[enabled]" "$STRIPE" || { echo "BLOCKED: Stripe hosted checkout Managed Payments repair missing."; exit 1; }
 
           printf '%s\n' \
@@ -215,8 +237,8 @@ workflows:
             "fameboard_live=verified" \
             "fameboard_discover=verified" \
             "stripe_hosted_checkout_repair=verified" \
-            >> build32_source_identity.txt
-          echo "Verified Build 32 fixes and Fameboard in exact locked TestFlight source."
+            >> build47_source_identity.txt
+          echo "Verified Build 47 baseline and Fameboard in exact locked TestFlight source."
 
       - name: Verify required TestFlight secrets are present
         script: |
@@ -342,13 +364,13 @@ workflows:
           test -n "${FAMEVERSE_SOURCE_SHA:-}"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
-            --dart-define="FAMEVERSE_BUILD_FAMILY=32" \
+            --dart-define="FAMEVERSE_BUILD_FAMILY=47" \
             --dart-define="FAMEVERSE_SOURCE_SHA=${FAMEVERSE_SOURCE_SHA}" \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - build32_source_identity.txt
+      - build47_source_identity.txt
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
 
@@ -359,9 +381,9 @@ workflows:
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
 # Bootstrap remains non-publishing and continues to prove unsigned iOS plus Android.
-# native-testflight always checks out the locked integration/sep27-big-update Build 32 repair source before validation/building.
-# A user may trigger the workflow from another branch; the published candidate source is still the locked Build 32 repair branch.
-# Every candidate publishes build32_source_identity.txt with the exact source commit used for the IPA.
-# The TestFlight source gate blocks upload if the required Build 32 fixes or Fameboard wiring are absent from the exact locked checkout.
-# TestFlight upload is a candidate checkpoint, never a product PASS.
-# The candidate must be physically tested before external promotion / release approval.
+# native-testflight checks out exactly the triggering branch commit and verifies its source SHA.
+# Build 47 source checks keep existing app safeguards plus top-100/UTC Fameboard copy.
+# build47_source_identity.txt records the exact source commit used for any IPA candidate.
+# The SQL source-file check does NOT prove the matching Supabase migration was applied.
+# The existing TestFlight signing and publishing path is unchanged; a run/upload needs separate CEO approval.
+# Any IPA is a candidate, never a product PASS without real Flutter/device/backend acceptance.
