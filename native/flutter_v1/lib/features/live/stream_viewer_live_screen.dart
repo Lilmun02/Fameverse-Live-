@@ -15,12 +15,16 @@ import 'native_live_stage.dart';
 import 'stream_live_shared.dart';
 
 class NativeViewerLiveScreen extends StatefulWidget {
+  static Future<void> _lastTransportCleanup = Future<void>.value();
+
   const NativeViewerLiveScreen({
     required this.backend,
     required this.liveBackend,
     required this.identity,
     required this.viewerProfile,
     required this.room,
+    this.onLiveJoined,
+    this.onExitFeed,
     super.key,
   });
 
@@ -29,6 +33,8 @@ class NativeViewerLiveScreen extends StatefulWidget {
   final FvIdentity identity;
   final FvProfile viewerProfile;
   final FvLiveRoom room;
+  final VoidCallback? onLiveJoined;
+  final VoidCallback? onExitFeed;
 
   @override
   State<NativeViewerLiveScreen> createState() => _NativeViewerLiveScreenState();
@@ -44,6 +50,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final List<int> _tapBursts = [];
   final Stopwatch _tapClock = Stopwatch();
   Call? _call;
+  Future<void>? _transportCleanup;
+  bool _joinedOnce = false;
   FvLiveActivitySession? _activity;
   StreamSubscription<CallState>? _callStateSubscription;
   Timer? _tapFlushTimer;
@@ -99,6 +107,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _connect() async {
     try {
+      // A preceding swipe page must fully release Stream before connecting.
+      await NativeViewerLiveScreen._lastTransportCleanup;
+      if (!mounted) return;
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: widget.room.id,
         role: 'viewer',
@@ -163,6 +174,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _flushTapBuffer();
       });
       if (mounted) setState(() => _connecting = false);
+      if (!_joinedOnce && mounted) {
+        _joinedOnce = true;
+        widget.onLiveJoined?.call();
+      }
       unawaited(_hydrateViewerState());
     } catch (error) {
       await _disposeTransport();
@@ -1052,7 +1067,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _schedulePop() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).maybePop();
+      if (!mounted) return;
+      if (widget.onExitFeed != null) {
+        widget.onExitFeed!();
+      } else {
+        Navigator.of(context).maybePop();
+      }
     });
   }
 
@@ -1086,7 +1106,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     unawaited(_disposeTransport());
   }
 
-  Future<void> _disposeTransport() async {
+  Future<void> _disposeTransport() =>
+      _transportCleanup ??= _performTransportCleanup();
+
+  Future<void> _performTransportCleanup() async {
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
     await _callStateSubscription?.cancel();
@@ -1124,7 +1147,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _callStateSubscription?.cancel();
     _queueTapBuffer();
     unawaited(_drainTapQueue());
-    unawaited(_disposeTransport());
+    NativeViewerLiveScreen._lastTransportCleanup = _disposeTransport();
     super.dispose();
   }
 
