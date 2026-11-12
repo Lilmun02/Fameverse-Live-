@@ -82,7 +82,7 @@ class _FameverseVerticalLiveFeedState extends State<FameverseVerticalLiveFeed> {
     final selected = rooms.indexWhere((room) => room.id == _activeRoomId);
     final next = selected >= 0
         ? selected
-        : _activeIndex.clamp(0, rooms.length - 1);
+        : _activeIndex.clamp(0, rooms.length - 1).toInt();
     if (next != _activeIndex) {
       _activeIndex = next;
       WidgetsBinding.instance.addPostFrameCallback((_) {
