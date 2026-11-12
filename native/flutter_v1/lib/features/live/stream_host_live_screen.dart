@@ -41,6 +41,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
   final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
+  final Set<String> _cameraFallbackUsers = <String>{};
+  final Map<String, Timer> _cameraFallbackTimers = <String, Timer>{};
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -285,6 +287,43 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
+  // Keep a profile image in the stage until a camera switch finishes.
+  // Remote messages are best-effort; a timeout prevents a stuck fallback.
+  void _setCameraFlipFallback(String userId, bool active) {
+    if (active && _cameraFallbackUsers.contains(userId)) return;
+    _cameraFallbackTimers.remove(userId)?.cancel();
+    if (!mounted) return;
+    setState(() {
+      if (active) {
+        _cameraFallbackUsers.add(userId);
+      } else {
+        _cameraFallbackUsers.remove(userId);
+      }
+    });
+    if (active) {
+      _cameraFallbackTimers[userId] = Timer(const Duration(seconds: 6), () {
+        _cameraFallbackTimers.remove(userId);
+        if (mounted) {
+          setState(() => _cameraFallbackUsers.remove(userId));
+        }
+      });
+    }
+  }
+
+  Future<void> _announceCameraFlip(bool active) async {
+    final activity = _activity;
+    if (activity == null) return;
+    try {
+      await activity.send('camera-flip', <String, dynamic>{
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+        'active': active,
+      }).timeout(const Duration(milliseconds: 650));
+    } catch (_) {
+      // Local fallback still runs even when the room activity channel drops.
+    }
+  }
+
   Future<void> _flipCamera() async {
     final call = _call;
     if (call == null ||
@@ -301,11 +340,15 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       _flipCameraBusy = true;
     }
 
+    _setCameraFlipFallback(widget.identity.id, true);
     try {
+      await _announceCameraFlip(true);
       fvRequireSuccess(await call.flipCamera(), 'Camera flip failed');
     } catch (_) {
       if (mounted) _showMessage('Camera flip failed.');
     } finally {
+      await _announceCameraFlip(false);
+      _setCameraFlipFallback(widget.identity.id, false);
       if (mounted) {
         setState(() => _flipCameraBusy = false);
       } else {
@@ -363,6 +406,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Future<void> _handleCohostEvent(Map<String, dynamic> payload) async {
     final event = payload['_event'] as String?;
     final viewerId = (payload['viewerId'] ?? payload['userId'])?.toString();
+    if (event == 'camera-flip') {
+      if (viewerId != null && viewerId == _activeCohostUserId) {
+        _setCameraFlipFallback(viewerId, payload['active'] == true);
+      }
+      return;
+    }
     if (viewerId == null || viewerId == widget.identity.id) return;
 
     switch (event) {
@@ -951,6 +1000,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
+    for (final timer in _cameraFallbackTimers.values) {
+      timer.cancel();
+    }
+    _cameraFallbackTimers.clear();
     if (!_ended) unawaited(_markRoomEnded());
     unawaited(_disposeTransport());
     super.dispose();
@@ -977,6 +1030,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 call: call,
                 cameraEnabled: _cameraEnabled,
                 activeCohostUserId: _activeCohostUserId,
+                hostCameraTransitioning: _cameraFallbackUsers.contains(
+                  widget.identity.id,
+                ),
+                cohostCameraTransitioning: _activeCohostUserId != null &&
+                    _cameraFallbackUsers.contains(_activeCohostUserId),
               )
             else
               const FvLiveBackground(icon: Icons.videocam_off_rounded),

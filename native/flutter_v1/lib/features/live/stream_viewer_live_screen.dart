@@ -39,6 +39,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final List<FvLiveChatMessage> _chat = [];
   final List<FvGiftPlayback> _giftQueue = [];
   final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
+  final Set<String> _cameraFallbackUsers = <String>{};
+  final Map<String, Timer> _cameraFallbackTimers = <String, Timer>{};
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
   final List<int> _tapBursts = [];
@@ -601,6 +603,14 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final viewerId = (payload['viewerId'] ?? payload['userId'])?.toString();
     if (viewerId == null) return;
 
+    if (event == 'camera-flip') {
+      if (viewerId == widget.room.hostUserId ||
+          viewerId == _activeCohostUserId) {
+        _setCameraFlipFallback(viewerId, payload['active'] == true);
+      }
+      return;
+    }
+
     if (event == 'cohost-active') {
       if (mounted) setState(() => _activeCohostUserId = viewerId);
       if (viewerId == widget.identity.id) await _activateSelfCohost();
@@ -778,6 +788,43 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
   }
 
+  // Keep a profile image in the stage until a camera switch finishes.
+  // Remote messages are best-effort; a timeout prevents a stuck fallback.
+  void _setCameraFlipFallback(String userId, bool active) {
+    if (active && _cameraFallbackUsers.contains(userId)) return;
+    _cameraFallbackTimers.remove(userId)?.cancel();
+    if (!mounted) return;
+    setState(() {
+      if (active) {
+        _cameraFallbackUsers.add(userId);
+      } else {
+        _cameraFallbackUsers.remove(userId);
+      }
+    });
+    if (active) {
+      _cameraFallbackTimers[userId] = Timer(const Duration(seconds: 6), () {
+        _cameraFallbackTimers.remove(userId);
+        if (mounted) {
+          setState(() => _cameraFallbackUsers.remove(userId));
+        }
+      });
+    }
+  }
+
+  Future<void> _announceCameraFlip(bool active) async {
+    final activity = _activity;
+    if (activity == null) return;
+    try {
+      await activity.send('camera-flip', <String, dynamic>{
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+        'active': active,
+      }).timeout(const Duration(milliseconds: 650));
+    } catch (_) {
+      // Local fallback still runs even when the room activity channel drops.
+    }
+  }
+
   Future<void> _flipCohostCamera() async {
     final call = _call;
     if (!_selfIsCohost ||
@@ -793,11 +840,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       _cohostFlipBusy = true;
     }
 
+    _setCameraFlipFallback(widget.identity.id, true);
     try {
+      await _announceCameraFlip(true);
       fvRequireSuccess(await call.flipCamera(), 'Camera flip failed');
     } catch (_) {
       if (mounted) _showMessage('Camera flip failed.');
     } finally {
+      await _announceCameraFlip(false);
+      _setCameraFlipFallback(widget.identity.id, false);
       if (mounted) {
         setState(() => _cohostFlipBusy = false);
       } else {
@@ -1121,6 +1172,10 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _comment.dispose();
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    for (final timer in _cameraFallbackTimers.values) {
+      timer.cancel();
+    }
+    _cameraFallbackTimers.clear();
     _callStateSubscription?.cancel();
     _queueTapBuffer();
     unawaited(_drainTapQueue());
@@ -1152,6 +1207,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   call: call,
                   hostUserId: widget.room.hostUserId,
                   activeCohostUserId: _activeCohostUserId,
+                  hostCameraTransitioning: _cameraFallbackUsers.contains(
+                    widget.room.hostUserId,
+                  ),
+                  cohostCameraTransitioning: _activeCohostUserId != null &&
+                      _cameraFallbackUsers.contains(_activeCohostUserId),
                 )
               else
                 const FvLiveBackground(),
