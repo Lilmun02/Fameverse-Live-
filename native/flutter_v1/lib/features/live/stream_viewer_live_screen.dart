@@ -107,7 +107,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _connect() async {
     try {
-      // A preceding swipe page must fully release Stream before connecting.
+      // Allow the previous page to dispose before taking Stream ownership.
+      await WidgetsBinding.instance.endOfFrame;
       await NativeViewerLiveScreen._lastTransportCleanup;
       if (!mounted) return;
       final credentials = await widget.liveBackend.issueLiveCredentials(
@@ -1106,8 +1107,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     unawaited(_disposeTransport());
   }
 
-  Future<void> _disposeTransport() =>
-      _transportCleanup ??= _performTransportCleanup();
+  Future<void> _disposeTransport() {
+    final current = _transportCleanup;
+    if (current != null) return current;
+
+    // Chain cleanup jobs so a late swipe cannot reset the next Stream call.
+    final previous = NativeViewerLiveScreen._lastTransportCleanup;
+    final cleanup = () async {
+      try {
+        await previous;
+      } catch (_) {
+        // A failed old cleanup must not block future Live sessions forever.
+      }
+      await _performTransportCleanup();
+    }();
+    _transportCleanup = cleanup;
+    NativeViewerLiveScreen._lastTransportCleanup = cleanup;
+    return cleanup;
+  }
 
   Future<void> _performTransportCleanup() async {
     _tapFlushTimer?.cancel();
@@ -1144,10 +1161,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _comment.dispose();
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
-    _callStateSubscription?.cancel();
     _queueTapBuffer();
     unawaited(_drainTapQueue());
-    NativeViewerLiveScreen._lastTransportCleanup = _disposeTransport();
+    unawaited(_disposeTransport());
     super.dispose();
   }
 
