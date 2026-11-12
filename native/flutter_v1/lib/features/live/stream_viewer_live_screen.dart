@@ -1113,14 +1113,16 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
     // Chain cleanup jobs so a late swipe cannot reset the next Stream call.
     final previous = NativeViewerLiveScreen._lastTransportCleanup;
-    final cleanup = () async {
+    Future<void> runCleanup() async {
       try {
         await previous;
       } catch (_) {
         // A failed old cleanup must not block future Live sessions forever.
       }
       await _performTransportCleanup();
-    }();
+    }
+
+    final cleanup = runCleanup();
     _transportCleanup = cleanup;
     NativeViewerLiveScreen._lastTransportCleanup = cleanup;
     return cleanup;
