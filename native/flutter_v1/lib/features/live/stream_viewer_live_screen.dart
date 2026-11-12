@@ -8,6 +8,7 @@ import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import '../profile/fame_coin_store_screen.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -37,6 +38,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final TextEditingController _comment = TextEditingController();
   final List<FvLiveChatMessage> _chat = [];
   final List<FvGiftPlayback> _giftQueue = [];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
   final List<double> _tapBuffer = [];
   final List<Map<String, dynamic>> _tapQueue = [];
   final List<int> _tapBursts = [];
@@ -226,30 +228,36 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (gift == null || !mounted) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
     );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
-    setState(() {
-      _chat.add(
-        FvLiveChatMessage(
-          id:
-              payload['id']?.toString() ??
-              '${DateTime.now().microsecondsSinceEpoch}',
-          user: sender,
-          userId: payload['senderId'] as String?,
-          gifterLevel: level,
-          kind: 'gift',
-          giftId: gift.id,
-          quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
-        ),
-      );
-    });
+    final receipt = FvLiveChatMessage(
+      id: payload['id']?.toString() ??
+          '${DateTime.now().microsecondsSinceEpoch}',
+      user: sender,
+      userId: payload['senderId'] as String?,
+      gifterLevel: level,
+      kind: 'gift',
+      giftId: gift.id,
+      quantity: quantity,
+      text: quantity > 1
+          ? '${gift.symbol} ${gift.label} · ${quantity}x combo · ${gift.cost * quantity} coins'
+          : '${gift.symbol} sent ${gift.label}',
+    );
+    if (quantity == 1) {
+      setState(() => _chat.add(receipt));
+    }
     _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
+      FvGiftPlayback(
+        gift: gift,
+        quantity: quantity,
+        sender: sender,
+        completionMessage: quantity > 1 ? receipt : null,
+      ),
     );
   }
 
@@ -258,8 +266,13 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     if (_giftPlayback == null) _playNextGift();
   }
 
-  void _playNextGift() {
+  void _playNextGift({int? expectedSerial}) {
+    if (expectedSerial != null && expectedSerial != _giftSerial) return;
     _giftTimer?.cancel();
+    final completedReceipt = _giftPlayback?.completionMessage;
+    if (completedReceipt != null && mounted) {
+      setState(() => _chat.add(completedReceipt));
+    }
     if (_giftQueue.isEmpty) {
       if (mounted) setState(() => _giftPlayback = null);
       return;
@@ -271,8 +284,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _giftSerial += 1;
       });
     }
-    // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    final serial = _giftSerial;
+    _giftTimer = Timer(
+      fvGiftPlaybackWatchdog(next),
+      () => _playNextGift(expectedSerial: serial),
+    );
   }
 
   Future<void> _postComment() async {
@@ -366,6 +382,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         quantity: quantity,
       );
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
+      // This receipt is presented locally; do not replay its own echo.
+      _giftEventGate.shouldRender(eventId);
       final message = FvLiveChatMessage(
         id: eventId,
         user: widget.viewerProfile.displayName,
@@ -374,13 +392,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         kind: 'gift',
         giftId: gift.id,
         quantity: quantity,
-        text: '${gift.symbol} sent ${gift.label} ×$quantity',
+        text: quantity > 1
+            ? '${gift.symbol} ${gift.label} · ${quantity}x combo · ${gift.cost * quantity} coins'
+            : '${gift.symbol} sent ${gift.label}',
       );
       if (mounted) {
         setState(() {
           _walletBalance = result.walletBalance;
           _gifterLevel = result.level;
-          _chat.add(message);
+          if (quantity == 1) _chat.add(message);
         });
       }
       _enqueueGift(
@@ -388,6 +408,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           gift: gift,
           quantity: quantity,
           sender: widget.viewerProfile.displayName,
+          completionMessage: quantity > 1 ? message : null,
         ),
       );
       await _broadcastGiftReceipt(<String, dynamic>{
@@ -572,13 +593,23 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       return;
     }
     setState(() => _selfCohostState = 'requested');
-    await activity.send('cohost-request', {
-      'viewerId': widget.identity.id,
-      'userId': widget.identity.id,
-      'displayName': widget.viewerProfile.displayName,
-      'avatarUrl': widget.viewerProfile.avatarUrl,
-    });
-    if (mounted) _showMessage('Co-host request sent.');
+    try {
+      await activity.send('cohost-request', {
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+        'displayName': widget.viewerProfile.displayName,
+        'avatarUrl': widget.viewerProfile.avatarUrl,
+      });
+      if (mounted) _showMessage('Co-host request sent.');
+    } catch (_) {
+      // A failed transport send must not leave the viewer permanently
+      // stuck in the pending state. Allow a fresh request after reconnect.
+      if (!mounted) return;
+      if (_selfCohostState == 'requested') {
+        setState(() => _selfCohostState = null);
+      }
+      _showMessage('Could not send co-host request. Please try again.');
+    }
   }
 
   Future<void> _handleCohostEvent(Map<String, dynamic> payload) async {
@@ -806,7 +837,15 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _toggleCohostCamera() async {
-    if (!_selfIsCohost || _call == null) return;
+    if (!_selfIsCohost || _call == null || _cohostFlipBusy) return;
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _cohostFlipBusy = true);
+    } else {
+      _cohostFlipBusy = true;
+    }
+
     final next = !_cohostCameraEnabled;
     try {
       fvRequireSuccess(
@@ -816,6 +855,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (mounted) setState(() => _cohostCameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _cohostFlipBusy = false);
+      } else {
+        _cohostFlipBusy = false;
+      }
     }
   }
 
@@ -958,10 +1003,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           ? Icons.videocam_rounded
                           : Icons.videocam_off_rounded,
                       label: _cohostCameraEnabled ? 'Camera' : 'Camera on',
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        unawaited(_toggleCohostCamera());
-                      },
+                      onPressed: !_cohostFlipBusy
+                          ? () {
+                              Navigator.of(context).pop();
+                              unawaited(_toggleCohostCamera());
+                            }
+                          : null,
                     ),
                     FvRoundLiveButton(
                       icon: Icons.call_end_rounded,
@@ -1100,6 +1147,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final call = _call;
+    final playbackSerial = _giftSerial;
     final cohostActive = _activeCohostUserId != null;
     final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
 
@@ -1336,7 +1384,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                 NativeGiftOverlay(
                   key: ValueKey('viewer-gift-$_giftSerial'),
                   playback: _giftPlayback!,
-                  onFinished: _playNextGift,
+                  onFinished: () =>
+                      _playNextGift(expectedSerial: playbackSerial),
                 ),
             ],
           ),

@@ -97,11 +97,12 @@ void main() {
       'TestFlight workflow must build a signed release IPA.',
     );
     require(
-      releaseSection.contains('TARGET_BRANCH="integration/sep27-big-update"') &&
-          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "32"') &&
-          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=32') &&
+      releaseSection.contains('git checkout --detach "\$CM_COMMIT"') &&
+          releaseSection.contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY: "47"') &&
+          releaseSection.contains('FAMEVERSE_BUILD_FAMILY=47') &&
           !releaseSection.contains('TARGET_BRANCH="build18/live-repair"'),
-      'TestFlight Build 32 must package the repaired integration branch, never the old Build 18 source.',
+      'TestFlight must package the exact triggering commit and retain the Build 47 release identity without changing signing.',
     );
 
     final usesEnvironmentPublishing =
@@ -215,7 +216,7 @@ void main() {
 
   if (exitCode == 0) {
     stdout.writeln(
-      '[native-foundation-law] constitution, Build 32 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
+      '[native-foundation-law] constitution, Build 47 release source, updater, feed navigation, First Verse settings, owner premium, promo separation, Supabase, Stream Video, signing, and camera contracts passed',
     );
   }
 }

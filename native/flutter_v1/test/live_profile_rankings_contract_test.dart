@@ -26,11 +26,21 @@ void main() {
       expect(rankings, contains("('supporters', 'Supporters'"));
       expect(rankings, contains("('pulse', 'Pulse'"));
       expect(rankings, contains("('creators', 'Creators'"));
-      expect(rankings, contains("('24h', '24H')"));
-      expect(rankings, contains("('7d', '7D')"));
+      // Legacy RPC window params are unchanged for backward compatibility.
+      // The approved new backend windows are calendar UTC boundaries.
+      expect(rankings, contains("('24h', 'Daily')"));
+      expect(rankings, contains("('7d', 'Weekly')"));
+      expect(rankings, contains('Daily ranking · resets at 00:00 UTC'));
+      expect(rankings, contains('Weekly ranking · resets Sunday at 00:00 UTC'));
+      expect(rankings, isNot(contains('Momentum from the last 24 hours')));
+      expect(rankings, isNot(contains('Momentum from the last 7 days')));
       expect(rankings, contains("Key('fameboard-window-24h')"));
       expect(rankings, contains("Key('fameboard-window-7d')"));
-      expect(rankings, contains("'p_limit': 50"));
+      expect(rankings, contains("'supporters' => '${_compact(entry.score)} coins sent'"));
+      expect(rankings, contains("'pulse' => '${_compact(entry.score)} Fame taps'"));
+      expect(rankings, contains("'creators' => '${_compact(entry.score)} live taps'"));
+      expect(rankings, contains("'p_limit': 100"));
+      expect(rankings, isNot(contains("'p_limit': 50")));
       expect(rankings, isNot(contains('fake')));
     });
 

@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_live_components.dart';
+import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
@@ -39,6 +40,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
+  final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -49,6 +51,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   bool _connecting = true;
   bool _ending = false;
+  bool _confirmingEnd = false;
   bool _ended = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
@@ -193,31 +196,44 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   void _receiveGift(Map<String, dynamic> payload) {
     final gift = fvGiftById(payload['giftId'] as String?);
     if (!mounted || gift == null) return;
+    if (!_giftEventGate.shouldRender(payload['id']?.toString())) return;
     final quantity = ((payload['quantity'] as num?)?.toInt() ?? 1).clamp(
       1,
       100000,
     );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
-    setState(() {
-      _chat.add(
-        FvLiveChatMessage(
-          id:
-              payload['id']?.toString() ??
-              '${DateTime.now().microsecondsSinceEpoch}',
-          user: sender,
-          userId: payload['senderId'] as String?,
-          gifterLevel: level,
-          kind: 'gift',
-          giftId: gift.id,
+    final eventId = payload['id']?.toString() ??
+        '${DateTime.now().microsecondsSinceEpoch}';
+    final receipt = FvLiveChatMessage(
+      id: eventId,
+      user: sender,
+      userId: payload['senderId'] as String?,
+      gifterLevel: level,
+      kind: 'gift',
+      giftId: gift.id,
+      quantity: quantity,
+      text: quantity > 1
+          ? '${gift.symbol} ${gift.label} · ${quantity}x combo · ${gift.cost * quantity} coins'
+          : '${gift.symbol} sent ${gift.label}',
+    );
+    // Owner QA previews already have their own renderer.
+    final ownerLocalPreview =
+        payload['qaHostPreview'] == true &&
+        payload['senderId'] == widget.identity.id;
+    if (quantity == 1 || ownerLocalPreview) {
+      setState(() => _chat.add(receipt));
+    }
+    if (!ownerLocalPreview) {
+      _enqueueGift(
+        FvGiftPlayback(
+          gift: gift,
           quantity: quantity,
-          text: '${gift.symbol} sent ${gift.label} ×$quantity',
+          sender: sender,
+          completionMessage: quantity > 1 ? receipt : null,
         ),
       );
-    });
-    _enqueueGift(
-      FvGiftPlayback(gift: gift, quantity: quantity, sender: sender),
-    );
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -225,8 +241,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     if (_giftPlayback == null) _playNextGift();
   }
 
-  void _playNextGift() {
+  void _playNextGift({int? expectedSerial}) {
+    // Ignore a late video callback or watchdog from an older gift.
+    if (expectedSerial != null && expectedSerial != _giftSerial) return;
     _giftTimer?.cancel();
+    final completedReceipt = _giftPlayback?.completionMessage;
+    if (completedReceipt != null && mounted) {
+      setState(() => _chat.add(completedReceipt));
+    }
     if (_giftQueue.isEmpty) {
       if (mounted) setState(() => _giftPlayback = null);
       return;
@@ -238,8 +260,11 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         _giftSerial += 1;
       });
     }
-    // Renderer completion advances normally; this only prevents a deadlock.
-    _giftTimer = Timer(const Duration(seconds: 20), _playNextGift);
+    final serial = _giftSerial;
+    _giftTimer = Timer(
+      fvGiftPlaybackWatchdog(next),
+      () => _playNextGift(expectedSerial: serial),
+    );
   }
 
   Future<void> _postComment() async {
@@ -320,7 +345,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _toggleCamera() async {
     final call = _call;
-    if (call == null || _connecting || _ending) return;
+    if (call == null || _connecting || _ending || _flipCameraBusy) {
+      return;
+    }
+
+    // Share the flip lock so camera power and lens changes never overlap.
+    if (mounted) {
+      setState(() => _flipCameraBusy = true);
+    } else {
+      _flipCameraBusy = true;
+    }
+
     final next = !_cameraEnabled;
     try {
       fvRequireSuccess(
@@ -330,6 +365,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) setState(() => _cameraEnabled = next);
     } catch (_) {
       if (mounted) _showMessage('Camera change failed.');
+    } finally {
+      if (mounted) {
+        setState(() => _flipCameraBusy = false);
+      } else {
+        _flipCameraBusy = false;
+      }
     }
   }
 
@@ -546,6 +587,36 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     try {
       await StreamVideo.reset(disconnect: true);
     } catch (_) {}
+  }
+
+  Future<void> _confirmEndLive() async {
+    if (!mounted || _ending || _confirmingEnd) return;
+    setState(() => _confirmingEnd = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('End this live?'),
+          content: const Text('Everyone watching will be disconnected.'),
+          actions: [
+            TextButton(
+              key: const Key('native-keep-live'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Keep streaming'),
+            ),
+            FilledButton(
+              key: const Key('native-confirm-end-live'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('End Live'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true && mounted) await _endLive();
+    } finally {
+      if (mounted) setState(() => _confirmingEnd = false);
+    }
   }
 
   Future<void> _endLive() async {
@@ -854,10 +925,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         ? Icons.videocam_rounded
                         : Icons.videocam_off_rounded,
                     label: _cameraEnabled ? 'Camera' : 'Camera on',
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      unawaited(_toggleCamera());
-                    },
+                    onPressed: !_flipCameraBusy
+                        ? () {
+                            Navigator.of(context).pop();
+                            unawaited(_toggleCamera());
+                          }
+                        : null,
                   ),
                   FvRoundLiveButton(
                     icon: Icons.group_add_rounded,
@@ -900,13 +973,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final call = _call;
+    final playbackSerial = _giftSerial;
     final cohostActive = _activeCohostUserId != null;
     final cohostCameraHeight = (MediaQuery.sizeOf(context).width - 24) / 2;
 
     return PopScope(
       canPop: _ended,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && !_ending) unawaited(_endLive());
+        if (!didPop && !_ending) unawaited(_confirmEndLive());
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -1029,7 +1103,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                         const SizedBox(width: 6),
                         FilledButton(
                           key: const Key('native-end-live'),
-                          onPressed: _ending ? null : _endLive,
+                          onPressed: _ending || _confirmingEnd
+                              ? null
+                              : _confirmEndLive,
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFFE62952),
                             foregroundColor: Colors.white,
@@ -1142,7 +1218,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               NativeGiftOverlay(
                 key: ValueKey<String>('host-gift-$_giftSerial'),
                 playback: _giftPlayback!,
-                onFinished: _playNextGift,
+                onFinished: () =>
+                    _playNextGift(expectedSerial: playbackSerial),
               ),
           ],
         ),

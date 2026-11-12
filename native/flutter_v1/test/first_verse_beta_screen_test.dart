@@ -81,6 +81,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('First Verse earned'), findsOneWidget);
+    // The owner has not approved final badge artwork yet.
+    expect(find.text('ART PENDING'), findsOneWidget);
     expect(find.text('8/8 required tests'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
     expect(find.text('1 bonus check completed'), findsOneWidget);
