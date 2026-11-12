@@ -49,4 +49,33 @@ void main() {
     expect(feed, isNot(contains('viewerCount: 999')));
     expect(feed, contains('room: room'));
   });
+  test('rapid swipes serialize Stream Video ownership and cleanup', () {
+    final viewer = File(
+      'lib/features/live/stream_viewer_live_screen.dart',
+    ).readAsStringSync();
+    expect(viewer, contains('await WidgetsBinding.instance.endOfFrame;'));
+    expect(
+      viewer,
+      contains('await NativeViewerLiveScreen._lastTransportCleanup;'),
+    );
+    expect(viewer, contains('Future<void> runCleanup() async'));
+    expect(
+      viewer,
+      contains('NativeViewerLiveScreen._lastTransportCleanup = cleanup;'),
+    );
+    expect(viewer, contains('_transportCleanup = cleanup;'));
+    expect(viewer, contains('unawaited(_disposeTransport());'));
+  });
+
+  test('Build 47 policy and original nav remain enforced', () {
+    final shell = File(
+      'lib/features/shell/fameverse_shell_build23.dart',
+    ).readAsStringSync();
+    expect(shell, contains('if (_canGoLive)'));
+    expect(shell, contains('FvPolicyFeature.goLive'));
+    expect(shell, contains('FameverseDiscoverScreen('));
+    expect(shell, contains('NativeProfileBuild23Screen('));
+    expect(shell, contains('NavigationBar('));
+    expect(shell, contains('else if (_tab == 0)'));
+  });
 }
