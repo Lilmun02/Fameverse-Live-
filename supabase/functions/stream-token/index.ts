@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { isFreshViewerRoom } from "./room_freshness.ts";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -83,7 +84,7 @@ Deno.serve(async (req: Request) => {
   });
   const { data: room, error: roomError } = await admin
     .from("live_rooms")
-    .select("id, host_user_id, status")
+    .select("id, host_user_id, status, heartbeat_at")
     .eq("id", roomId)
     .maybeSingle();
 
@@ -94,6 +95,12 @@ Deno.serve(async (req: Request) => {
   const isHost = room.host_user_id === user.id;
   if (role === "host" && !isHost) {
     return response(403, { error: "host-role-forbidden" });
+  }
+
+  // A crashed host can leave status='live' indefinitely. Do not give
+  // NEW viewer tokens to expired rooms. Hosts retain their reconnect path.
+  if (role === "viewer" && !isFreshViewerRoom(room.heartbeat_at)) {
+    return response(409, { error: "room-presence-expired" });
   }
 
   if (role === "host") {
