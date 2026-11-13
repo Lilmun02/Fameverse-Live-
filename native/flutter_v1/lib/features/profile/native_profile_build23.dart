@@ -19,6 +19,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
     required this.onCreatorStudio,
     required this.onFirstVerse,
     required this.onPolicies,
+    this.onOpenInbox,
     required this.onSignOut,
     super.key,
   });
@@ -34,6 +35,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
   final VoidCallback onCreatorStudio;
   final VoidCallback? onFirstVerse;
   final VoidCallback onPolicies;
+  final VoidCallback? onOpenInbox;
   final Future<void> Function() onSignOut;
 
   int get _friends =>
@@ -98,6 +100,13 @@ class NativeProfileBuild23Screen extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onOpenInbox != null)
+                IconButton(
+                  key: const Key('profile-inbox-button'),
+                  tooltip: 'Inbox',
+                  onPressed: onOpenInbox,
+                  icon: const Icon(Icons.mail_outline_rounded),
+                ),
               IconButton(
                 key: const Key('profile-settings-button'),
                 onPressed: () => _openSettings(context),
