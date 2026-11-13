@@ -246,7 +246,15 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         roomId: room.id,
         role: 'host',
       );
-      if (!mounted) return;
+      if (!mounted) {
+        // The room was created, but navigation never opened. Close it
+        // immediately instead of leaving a ghost Live room in discovery.
+        await widget.liveBackend.endLiveRoom(
+          roomId: room.id,
+          hostUserId: widget.identity.id,
+        );
+        return;
+      }
 
       final ended = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
