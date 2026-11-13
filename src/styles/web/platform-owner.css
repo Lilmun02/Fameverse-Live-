@@ -1,0 +1,30 @@
+/* Preview-only owner login and security flow */
+.fv-owner-page,.fv-owner-denied {width:min(960px,100%); min-height:65dvh; margin:0 auto; padding:36px 0 70px; box-sizing:border-box; color:#f7edff}
+.fv-owner-heading {display:flex;justify-content:space-between;align-items:flex-start;gap:22px;border-bottom:1px solid #ffffff24;padding-bottom:25px}
+.fv-owner-page h1,.fv-owner-denied h1 {font-size:clamp(30px,4.1vw,44px);margin:12px 0;line-height:1.15;letter-spacing:-.04em}
+.fv-owner-page h2,.fv-owner-denied h2 {font-size:clamp(22px,2.4vw,28px);margin:0 0 15px}
+.fv-owner-page p,.fv-owner-denied p {font-size:17px;line-height:1.65;color:#d7c6e6;max-width:700px}
+.fv-owner-readonly {padding:10px;border:1px solid #bc91db8b;border-radius:12px;font-size:13px;font-weight:850;color:#f0d6ff;white-space:nowrap}
+.fv-owner-lock {width:min(620px,100%);box-sizing:border-box;margin:36px auto 0;padding:28px;border:1px solid #ad80d26b;border-radius:18px;background:linear-gradient(130deg,#281630,#100a1a);display:grid;gap:14px}
+.fv-owner-lock label {font-size:16px;font-weight:750;color:#fff}
+.fv-owner-lock input {width:100%;box-sizing:border-box;min-height:52px;padding:12px;border:2px solid #ba8ed7;border-radius:10px;background:#100819;color:#fff;font-size:19px}
+.fv-owner-lock button,.fv-owner-denied a {min-height:48px;padding:11px 18px;border:1px solid #bd8eea;border-radius:10px;background:#8d45c2;color:#fff;font:inherit;font-size:16px;font-weight:800;text-decoration:none;cursor:pointer}
+.fv-owner-lock button:disabled {opacity:.5;cursor:wait}
+.fv-owner-lock button.fv-owner-text-button {background:#241332}
+.fv-owner-email-form {display:grid;gap:12px;margin-top:10px}
+.fv-owner-ip code {font-size:17px;font-weight:850;overflow-wrap:anywhere;color:#fff}
+.fv-owner-note {background:#301c3c;border:1px solid #ad80d277;border-radius:10px;padding:12px}
+.fv-owner-setup-message {font-size:16px;line-height:1.55;padding:13px 16px;border:1px solid #c490e66b;border-radius:10px;color:#f2d5fc}
+.fv-owner-metrics {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:15px}
+.fv-owner-metrics article {display:grid;gap:10px;padding:18px;border:1px solid #bc83dc4b;border-radius:13px;background:#1a1126}
+.fv-owner-metrics article span {font-size:15px;color:#c8a8d9}
+.fv-owner-metrics article strong {font-size:26px;font-variant-numeric:tabular-nums}
+.fv-web-shell .fv-platform-guest-label,.fv-web-shell .fv-platform-auth-checking,.fv-web-shell .fv-platform-account-copy small {font-size:14px;line-height:1.4;color:#d6c4e0}
+.fv-web-shell .fv-platform-account-copy strong,.fv-web-shell .fv-platform-signin {font-size:16px}
+.fv-web-shell .fv-platform-account-menu {width:min(350px,calc(100vw - 40px))}
+.fv-web-shell .fv-platform-account-menu a,.fv-web-shell .fv-platform-account-menu>button {font-size:16px;min-height:46px}
+.fv-web-shell .fv-platform-account-menu p,.fv-web-shell .fv-platform-account-menu>small,.fv-web-shell .fv-platform-account-menu .fv-platform-account-email {font-size:14px}
+.fv-web-shell .auth-card p,.fv-web-shell .auth-card label,.fv-web-shell .auth-card .auth-message,.fv-web-shell .auth-card .auth-switch {font-size:16px;line-height:1.5}
+.fv-web-shell .auth-card input {font-size:17px;min-height:48px}
+.fv-web-shell .auth-card button {min-height:46px}
+@media(max-width:660px){.fv-owner-page,.fv-owner-denied{padding:20px 0 54px}.fv-owner-heading{flex-direction:column}.fv-owner-lock{padding:19px;margin-top:24px}.fv-owner-metrics{grid-template-columns:1fr}}

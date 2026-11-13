@@ -11,6 +11,7 @@ import WebCommunity from './WebCommunity.jsx'
 import WebProfilePage from './WebProfilePage.jsx'
 import WebSettingsPage from './WebSettingsPage.jsx'
 import WebSupportMessenger from './WebSupportMessenger.jsx'
+import WebOwnerCommandCenter from './WebOwnerCommandCenter.jsx'
 
 const FALLBACK_PACKS = [
   { id: 'stripe-100', coins: 100, label: '100 Fame Coins' },
@@ -95,7 +96,8 @@ export default function WebStore() {
   const settingsOpen = settingsRequested && signedIn
   const isDiscoverPage = window.location.pathname === '/discover'
   const isCoinsPage = window.location.pathname === '/coins'
-  const isHomePage = !settingsRequested && !profileId && !isDiscoverPage && !isCoinsPage
+  const ownerRequested = window.location.pathname === '/owner' || window.location.pathname.startsWith('/owner/')
+  const isHomePage = !settingsRequested && !profileId && !isDiscoverPage && !isCoinsPage && !ownerRequested
 
   useEffect(() => {
     document.documentElement.classList.add('fv-web-mode')
@@ -227,7 +229,9 @@ export default function WebStore() {
       {isHomePage && <WebBlackFridayBanner />}
       <div className="fv-platform-layout">
         <div className="fv-platform-content">
-          {settingsOpen ? (
+          {ownerRequested ? (
+            <WebOwnerCommandCenter account={account} />
+          ) : settingsOpen ? (
             <WebSettingsPage account={account} />
           ) : profileId ? (
             <WebProfilePage profileId={profileId} ownUserId={account.session?.user?.id} onBack={() => window.location.assign('/discover')} />
@@ -308,7 +312,7 @@ export default function WebStore() {
               {configMessage && <p className="fv-web-inline-message fv-web-inline-error" role="status">{configMessage}</p>}
             </>
           )}
-          {!settingsOpen && !profileId && (
+          {!settingsOpen && !profileId && !ownerRequested && (
             <footer className="fv-web-footer">
               <a className="fv-web-brand" href="/"><span className="fv-web-mark">F</span><span>FAMEVERSE <b>LIVE</b></span></a>
               <div><a href="/reset-password">Password reset</a><span>Use the message icon for support.</span></div>
@@ -317,7 +321,7 @@ export default function WebStore() {
           )}
         </div>
       </div>
-      <WebSupportMessenger userId={account.session?.user?.id || null} onSignIn={() => setAuthOpen(true)} />
+      {!ownerRequested && <WebSupportMessenger userId={account.session?.user?.id || null} onSignIn={() => setAuthOpen(true)} />}
       {toast && <div className="fv-web-toast" role="status">{toast}</div>}
     </main>
   )

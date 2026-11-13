@@ -51,6 +51,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/owner",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/owner/:section",
+      "destination": "/index.html"
+    },
+    {
       "source": "/discover",
       "destination": "/index.html"
     },

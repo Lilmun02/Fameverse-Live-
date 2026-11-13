@@ -57,6 +57,8 @@ export default function WebHeader({ account, onSignIn, query = '', onQueryChange
             <p>Coin purchases are attached to this account.</p>
             <a href={`/profile/${encodeURIComponent(account.session.user.id)}`}><WebIcon name="people" size={18} />My profile</a>
             <a href="/settings"><WebIcon name="people" size={18} />Settings</a>
+            {account.profile?.account_role === 'owner' &&
+              <a href="/owner"><WebIcon name="home" size={18} />Owner Command Center</a>}
             <button type="button" disabled={signingOut} onClick={signOut}><WebIcon name="logout" size={18} />{signingOut ? 'Signing out…' : 'Sign out'}</button>
             {signOutError && <small role="alert">{signOutError}</small>}
           </div>
