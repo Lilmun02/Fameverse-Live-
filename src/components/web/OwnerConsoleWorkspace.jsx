@@ -224,8 +224,14 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
     // cycle firing two real network requests. Abort cancels stale requests.
     const controller = new AbortController()
     let active = true
+    let deadline
     setData({key:requestKey,state:'loading',value:null,error:''})
     const timer = window.setTimeout(() => {
+      deadline = window.setTimeout(() => {
+        if (!active) return
+        controller.abort()
+        setData({key:requestKey,state:'error',value:null,error:'The protected section read timed out. Retry to verify access again.'})
+      }, 10000)
       fetch('/api/owner/console', {
         method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,
         headers:{'Content-Type':'application/json',Authorization:'Bearer ' + token},
@@ -238,14 +244,14 @@ export default function OwnerConsoleWorkspace({ token, overview, onLock }) {
         if (!String(response.headers.get('content-type') || '').includes('application/json')) throw new Error('Secure preview session unavailable.')
         const body = await response.json()
         if (!response.ok || !body?.authorized) throw new Error(body?.error || 'Owner records unavailable.')
-        if (active) {
+        if (active && !controller.signal.aborted) {
           setData({key:requestKey,state:'ready',value:body,error:''})
         }
       }).catch((error) => {
         if (active && error.name !== 'AbortError') setData({key:requestKey,state:'error',value:null,error:error.message})
-      })
+      }).finally(() => window.clearTimeout(deadline))
     }, 80)
-    return () => {active=false;window.clearTimeout(timer);controller.abort()}
+    return () => {active=false;window.clearTimeout(timer);window.clearTimeout(deadline);controller.abort()}
   }, [token,section,page,query,version,kind,windowName,requestKey])
 
   const selectAction = (operation, targetId = '', targetIds = {}) => {
