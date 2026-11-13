@@ -15,6 +15,7 @@ import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_build23.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
+import '../profile/fameverse_inbox_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
 import '../profile/native_profile_build23.dart';
@@ -366,6 +367,19 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       ..showSnackBar(SnackBar(content: Text(value)));
   }
 
+  void _openInbox() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => FameverseInboxScreen(
+          userId: widget.identity.id,
+          policyAccess: widget.policyAccess,
+          onReviewPolicy: widget.onReviewPolicy,
+          onOpenPolicies: _openPolicies,
+        ),
+      ),
+    );
+  }
+
   void _openPolicies() {
     Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (context) => const FameversePolicyScreen()),
@@ -616,6 +630,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
                 ? _openFirstVerse
                 : null,
             onPolicies: _openPolicies,
+            onOpenInbox: _openInbox,
             onSignOut: widget.backend.signOut,
           ),
         ],
