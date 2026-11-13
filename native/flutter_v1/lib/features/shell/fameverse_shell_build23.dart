@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,6 +23,7 @@ import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_build23.dart';
+import 'fameverse_ios27_glass_nav.dart';
 
 class FameverseBuild23Shell extends StatefulWidget {
   const FameverseBuild23Shell({
@@ -533,7 +535,14 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
           createdAt: null,
         );
 
+    // Deferred native glass: leave the Live camera setup on the existing
+    // bar until native platform-view/video compositing is device-verified.
+    final iosGlassNavigation = !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        _tab != 2;
+
     return Scaffold(
+      extendBody: iosGlassNavigation,
       body: IndexedStack(
         index: _tab,
         children: [
@@ -620,8 +629,14 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        key: const Key('fameverse-bottom-nav'),
+      bottomNavigationBar: iosGlassNavigation
+          ? FameverseIos27GlassNav(
+              key: const Key('fameverse-bottom-nav'),
+              selectedIndex: _tab,
+              onDestinationSelected: _setTab,
+            )
+          : NavigationBar(
+              key: const Key('fameverse-bottom-nav'),
         selectedIndex: _tab,
         onDestinationSelected: _setTab,
         destinations: const [
