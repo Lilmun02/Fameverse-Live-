@@ -1119,6 +1119,8 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
         'cohost-active',
         'cohost-source-left',
         'cohost-ended',
+        // Temporary profile-photo fallback while a lens is switching.
+        'camera-flip',
       ];
       for (final event in cohostEvents) {
         channel.onBroadcast(
