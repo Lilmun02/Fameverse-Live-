@@ -11,6 +11,7 @@ import 'native_gift_receipt_gate.dart';
 import 'native_live_profile_sheet.dart';
 import 'native_live_rankings.dart';
 import 'native_live_stage.dart';
+import 'fv_host_viewer_arrival_tracker.dart';
 import 'stream_live_shared.dart';
 
 class NativeHostLiveScreen extends StatefulWidget {
@@ -41,6 +42,9 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
   final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
+  final FvHostViewerArrivalTracker _arrivalTracker = FvHostViewerArrivalTracker();
+  StreamSubscription<CallState>? _viewerJoinSubscription;
+  int _joinSerial = 0;
 
   Call? _call;
   FvLiveActivitySession? _activity;
@@ -122,6 +126,20 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       );
       fvRequireSuccess(await call.goLive(), 'Could not start the livestream');
 
+      // Do not emit join messages for the initial Stream roster.
+      _arrivalTracker.observe(
+        call.state.value.callParticipants.map(
+          (participant) => FvHostViewerIdentity(
+            userId: participant.userId,
+            displayName: participant.name,
+          ),
+        ),
+        hostUserId: widget.identity.id,
+      );
+      _viewerJoinSubscription = call.state.valueStream.listen(
+        _onViewerRosterChanged,
+      );
+
       _activity = widget.liveBackend.openLiveActivity(
         roomId: widget.room.id,
         onComment: _receiveComment,
@@ -172,6 +190,34 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
       if (mounted && taps != _fameTaps) setState(() => _fameTaps = taps);
     } catch (_) {}
+  }
+
+  void _onViewerRosterChanged(CallState state) {
+    if (!mounted || _ending || _ended) return;
+    final arrivals = _arrivalTracker.observe(
+      state.callParticipants.map(
+        (participant) => FvHostViewerIdentity(
+          userId: participant.userId,
+          displayName: participant.name,
+        ),
+      ),
+      hostUserId: widget.identity.id,
+    );
+    if (arrivals.isEmpty) return;
+    setState(() {
+      for (final arrival in arrivals) {
+        final displayName = arrival.displayName.trim();
+        _chat.add(
+          FvLiveChatMessage(
+            id: 'join-${widget.room.id}-${_joinSerial++}',
+            user: displayName.isEmpty ? 'Fameverse viewer' : displayName,
+            userId: arrival.userId,
+            text: 'joined the Live',
+            kind: 'join',
+          ),
+        );
+      }
+    });
   }
 
   void _receiveComment(Map<String, dynamic> payload) {
@@ -553,6 +599,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   }
 
   Future<void> _disposeTransport() async {
+    await _viewerJoinSubscription?.cancel();
+    _viewerJoinSubscription = null;
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
@@ -948,6 +996,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   @override
   void dispose() {
     _comment.dispose();
+    _viewerJoinSubscription?.cancel();
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
