@@ -229,14 +229,14 @@ void main() {
       },
     );
 
-    test('TestFlight builds the triggering commit', () async {
+    test('Build 47 TestFlight builds the triggering commit', () async {
       final codemagic = await File('../../codemagic.yaml').readAsString();
 
       expect(codemagic, contains('git checkout --detach "\$CM_COMMIT"'));
       expect(codemagic, contains('FAMEVERSE_SOURCE_SHA=\$SOURCE_SHA'));
-      expect(codemagic, contains('build32_source_identity.txt'));
-      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "32"'));
-      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=32"'));
+      expect(codemagic, contains('build47_source_identity.txt'));
+      expect(codemagic, contains('FAMEVERSE_BUILD_FAMILY: "47"'));
+      expect(codemagic, contains('--dart-define="FAMEVERSE_BUILD_FAMILY=47"'));
       expect(
         codemagic,
         contains(
