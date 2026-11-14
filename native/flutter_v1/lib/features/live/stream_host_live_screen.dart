@@ -302,7 +302,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final backend = widget.liveBackend;
     if (userId == null || backend is! FvCohostGiftBackend) return;
     try {
-      final coins = await backend.loadCohostGiftCoins(
+      final coins = await (backend as FvCohostGiftBackend).loadCohostGiftCoins(
         roomId: widget.room.id,
         cohostUserId: userId,
       );
@@ -615,7 +615,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
     var permissionsGranted = false;
     try {
-      await gifting.prepareCohostGiftSession(
+      await (gifting as FvCohostGiftBackend).prepareCohostGiftSession(
         roomId: widget.room.id,
         cohostUserId: viewerId,
       );
@@ -661,7 +661,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         } catch (_) {}
       }
       try {
-        await gifting.clearCohostGiftSession(roomId: widget.room.id);
+        await (gifting as FvCohostGiftBackend).clearCohostGiftSession(roomId: widget.room.id);
       } catch (_) {}
       if (mounted) _showMessage('Co-host could not start.');
     }
@@ -673,7 +673,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final gifting = widget.liveBackend;
     if (gifting is FvCohostGiftBackend) {
       try {
-        await gifting.clearCohostGiftSession(roomId: widget.room.id);
+        await (gifting as FvCohostGiftBackend).clearCohostGiftSession(roomId: widget.room.id);
       } catch (_) {
         if (mounted) {
           _showMessage('Co-host gifts could not be disabled. End Live safely.');
