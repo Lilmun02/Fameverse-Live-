@@ -37,7 +37,10 @@ void main() {
       );
       expect(frames.length, 5);
       expect(frames.map((frame) => frame.comboIndex).toList(), [1, 2, 3, 4, 5]);
-      expect(frames.take(4).every((frame) => frame.completionMessage == null), isTrue);
+      expect(
+        frames.take(4).every((frame) => frame.completionMessage == null),
+        isTrue,
+      );
       expect(frames.last.completionMessage, same(finalChat));
     });
 

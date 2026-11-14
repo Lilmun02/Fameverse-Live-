@@ -57,7 +57,11 @@ void main() {
       ).length,
       1,
     );
-    tracker.observe([], hostUserId: 'host', now: epoch.add(const Duration(seconds: 4)));
+    tracker.observe(
+      [],
+      hostUserId: 'host',
+      now: epoch.add(const Duration(seconds: 4)),
+    );
     expect(
       tracker.observe(
         [viewer('v2')],
@@ -66,7 +70,11 @@ void main() {
       ),
       isEmpty,
     );
-    tracker.observe([], hostUserId: 'host', now: epoch.add(const Duration(seconds: 34)));
+    tracker.observe(
+      [],
+      hostUserId: 'host',
+      now: epoch.add(const Duration(seconds: 34)),
+    );
     expect(
       tracker.observe(
         [viewer('v2')],

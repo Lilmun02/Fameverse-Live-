@@ -12,7 +12,12 @@ void main() {
       expect(shell, contains('Future<void> _openCreatorStudio('));
       expect(shell, contains('_openPersonalCreatorStudio(currentProfile);'));
       expect(shell, isNot(contains('Build23OwnerControlCenterScreen(')));
-      expect(shell, isNot(contains("import '../profile/owner_control_center_build23.dart';")));
+      expect(
+        shell,
+        isNot(
+          contains("import '../profile/owner_control_center_build23.dart';"),
+        ),
+      );
       expect(shell, contains('account.profile.id != widget.identity.id'));
       expect(shell, contains('_loadAuthoritativeAccount()'));
     });

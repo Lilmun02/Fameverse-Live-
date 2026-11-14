@@ -11,8 +11,14 @@ void main() {
       'final credentials = await widget.liveBackend.issueLiveCredentials(',
     );
     final abandonment = camera.indexOf('if (!mounted) {', start);
-    final end = camera.indexOf('await widget.liveBackend.endLiveRoom(', abandonment);
-    final nextRoute = camera.indexOf('Navigator.of(context).push<bool>(', start);
+    final end = camera.indexOf(
+      'await widget.liveBackend.endLiveRoom(',
+      abandonment,
+    );
+    final nextRoute = camera.indexOf(
+      'Navigator.of(context).push<bool>(',
+      start,
+    );
 
     expect(start, greaterThan(0));
     expect(abandonment, greaterThan(start));

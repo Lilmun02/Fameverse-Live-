@@ -22,14 +22,19 @@ void main() {
       expect(camera, isNot(contains('unawaited(_startPreview());\n  }')));
     });
 
-    test('releases preview before microphone permission check and Stream room', () {
-      final stop = camera.indexOf('await _stopPreview();');
-      final verify = camera.indexOf('await _verifyCameraAccess();');
-      final open = camera.indexOf('room = await widget.liveBackend.startLiveRoom(');
-      expect(stop, greaterThan(0));
-      expect(verify, greaterThan(stop));
-      expect(open, greaterThan(verify));
-      expect(camera, contains('await controller.dispose();'));
-    });
+    test(
+      'releases preview before microphone permission check and Stream room',
+      () {
+        final stop = camera.indexOf('await _stopPreview();');
+        final verify = camera.indexOf('await _verifyCameraAccess();');
+        final open = camera.indexOf(
+          'room = await widget.liveBackend.startLiveRoom(',
+        );
+        expect(stop, greaterThan(0));
+        expect(verify, greaterThan(stop));
+        expect(open, greaterThan(verify));
+        expect(camera, contains('await controller.dispose();'));
+      },
+    );
   });
 }
