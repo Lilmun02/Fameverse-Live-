@@ -15,13 +15,14 @@ import '../live/native_camera_screen.dart';
 import '../profile/creator_studio_build23.dart';
 import '../profile/fameverse_edit_profile_screen.dart';
 import '../profile/fameverse_policy_screen.dart';
+import '../profile/fameverse_inbox_screen.dart';
 import '../profile/fameverse_public_profile_screen.dart';
 import '../profile/first_verse_beta_screen.dart';
 import '../profile/native_profile_build23.dart';
-import '../profile/owner_control_center_build23.dart';
 import '../stories/creator_stories_screen.dart';
 import 'fameverse_discover_screen.dart';
 import 'fameverse_home_build23.dart';
+import 'fameverse_vertical_live_feed.dart';
 
 class FameverseBuild23Shell extends StatefulWidget {
   const FameverseBuild23Shell({
@@ -366,6 +367,19 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       ..showSnackBar(SnackBar(content: Text(value)));
   }
 
+  void _openInbox() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => FameverseInboxScreen(
+          userId: widget.identity.id,
+          policyAccess: widget.policyAccess,
+          onReviewPolicy: widget.onReviewPolicy,
+          onOpenPolicies: _openPolicies,
+        ),
+      ),
+    );
+  }
+
   void _openPolicies() {
     Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (context) => const FameversePolicyScreen()),
@@ -422,17 +436,8 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
     });
     final currentProfile = account.profile;
 
-    if (account.role == 'owner') {
-      Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (context) => Build23OwnerControlCenterScreen(
-            onOpenCreatorStudio: () =>
-                _openPersonalCreatorStudio(currentProfile),
-          ),
-        ),
-      );
-      return;
-    }
+    // Every account, including the owner, opens its personal Creator Studio.
+    // The privileged Owner Command Center is web-only, never a native route.
     _openPersonalCreatorStudio(currentProfile);
   }
 
@@ -537,23 +542,39 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
       body: IndexedStack(
         index: _tab,
         children: [
-          FameverseHomeBuild23Screen(
-            profile: profile,
-            network: _network,
-            creators: _creators,
-            rooms: _rooms,
-            stories: _stories,
-            loading: _loading,
-            error: _error,
-            onRefresh: _refreshAll,
-            onOpenProfile: () => _setTab(3),
-            onOpenDiscover: () => _setTab(1),
-            onOpenStories: () => unawaited(_openStories(profile)),
-            onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
-            onToggleFollow: _toggleFollow,
-            onCreatorSelected: _openPublicProfile,
-            followBusy: _followBusy,
-          ),
+          if (_tab == 0 && _rooms.isNotEmpty)
+            FameverseVerticalLiveFeed(
+              backend: widget.backend,
+              liveBackend: widget.liveBackend,
+              identity: widget.identity,
+              profile: profile,
+              rooms: _rooms,
+              followingIds: _network.followingIds,
+              onOpenDiscover: () => _setTab(1),
+              onOpenStories: () => unawaited(_openStories(profile)),
+              onRefresh: _refreshRooms,
+              onLiveJoined: () => unawaited(_recordBetaMission('join_live')),
+            )
+          else if (_tab == 0)
+            FameverseHomeBuild23Screen(
+              profile: profile,
+              network: _network,
+              creators: _creators,
+              rooms: _rooms,
+              stories: _stories,
+              loading: _loading,
+              error: _error,
+              onRefresh: _refreshAll,
+              onOpenProfile: () => _setTab(3),
+              onOpenDiscover: () => _setTab(1),
+              onOpenStories: () => unawaited(_openStories(profile)),
+              onRoomSelected: (room) => unawaited(_openRoom(room, profile)),
+              onToggleFollow: _toggleFollow,
+              onCreatorSelected: _openPublicProfile,
+              followBusy: _followBusy,
+            )
+          else
+            const SizedBox.shrink(),
           FameverseDiscoverScreen(
             profile: profile,
             network: _network,
@@ -616,6 +637,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
                 ? _openFirstVerse
                 : null,
             onPolicies: _openPolicies,
+            onOpenInbox: _openInbox,
             onSignOut: widget.backend.signOut,
           ),
         ],
