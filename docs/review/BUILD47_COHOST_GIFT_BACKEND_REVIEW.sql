@@ -82,6 +82,38 @@ grant execute on function public.prepare_fameverse_live_cohost(uuid,uuid) to aut
 grant execute on function public.activate_fameverse_live_cohost(uuid) to authenticated;
 grant execute on function public.clear_fameverse_live_cohost(uuid) to authenticated;
 
+-- Authoritative total. Never accumulate unverified broadcast totals as money.
+create or replace function public.get_fameverse_cohost_gift_coins(
+  p_room_id uuid, p_cohost_user_id uuid
+) returns bigint language plpgsql security definer
+set search_path to public, pg_temp as $function$
+declare v_total bigint := 0;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.live_room_cohosts c
+    join public.live_rooms r on r.id = c.room_id
+    where c.room_id = p_room_id
+      and c.cohost_user_id = p_cohost_user_id
+      and c.activated_at is not null
+      and r.status = 'live' and r.ended_at is null
+  ) then
+    return 0;
+  end if;
+  select coalesce(sum(e.coins_spent), 0) into v_total
+    from public.gift_events e
+    where e.room_id = p_room_id
+      and e.recipient_user_id = p_cohost_user_id;
+  return v_total;
+end;
+$function$;
+revoke all on function public.get_fameverse_cohost_gift_coins(uuid,uuid)
+  from public,anon;
+grant execute on function public.get_fameverse_cohost_gift_coins(uuid,uuid)
+  to authenticated;
+
 -- The additive 4-argument RPC retains the proven wallet debit, ledger,
 -- gift events, level calculations and cash-backed creator-share transaction.
 CREATE OR REPLACE FUNCTION public.send_fameverse_gift(p_room_id uuid, p_gift_id text, p_quantity integer, p_recipient_user_id uuid)
