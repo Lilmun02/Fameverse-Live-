@@ -451,6 +451,7 @@ class NativeGiftTray extends StatefulWidget {
     required this.onRefill,
     this.onBuyCoins,
     this.onExchange,
+    this.recipientSelector,
     super.key,
   });
 
@@ -460,6 +461,7 @@ class NativeGiftTray extends StatefulWidget {
   final Future<int> Function() onRefill;
   final VoidCallback? onBuyCoins;
   final VoidCallback? onExchange;
+  final Widget? recipientSelector;
 
   @override
   State<NativeGiftTray> createState() => _NativeGiftTrayState();
@@ -727,6 +729,10 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
               ],
             ),
             const SizedBox(height: 8),
+            if (widget.recipientSelector != null) ...[
+              widget.recipientSelector!,
+              const SizedBox(height: 8),
+            ],
             SizedBox(
               height: 38,
               child: ListView.separated(
