@@ -1207,6 +1207,7 @@ class SupabaseFameverseLiveBackend
         'cohost-accept',
         'cohost-decline',
         'cohost-active',
+        'cohost-gift-ready',
         'cohost-source-left',
         'cohost-ended',
         // Temporary profile-photo fallback while a lens is switching.
