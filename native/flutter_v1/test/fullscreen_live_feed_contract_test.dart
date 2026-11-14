@@ -60,10 +60,7 @@ void main() {
         'final previousCleanup = NativeViewerLiveScreen._lastTransportCleanup;',
       ),
     );
-    expect(
-      viewer,
-      contains('await previousCleanup;'),
-    );
+    expect(viewer, contains('await previousCleanup;'));
     expect(viewer, contains('Future<void> runCleanup() async'));
     expect(
       viewer,

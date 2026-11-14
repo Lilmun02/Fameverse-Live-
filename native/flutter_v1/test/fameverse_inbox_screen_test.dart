@@ -31,10 +31,7 @@ void main() {
     ]);
     await tester.pumpWidget(
       MaterialApp(
-        home: FameverseInboxScreen(
-          userId: 'member-one',
-          repository: store,
-        ),
+        home: FameverseInboxScreen(userId: 'member-one', repository: store),
       ),
     );
     await tester.pumpAndSettle();

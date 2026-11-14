@@ -42,7 +42,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
   final List<FvGiftPlayback> _giftQueue = <FvGiftPlayback>[];
   final FvGiftReceiptGate _giftEventGate = FvGiftReceiptGate();
-  final FvHostViewerArrivalTracker _arrivalTracker = FvHostViewerArrivalTracker();
+  final FvHostViewerArrivalTracker _arrivalTracker =
+      FvHostViewerArrivalTracker();
   StreamSubscription<CallState>? _viewerJoinSubscription;
   int _joinSerial = 0;
   final Set<String> _cameraFallbackUsers = <String>{};
@@ -251,8 +252,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     );
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
-    final eventId = payload['id']?.toString() ??
-        '${DateTime.now().microsecondsSinceEpoch}';
+    final eventId =
+        payload['id']?.toString() ?? '${DateTime.now().microsecondsSinceEpoch}';
     final receipt = FvLiveChatMessage(
       id: eventId,
       user: sender,
@@ -374,11 +375,13 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final activity = _activity;
     if (activity == null) return;
     try {
-      await activity.send('camera-flip', <String, dynamic>{
-        'viewerId': widget.identity.id,
-        'userId': widget.identity.id,
-        'active': active,
-      }).timeout(const Duration(milliseconds: 650));
+      await activity
+          .send('camera-flip', <String, dynamic>{
+            'viewerId': widget.identity.id,
+            'userId': widget.identity.id,
+            'active': active,
+          })
+          .timeout(const Duration(milliseconds: 650));
     } catch (_) {
       // Local fallback still runs even when the room activity channel drops.
     }
@@ -1099,7 +1102,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 hostCameraTransitioning: _cameraFallbackUsers.contains(
                   widget.identity.id,
                 ),
-                cohostCameraTransitioning: _activeCohostUserId != null &&
+                cohostCameraTransitioning:
+                    _activeCohostUserId != null &&
                     _cameraFallbackUsers.contains(_activeCohostUserId),
               )
             else
@@ -1337,8 +1341,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
               NativeGiftOverlay(
                 key: ValueKey<String>('host-gift-$_giftSerial'),
                 playback: _giftPlayback!,
-                onFinished: () =>
-                    _playNextGift(expectedSerial: playbackSerial),
+                onFinished: () => _playNextGift(expectedSerial: playbackSerial),
               ),
           ],
         ),

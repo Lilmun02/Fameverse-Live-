@@ -34,14 +34,8 @@ void main() {
     final finish = src.indexOf('_connectFinished.complete();', start);
     expect(finish, greaterThan(start));
     final region = src.substring(start, finish);
-    expect(
-      region.split('if (_connectCancelled) return;').length - 1,
-      5,
-    );
-    expect(
-      src,
-      contains('!mounted || _leaving || _transportCleanup != null'),
-    );
+    expect(region.split('if (_connectCancelled) return;').length - 1, 5);
+    expect(src, contains('!mounted || _leaving || _transportCleanup != null'));
     expect(
       src,
       contains('final Completer<void> _connectFinished = Completer<void>();'),
