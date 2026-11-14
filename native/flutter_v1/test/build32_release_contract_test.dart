@@ -14,8 +14,8 @@ void main() {
         for (final marker in <String>[
           "'get_fameverse_rankings_v2'",
           "'p_window': _window",
-          "('24h', '24H')",
-          "('7d', '7D')",
+          "('24h', 'Daily')",
+          "('7d', 'Weekly')",
           "('supporters', 'Supporters'",
           "('pulse', 'Pulse'",
           "('creators', 'Creators'",
