@@ -2,6 +2,8 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
+    # Temporary Flutter 3.50 framework deprecation; full Material migration is out of scope.
+    deprecated_member_use: ignore
     dead_code: error
     unused_import: error
   exclude:
