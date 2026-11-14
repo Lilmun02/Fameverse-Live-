@@ -44,7 +44,8 @@ class FameverseBuild23Shell extends StatefulWidget {
   State<FameverseBuild23Shell> createState() => _FameverseBuild23ShellState();
 }
 
-class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
+class _FameverseBuild23ShellState extends State<FameverseBuild23Shell>
+    with WidgetsBindingObserver {
   static const _emptyNetwork = FvFollowNetwork(
     followers: [],
     following: [],
@@ -80,20 +81,37 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_refreshAll());
     unawaited(_refreshBeta());
     unawaited(_refreshStories());
     unawaited(_refreshRole());
-    // Active-room heartbeats expire quickly. Refresh Home/Discover while open.
+    // No recurring live-room polling while the app is backgrounded.
+    _startRoomRefreshTimer();
+  }
+
+  void _startRoomRefreshTimer() {
+    if (_roomRefreshTimer?.isActive == true) return;
     _roomRefreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
-      if (_tab == 0 || _tab == 1) {
-        unawaited(_refreshRooms());
-      }
+      if (!mounted) return;
+      if (_tab == 0 || _tab == 1) unawaited(_refreshRooms());
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _startRoomRefreshTimer();
+      if (_tab == 0 || _tab == 1) unawaited(_refreshRooms());
+    } else {
+      _roomRefreshTimer?.cancel();
+      _roomRefreshTimer = null;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _roomRefreshTimer?.cancel();
     super.dispose();
   }
