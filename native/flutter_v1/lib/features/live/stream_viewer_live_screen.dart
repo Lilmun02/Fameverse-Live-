@@ -449,20 +449,23 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     setState(() => _giftSending = true);
     try {
       final backend = widget.liveBackend;
-      final result = recipientUserId == null
-          ? await backend.recordGift(
-              roomId: widget.room.id,
-              giftId: gift.id,
-              quantity: quantity,
-            )
-          : backend is FvCohostGiftBackend
-          ? await backend.recordGiftToCohost(
-              roomId: widget.room.id,
-              giftId: gift.id,
-              quantity: quantity,
-              cohostUserId: recipientUserId,
-            )
-          : throw StateError('Co-host gifting is unavailable.');
+      late final FvGiftSendResult result;
+      if (recipientUserId == null) {
+        result = await backend.recordGift(
+          roomId: widget.room.id,
+          giftId: gift.id,
+          quantity: quantity,
+        );
+      } else if (backend is FvCohostGiftBackend) {
+        result = await backend.recordGiftToCohost(
+          roomId: widget.room.id,
+          giftId: gift.id,
+          quantity: quantity,
+          cohostUserId: recipientUserId,
+        );
+      } else {
+        throw StateError('Co-host gifting is unavailable.');
+      }
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
       // This receipt is presented locally; do not replay its own echo.
       _giftEventGate.shouldRender(eventId);
@@ -599,8 +602,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                     ),
                     TextButton(
                       key: const Key('gift-recipient-cohost'),
-                      onPressed: () =>
-                          setSheetState(() => recipientId = cohostId),
+                      onPressed: () {
+                        setSheetState(() => recipientId = cohostId);
+                      },
                       child: Text(
                         'Co-host',
                         style: TextStyle(
@@ -915,7 +919,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (_) {
       await _deactivateSelfCohost();
       if (mounted) {
-        _showMessage('Co-host activation failed. Gift routing was not enabled.');
+        _showMessage(
+          'Co-host activation failed. Gift routing was not enabled.',
+        );
       }
     }
   }
