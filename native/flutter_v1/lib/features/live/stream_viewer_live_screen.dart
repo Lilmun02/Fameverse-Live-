@@ -59,6 +59,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   StreamSubscription<CallState>? _callStateSubscription;
   Timer? _tapFlushTimer;
   Timer? _giftTimer;
+  Timer? _cohostGiftRefreshTimer;
   FvGiftPlayback? _giftPlayback;
   bool _connecting = true;
   bool _leaving = false;
@@ -75,6 +76,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   int _fameTaps = 0;
   int _localTapCount = 0;
   int _giftSerial = 0;
+  int? _cohostGiftCoins;
   String? _accountRole;
   String? _selfCohostState;
   String? _activeCohostUserId;
@@ -292,6 +294,33 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         completionMessage: quantity > 1 ? receipt : null,
       ),
     );
+    _scheduleCohostGiftRefresh();
+  }
+
+  void _scheduleCohostGiftRefresh() {
+    if (_activeCohostUserId == null) return;
+    _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftRefreshTimer = Timer(
+      const Duration(milliseconds: 400),
+      () => unawaited(_refreshCohostGiftCoins()),
+    );
+  }
+
+  Future<void> _refreshCohostGiftCoins() async {
+    final userId = _activeCohostUserId;
+    final backend = widget.liveBackend;
+    if (userId == null || backend is! FvCohostGiftBackend) return;
+    try {
+      final coins = await backend.loadCohostGiftCoins(
+        roomId: widget.room.id,
+        cohostUserId: userId,
+      );
+      if (mounted && _activeCohostUserId == userId) {
+        setState(() => _cohostGiftCoins = coins);
+      }
+    } catch (_) {
+      // Never display a guessed total when the authoritative RPC fails.
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -383,7 +412,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
   }
 
-  Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
+  Future<bool> _sendGift(
+    FvGiftDefinition gift,
+    int quantity, {
+    String? recipientUserId,
+  }) async {
     if (_giftSending) return false;
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_walletReady) {
@@ -398,6 +431,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       _showMessage('Gift amount must be between 1 and 100,000.');
       return false;
     }
+    if (recipientUserId != null &&
+        (recipientUserId != _activeCohostUserId ||
+            recipientUserId == widget.identity.id)) {
+      _showMessage('That co-host is not available to receive gifts.');
+      return false;
+    }
     final total = gift.cost * quantity;
     if (_walletBalance < total) {
       _showMessage(
@@ -409,11 +448,21 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
     setState(() => _giftSending = true);
     try {
-      final result = await widget.liveBackend.recordGift(
-        roomId: widget.room.id,
-        giftId: gift.id,
-        quantity: quantity,
-      );
+      final backend = widget.liveBackend;
+      final result = recipientUserId == null
+          ? await backend.recordGift(
+              roomId: widget.room.id,
+              giftId: gift.id,
+              quantity: quantity,
+            )
+          : backend is FvCohostGiftBackend
+          ? await backend.recordGiftToCohost(
+              roomId: widget.room.id,
+              giftId: gift.id,
+              quantity: quantity,
+              cohostUserId: recipientUserId,
+            )
+          : throw StateError('Co-host gifting is unavailable.');
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
       // This receipt is presented locally; do not replay its own echo.
       _giftEventGate.shouldRender(eventId);
@@ -452,7 +501,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         'giftId': gift.id,
         'quantity': quantity,
         'totalCoins': total,
+        'recipientId': recipientUserId ?? widget.room.hostUserId,
       });
+      _scheduleCohostGiftRefresh();
       return true;
     } catch (error) {
       final text = error.toString().toLowerCase();
@@ -659,13 +710,26 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
 
     if (event == 'cohost-active') {
-      if (mounted) setState(() => _activeCohostUserId = viewerId);
+      if (mounted) {
+        setState(() {
+          _activeCohostUserId = viewerId;
+          _cohostGiftCoins = null;
+        });
+      }
       if (viewerId == widget.identity.id) await _activateSelfCohost();
+      _scheduleCohostGiftRefresh();
+      return;
+    }
+    if (event == 'cohost-gift-ready') {
+      if (viewerId == _activeCohostUserId) _scheduleCohostGiftRefresh();
       return;
     }
     if (event == 'cohost-ended') {
       if (_activeCohostUserId == viewerId && mounted) {
-        setState(() => _activeCohostUserId = null);
+        setState(() {
+          _activeCohostUserId = null;
+          _cohostGiftCoins = null;
+        });
       }
       if (viewerId == widget.identity.id) {
         await _deactivateSelfCohost(notify: false);
@@ -1218,6 +1282,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     await _connectFinished.future;
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    _cohostGiftRefreshTimer?.cancel();
     await _callStateSubscription?.cancel();
     _callStateSubscription = null;
     final activity = _activity;
@@ -1250,6 +1315,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _comment.dispose();
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    _cohostGiftRefreshTimer?.cancel();
     for (final timer in _cameraFallbackTimers.values) {
       timer.cancel();
     }
@@ -1287,6 +1353,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   call: call,
                   hostUserId: widget.room.hostUserId,
                   activeCohostUserId: _activeCohostUserId,
+                  cohostGiftCoins: _cohostGiftCoins,
                   hostCameraTransitioning: _cameraFallbackUsers.contains(
                     widget.room.hostUserId,
                   ),
