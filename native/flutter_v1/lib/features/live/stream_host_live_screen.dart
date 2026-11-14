@@ -54,6 +54,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Timer? _heartbeat;
   Timer? _tapRefresh;
   Timer? _giftTimer;
+  Timer? _cohostGiftRefreshTimer;
   FvGiftPlayback? _giftPlayback;
 
   bool _connecting = true;
@@ -66,6 +67,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   int _fameTaps = 0;
   int _gifterLevel = 1;
   int _giftSerial = 0;
+  int? _cohostGiftCoins;
   String? _activeCohostUserId;
   String? _pendingInviteUserId;
   String? _error;
@@ -283,6 +285,33 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
       );
     }
+    _scheduleCohostGiftRefresh();
+  }
+
+  void _scheduleCohostGiftRefresh() {
+    if (_activeCohostUserId == null) return;
+    _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftRefreshTimer = Timer(
+      const Duration(milliseconds: 400),
+      () => unawaited(_refreshCohostGiftCoins()),
+    );
+  }
+
+  Future<void> _refreshCohostGiftCoins() async {
+    final userId = _activeCohostUserId;
+    final backend = widget.liveBackend;
+    if (userId == null || backend is! FvCohostGiftBackend) return;
+    try {
+      final coins = await backend.loadCohostGiftCoins(
+        roomId: widget.room.id,
+        cohostUserId: userId,
+      );
+      if (mounted && _activeCohostUserId == userId) {
+        setState(() => _cohostGiftCoins = coins);
+      }
+    } catch (_) {
+      // Do not invent a coin total when the authoritative read fails.
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -476,6 +505,10 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       return;
     }
     if (viewerId == null || viewerId == widget.identity.id) return;
+    if (event == 'cohost-gift-ready') {
+      if (viewerId == _activeCohostUserId) _scheduleCohostGiftRefresh();
+      return;
+    }
 
     switch (event) {
       case 'cohost-request':
@@ -575,7 +608,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     final call = _call;
     final activity = _activity;
     if (call == null || activity == null) return;
+    final gifting = widget.liveBackend;
+    if (gifting is! FvCohostGiftBackend) {
+      if (mounted) _showMessage('Co-host gift authorization unavailable.');
+      return;
+    }
+    var permissionsGranted = false;
     try {
+      await gifting.prepareCohostGiftSession(
+        roomId: widget.room.id,
+        cohostUserId: viewerId,
+      );
       fvRequireSuccess(
         await call.grantPermissions(
           userId: viewerId,
@@ -586,6 +629,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         ),
         'Could not grant co-host media permissions',
       );
+      permissionsGranted = true;
       if (acceptedRequest) {
         await activity.send('cohost-accept', <String, dynamic>{
           'viewerId': viewerId,
@@ -599,10 +643,26 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       if (mounted) {
         setState(() {
           _activeCohostUserId = viewerId;
+          _cohostGiftCoins = null;
           _pendingInviteUserId = null;
         });
+        _scheduleCohostGiftRefresh();
       }
     } catch (_) {
+      if (permissionsGranted) {
+        try {
+          await call.revokePermissions(
+            userId: viewerId,
+            permissions: const <CallPermission>[
+              CallPermission.sendAudio,
+              CallPermission.sendVideo,
+            ],
+          );
+        } catch (_) {}
+      }
+      try {
+        await gifting.clearCohostGiftSession(roomId: widget.room.id);
+      } catch (_) {}
       if (mounted) _showMessage('Co-host could not start.');
     }
   }
@@ -610,6 +670,17 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Future<void> _endCohost({bool notify = true}) async {
     final userId = _activeCohostUserId;
     if (userId == null) return;
+    final gifting = widget.liveBackend;
+    if (gifting is FvCohostGiftBackend) {
+      try {
+        await gifting.clearCohostGiftSession(roomId: widget.room.id);
+      } catch (_) {
+        if (mounted) {
+          _showMessage('Co-host gifts could not be disabled. End Live safely.');
+        }
+        return;
+      }
+    }
     final call = _call;
     if (call != null) {
       try {
@@ -630,7 +701,12 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         });
       } catch (_) {}
     }
-    if (mounted) setState(() => _activeCohostUserId = null);
+    if (mounted) {
+      setState(() {
+        _activeCohostUserId = null;
+        _cohostGiftCoins = null;
+      });
+    }
   }
 
   Future<void> _cancelInvite() async {
@@ -1099,6 +1175,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 call: call,
                 cameraEnabled: _cameraEnabled,
                 activeCohostUserId: _activeCohostUserId,
+                cohostGiftCoins: _cohostGiftCoins,
                 hostCameraTransitioning: _cameraFallbackUsers.contains(
                   widget.identity.id,
                 ),
