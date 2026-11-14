@@ -16,14 +16,12 @@ FvCreatorPayoutSummary _summary(int availableCents) {
 }
 
 void main() {
-  testWidgets('shows $25 minimum and accurate cleared earnings progress', (
+  testWidgets('shows the minimum and accurate cleared earnings progress', (
     tester,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: FvWithdrawalProgressCard(summary: _summary(1000)),
-        ),
+        home: Scaffold(body: FvWithdrawalProgressCard(summary: _summary(1000))),
       ),
     );
 
@@ -49,9 +47,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: FvWithdrawalProgressCard(summary: _summary(3100)),
-        ),
+        home: Scaffold(body: FvWithdrawalProgressCard(summary: _summary(3100))),
       ),
     );
 
@@ -59,9 +55,6 @@ void main() {
       find.byKey(const Key('creator-withdrawal-progress-bar')),
     );
     expect(bar.value, 1.0);
-    expect(
-      find.textContaining('Withdrawal minimum reached'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Withdrawal minimum reached'), findsOneWidget);
   });
 }
