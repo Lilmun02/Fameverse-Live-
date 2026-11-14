@@ -903,7 +903,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (gifting is! FvCohostGiftBackend) {
         throw StateError('Co-host gift authorization unavailable');
       }
-      await (gifting as FvCohostGiftBackend).activateCohostGiftSession(roomId: widget.room.id);
+      await (gifting as FvCohostGiftBackend).activateCohostGiftSession(
+        roomId: widget.room.id,
+      );
       await _activity?.send('cohost-gift-ready', {
         'viewerId': widget.identity.id,
         'userId': widget.identity.id,
@@ -943,7 +945,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final gifting = widget.liveBackend;
     if (gifting is FvCohostGiftBackend) {
       try {
-        await (gifting as FvCohostGiftBackend).clearCohostGiftSession(roomId: widget.room.id);
+        await (gifting as FvCohostGiftBackend).clearCohostGiftSession(
+          roomId: widget.room.id,
+        );
       } catch (_) {}
     }
     if (notify) {
