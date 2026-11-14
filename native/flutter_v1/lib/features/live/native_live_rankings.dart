@@ -21,7 +21,10 @@ class NativeLiveRankingsSheet extends StatefulWidget {
 }
 
 class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
-  static const _windows = <(String, String)>[('24h', 'Daily'), ('7d', 'Weekly')];
+  static const _windows = <(String, String)>[
+    ('24h', 'Daily'),
+    ('7d', 'Weekly'),
+  ];
   static const _kinds = <(String, String, IconData)>[
     ('supporters', 'Supporters', Icons.card_giftcard_rounded),
     ('pulse', 'Pulse', Icons.bolt_rounded),

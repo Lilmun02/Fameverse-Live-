@@ -112,9 +112,7 @@ class _FameverseAppState extends State<FameverseApp>
     } catch (_) {
       // A failed backend query cannot unlock restricted features.
     }
-    if (!mounted ||
-        epoch != _policyLoadEpoch ||
-        _identity?.id != identity.id) {
+    if (!mounted || epoch != _policyLoadEpoch || _identity?.id != identity.id) {
       return;
     }
 
@@ -152,7 +150,8 @@ class _FameverseAppState extends State<FameverseApp>
     } catch (_) {
       if (mounted && _identity?.id == identity.id) {
         setState(() {
-          _policyError = 'The decision could not be saved. Check your '
+          _policyError =
+              'The decision could not be saved. Check your '
               'connection. You can still browse with restricted access.';
         });
       }

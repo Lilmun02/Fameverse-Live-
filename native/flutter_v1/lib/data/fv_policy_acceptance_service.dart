@@ -11,9 +11,7 @@ class FvPolicyAcceptanceService {
 
   static const requiredPolicyVersion = '2026-10';
 
-  Future<FvPolicyAccess> submitDecision({
-    required bool accept,
-  }) async {
+  Future<FvPolicyAccess> submitDecision({required bool accept}) async {
     final user = client.auth.currentUser;
     if (user == null) {
       throw StateError('Sign in before responding to the policy.');
@@ -48,13 +46,17 @@ class FvPolicyAcceptanceService {
     try {
       // Inserts only if the account has never received this notice.
       // A subsequent login can never restart the 10-day countdown.
-      await client.from('policy_acceptances').upsert({
-        'user_id': user.id,
-        'policy_version': requiredPolicyVersion,
-        'decision': 'unsigned',
-      },
-          onConflict: 'user_id,policy_version',
-          ignoreDuplicates: true);
+      await client
+          .from('policy_acceptances')
+          .upsert(
+            {
+              'user_id': user.id,
+              'policy_version': requiredPolicyVersion,
+              'decision': 'unsigned',
+            },
+            onConflict: 'user_id,policy_version',
+            ignoreDuplicates: true,
+          );
 
       final raw = await client.rpc(
         'get_my_fameverse_policy_status',
@@ -67,7 +69,8 @@ class FvPolicyAcceptanceService {
         record = Map<String, dynamic>.from(raw);
       }
 
-      final matched = record != null &&
+      final matched =
+          record != null &&
           record['user_id']?.toString() == user.id &&
           record['policy_version'] == requiredPolicyVersion;
       final decision = switch (record?['decision']) {
@@ -82,7 +85,8 @@ class FvPolicyAcceptanceService {
         policyVersion: requiredPolicyVersion,
         decision: decision,
         verifiedForAccount: matched,
-        withinNoticeWindow: matched &&
+        withinNoticeWindow:
+            matched &&
             decision == FvPolicyDecision.unsigned &&
             record?['can_use_restricted'] == true,
         isGracePeriod: matched && phase == 'grace',

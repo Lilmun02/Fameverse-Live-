@@ -264,8 +264,10 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(playback.gift.symbol,
-                    style: const TextStyle(fontSize: 30)),
+                Text(
+                  playback.gift.symbol,
+                  style: const TextStyle(fontSize: 30),
+                ),
                 const SizedBox(width: 9),
                 Flexible(
                   child: Text(

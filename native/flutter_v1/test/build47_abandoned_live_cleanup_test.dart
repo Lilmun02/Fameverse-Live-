@@ -28,10 +28,7 @@ void main() {
       camera.substring(abandonment, nextRoute),
       contains('hostUserId: widget.identity.id'),
     );
-    expect(
-      camera.substring(abandonment, nextRoute),
-      contains('return;'),
-    );
+    expect(camera.substring(abandonment, nextRoute), contains('return;'));
   });
 
   test('normal host navigation and failure cleanup are preserved', () {
