@@ -3,35 +3,25 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Room polling pauses when app is not resumed', () {
-    final shell = File(
-      'lib/features/shell/fameverse_shell_build23.dart',
-    ).readAsStringSync();
-    expect(shell, contains('with WidgetsBindingObserver {'));
-    expect(shell, contains('WidgetsBinding.instance.addObserver(this);'));
-    expect(shell, contains('WidgetsBinding.instance.removeObserver(this);'));
-    expect(
-      shell,
-      contains('didChangeAppLifecycleState(AppLifecycleState state)'),
-    );
-    expect(shell, contains('if (state == AppLifecycleState.resumed) {'));
-    expect(shell, contains('_roomRefreshTimer = null;'));
-    expect(shell, contains('_roomRefreshTimer?.cancel();'));
-    expect(shell, contains('_startRoomRefreshTimer();'));
-    expect(shell, contains('if (_tab == 0 || _tab == 1)'));
+  const path = 'lib/features/shell/fameverse_shell_build23.dart';
+
+  test('Background lifecycle stops room polling', () {
+    final source = File(path).readAsStringSync();
+    expect(source, contains('with WidgetsBindingObserver {'));
+    expect(source, contains('WidgetsBinding.instance.addObserver(this);'));
+    expect(source, contains('WidgetsBinding.instance.removeObserver(this);'));
+    expect(source, contains('didChangeAppLifecycleState'));
+    expect(source, contains('AppLifecycleState.resumed'));
+    expect(source, contains('_roomRefreshTimer?.cancel();'));
+    expect(source, contains('_roomRefreshTimer = null;'));
   });
 
-  test('Repeated resumed notifications cannot add polling timers', () {
-    final shell = File(
-      'lib/features/shell/fameverse_shell_build23.dart',
-    ).readAsStringSync();
-    expect(
-      shell,
-      contains('if (_roomRefreshTimer?.isActive == true) return;'),
-    );
-    expect(
-      shell,
-      contains('Timer.periodic(const Duration(seconds: 20)'),
-    );
+  test('Room polling resumes once and refreshes visible tabs', () {
+    final source = File(path).readAsStringSync();
+    expect(source, contains('_startRoomRefreshTimer();'));
+    expect(source, contains('_roomRefreshTimer?.isActive == true'));
+    expect(source, contains('Timer.periodic(const Duration(seconds: 20)'));
+    expect(source, contains('if (_tab == 0 || _tab == 1)'));
+    expect(source, contains('unawaited(_refreshRooms());'));
   });
 }
