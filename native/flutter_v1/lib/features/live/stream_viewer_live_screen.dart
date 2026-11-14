@@ -566,21 +566,65 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _showGiftTray() {
     FocusManager.instance.primaryFocus?.unfocus();
+    // The recipient selector lives inside the gift tray, never over Live.
+    final cohostId = _activeCohostUserId == widget.identity.id
+        ? null
+        : _activeCohostUserId;
+    String? recipientId;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF140D1B),
-      builder: (sheetContext) => NativeGiftTray(
-        coins: _walletBalance,
-        canRefill: _canRefill,
-        onSend: _sendGift,
-        onRefill: _refillWallet,
-        onBuyCoins: () {
-          Navigator.of(sheetContext).pop();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_openCoinStore());
-          });
-        },
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => NativeGiftTray(
+          coins: _walletBalance,
+          canRefill: _canRefill,
+          recipientSelector: cohostId == null
+              ? null
+              : Row(
+                  children: [
+                    const Text('Gift to'),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      key: const Key('gift-recipient-host'),
+                      onPressed: () => setSheetState(() => recipientId = null),
+                      child: Text(
+                        'Host',
+                        style: TextStyle(
+                          color: recipientId == null
+                              ? const Color(0xFFAD73FF)
+                              : Colors.white70,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('gift-recipient-cohost'),
+                      onPressed: () =>
+                          setSheetState(() => recipientId = cohostId),
+                      child: Text(
+                        'Co-host',
+                        style: TextStyle(
+                          color: recipientId == cohostId
+                              ? const Color(0xFFAD73FF)
+                              : Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+          onSend: (gift, quantity) => _sendGift(
+            gift,
+            quantity,
+            recipientUserId: recipientId,
+          ),
+          onRefill: _refillWallet,
+          onBuyCoins: () {
+            Navigator.of(sheetContext).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) unawaited(_openCoinStore());
+            });
+          },
+        ),
       ),
     ).then((_) {
       if (mounted) setState(() {});
@@ -851,6 +895,16 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         await call.setCameraEnabled(enabled: true),
         'Could not enable co-host camera',
       );
+      final gifting = widget.liveBackend;
+      if (gifting is! FvCohostGiftBackend) {
+        throw StateError('Co-host gift authorization unavailable');
+      }
+      await gifting.activateCohostGiftSession(roomId: widget.room.id);
+      await _activity?.send('cohost-gift-ready', {
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+      });
+      _scheduleCohostGiftRefresh();
       if (mounted) {
         setState(() {
           _selfCohostState = 'active';
@@ -859,8 +913,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         });
       }
     } catch (_) {
+      await _deactivateSelfCohost();
       if (mounted) {
-        _showMessage('Co-host camera or microphone could not start.');
+        _showMessage('Co-host activation failed. Gift routing was not enabled.');
       }
     }
   }
@@ -879,6 +934,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
             .timeout(const Duration(milliseconds: 900));
       } catch (_) {}
     }
+    final gifting = widget.liveBackend;
+    if (gifting is FvCohostGiftBackend) {
+      try {
+        await gifting.clearCohostGiftSession(roomId: widget.room.id);
+      } catch (_) {}
+    }
     if (notify) {
       try {
         await _activity
@@ -894,6 +955,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _selfCohostState = null;
         if (_activeCohostUserId == widget.identity.id) {
           _activeCohostUserId = null;
+          _cohostGiftCoins = null;
         }
       });
     }
