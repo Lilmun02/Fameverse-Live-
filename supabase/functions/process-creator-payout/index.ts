@@ -13,6 +13,27 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function payoutBatchIdFromLinks(value: unknown): string | null {
+  if (typeof value === "string") {
+    const match = value.match(/\/v1\/payments\/payouts\/([^/?#]+)/i);
+    return match?.[1] ?? null;
+  }
+  if (Array.isArray(value)) {
+    for (const nested of value) {
+      const batchId = payoutBatchIdFromLinks(nested);
+      if (batchId) return batchId;
+    }
+    return null;
+  }
+  if (value && typeof value === "object") {
+    for (const nested of Object.values(value as Record<string, unknown>)) {
+      const batchId = payoutBatchIdFromLinks(nested);
+      if (batchId) return batchId;
+    }
+  }
+  return null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -109,53 +130,105 @@ Deno.serve(async (req: Request) => {
         status: "failed",
         provider_status: "AUTH_FAILED",
         provider_status_updated_at: new Date().toISOString(),
-        moderation_note: "PayPal authentication failed.",
+        moderation_note: "PayPal authentication failed before payout submission.",
       }).eq("id", payoutId);
       return json({ error: "paypal_auth_failed" }, 502);
     }
 
     const amount = (Number(payout.amount_cents) / 100).toFixed(2);
     const senderBatchId = `fv-${payoutId}`;
-    const payoutResponse = await fetch(`${baseUrl}/v1/payments/payouts`, {
+    const requestBody = JSON.stringify({
+      sender_batch_header: {
+        sender_batch_id: senderBatchId,
+        email_subject: "Your Fameverse payout",
+        email_message: "Your Fameverse creator payout has been sent.",
+      },
+      items: [{
+        recipient_type: "EMAIL",
+        amount: { value: amount, currency: "USD" },
+        note: `Fameverse creator payout ${payoutId}`,
+        sender_item_id: payoutId,
+        receiver: payout.payout_recipient,
+      }],
+    });
+
+    const submit = () => fetch(`${baseUrl}/v1/payments/payouts`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${tokenJson.access_token}`,
         "Content-Type": "application/json",
+        "PayPal-Request-Id": senderBatchId,
       },
-      body: JSON.stringify({
-        sender_batch_header: {
-          sender_batch_id: senderBatchId,
-          email_subject: "Your Fameverse payout",
-          email_message: "Your Fameverse creator payout has been sent.",
-        },
-        items: [{
-          recipient_type: "EMAIL",
-          amount: { value: amount, currency: "USD" },
-          note: `Fameverse creator payout ${payoutId}`,
-          sender_item_id: payoutId,
-          receiver: payout.payout_recipient,
-        }],
-      }),
+      body: requestBody,
     });
-    const payoutJson = await payoutResponse.json();
-    if (!payoutResponse.ok) {
-      await admin.from("creator_payout_requests").update({
-        status: "failed",
-        provider_status: payoutJson?.name ?? `HTTP_${payoutResponse.status}`,
-        provider_status_updated_at: new Date().toISOString(),
-        moderation_note: payoutJson?.message ?? "PayPal payout submission failed.",
-      }).eq("id", payoutId);
-      return json({ error: "paypal_payout_failed", detail: payoutJson }, 502);
+
+    let payoutResponse: Response;
+    try {
+      payoutResponse = await submit();
+    } catch (_) {
+      // sender_batch_id and PayPal-Request-Id make the retry idempotent.
+      payoutResponse = await submit();
     }
 
-    const batchId = payoutJson?.batch_header?.payout_batch_id ?? null;
-    const batchStatus = payoutJson?.batch_header?.batch_status ?? "PENDING";
+    // PayPal documents that a 5xx can be retried with the same sender_batch_id.
+    if (payoutResponse.status >= 500) {
+      payoutResponse = await submit();
+    }
+
+    const payoutJson = await payoutResponse.json().catch(() => ({}));
+    let batchId = payoutJson?.batch_header?.payout_batch_id ?? null;
+    let batchStatus = payoutJson?.batch_header?.batch_status ?? "PENDING";
+
+    if (!payoutResponse.ok) {
+      const providerErrorName = typeof payoutJson?.name === "string"
+        ? payoutJson.name.toUpperCase()
+        : "";
+      const duplicateBatchId = payoutBatchIdFromLinks(payoutJson);
+      if (duplicateBatchId) {
+        batchId = duplicateBatchId;
+        batchStatus = "PENDING";
+      } else if (
+        providerErrorName === "DUPLICATE_BATCH_ID" || payoutResponse.status >= 500
+      ) {
+        // Duplicate and 5xx responses can mean PayPal already accepted this
+        // deterministic batch. Never release the reserved creator balance.
+        await admin.from("creator_payout_requests").update({
+          status: "processing",
+          provider_status: "SUBMISSION_UNKNOWN",
+          provider_status_updated_at: new Date().toISOString(),
+          moderation_note: providerErrorName === "DUPLICATE_BATCH_ID"
+            ? "PayPal reported a duplicate deterministic batch without a recoverable batch ID. Keep payout reserved and recover through the idempotent provider flow."
+            : "PayPal submission result is unknown. Keep payout reserved and investigate before retrying outside the idempotent provider flow.",
+        }).eq("id", payoutId);
+        return json({ error: "paypal_submission_unknown" }, 502);
+      } else {
+        await admin.from("creator_payout_requests").update({
+          status: "failed",
+          provider_status: payoutJson?.name ?? `HTTP_${payoutResponse.status}`,
+          provider_status_updated_at: new Date().toISOString(),
+          moderation_note: payoutJson?.message ?? "PayPal rejected the payout submission.",
+        }).eq("id", payoutId);
+        return json({ error: "paypal_payout_failed", detail: payoutJson }, 502);
+      }
+    }
+
+    if (!batchId) {
+      await admin.from("creator_payout_requests").update({
+        status: "processing",
+        provider_status: "SUBMISSION_UNKNOWN",
+        provider_status_updated_at: new Date().toISOString(),
+        moderation_note: "PayPal accepted or returned the submission without a usable batch ID. Keep payout reserved for recovery.",
+      }).eq("id", payoutId);
+      return json({ error: "paypal_batch_id_missing" }, 502);
+    }
+
     await admin.from("creator_payout_requests").update({
       status: "processing",
       provider_batch_id: batchId,
       provider_status: batchStatus,
       provider_status_updated_at: new Date().toISOString(),
       external_reference: batchId,
+      moderation_note: null,
     }).eq("id", payoutId);
 
     return json({
@@ -167,12 +240,16 @@ Deno.serve(async (req: Request) => {
       provider_status: batchStatus,
     });
   } catch (error) {
+    // Network ambiguity after begin_processing must not release the reservation:
+    // PayPal may have accepted the deterministic batch even if our response was lost.
     await admin.from("creator_payout_requests").update({
-      status: "failed",
-      provider_status: "NETWORK_ERROR",
+      status: "processing",
+      provider_status: "SUBMISSION_UNKNOWN",
       provider_status_updated_at: new Date().toISOString(),
-      moderation_note: error instanceof Error ? error.message : "Unknown payout error",
+      moderation_note: error instanceof Error
+        ? `PayPal submission result unknown: ${error.message}`
+        : "PayPal submission result unknown.",
     }).eq("id", payoutId);
-    return json({ error: "payout_network_error" }, 502);
+    return json({ error: "payout_network_unknown" }, 502);
   }
 });
