@@ -34,6 +34,10 @@ void main() {
     ).readAsStringSync();
     expect(screen, contains('generation != _generation'));
     expect(screen, contains('verifiedForAccount'));
-    expect(
-      screen,
-      contains('Direct messaging is not available in this 
+    expect(screen, contains(
+      'Direct messaging is not available in this version.',
+    ));
+    expect(screen, isNot(contains('fakeMessage')));
+    expect(screen, isNot(contains('unreadCount')));
+  });
+}

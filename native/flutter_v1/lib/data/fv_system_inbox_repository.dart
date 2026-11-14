@@ -25,7 +25,9 @@ class FvSystemNotice {
       title: rawTitle.isEmpty ? 'Fameverse update' : rawTitle,
       summary: (row['summary']?.toString() ?? '').trim(),
       versionLabel: rawVersion.isEmpty ? null : rawVersion,
-      publishedAt: DateTime.tryParse(row['published_at']?.toString() ?? ''),
+      publishedAt: DateTime.tryParse(
+        row['published_at']?.toString() ?? '',
+      ),
     );
   }
 }
@@ -42,4 +44,18 @@ class SupabaseFvSystemInboxRepository implements FvSystemInboxRepository {
   @override
   Future<List<FvSystemNotice>> loadForUser(String userId) async {
     // Never keep account-specific screens alive across an auth switch.
-    if (userId.isEmpty || client.auth.cu
+    if (userId.isEmpty || client.auth.currentUser?.id != userId) {
+      throw StateError('Inbox session does not match the signed-in account.');
+    }
+
+    // app_update_notices has a SELECT RLS policy for active notices.
+    // No insert, update, fake unread status, or private-message queries.
+    final rows = await client
+        .from('app_update_notices')
+        .select('id,title,summary,version_label,published_at')
+        .eq('active', true)
+        .order('published_at', ascending: false)
+        .limit(25);
+    return rows.map(FvSystemNotice.fromRow).toList(growable: false);
+  }
+}

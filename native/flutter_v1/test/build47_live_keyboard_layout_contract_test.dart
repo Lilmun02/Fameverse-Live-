@@ -11,7 +11,10 @@ void main() {
       test('$filename resizes chat while a software keyboard is visible', () {
         final source = File('lib/features/live/$filename').readAsStringSync();
         expect(source, contains('resizeToAvoidBottomInset: true'));
-        expect(source, contains('MediaQuery.viewInsetsOf(context).bottom > 0'));
+        expect(
+          source,
+          contains('MediaQuery.viewInsetsOf(context).bottom > 0'),
+        );
         expect(source, contains('if (!keyboardVisible) ...['));
         expect(source, contains('if (keyboardVisible)'));
         expect(source, contains('Expanded('));

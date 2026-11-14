@@ -46,4 +46,54 @@ void main() {
     );
   });
 
-  test('brief reconnect is deduped, genuine later reentr
+  test('brief reconnect is deduped, genuine later reentry is allowed', () {
+    final tracker = FvHostViewerArrivalTracker();
+    tracker.observe([], hostUserId: 'host', now: epoch);
+    expect(
+      tracker.observe(
+        [viewer('v2')],
+        hostUserId: 'host',
+        now: epoch.add(const Duration(seconds: 1)),
+      ).length,
+      1,
+    );
+    tracker.observe(
+      [],
+      hostUserId: 'host',
+      now: epoch.add(const Duration(seconds: 4)),
+    );
+    expect(
+      tracker.observe(
+        [viewer('v2')],
+        hostUserId: 'host',
+        now: epoch.add(const Duration(seconds: 8)),
+      ),
+      isEmpty,
+    );
+    tracker.observe(
+      [],
+      hostUserId: 'host',
+      now: epoch.add(const Duration(seconds: 34)),
+    );
+    expect(
+      tracker.observe(
+        [viewer('v2')],
+        hostUserId: 'host',
+        now: epoch.add(const Duration(seconds: 35)),
+      ).length,
+      1,
+    );
+  });
+
+  test('host, duplicates and empty user IDs cannot create announcements', () {
+    final tracker = FvHostViewerArrivalTracker();
+    tracker.observe([], hostUserId: 'host', now: epoch);
+    final joins = tracker.observe(
+      [viewer('host'), viewer(''), viewer('v3', 'A'), viewer('v3', 'B')],
+      hostUserId: 'host',
+      now: epoch.add(const Duration(seconds: 1)),
+    );
+    expect(joins.map((v) => v.userId).toList(), ['v3']);
+    expect(joins.single.displayName, 'A');
+  });
+}
