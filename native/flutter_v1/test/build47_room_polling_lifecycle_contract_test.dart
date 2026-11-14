@@ -10,7 +10,10 @@ void main() {
     expect(shell, contains('with WidgetsBindingObserver {'));
     expect(shell, contains('WidgetsBinding.instance.addObserver(this);'));
     expect(shell, contains('WidgetsBinding.instance.removeObserver(this);'));
-    expect(shell, contains('didChangeAppLifecycleState(AppLifecycleState state)'));
+    expect(
+      shell,
+      contains('didChangeAppLifecycleState(AppLifecycleState state)'),
+    );
     expect(shell, contains('if (state == AppLifecycleState.resumed) {'));
     expect(shell, contains('_roomRefreshTimer = null;'));
     expect(shell, contains('_roomRefreshTimer?.cancel();'));
