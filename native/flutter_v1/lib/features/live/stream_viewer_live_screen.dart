@@ -1317,6 +1317,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                               radius: 18,
                             ),
                           ),
+                          const SizedBox(width: 3),
+                          IconButton(
+                            key: const Key('viewer-live-rankings-button'),
+                            onPressed: () =>
+                                unawaited(showNativeLiveRankings(context)),
+                            constraints: const BoxConstraints.tightFor(
+                              width: 28,
+                              height: 28,
+                            ),
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.emoji_events_rounded,
+                              size: 16,
+                              color: Color(0xFFFFC75A),
+                            ),
+                            tooltip: 'Rankings',
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -1377,24 +1395,6 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                           _ViewerStatChip(
                             icon: Icons.local_fire_department_rounded,
                             text: '${_fameTaps + _tapBuffer.length}',
-                          ),
-                          const SizedBox(width: 3),
-                          IconButton(
-                            key: const Key('viewer-live-rankings-button'),
-                            onPressed: () =>
-                                unawaited(showNativeLiveRankings(context)),
-                            constraints: const BoxConstraints.tightFor(
-                              width: 28,
-                              height: 28,
-                            ),
-                            padding: EdgeInsets.zero,
-                            visualDensity: VisualDensity.compact,
-                            icon: const Icon(
-                              Icons.emoji_events_rounded,
-                              size: 16,
-                              color: Color(0xFFFFC75A),
-                            ),
-                            tooltip: 'Rankings',
                           ),
                         ],
                       ),
