@@ -971,11 +971,14 @@ class SupabaseFameverseLiveBackend
     required String giftId,
     required int quantity,
   }) async {
-    final data = await _client.rpc('send_fameverse_gift', params: {
-      'p_room_id': roomId,
-      'p_gift_id': giftId,
-      'p_quantity': quantity,
-    });
+    final data = await _client.rpc(
+      'send_fameverse_gift',
+      params: {
+        'p_room_id': roomId,
+        'p_gift_id': giftId,
+        'p_quantity': quantity,
+      },
+    );
     return _giftResult(data);
   }
 
@@ -986,12 +989,15 @@ class SupabaseFameverseLiveBackend
     required int quantity,
     required String cohostUserId,
   }) async {
-    final data = await _client.rpc('send_fameverse_gift', params: {
-      'p_room_id': roomId,
-      'p_gift_id': giftId,
-      'p_quantity': quantity,
-      'p_recipient_user_id': cohostUserId,
-    });
+    final data = await _client.rpc(
+      'send_fameverse_gift',
+      params: {
+        'p_room_id': roomId,
+        'p_gift_id': giftId,
+        'p_quantity': quantity,
+        'p_recipient_user_id': cohostUserId,
+      },
+    );
     return _giftResult(data);
   }
 
@@ -1000,22 +1006,29 @@ class SupabaseFameverseLiveBackend
     required String roomId,
     required String cohostUserId,
   }) async {
-    await _client.rpc('prepare_fameverse_live_cohost', params: {
-      'p_room_id': roomId,
-      'p_cohost_user_id': cohostUserId,
-    });
+    await _client.rpc(
+      'prepare_fameverse_live_cohost',
+      params: {
+        'p_room_id': roomId,
+        'p_cohost_user_id': cohostUserId,
+      },
+    );
   }
 
   @override
   Future<void> activateCohostGiftSession({required String roomId}) async {
-    await _client.rpc('activate_fameverse_live_cohost',
-        params: {'p_room_id': roomId});
+    await _client.rpc(
+      'activate_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
   }
 
   @override
   Future<void> clearCohostGiftSession({required String roomId}) async {
-    await _client.rpc('clear_fameverse_live_cohost',
-        params: {'p_room_id': roomId});
+    await _client.rpc(
+      'clear_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
   }
 
   @override
@@ -1023,10 +1036,13 @@ class SupabaseFameverseLiveBackend
     required String roomId,
     required String cohostUserId,
   }) async {
-    final data = await _client.rpc('get_fameverse_cohost_gift_coins', params: {
-      'p_room_id': roomId,
-      'p_cohost_user_id': cohostUserId,
-    });
+    final data = await _client.rpc(
+      'get_fameverse_cohost_gift_coins',
+      params: {
+        'p_room_id': roomId,
+        'p_cohost_user_id': cohostUserId,
+      },
+    );
     return (data as num?)?.toInt() ?? 0;
   }
 
