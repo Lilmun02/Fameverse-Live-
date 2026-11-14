@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_creator_backend.dart';
+import 'creator_withdrawal_progress_card.dart';
 
 class Build23CreatorStudioScreen extends StatefulWidget {
   const Build23CreatorStudioScreen({
@@ -367,6 +368,8 @@ class _Build23CreatorStudioScreenState
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                FvWithdrawalProgressCard(summary: _summary),
                 const SizedBox(height: 22),
                 const _SectionLabel('PROMOTIONAL / QA'),
                 const SizedBox(height: 10),
