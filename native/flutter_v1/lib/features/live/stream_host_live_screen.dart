@@ -746,6 +746,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
+    _cohostGiftRefreshTimer?.cancel();
     final activity = _activity;
     _activity = null;
     if (activity != null) {
@@ -1142,6 +1143,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _heartbeat?.cancel();
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
+    _cohostGiftRefreshTimer?.cancel();
     for (final timer in _cameraFallbackTimers.values) {
       timer.cancel();
     }
