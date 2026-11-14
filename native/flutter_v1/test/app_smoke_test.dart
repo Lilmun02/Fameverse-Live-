@@ -27,6 +27,17 @@ void main() {
       ),
     );
     await _continuePastStartupGate(tester);
+    final restrictedBrowse = find.byKey(const Key('build47-limited-browsing'));
+    if (find.byKey(const Key('build47-startup-policy-gate')).evaluate().isNotEmpty) {
+      await tester.scrollUntilVisible(
+        restrictedBrowse,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(restrictedBrowse);
+      await tester.pumpAndSettle();
+    }
 
     expect(find.byKey(const Key('build23-home')), findsOneWidget);
     expect(find.byKey(const Key('fameverse-bottom-nav')), findsOneWidget);

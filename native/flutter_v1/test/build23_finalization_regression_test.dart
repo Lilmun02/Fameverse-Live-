@@ -23,10 +23,10 @@ void main() {
           'lib/features/profile/native_profile_build23.dart',
         ).readAsString();
 
-        expect(profile, contains("Key('profile-fame-coins-card')"));
+        expect(profile, contains('_WalletCard(userId: profile.id)'));
         expect(profile, contains('onTap: _loading ? null : _openStore'));
-        expect(profile, contains("Key('profile-buy-fame-coins')"));
-        expect(profile, contains("tooltip: 'Refresh Fame Coins'"));
+        expect(profile, contains('FameCoinStoreScreen('));
+        expect(profile, contains("label: 'Fame Coins'"));
       },
     );
   });
