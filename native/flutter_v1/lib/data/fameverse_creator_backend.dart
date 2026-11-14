@@ -59,6 +59,66 @@ class FvCreatorPayoutSummary {
   );
 }
 
+class FvCreatorVerificationProgress {
+  const FvCreatorVerificationProgress({
+    required this.verificationStatus,
+    required this.followerCount,
+    required this.followerRequirement,
+    required this.eligibleReceivedCoins,
+    required this.receivedCoinsRequirement,
+    required this.eligible,
+    required this.requestedAt,
+    required this.reviewedAt,
+    required this.publicNote,
+    required this.updatedAt,
+  });
+
+  final String verificationStatus;
+  final int followerCount;
+  final int followerRequirement;
+  final int eligibleReceivedCoins;
+  final int receivedCoinsRequirement;
+  final bool eligible;
+  final DateTime? requestedAt;
+  final DateTime? reviewedAt;
+  final String? publicNote;
+  final DateTime? updatedAt;
+
+  bool get isVerified => verificationStatus == 'verified';
+  bool get isPending => verificationStatus == 'pending';
+  bool get needsInfo => verificationStatus == 'needs_info';
+
+  factory FvCreatorVerificationProgress.fromMap(Map<String, dynamic> row) {
+    return FvCreatorVerificationProgress(
+      verificationStatus:
+          row['verification_status']?.toString().trim().toLowerCase() ??
+          'unverified',
+      followerCount: _intValue(row['follower_count']),
+      followerRequirement: _intValue(row['follower_requirement']),
+      eligibleReceivedCoins: _intValue(row['eligible_received_coins']),
+      receivedCoinsRequirement: _intValue(row['received_coins_requirement']),
+      eligible: row['eligible'] == true,
+      requestedAt: _dateValue(row['requested_at']),
+      reviewedAt: _dateValue(row['reviewed_at']),
+      publicNote: row['public_note']?.toString(),
+      updatedAt: _dateValue(row['updated_at']),
+    );
+  }
+
+  static const empty = FvCreatorVerificationProgress(
+    verificationStatus: 'unverified',
+    followerCount: 0,
+    followerRequirement: 100,
+    eligibleReceivedCoins: 0,
+    receivedCoinsRequirement: 500000,
+    eligible: false,
+    requestedAt: null,
+    reviewedAt: null,
+    publicNote: null,
+    updatedAt: null,
+  );
+}
+
 class FvCreatorPayoutRequest {
   const FvCreatorPayoutRequest({
     required this.id,
@@ -69,6 +129,9 @@ class FvCreatorPayoutRequest {
     required this.paidAt,
     required this.moderationNote,
     required this.externalReference,
+    required this.providerStatus,
+    required this.providerBatchId,
+    required this.providerStatusUpdatedAt,
   });
 
   final String id;
@@ -79,6 +142,9 @@ class FvCreatorPayoutRequest {
   final DateTime? paidAt;
   final String? moderationNote;
   final String? externalReference;
+  final String? providerStatus;
+  final String? providerBatchId;
+  final DateTime? providerStatusUpdatedAt;
 
   factory FvCreatorPayoutRequest.fromMap(Map<String, dynamic> row) {
     return FvCreatorPayoutRequest(
@@ -88,8 +154,11 @@ class FvCreatorPayoutRequest {
       requestedAt: _dateValue(row['requested_at']),
       reviewedAt: _dateValue(row['reviewed_at']),
       paidAt: _dateValue(row['paid_at']),
-      moderationNote: row['moderation_note'] as String?,
-      externalReference: row['external_reference'] as String?,
+      moderationNote: row['moderation_note']?.toString(),
+      externalReference: row['external_reference']?.toString(),
+      providerStatus: row['provider_status']?.toString(),
+      providerBatchId: row['provider_batch_id']?.toString(),
+      providerStatusUpdatedAt: _dateValue(row['provider_status_updated_at']),
     );
   }
 }
@@ -165,6 +234,26 @@ class FvPayoutModerationItem {
   }
 }
 
+class FvCreatorPayoutMethod {
+  const FvCreatorPayoutMethod({
+    required this.provider,
+    required this.recipientEmail,
+    required this.enabled,
+  });
+
+  final String provider;
+  final String recipientEmail;
+  final bool enabled;
+
+  factory FvCreatorPayoutMethod.fromMap(Map<String, dynamic> row) {
+    return FvCreatorPayoutMethod(
+      provider: row['provider']?.toString() ?? 'paypal',
+      recipientEmail: row['recipient_email']?.toString() ?? '',
+      enabled: row['enabled'] == true,
+    );
+  }
+}
+
 class SupabaseFameverseCreatorBackend {
   SupabaseFameverseCreatorBackend(this._client);
 
@@ -187,6 +276,28 @@ class SupabaseFameverseCreatorBackend {
     return (row?['role'] as String?)?.trim().toLowerCase();
   }
 
+  Future<FvCreatorPayoutMethod?> loadPayoutMethod() async {
+    final response = await _client.rpc('get_creator_payout_method');
+    final rows = _rows(response);
+    if (rows.isEmpty) return null;
+    return FvCreatorPayoutMethod.fromMap(rows.first);
+  }
+
+  Future<FvCreatorPayoutMethod> setPayoutMethod({
+    required String recipientEmail,
+  }) async {
+    final response = await _client.rpc(
+      'set_creator_payout_method',
+      params: {
+        'p_provider': 'paypal',
+        'p_recipient_email': recipientEmail.trim(),
+      },
+    );
+    final rows = _rows(response);
+    if (rows.isEmpty) throw Exception('Payout method was not saved.');
+    return FvCreatorPayoutMethod.fromMap(rows.first);
+  }
+
   Future<FvCreatorPayoutSummary> loadPayoutSummary() async {
     final response = await _client.rpc('get_creator_payout_summary');
     final rows = _rows(response);
@@ -202,6 +313,13 @@ class SupabaseFameverseCreatorBackend {
       params: {'p_limit': limit},
     );
     return _rows(response).map(FvCreatorPayoutRequest.fromMap).toList();
+  }
+
+  Future<FvCreatorVerificationProgress> loadVerificationProgress() async {
+    final response = await _client.rpc('get_creator_verification_progress');
+    final rows = _rows(response);
+    if (rows.isEmpty) return FvCreatorVerificationProgress.empty;
+    return FvCreatorVerificationProgress.fromMap(rows.first);
   }
 
   Future<String> requestVerification() async {
