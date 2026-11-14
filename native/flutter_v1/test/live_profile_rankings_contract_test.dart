@@ -36,9 +36,18 @@ void main() {
       expect(rankings, isNot(contains('Momentum from the last 7 days')));
       expect(rankings, contains("Key('fameboard-window-24h')"));
       expect(rankings, contains("Key('fameboard-window-7d')"));
-      expect(rankings, contains("'supporters' => '${_compact(entry.score)} coins sent'"));
-      expect(rankings, contains("'pulse' => '${_compact(entry.score)} Fame taps'"));
-      expect(rankings, contains("'creators' => '${_compact(entry.score)} live taps'"));
+      expect(
+        rankings,
+        contains(r"'supporters' => '${_compact(entry.score)} coins sent'"),
+      );
+      expect(
+        rankings,
+        contains(r"'pulse' => '${_compact(entry.score)} Fame taps'"),
+      );
+      expect(
+        rankings,
+        contains(r"'creators' => '${_compact(entry.score)} live taps'"),
+      );
       expect(rankings, contains("'p_limit': 100"));
       expect(rankings, isNot(contains("'p_limit': 50")));
       expect(rankings, isNot(contains('fake')));
