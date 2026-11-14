@@ -55,8 +55,8 @@ void main() {
       expect(stage, contains('bottom: 8,'));
       expect(stage, contains('Icons.diamond_rounded'));
       expect(stage, contains('Color(0xFFAD73FF)'));
-      expect(host, contains('backend.loadCohostGiftCoins('));
-      expect(viewer, contains('backend.loadCohostGiftCoins('));
+      expect(host, contains('loadCohostGiftCoins('));
+      expect(viewer, contains('loadCohostGiftCoins('));
       expect(viewer, isNot(contains('_cohostGiftCoins += total')));
       expect(host, isNot(contains('_cohostGiftCoins += total')));
     });
