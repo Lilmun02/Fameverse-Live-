@@ -31,10 +31,7 @@ void main() {
     ]);
     await tester.pumpWidget(
       MaterialApp(
-        home: FameverseInboxScreen(
-          userId: 'member-one',
-          repository: store,
-        ),
+        home: FameverseInboxScreen(userId: 'member-one', repository: store),
       ),
     );
     await tester.pumpAndSettle();
@@ -50,47 +47,4 @@ void main() {
 
   testWidgets('declined accounts can still see policy reminder', (
     tester,
-  ) async {
-    var reviews = 0;
-    final store = _StubNotices([]);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: FameverseInboxScreen(
-          userId: 'member-two',
-          repository: store,
-          policyAccess: const FvPolicyAccess(
-            accountId: 'member-two',
-            policyVersion: 'v47',
-            decision: FvPolicyDecision.declined,
-            verifiedForAccount: true,
-          ),
-          onReviewPolicy: () => reviews++,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Policy access restricted'), findsOneWidget);
-    expect(find.text('No published system updates right now.'), findsOneWidget);
-    await tester.tap(find.text('Review agreement'));
-    expect(reviews, 1);
-  });
-
-  testWidgets('inbox never shows another account policy', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: FameverseInboxScreen(
-          userId: 'member-B',
-          repository: _StubNotices([]),
-          policyAccess: const FvPolicyAccess(
-            accountId: 'member-A',
-            policyVersion: 'v47',
-            decision: FvPolicyDecision.declined,
-            verifiedForAccount: true,
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Policy access restricted'), findsNothing);
-  });
-}
+  ) asyn

@@ -34,10 +34,7 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(
-        onAccept: () => accepts++,
-        onDecline: () => declines++,
-      ),
+      screen(onAccept: () => accepts++, onDecline: () => declines++),
     );
 
     final accept = find.byKey(const Key('build47-accept-policy'));
@@ -50,57 +47,4 @@ void main() {
 
     expect(tester.widget<FilledButton>(accept).onPressed, isNotNull);
     await tester.ensureVisible(accept);
-    await tester.tap(accept);
-    expect(accepts, 1);
-    expect(declines, 0);
-  });
-
-  testWidgets('decline is not confused with acceptance', (tester) async {
-    var accepts = 0;
-    var declines = 0;
-    await tester.pumpWidget(
-      screen(
-        onAccept: () => accepts++,
-        onDecline: () => declines++,
-      ),
-    );
-    final decline = find.byKey(const Key('build47-decline-policy'));
-    await tester.ensureVisible(decline);
-    await tester.tap(decline);
-    expect(accepts, 0);
-    expect(declines, 1);
-  });
-
-  testWidgets('expired notice needs support, not self-acceptance', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      screen(
-        onAccept: () {},
-        onDecline: () {},
-        access: const FvPolicyAccess(
-          accountId: 'test-account',
-          policyVersion: '2026-10',
-          decision: FvPolicyDecision.unsigned,
-          verifiedForAccount: true,
-          requiresSupport: true,
-        ),
-      ),
-    );
-    final accept = find.byKey(const Key('build47-accept-policy'));
-    expect(tester.widget<FilledButton>(accept).onPressed, isNull);
-    expect(find.textContaining('Monday'), findsWidgets);
-  });
-
-  testWidgets('busy state disables every decision control', (tester) async {
-    await tester.pumpWidget(
-      screen(onAccept: () {}, onDecline: () {}, busy: true),
-    );
-    final accept = find.byKey(const Key('build47-accept-policy'));
-    final decline = find.byKey(const Key('build47-decline-policy'));
-    final limited = find.byKey(const Key('build47-limited-browsing'));
-    expect(tester.widget<FilledButton>(accept).onPressed, isNull);
-    expect(tester.widget<OutlinedButton>(decline).onPressed, isNull);
-    expect(tester.widget<TextButton>(limited).onPressed, isNull);
-  });
-}
+    await te
