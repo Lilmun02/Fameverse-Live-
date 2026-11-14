@@ -25,9 +25,7 @@ class FvSystemNotice {
       title: rawTitle.isEmpty ? 'Fameverse update' : rawTitle,
       summary: (row['summary']?.toString() ?? '').trim(),
       versionLabel: rawVersion.isEmpty ? null : rawVersion,
-      publishedAt: DateTime.tryParse(
-        row['published_at']?.toString() ?? '',
-      ),
+      publishedAt: DateTime.tryParse(row['published_at']?.toString() ?? ''),
     );
   }
 }

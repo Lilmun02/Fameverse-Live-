@@ -255,11 +255,7 @@ class _BadgePreview extends StatelessWidget {
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.shield_outlined,
-            color: Color(0xFFC9B6D4),
-            size: 25,
-          ),
+          Icon(Icons.shield_outlined, color: Color(0xFFC9B6D4), size: 25),
           SizedBox(height: 5),
           Text(
             'ART PENDING',

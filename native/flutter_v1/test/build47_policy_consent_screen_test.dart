@@ -34,10 +34,7 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(
-        onAccept: () => accepts++,
-        onDecline: () => declines++,
-      ),
+      screen(onAccept: () => accepts++, onDecline: () => declines++),
     );
 
     final accept = find.byKey(const Key('build47-accept-policy'));
@@ -59,13 +56,11 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(
-        onAccept: () => accepts++,
-        onDecline: () => declines++,
-      ),
+      screen(onAccept: () => accepts++, onDecline: () => declines++),
     );
     final decline = find.byKey(const Key('build47-decline-policy'));
     await tester.ensureVisible(decline);
+    await tester.pumpAndSettle();
     await tester.tap(decline);
     expect(accepts, 0);
     expect(declines, 1);
@@ -101,6 +96,8 @@ void main() {
     final limited = find.byKey(const Key('build47-limited-browsing'));
     expect(tester.widget<FilledButton>(accept).onPressed, isNull);
     expect(tester.widget<OutlinedButton>(decline).onPressed, isNull);
+    await tester.scrollUntilVisible(limited, 120.0);
+    await tester.pumpAndSettle();
     expect(tester.widget<TextButton>(limited).onPressed, isNull);
   });
 }

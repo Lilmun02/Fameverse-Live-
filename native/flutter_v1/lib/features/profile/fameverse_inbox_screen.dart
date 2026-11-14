@@ -38,7 +38,8 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ??
+    _repository =
+        widget.repository ??
         SupabaseFvSystemInboxRepository(Supabase.instance.client);
     unawaited(_load());
   }
@@ -48,7 +49,8 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.userId != widget.userId ||
         oldWidget.repository != widget.repository) {
-      _repository = widget.repository ??
+      _repository =
+          widget.repository ??
           SupabaseFvSystemInboxRepository(Supabase.instance.client);
       _notices = const [];
       _error = null;
@@ -103,7 +105,8 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
   Widget build(BuildContext context) {
     final policy = _verifiedPolicy;
     final policyPending = policy?.decision == FvPolicyDecision.unsigned;
-    final policyLimited = policy?.decision == FvPolicyDecision.declined ||
+    final policyLimited =
+        policy?.decision == FvPolicyDecision.declined ||
         (policy?.requiresSupport ?? false);
     return Scaffold(
       key: const Key('fameverse-native-inbox'),
@@ -156,9 +159,9 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
                       Text(
                         policyLimited
                             ? 'Your account has limited feature access. '
-                                'Review the agreement or contact support.'
+                                  'Review the agreement or contact support.'
                             : 'Review the current Fameverse agreement. '
-                                'Your access depends on the server policy.',
+                                  'Your access depends on the server policy.',
                         style: const TextStyle(color: Color(0xFFE4D9EB)),
                       ),
                       if (widget.onReviewPolicy != null) ...[
@@ -176,9 +179,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
               const SizedBox(height: 10),
             ],
             if (_loading)
-              const LinearProgressIndicator(
-                key: Key('inbox-loading-indicator'),
-              )
+              const LinearProgressIndicator(key: Key('inbox-loading-indicator'))
             else if (_error != null)
               Card(
                 child: Padding(
@@ -208,7 +209,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
             else
               ..._notices.map(
                 (notice) => Card(
-                  key: ValueKey('inbox-notice-' + notice.id),
+                  key: ValueKey('inbox-notice-${notice.id}'),
                   color: const Color(0xFF221B2C),
                   child: Padding(
                     padding: const EdgeInsets.all(15),
@@ -226,9 +227,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
                           const SizedBox(height: 7),
                           Text(
                             notice.summary,
-                            style: const TextStyle(
-                              color: Color(0xFFE0D4E7),
-                            ),
+                            style: const TextStyle(color: Color(0xFFE0D4E7)),
                           ),
                         ],
                         if (notice.versionLabel != null) ...[

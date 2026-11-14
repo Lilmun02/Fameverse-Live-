@@ -97,8 +97,10 @@ void main() {
           'lib/features/live/stream_viewer_live_screen.dart',
         ).readAsStringSync();
         expect(tray, contains('onFinished'));
-        expect(host, contains('onFinished: _playNextGift'));
-        expect(viewer, contains('onFinished: _playNextGift'));
+        expect(host, contains('onFinished: () => _playNextGift('));
+        expect(viewer, contains('onFinished: () =>'));
+        expect(host, contains('expectedSerial: playbackSerial'));
+        expect(viewer, contains('expectedSerial: playbackSerial'));
         expect(host, isNot(contains('6800')));
         expect(viewer, isNot(contains('6800')));
       },

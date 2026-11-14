@@ -1,9 +1,6 @@
 /// A connected Stream call participant observed by the Live host.
 class FvHostViewerIdentity {
-  const FvHostViewerIdentity({
-    required this.userId,
-    required this.displayName,
-  });
+  const FvHostViewerIdentity({required this.userId, required this.displayName});
 
   final String userId;
   final String displayName;
@@ -43,8 +40,7 @@ class FvHostViewerArrivalTracker {
     for (final entry in connected.entries) {
       if (_present.contains(entry.key)) continue;
       final last = _lastAnnounced[entry.key];
-      if (last != null &&
-          timestamp.difference(last) < reconnectCooldown) {
+      if (last != null && timestamp.difference(last) < reconnectCooldown) {
         continue;
       }
       arrived.add(entry.value);
