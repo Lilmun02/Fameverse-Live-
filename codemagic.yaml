@@ -194,8 +194,8 @@ workflows:
             echo "BLOCKED: privileged Owner Command Center must remain web-only."
             exit 1
           fi
-          grep -Fq "Owner Studio" "$PROFILE" || { echo "BLOCKED: current Owner Studio settings label missing."; exit 1; }
-          grep -Fq "profile-fame-coins-card" "$PROFILE" || { echo "BLOCKED: full Fame Coins card tap fix missing."; exit 1; }
+          grep -Fq "label: isOwner ? 'My Creator Account' : 'Creator Studio'" "$PROFILE" || { echo "BLOCKED: approved Creator Studio settings label missing."; exit 1; }
+          grep -Fq "_WalletCard(userId: profile.id)" "$PROFILE" || { echo "BLOCKED: approved Fame Coins settings route missing."; exit 1; }
           grep -Fq "owner-host-gift-button" "$HOST_SURFACE" || { echo "BLOCKED: owner host gift button missing."; exit 1; }
           grep -Fq "bool _flipCameraBusy = false;" "$HOST_SURFACE" || { echo "BLOCKED: host camera anti-spam repair missing."; exit 1; }
           grep -Fq "if (confirmed == true && mounted) await _endLive();" "$HOST_SURFACE" || { echo "BLOCKED: host End Live confirmation missing."; exit 1; }
