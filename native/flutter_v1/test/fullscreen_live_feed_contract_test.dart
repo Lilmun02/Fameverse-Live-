@@ -56,7 +56,9 @@ void main() {
     expect(viewer, contains('await WidgetsBinding.instance.endOfFrame;'));
     expect(
       viewer,
-      contains('final previousCleanup = NativeViewerLiveScreen._lastTransportCleanup;'),
+      contains(
+        'final previousCleanup = NativeViewerLiveScreen._lastTransportCleanup;',
+      ),
     );
     expect(
       viewer,
