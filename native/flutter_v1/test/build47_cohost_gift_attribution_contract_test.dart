@@ -39,7 +39,7 @@ void main() {
       expect(viewer, contains("key: const Key('gift-recipient-cohost')"));
     });
 
-    test('co-host gifted coins are read from backend, never from broadcast', () {
+    test('co-host total is read from backend, not broadcast', () {
       final stage = File(
         'lib/features/live/native_live_stage.dart',
       ).readAsStringSync();
