@@ -82,6 +82,12 @@ void main() {
       expect(viewer, contains("Key('viewer-live-rankings-button')"));
       expect(host, contains('showNativeLiveRankings'));
       expect(viewer, contains('showNativeLiveRankings'));
+      final avatarPos = viewer.indexOf('child: NativeProfileAvatar(');
+      final fameboardPos = viewer.indexOf('viewer-live-rankings-button');
+      final tapsPos = viewer.indexOf('Icons.local_fire_department_rounded');
+      expect(avatarPos, greaterThan(0));
+      expect(fameboardPos, greaterThan(avatarPos));
+      expect(fameboardPos, lessThan(tapsPos));
     });
   });
 }
