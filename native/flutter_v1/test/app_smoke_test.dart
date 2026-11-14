@@ -28,6 +28,18 @@ void main() {
     );
     await _continuePastStartupGate(tester);
 
+    // A test identity without server-verified consent must browse restricted.
+    // Never bypass acceptance in the app just to satisfy a nav smoke test.
+    if (find.byKey(const Key('build47-startup-policy-gate'))
+        .evaluate()
+        .isNotEmpty) {
+      final limited = find.byKey(const Key('build47-limited-browsing'));
+      await tester.scrollUntilVisible(limited, 120.0);
+      await tester.pumpAndSettle();
+      await tester.tap(limited);
+      await tester.pumpAndSettle();
+    }
+
     expect(find.byKey(const Key('build23-home')), findsOneWidget);
     expect(find.byKey(const Key('fameverse-bottom-nav')), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
