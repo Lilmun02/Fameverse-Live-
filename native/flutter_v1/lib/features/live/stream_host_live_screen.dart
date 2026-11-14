@@ -1115,10 +1115,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!cohostActive && !keyboardVisible) ...[
-                      const Center(child: _FameverseLiveWordmark()),
-                      const SizedBox(height: 14),
-                    ],
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -1346,45 +1342,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _FameverseLiveWordmark extends StatelessWidget {
-  const _FameverseLiveWordmark();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.workspace_premium_rounded,
-          size: 18,
-          color: Color(0xFFB75CFF),
-          shadows: [Shadow(color: Color(0xFF8B35FF), blurRadius: 12)],
-        ),
-        Text(
-          'FAMEVERSE',
-          key: Key('host-v2-fameverse-wordmark'),
-          style: TextStyle(
-            color: Color(0xFFD6A4FF),
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 4,
-            shadows: [Shadow(color: Color(0xFF8B35FF), blurRadius: 10)],
-          ),
-        ),
-        Text(
-          'PEOPLE MAKE LEGENDS',
-          style: TextStyle(
-            color: Color(0xFFECE4F2),
-            fontSize: 6,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 2.2,
-          ),
-        ),
-      ],
     );
   }
 }
