@@ -632,8 +632,7 @@ class _FameverseBuild23ShellState extends State<FameverseBuild23Shell> {
             onChangePhoto: _pickProfilePhoto,
             onEdit: () => _openEdit(profile),
             onCreatorStudio: () => unawaited(_openCreatorStudio(profile)),
-            onFirstVerse:
-                _canUseBetaBadges && !_isOwner && _betaStatus.enrolled
+            onFirstVerse: _canUseBetaBadges && !_isOwner && _betaStatus.enrolled
                 ? _openFirstVerse
                 : null,
             onPolicies: _openPolicies,

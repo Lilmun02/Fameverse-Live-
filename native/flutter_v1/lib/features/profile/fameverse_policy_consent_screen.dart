@@ -76,11 +76,7 @@ class _FameversePolicyConsentScreenState
         child: ListView(
           padding: const EdgeInsets.fromLTRB(22, 26, 22, 32),
           children: [
-            const Icon(
-              Icons.gavel_rounded,
-              size: 45,
-              color: Color(0xFFD29BFF),
-            ),
+            const Icon(Icons.gavel_rounded, size: 45, color: Color(0xFFD29BFF)),
             const SizedBox(height: 20),
             const Text(
               'Fameverse policy update',
@@ -143,7 +139,9 @@ class _FameversePolicyConsentScreenState
             const SizedBox(height: 12),
             FilledButton(
               key: const Key('build47-accept-policy'),
-              onPressed: _readAndAgree && !widget.busy &&
+              onPressed:
+                  _readAndAgree &&
+                      !widget.busy &&
                       !widget.access.requiresSupport &&
                       widget.access.verifiedForAccount
                   ? widget.onAccept

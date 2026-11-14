@@ -158,8 +158,10 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         } catch (_) {}
       }
       if (mounted) {
-        setState(() => _previewError =
-            'Camera preview is unavailable. Check camera permission.');
+        setState(
+          () => _previewError =
+              'Camera preview is unavailable. Check camera permission.',
+        );
       }
     }
   }

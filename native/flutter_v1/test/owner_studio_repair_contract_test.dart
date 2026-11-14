@@ -18,7 +18,10 @@ void main() {
       expect(owner, contains("title: const Text('Owner Studio')"));
       expect(owner, contains("title: 'My Creator Account'"));
       expect(creator, contains("'My Creator Account' : 'Creator Studio'"));
-      expect(profile, contains("isOwner ? 'My Creator Account' : 'Creator Studio'"));
+      expect(
+        profile,
+        contains("isOwner ? 'My Creator Account' : 'Creator Studio'"),
+      );
       expect(owner, contains("const _Section('CREATOR VERIFICATION')"));
       expect(owner, contains("const _Section('CREATOR PAYOUTS')"));
       expect(owner, contains("const _Section('PLATFORM FINANCES')"));
