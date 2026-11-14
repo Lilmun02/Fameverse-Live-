@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import '../../data/fameverse_creator_backend.dart';
@@ -54,7 +55,7 @@ class FvWithdrawalProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            _usd(available) + ' / ' + _usd(minimum) + ' available',
+            '${_usd(available)} / ${_usd(minimum)} available',
             key: const Key('creator-withdrawal-earned-label'),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
           ),
@@ -71,8 +72,7 @@ class FvWithdrawalProgressCard extends StatelessWidget {
           Text(
             reached
                 ? 'Withdrawal minimum reached. Verification and payout setup still apply.'
-                : _usd(remaining) +
-                      ' more in cleared earnings to reach the minimum.',
+                : '${_usd(remaining)} more in cleared earnings to reach the minimum.',
             key: const Key('creator-withdrawal-remaining-label'),
             style: const TextStyle(
               color: Color(0xFFD4C3DC),
