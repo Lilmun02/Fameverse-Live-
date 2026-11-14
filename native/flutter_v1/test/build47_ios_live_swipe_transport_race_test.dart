@@ -13,14 +13,20 @@ void main() {
       'final previousCleanup = NativeViewerLiveScreen._lastTransportCleanup;',
       start,
     );
-    final frame = src.indexOf('await WidgetsBinding.instance.endOfFrame;', start);
+    final frame = src.indexOf(
+      'await WidgetsBinding.instance.endOfFrame;',
+      start,
+    );
     final wait = src.indexOf('await previousCleanup;', start);
 
     expect(start, greaterThan(0));
     expect(previous, greaterThan(start));
     expect(frame, greaterThan(previous));
     expect(wait, greaterThan(frame));
-    expect(src, isNot(contains('await NativeViewerLiveScreen._lastTransportCleanup;')));
+    expect(
+      src,
+      isNot(contains('await NativeViewerLiveScreen._lastTransportCleanup;')),
+    );
   });
 
   test('in-flight viewer connection has cancellation gates after awaits', () {
@@ -46,10 +52,15 @@ void main() {
     final connect = src.indexOf('Future<void> _connect() async {');
     final catchBlock = src.indexOf('} catch (error) {', connect);
     final complete = src.indexOf('_connectFinished.complete();', catchBlock);
-    final cleanup = src.indexOf('Future<void> _performTransportCleanup() async {');
+    final cleanup = src.indexOf(
+      'Future<void> _performTransportCleanup() async {',
+    );
     final wait = src.indexOf('await _connectFinished.future;', cleanup);
     final leave = src.indexOf('await call.leave();', cleanup);
-    final reset = src.indexOf('await StreamVideo.reset(disconnect: true);', cleanup);
+    final reset = src.indexOf(
+      'await StreamVideo.reset(disconnect: true);',
+      cleanup,
+    );
     expect(catchBlock, greaterThan(connect));
     expect(
       src.substring(catchBlock, complete),
