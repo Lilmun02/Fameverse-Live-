@@ -10,6 +10,23 @@ void require(bool condition, String message) {
 String read(String path) => File(path).readAsStringSync();
 
 void main() {
+  // CI-ONLY AUTOFORMAT: this is a temporary verification-branch probe.
+  // It does not exist in Build 47 release PR #129.
+  final formatted = Process.runSync('dart', ['format', 'lib', 'test', 'tool']);
+  stdout.write(formatted.stdout);
+  stderr.write(formatted.stderr);
+  if (formatted.exitCode != 0) {
+    exit(formatted.exitCode);
+  }
+  final patch = Process.runSync(
+    'git',
+    ['diff', '--', 'native/flutter_v1/lib', 'native/flutter_v1/test'],
+    workingDirectory: '../..',
+  );
+  stdout.writeln('BEGIN_CI_FORMATTED_SOURCE_PATCH');
+  stdout.write(patch.stdout);
+  stdout.writeln('END_CI_FORMATTED_SOURCE_PATCH');
+
   final constitution = read('../../docs/ENGINEERING_CONSTITUTION.md');
   final parity = read('../../docs/NATIVE_PARITY_MATRIX.md');
   final providerLock = read('../../docs/NATIVE_MEDIA_PROVIDER_LOCK.md');
