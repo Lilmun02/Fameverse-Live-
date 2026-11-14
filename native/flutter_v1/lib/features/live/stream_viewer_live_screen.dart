@@ -53,6 +53,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   final Stopwatch _tapClock = Stopwatch();
   Call? _call;
   Future<void>? _transportCleanup;
+  final Completer<void> _connectFinished = Completer<void>();
   bool _joinedOnce = false;
   FvLiveActivitySession? _activity;
   StreamSubscription<CallState>? _callStateSubscription;
@@ -107,17 +108,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     } catch (_) {}
   }
 
+  bool get _connectCancelled =>
+      !mounted || _leaving || _transportCleanup != null;
+
   Future<void> _connect() async {
+    // Capture the PREVIOUS page cleanup before an asynchronous yield;
+    // otherwise a disposed page can accidentally await its own cleanup.
+    final previousCleanup = NativeViewerLiveScreen._lastTransportCleanup;
     try {
-      // Allow the previous page to dispose before taking Stream ownership.
       await WidgetsBinding.instance.endOfFrame;
-      await NativeViewerLiveScreen._lastTransportCleanup;
-      if (!mounted) return;
+      await previousCleanup;
+      if (_connectCancelled) return;
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: widget.room.id,
         role: 'viewer',
       );
+      if (_connectCancelled) return;
       await StreamVideo.reset(disconnect: true);
+      if (_connectCancelled) return;
       final client = StreamVideo(
         credentials.apiKey,
         user: User.regular(
@@ -135,6 +143,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         await client.connect(registerPushDevice: false),
         'Could not connect to Stream Video',
       );
+      if (_connectCancelled) return;
       final call = client.makeCall(
         callType: StreamCallType.liveStream(),
         id: credentials.callId,
@@ -153,6 +162,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         ),
         'Could not join the livestream',
       );
+      if (_connectCancelled) return;
 
       _callStateSubscription?.cancel();
       _callStateSubscription = call.state.valueStream.listen((state) {
@@ -183,12 +193,16 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       }
       unawaited(_hydrateViewerState());
     } catch (error) {
-      await _disposeTransport();
-      if (!mounted) return;
+      // Cleanup awaits _connectFinished, so never await it from inside
+      // this connection method: doing so would deadlock the Live Feed.
+      unawaited(_disposeTransport());
+      if (!mounted || _leaving) return;
       setState(() {
         _connecting = false;
         _error = 'Could not join this live. ${fvFriendlyError(error)}';
       });
+    } finally {
+      _connectFinished.complete();
     }
   }
 
@@ -1196,6 +1210,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _performTransportCleanup() async {
+    // Wait until an in-flight credential/connect/join operation has stopped
+    // before releasing the global Stream client and any room attachment.
+    await _connectFinished.future;
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
     await _callStateSubscription?.cancel();
