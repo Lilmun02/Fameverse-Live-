@@ -30,8 +30,9 @@ void main() {
       // The approved new backend windows are calendar UTC boundaries.
       expect(rankings, contains("('24h', 'Daily')"));
       expect(rankings, contains("('7d', 'Weekly')"));
-      expect(rankings, contains('Daily ranking · resets at 00:00 UTC'));
-      expect(rankings, contains('Weekly ranking · resets Sunday at 00:00 UTC'));
+      expect(rankings, contains('Resets every day'));
+      expect(rankings, contains('Resets every week'));
+      expect(rankings, isNot(contains('UTC'));
       expect(rankings, isNot(contains('Momentum from the last 24 hours')));
       expect(rankings, isNot(contains('Momentum from the last 7 days')));
       expect(rankings, contains("Key('fameboard-window-24h')"));
