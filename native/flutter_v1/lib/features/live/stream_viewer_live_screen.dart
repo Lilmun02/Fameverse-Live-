@@ -1382,6 +1382,21 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _giftTimer?.cancel();
     _cohostGiftRefreshTimer?.cancel();
     _cohostGiftLeaseTimer?.cancel();
+    _cohostGiftLeaseTimer = null;
+    // Revoke gift attribution before leaving media. If the network is gone,
+    // the server's 60-second lease remains the fail-closed fallback.
+    if (_selfIsCohost) {
+      final gifting = widget.liveBackend;
+      if (gifting is FvCohostGiftBackend) {
+        try {
+          await gifting
+              .clearCohostGiftSession(roomId: widget.room.id)
+              .timeout(const Duration(milliseconds: 800));
+        } catch (_) {
+          // Leave cannot be held hostage by a disconnected gift backend.
+        }
+      }
+    }
     await _callStateSubscription?.cancel();
     _callStateSubscription = null;
     final activity = _activity;
