@@ -16,10 +16,10 @@ describe('Build 48 policy guard fails closed without an acceptance record', () =
     expect(statements).not.toContain('not exists (')
   })
 
-  it('preserves accepted access and original 10-day notice/grace deadline', () => {
+  it('only accepts explicit server-stored agreement for restricted features', () => {
     expect(statements).toContain("p.decision = 'accepted'")
-    expect(statements).toContain("p.decision = 'unsigned'")
-    expect(statements).toContain("p.notice_started_at + interval '10 days'")
+    expect(statements).not.toContain("p.decision = 'unsigned'")
+    expect(statements).not.toContain("p.notice_started_at + interval '10 days'")
     expect(statements).not.toContain('insert into')
     expect(statements).not.toContain('delete from')
     expect(statements).not.toContain('update public.')
