@@ -113,6 +113,7 @@ Deno.serve(async (req: Request) => {
       !status ||
       status.user_id !== user.id ||
       status.policy_version !== "2026-10" ||
+      status.decision !== "accepted" ||
       status.can_use_restricted !== true
     ) {
       return response(403, { error: "policy-restricted-host" });
