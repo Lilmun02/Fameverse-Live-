@@ -49,7 +49,7 @@ void main() {
     }
   });
 
-  test('unsigned users retain access during the 7+3-day server window', () {
+  test('unsigned users cannot use restricted features during the notice window', () {
     const access = FvPolicyAccess(
       accountId: 'account-1',
       policyVersion: '2026-10',
@@ -58,7 +58,7 @@ void main() {
       withinNoticeWindow: true,
     );
     for (final feature in restricted) {
-      expect(access.permits(feature), isTrue);
+      expect(access.permits(feature), isFalse);
     }
   });
 
@@ -86,7 +86,7 @@ void main() {
       withinNoticeWindow: true,
     );
     for (final feature in restricted) {
-      expect(grace.permits(feature), isTrue);
+      expect(grace.permits(feature), isFalse);
       expect(expired.permits(feature), isFalse);
       expect(declined.permits(feature), isFalse);
     }
