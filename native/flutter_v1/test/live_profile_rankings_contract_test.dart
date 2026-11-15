@@ -49,6 +49,8 @@ void main() {
         rankings,
         contains(r"'creators' => '${_compact(entry.score)} live taps'"),
       );
+      expect(rankings, contains("'creators' => ''"));
+      expect(rankings, isNot(contains('followers')));
       expect(rankings, contains("'p_limit': 100"));
       expect(rankings, isNot(contains("'p_limit': 50")));
       expect(rankings, isNot(contains('fake')));
