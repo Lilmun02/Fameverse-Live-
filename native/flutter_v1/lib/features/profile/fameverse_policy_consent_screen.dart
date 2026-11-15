@@ -16,7 +16,7 @@ class FameversePolicyConsentScreen extends StatefulWidget {
     super.key,
   });
 
-  final VoidCallback onAccept;
+  final ValueChanged<bool> onAccept;
   final VoidCallback onDecline;
   final bool busy;
   final FvPolicyAccess access;
@@ -142,7 +142,7 @@ class _FameversePolicyConsentScreenState
                       !widget.busy &&
                       !widget.access.requiresSupport &&
                       widget.access.verifiedForAccount
-                  ? widget.onAccept
+                  ? () => widget.onAccept(_readAndAgree)
                   : null,
               child: Text(
                 widget.busy ? 'Saving decision…' : 'Accept and continue',
