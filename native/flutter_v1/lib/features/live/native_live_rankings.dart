@@ -100,9 +100,10 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
     await _load();
   }
 
-  String _windowCopy() => _window == '24h'
-      ? 'Daily ranking · resets at 00:00 UTC'
-      : 'Weekly ranking · resets Sunday at 00:00 UTC';
+  String _windowCopy() {
+    if (_window == '24h') return 'Resets every day';
+    return 'Resets every week';
+  }
 
   String _scoreCopy(_RankingEntry entry) {
     return switch (_kind) {
@@ -117,7 +118,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
     return switch (_kind) {
       'supporters' => '${_compact(entry.secondary)} gifts',
       'pulse' => '${_compact(entry.secondary)} total taps',
-      'creators' => '+${_compact(entry.secondary)} followers',
+      'creators' => '',
       _ => '',
     };
   }

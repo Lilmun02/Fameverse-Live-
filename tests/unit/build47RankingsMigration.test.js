@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 // Build 47 contract only: this test never connects to Supabase and never
 // touches wallets, purchases, checkout sessions or actual gifting data.
 const sql = readFileSync(
-  new URL('../../supabase/migrations/20261105_build47_utc_rankings_top100.sql', import.meta.url),
+  new URL('../../supabase/migrations/20261115_build47_creator_rankings_no_followers.sql', import.meta.url),
   'utf8',
 )
 
@@ -25,8 +25,9 @@ describe('Build 47 UTC ranking backend regression contract', () => {
   it('keeps the native Fameboard labels and categories synchronized with Build 47 UTC SQL', () => {
     expect(native).toContain("('24h', 'Daily')")
     expect(native).toContain("('7d', 'Weekly')")
-    expect(native).toContain('Daily ranking · resets at 00:00 UTC')
-    expect(native).toContain('Weekly ranking · resets Sunday at 00:00 UTC')
+    expect(native).toContain('Resets every day')
+    expect(native).toContain('Resets every week')
+    expect(native).not.toContain('UTC')
     expect(native).not.toContain('Momentum from the last 24 hours')
     expect(native).not.toContain('Momentum from the last 7 days')
     expect(native).toContain("'supporters' => '${_compact(entry.score)} coins sent'")
@@ -68,14 +69,16 @@ describe('Build 47 UTC ranking backend regression contract', () => {
     expect(section).not.toContain('public.gift_events')
   })
 
-  it('Creators require positive eligible host taps and show follower count as secondary', () => {
+  it('Creators require positive eligible host taps and cannot score or display followers', () => {
     const section = branchSql('creators')
     expect(section).toContain('public.live_rooms')
     expect(section).toContain('b.room_id = lr.id')
     expect(section).toContain('b.eligible_tap_count')
     expect(section).toContain('t.ranked_score > 0')
-    expect(section).toContain('follower_count')
-    expect(section).toContain('coalesce(f.follower_count, 0)::bigint')
+    expect(section).not.toContain('public.follows')
+    expect(section).not.toContain('follower_count')
+    expect(section).toContain('r.ranked_score, 0::bigint')
+    expect(section).not.toContain('left join followers')
   })
 
   it('is an authenticated read-only ranking function with no purchase mutations', () => {
