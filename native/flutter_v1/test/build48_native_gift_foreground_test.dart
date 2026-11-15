@@ -35,7 +35,9 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('non-video premium gift has sender and no backplate', (tester) async {
+  testWidgets('non-video premium gift has sender and no backplate', (
+    tester,
+  ) async {
     const gift = FvGiftDefinition(
       id: 'test-premium',
       label: 'Universe',
@@ -57,7 +59,10 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byKey(const Key('native-gift-presentation-test-premium')), findsOneWidget);
+    expect(
+      find.byKey(const Key('native-gift-presentation-test-premium')),
+      findsOneWidget,
+    );
     expect(find.text('Sender B sent Universe'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
