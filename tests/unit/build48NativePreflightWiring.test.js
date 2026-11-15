@@ -21,6 +21,8 @@ describe('Build 48 native CI wiring regression', () => {
     expect(gh).toContain('flutter analyze')
     expect(gh).toContain('flutter test')
     expect(gh).toContain('flutter build apk --debug')
+    expect(gh).toContain('actions/upload-artifact@v4')
+    expect(gh).toContain('native/flutter_v1/build/app/outputs/flutter-apk/app-debug.apk')
     expect(gh).toContain('physical-release-gate:')
     expect(gh).toContain('node scripts/check-native-physical-acceptance.mjs')
   })
