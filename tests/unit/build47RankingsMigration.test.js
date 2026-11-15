@@ -25,8 +25,9 @@ describe('Build 47 UTC ranking backend regression contract', () => {
   it('keeps the native Fameboard labels and categories synchronized with Build 47 UTC SQL', () => {
     expect(native).toContain("('24h', 'Daily')")
     expect(native).toContain("('7d', 'Weekly')")
-    expect(native).toContain('Daily ranking · resets at 00:00 UTC')
-    expect(native).toContain('Weekly ranking · resets Sunday at 00:00 UTC')
+    expect(native).toContain('Resets every day')
+    expect(native).toContain('Resets every week')
+    expect(native).not.toContain('UTC')
     expect(native).not.toContain('Momentum from the last 24 hours')
     expect(native).not.toContain('Momentum from the last 7 days')
     expect(native).toContain("'supporters' => '${_compact(entry.score)} coins sent'")
