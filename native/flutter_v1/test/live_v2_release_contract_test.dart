@@ -139,7 +139,7 @@ void main() {
       },
     );
 
-    test('approved neon solo host V2 layout stays wired', () async {
+    test('approved clean solo host V2 layout stays wired', () async {
       final host = await File(
         'lib/features/live/stream_host_live_screen.dart',
       ).readAsString();
@@ -147,9 +147,8 @@ void main() {
         'lib/features/live/stream_live_shared.dart',
       ).readAsString();
 
-      expect(host, contains("Key('host-v2-fameverse-wordmark')"));
-      expect(host, contains("'FAMEVERSE'"));
-      expect(host, contains("'PEOPLE MAKE LEGENDS'"));
+      expect(host, isNot(contains('_FameverseLiveWordmark')));
+      expect(host, isNot(contains('host-v2-fameverse-wordmark')));
       expect(host, contains('widget.room.host.displayName'));
       expect(host, contains('class _NeonHostAvatar'));
       expect(host, contains('class _LiveStatsPill'));
