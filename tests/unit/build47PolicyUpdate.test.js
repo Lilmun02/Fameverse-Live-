@@ -63,8 +63,10 @@ describe('Build 47 policy update source safety contract', () => {
     expect(shell).toContain('if (_canGoLive)')
     expect(shell).toContain('Live hosting requires policy acceptance.')
     expect(shell).toContain('_canUseBetaBadges && !_isOwner && _betaStatus.enrolled')
-    expect(settings).toContain('if (!isOwner && onFirstVerse != null) ...[')
-    expect(settings).toContain("key: const Key('settings-owner-premium-card')")
+    expect(settings).toMatch(/final showFirstVerse =\s*!isOwner &&\s*widget\.onFirstVerse != null &&/)
+    expect(settings).toContain('if (showFirstVerse) ...[')
+    expect(settings).toContain('onTap: widget.onFirstVerse')
+    expect(settings).toContain("label: isOwner ? 'My Creator Account' : 'Creator Studio'")
   })
 
   it('locks original notice timestamp, grace, expiry and server-scoped rights', () => {
