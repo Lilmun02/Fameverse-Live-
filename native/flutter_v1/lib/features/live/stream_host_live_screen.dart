@@ -36,7 +36,8 @@ class NativeHostLiveScreen extends StatefulWidget {
   State<NativeHostLiveScreen> createState() => _NativeHostLiveScreenState();
 }
 
-class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
+class _NativeHostLiveScreenState extends State<NativeHostLiveScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _comment = TextEditingController();
   final List<FvLiveChatMessage> _chat = <FvLiveChatMessage>[];
   final List<Map<String, dynamic>> _cohostRequests = <Map<String, dynamic>>[];
@@ -57,6 +58,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Timer? _cohostGiftRefreshTimer;
   FvGiftPlayback? _giftPlayback;
 
+  bool _tapRefreshBusy = false;
   bool _connecting = true;
   bool _ending = false;
   bool _confirmingEnd = false;
@@ -75,6 +77,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fameTaps = widget.room.fameTaps;
     unawaited(_connect());
   }
@@ -160,12 +163,8 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           ),
         );
       });
-      _tapRefresh = Timer.periodic(
-        const Duration(seconds: 2),
-        (_) => unawaited(_refreshTapTotal()),
-      );
-
       if (mounted) setState(() => _connecting = false);
+      _startTapRefresh();
 
       try {
         final stats = await widget.liveBackend.loadGifterStats(
@@ -190,11 +189,60 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     }
   }
 
+  bool get _appIsForeground {
+    final state = WidgetsBinding.instance.lifecycleState;
+    return state == null || state == AppLifecycleState.resumed;
+  }
+
+  void _startTapRefresh() {
+    if (!mounted ||
+        _connecting ||
+        _ending ||
+        _ended ||
+        !_appIsForeground ||
+        _tapRefresh?.isActive == true) {
+      return;
+    }
+    _tapRefresh = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => unawaited(_refreshTapTotal()),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _startTapRefresh();
+      if (!_connecting && !_ending && !_ended) {
+        unawaited(_refreshTapTotal());
+      }
+    } else {
+      // Cosmetic tap-count reads pause when backgrounded; room heartbeats
+      // continue so minimizing the app does not silently end an active Live.
+      _tapRefresh?.cancel();
+      _tapRefresh = null;
+    }
+  }
+
   Future<void> _refreshTapTotal() async {
+    if (_tapRefreshBusy || !mounted || _ending || _ended || !_appIsForeground) {
+      return;
+    }
+    _tapRefreshBusy = true;
     try {
       final taps = await widget.liveBackend.loadTapTotal(widget.room.id);
-      if (mounted && taps != _fameTaps) setState(() => _fameTaps = taps);
-    } catch (_) {}
+      if (mounted &&
+          !_ending &&
+          !_ended &&
+          _appIsForeground &&
+          taps != _fameTaps) {
+        setState(() => _fameTaps = taps);
+      }
+    } catch (_) {
+      // Transient network failure must not interrupt host Live.
+    } finally {
+      _tapRefreshBusy = false;
+    }
   }
 
   void _onViewerRosterChanged(CallState state) {
@@ -1138,6 +1186,7 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _comment.dispose();
     _viewerJoinSubscription?.cancel();
     _heartbeat?.cancel();
