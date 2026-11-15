@@ -224,6 +224,7 @@ class _V2CohostStage extends StatelessWidget {
                           fit: StackFit.expand,
                           children: [
                             Positioned.fill(
+                              key: const Key('cohost-right-camera'),
                               child: right,
                             ),
                             if (cohostGiftCoins != null)
