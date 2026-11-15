@@ -76,7 +76,7 @@ describe('Build 47 policy update source safety contract', () => {
     expect(service).toContain('requires_support')
     expect(service).toContain('grace_starts_at')
     expect(policy).toContain('withinNoticeWindow')
-    expect(policy).toContain('bool get canUseRestrictedFeatures => hasAccepted || hasTemporaryAccess')
+    expect(policy).toContain('bool get canUseRestrictedFeatures => hasAccepted;')
     expect(consent).toContain('You are in the 3-day grace period.')
     expect(consent).toContain('Fameverse support Monday–Friday.')
     expect(consent).toContain("Key('build47-policy-deadline-message')")
