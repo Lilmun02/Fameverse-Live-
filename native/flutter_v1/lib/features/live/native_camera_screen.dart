@@ -388,7 +388,13 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                         border: Border.all(color: const Color(0xFF654580)),
                       ),
                       child: _previewController?.value.isInitialized == true
-                          ? CameraPreview(_previewController!)
+                          ? Center(
+                              // A tight, wide setup panel must not stretch the
+                              // portrait front-camera texture. Center loosens
+                              // the constraints so CameraPreview can honor its
+                              // sensor aspect ratio on Android and iOS.
+                              child: CameraPreview(_previewController!),
+                            )
                           : const Center(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
