@@ -616,11 +616,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                     ),
                   ],
                 ),
-          onSend: (gift, quantity) => _sendGift(
-            gift,
-            quantity,
-            recipientUserId: recipientId,
-          ),
+          onSend: (gift, quantity) =>
+              _sendGift(gift, quantity, recipientUserId: recipientId),
           onRefill: _refillWallet,
           onBuyCoins: () {
             Navigator.of(sheetContext).pop();
@@ -903,9 +900,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (gifting is! FvCohostGiftBackend) {
         throw StateError('Co-host gift authorization unavailable');
       }
-      await gifting.activateCohostGiftSession(
-        roomId: widget.room.id,
-      );
+      await gifting.activateCohostGiftSession(roomId: widget.room.id);
       await _activity?.send('cohost-gift-ready', {
         'viewerId': widget.identity.id,
         'userId': widget.identity.id,
@@ -945,9 +940,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final gifting = widget.liveBackend;
     if (gifting is FvCohostGiftBackend) {
       try {
-        await gifting.clearCohostGiftSession(
-          roomId: widget.room.id,
-        );
+        await gifting.clearCohostGiftSession(roomId: widget.room.id);
       } catch (_) {}
     }
     if (notify) {
