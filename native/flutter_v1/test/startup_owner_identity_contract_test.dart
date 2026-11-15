@@ -64,7 +64,8 @@ void main() {
     expect(
       profile,
       contains("label: isOwner ? 'My Creator Account' : 'Creator Studio'"),
-      reason: 'Owner Settings must visibly expose the personal creator account.',
+      reason:
+          'Owner Settings must visibly expose the personal creator account.',
     );
   });
 }

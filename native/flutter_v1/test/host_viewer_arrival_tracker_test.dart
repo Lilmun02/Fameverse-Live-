@@ -50,11 +50,13 @@ void main() {
     final tracker = FvHostViewerArrivalTracker();
     tracker.observe([], hostUserId: 'host', now: epoch);
     expect(
-      tracker.observe(
-        [viewer('v2')],
-        hostUserId: 'host',
-        now: epoch.add(const Duration(seconds: 1)),
-      ).length,
+      tracker
+          .observe(
+            [viewer('v2')],
+            hostUserId: 'host',
+            now: epoch.add(const Duration(seconds: 1)),
+          )
+          .length,
       1,
     );
     tracker.observe(
@@ -76,11 +78,13 @@ void main() {
       now: epoch.add(const Duration(seconds: 34)),
     );
     expect(
-      tracker.observe(
-        [viewer('v2')],
-        hostUserId: 'host',
-        now: epoch.add(const Duration(seconds: 35)),
-      ).length,
+      tracker
+          .observe(
+            [viewer('v2')],
+            hostUserId: 'host',
+            now: epoch.add(const Duration(seconds: 35)),
+          )
+          .length,
       1,
     );
   });

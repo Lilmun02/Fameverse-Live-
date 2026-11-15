@@ -28,7 +28,10 @@ void main() {
     );
     await _continuePastStartupGate(tester);
     final restrictedBrowse = find.byKey(const Key('build47-limited-browsing'));
-    if (find.byKey(const Key('build47-startup-policy-gate')).evaluate().isNotEmpty) {
+    if (find
+        .byKey(const Key('build47-startup-policy-gate'))
+        .evaluate()
+        .isNotEmpty) {
       await tester.scrollUntilVisible(
         restrictedBrowse,
         150,

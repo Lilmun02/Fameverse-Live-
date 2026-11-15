@@ -113,10 +113,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          _PremiumHero(
-            profile: profile,
-            isOwner: isOwner,
-          ),
+          _PremiumHero(profile: profile, isOwner: isOwner),
           const SizedBox(height: 18),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -200,10 +197,7 @@ class NativeProfileBuild23Screen extends StatelessWidget {
 }
 
 class _PremiumHero extends StatelessWidget {
-  const _PremiumHero({
-    required this.profile,
-    required this.isOwner,
-  });
+  const _PremiumHero({required this.profile, required this.isOwner});
 
   final FvProfile profile;
   final bool isOwner;
@@ -292,7 +286,6 @@ class _PremiumHero extends StatelessWidget {
                 ),
                 child: ClipOval(child: _Avatar(profile: profile)),
               ),
-
             ],
           ),
         ],
@@ -501,8 +494,7 @@ class _Build23SettingsScreen extends StatefulWidget {
   final Future<void> Function() onSignOut;
 
   @override
-  State<_Build23SettingsScreen> createState() =>
-      _Build23SettingsScreenState();
+  State<_Build23SettingsScreen> createState() => _Build23SettingsScreenState();
 }
 
 class _Build23SettingsScreenState extends State<_Build23SettingsScreen> {
@@ -514,10 +506,7 @@ class _Build23SettingsScreenState extends State<_Build23SettingsScreen> {
         label.toLowerCase().contains(_search);
   }
 
-  Widget _section(
-    String title,
-    List<({String label, Widget child})> entries,
-  ) {
+  Widget _section(String title, List<({String label, Widget child})> entries) {
     final visible = entries
         .where((entry) => _matches(title, entry.label))
         .map((entry) => entry.child)

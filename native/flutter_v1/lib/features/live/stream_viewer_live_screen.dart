@@ -268,7 +268,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final sender = (payload['sender'] as String?) ?? 'Fameverse viewer';
     final level = (payload['gifterLevel'] as num?)?.toInt() ?? 1;
     final receipt = FvLiveChatMessage(
-      id: payload['id']?.toString() ??
+      id:
+          payload['id']?.toString() ??
           '${DateTime.now().microsecondsSinceEpoch}',
       user: sender,
       userId: payload['senderId'] as String?,
@@ -861,11 +862,13 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final activity = _activity;
     if (activity == null) return;
     try {
-      await activity.send('camera-flip', <String, dynamic>{
-        'viewerId': widget.identity.id,
-        'userId': widget.identity.id,
-        'active': active,
-      }).timeout(const Duration(milliseconds: 650));
+      await activity
+          .send('camera-flip', <String, dynamic>{
+            'viewerId': widget.identity.id,
+            'userId': widget.identity.id,
+            'active': active,
+          })
+          .timeout(const Duration(milliseconds: 650));
     } catch (_) {
       // Local fallback still runs even when the room activity channel drops.
     }
@@ -1287,7 +1290,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   hostCameraTransitioning: _cameraFallbackUsers.contains(
                     widget.room.hostUserId,
                   ),
-                  cohostCameraTransitioning: _activeCohostUserId != null &&
+                  cohostCameraTransitioning:
+                      _activeCohostUserId != null &&
                       _cameraFallbackUsers.contains(_activeCohostUserId),
                 )
               else

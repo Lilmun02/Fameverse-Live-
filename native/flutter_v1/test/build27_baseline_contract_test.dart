@@ -16,7 +16,10 @@ void main() {
       expect(shell, contains('Future<void> _openCreatorStudio('));
       expect(shell, contains('_openPersonalCreatorStudio(currentProfile);'));
       expect(shell, isNot(contains('Build23OwnerControlCenterScreen(')));
-      expect(profile, contains("label: isOwner ? 'My Creator Account' : 'Creator Studio'"));
+      expect(
+        profile,
+        contains("label: isOwner ? 'My Creator Account' : 'Creator Studio'"),
+      );
     });
 
     test('owner host gift tray stays on host Live', () {
