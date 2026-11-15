@@ -152,7 +152,7 @@ class _FameverseAppState extends State<FameverseApp>
         setState(() {
           _policyError =
               'The decision could not be saved. Check your '
-              'connection. You can still browse with restricted access.';
+              'connection. Please choose Accept or Decline to continue.';
         });
       }
     } finally {
@@ -332,9 +332,6 @@ class _FameverseAppState extends State<FameverseApp>
         error: _policyError,
         onAccept: () => unawaited(_submitPolicyDecision(accept: true)),
         onDecline: () => unawaited(_submitPolicyDecision(accept: false)),
-        onBrowseRestricted: () {
-          setState(() => _policyPromptDismissed = true);
-        },
       );
     }
 
