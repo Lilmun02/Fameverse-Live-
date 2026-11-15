@@ -23,7 +23,6 @@ void main() {
         access: access,
         onAccept: onAccept,
         onDecline: onDecline,
-        onBrowseRestricted: () {},
       ),
     );
   }
@@ -94,14 +93,8 @@ void main() {
     );
     final accept = find.byKey(const Key('build47-accept-policy'));
     final decline = find.byKey(const Key('build47-decline-policy'));
-    final limited = find.byKey(const Key('build47-limited-browsing'));
     expect(tester.widget<FilledButton>(accept).onPressed, isNull);
     expect(tester.widget<OutlinedButton>(decline).onPressed, isNull);
-    await tester.scrollUntilVisible(
-      limited,
-      150,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(tester.widget<TextButton>(limited).onPressed, isNull);
+    expect(find.byKey(const Key('build47-limited-browsing')), findsNothing);
   });
 }

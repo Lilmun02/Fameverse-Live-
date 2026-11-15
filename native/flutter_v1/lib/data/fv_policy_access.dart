@@ -56,7 +56,7 @@ class FvPolicyAccess {
       decision == FvPolicyDecision.unsigned &&
       withinNoticeWindow;
 
-  bool get canUseRestrictedFeatures => hasAccepted || hasTemporaryAccess;
+  bool get canUseRestrictedFeatures => hasAccepted;
 
   bool permits(FvPolicyFeature feature) {
     switch (feature) {
