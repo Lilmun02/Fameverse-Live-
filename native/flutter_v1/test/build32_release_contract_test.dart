@@ -14,8 +14,8 @@ void main() {
         for (final marker in <String>[
           "'get_fameverse_rankings_v2'",
           "'p_window': _window",
-          "('24h', '24H')",
-          "('7d', '7D')",
+          "('24h', 'Daily')",
+          "('7d', 'Weekly')",
           "('supporters', 'Supporters'",
           "('pulse', 'Pulse'",
           "('creators', 'Creators'",
@@ -93,7 +93,7 @@ void main() {
 
       expect(host, contains('bool _flipCameraBusy = false;'));
       expect(viewer, contains('bool _cohostFlipBusy = false;'));
-      expect(profile, contains("Key('profile-fame-coins-card')"));
+      expect(profile, contains('_WalletCard(userId: profile.id)'));
       expect(profile, contains('onTap: _loading ? null : _openStore'));
     });
 

@@ -49,7 +49,7 @@ void main() {
       );
 
       expect(profile, contains('FAMEVERSE OWNER • PREMIUM'));
-      expect(profile, contains('Owner Premium'));
+      expect(profile, contains('OWNER PREMIUM PROFILE'));
       expect(studio, contains('Premium owner access'));
       expect(studio, isNot(contains('ImageFiltered')));
       expect(studio, isNot(contains('ImageFilter.blur')));
@@ -75,7 +75,7 @@ void main() {
         'lib/features/profile/creator_studio_build23.dart',
       );
 
-      expect(profile, contains("Key('profile-buy-fame-coins')"));
+      expect(profile, contains('_WalletCard(userId: profile.id)'));
       expect(profile, contains('FameCoinStoreScreen('));
       expect(studio, isNot(contains('NativeRechargeScreen')));
       expect(studio, isNot(contains('native_recharge_screen.dart')));
