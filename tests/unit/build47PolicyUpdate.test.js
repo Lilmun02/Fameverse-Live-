@@ -35,7 +35,7 @@ describe('Build 47 policy update source safety contract', () => {
     expect(consent).toContain('FameversePolicyScreen()')
     expect(consent).toContain("Key('build47-accept-policy')")
     expect(consent).toContain("Key('build47-decline-policy')")
-    expect(consent).toContain("Key('build47-limited-browsing')")
+    expect(consent).not.toContain("Key('build47-limited-browsing')")
     expect(consent).toContain('A failed save never counts as acceptance.')
   })
 
