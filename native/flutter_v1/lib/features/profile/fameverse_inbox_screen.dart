@@ -208,7 +208,7 @@ class _FameverseInboxScreenState extends State<FameverseInboxScreen> {
             else
               ..._notices.map(
                 (notice) => Card(
-                  key: ValueKey('inbox-notice-' + notice.id),
+                  key: ValueKey('inbox-notice-${notice.id}'),
                   color: const Color(0xFF221B2C),
                   child: Padding(
                     padding: const EdgeInsets.all(15),

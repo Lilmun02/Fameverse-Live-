@@ -84,9 +84,9 @@ class FvPolicyAcceptanceService {
         verifiedForAccount: matched,
         withinNoticeWindow: matched &&
             decision == FvPolicyDecision.unsigned &&
-            record?['can_use_restricted'] == true,
+            record['can_use_restricted'] == true,
         isGracePeriod: matched && phase == 'grace',
-        requiresSupport: matched && record?['requires_support'] == true,
+        requiresSupport: matched && record['requires_support'] == true,
         noticeStartedAt: _parseDate(record?['notice_started_at']),
         graceStartsAt: _parseDate(record?['grace_starts_at']),
         noticeEndsAt: _parseDate(record?['notice_ends_at']),
