@@ -6,7 +6,6 @@ import 'package:video_player/video_player.dart';
 import '../../data/fameverse_backend.dart';
 import '../../data/fameverse_live_backend.dart';
 import 'native_gift_visual.dart';
-import 'native_pocket_comet_gift.dart';
 
 class FvLiveChatMessage {
   const FvLiveChatMessage({
@@ -35,17 +34,65 @@ class FvGiftPlayback {
     required this.gift,
     required this.quantity,
     required this.sender,
+    this.comboIndex = 1,
+    this.comboTotal = 1,
+    this.completionMessage,
   });
 
   final FvGiftDefinition gift;
   final int quantity;
   final String sender;
+  final int comboIndex;
+  final int comboTotal;
+
+  /// Render one combined chat receipt only after the last combo animation.
+  final FvLiveChatMessage? completionMessage;
+
+  String get visualCountLabel {
+    if (comboTotal > 1) return ' · Combo ×$comboIndex';
+    if (quantity > 1) return ' · ×$quantity';
+    return '';
+  }
+}
+
+const int fvMaxSequentialGiftCombo = 50;
+
+List<FvGiftPlayback> fvExpandGiftVisualCombo(FvGiftPlayback playback) {
+  if (playback.quantity <= 1 || playback.quantity > fvMaxSequentialGiftCombo) {
+    return <FvGiftPlayback>[playback];
+  }
+
+  return List<FvGiftPlayback>.generate(
+    playback.quantity,
+    (index) => FvGiftPlayback(
+      gift: playback.gift,
+      quantity: 1,
+      sender: playback.sender,
+      comboIndex: index + 1,
+      comboTotal: playback.quantity,
+      completionMessage: index == playback.quantity - 1
+          ? playback.completionMessage
+          : null,
+    ),
+    growable: false,
+  );
+}
+
+/// Longer watchdog for cinematic videos. Renderer completion normally advances
+/// the FIFO queue; watchdogs must never truncate a legitimate full animation.
+Duration fvGiftPlaybackWatchdog(FvGiftPlayback playback) {
+  final url = playback.gift.videoUrl?.trim() ?? '';
+  if (playback.gift.cinematic && url.isNotEmpty) {
+    return const Duration(seconds: 90);
+  }
+  return const Duration(seconds: 8);
 }
 
 class NativeGiftOverlay extends StatefulWidget {
-  const NativeGiftOverlay({required this.playback, super.key});
+  const NativeGiftOverlay({required this.playback, this.onFinished, super.key});
 
   final FvGiftPlayback playback;
+  final VoidCallback? onFinished;
 
   @override
   State<NativeGiftOverlay> createState() => _NativeGiftOverlayState();
@@ -54,6 +101,11 @@ class NativeGiftOverlay extends StatefulWidget {
 class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   VideoPlayerController? _controller;
   String? _loadedUrl;
+  Timer? _finishTimer;
+  bool _reportedFinished = false;
+  bool _videoLoading = false;
+  bool _videoFailed = false;
+  int _videoLoadEpoch = 0;
 
   @override
   void initState() {
@@ -64,143 +116,325 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
   @override
   void didUpdateWidget(covariant NativeGiftOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
-        oldWidget.playback.gift.id != widget.playback.gift.id) {
+    if (oldWidget.playback.gift.id != widget.playback.gift.id ||
+        oldWidget.playback.gift.videoUrl != widget.playback.gift.videoUrl ||
+        oldWidget.playback.quantity != widget.playback.quantity ||
+        oldWidget.playback.comboIndex != widget.playback.comboIndex ||
+        oldWidget.playback.comboTotal != widget.playback.comboTotal) {
+      _reportedFinished = false;
+      _finishTimer?.cancel();
       unawaited(_syncVideo());
     }
   }
 
+  void _scheduleFinish(Duration duration) {
+    _finishTimer?.cancel();
+    _finishTimer = Timer(duration, _reportFinished);
+  }
+
+  void _reportFinished() {
+    if (_reportedFinished) return;
+    _reportedFinished = true;
+    widget.onFinished?.call();
+  }
+
+  Duration _staticDuration(FvGiftDefinition gift) {
+    if (gift.cinematic) return const Duration(milliseconds: 3200);
+    if (gift.cost >= 100) return const Duration(milliseconds: 3000);
+    return const Duration(milliseconds: 1900);
+  }
+
   Future<void> _syncVideo() async {
-    final url = widget.playback.gift.videoUrl;
-    if (url == null || url.isEmpty) {
+    final epoch = ++_videoLoadEpoch;
+    final gift = widget.playback.gift;
+    final url = gift.videoUrl?.trim() ?? '';
+
+    if (gift.cost < 100 || !gift.cinematic || url.isEmpty) {
       final previous = _controller;
       _controller = null;
       _loadedUrl = null;
+      _videoLoading = false;
+      _videoFailed = gift.cinematic;
       if (previous != null) await previous.dispose();
+      _scheduleFinish(_staticDuration(gift));
       if (mounted) setState(() {});
       return;
     }
-    if (_loadedUrl == url && _controller != null) {
+
+    if (_loadedUrl == url &&
+        _controller != null &&
+        _controller!.value.isInitialized) {
+      _videoLoading = false;
+      _videoFailed = false;
       await _controller!.seekTo(Duration.zero);
+      await _controller!.setVolume(1);
       await _controller!.play();
+      final rawMs = _controller!.value.duration.inMilliseconds + 350;
+      final safeMs = rawMs.clamp(1500, 60000).toInt();
+      _scheduleFinish(Duration(milliseconds: safeMs));
+      if (mounted) setState(() {});
       return;
     }
-    final next = VideoPlayerController.networkUrl(Uri.parse(url));
-    try {
-      await next.initialize();
-      await next.setLooping(false);
-      await next.setVolume(1);
-      await next.play();
-      final previous = _controller;
-      _controller = next;
-      _loadedUrl = url;
-      if (previous != null) await previous.dispose();
-      if (mounted) setState(() {});
-    } catch (_) {
-      await next.dispose();
+
+    _videoLoading = true;
+    _videoFailed = false;
+    if (mounted) setState(() {});
+
+    final previous = _controller;
+    _controller = null;
+    _loadedUrl = null;
+    if (previous != null) await previous.dispose();
+
+    Object? lastError;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final next = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+      try {
+        await next.initialize().timeout(const Duration(seconds: 10));
+        if (!mounted || epoch != _videoLoadEpoch) {
+          await next.dispose();
+          return;
+        }
+        await next.setLooping(false);
+        await next.setVolume(1);
+        await next.seekTo(Duration.zero);
+        await next.play();
+        _controller = next;
+        _loadedUrl = url;
+        _videoLoading = false;
+        _videoFailed = false;
+        final rawMs = next.value.duration.inMilliseconds + 350;
+        final safeMs = rawMs.clamp(1500, 60000).toInt();
+        _scheduleFinish(Duration(milliseconds: safeMs));
+        setState(() {});
+        return;
+      } catch (error) {
+        lastError = error;
+        await next.dispose();
+        if (!mounted || epoch != _videoLoadEpoch) return;
+        if (attempt == 0) {
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+        }
+      }
     }
+
+    if (!mounted || epoch != _videoLoadEpoch) return;
+    _videoLoading = false;
+    _videoFailed = true;
+    _controller = null;
+    _loadedUrl = null;
+    _scheduleFinish(const Duration(milliseconds: 4500));
+    setState(() {});
+    assert(() {
+      debugPrint('Premium gift video failed for ${gift.id}: $lastError');
+      return true;
+    }());
   }
 
   @override
   void dispose() {
+    _videoLoadEpoch++;
+    _finishTimer?.cancel();
     final controller = _controller;
     _controller = null;
     if (controller != null) unawaited(controller.dispose());
     super.dispose();
   }
 
+  // Small gifts stay compact, but sender identity must remain visible.
+  // Do not use subtitles, underlines, or a framed picture as the gift itself.
+  Widget _lightweightGift(FvGiftPlayback playback) {
+    final description =
+        '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}';
+    return IgnorePointer(
+      child: Align(
+        alignment: const Alignment(-0.78, 0.1),
+        child: Semantics(
+          label: description,
+          child: Container(
+            key: Key('lightweight-gift-${playback.gift.id}'),
+            constraints: const BoxConstraints(maxWidth: 260),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xD91B1029),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  playback.gift.symbol,
+                  style: const TextStyle(fontSize: 30),
+                ),
+                const SizedBox(width: 9),
+                Flexible(
+                  child: Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
+    final size = MediaQuery.sizeOf(context);
+    final premium = playback.gift.cost >= 100;
+    return IgnorePointer(
+      child: Align(
+        alignment: const Alignment(0, .02),
+        child: SizedBox(
+          key: Key('native-gift-presentation-${playback.gift.id}'),
+          width: size.width * .90,
+          height: size.height * (premium ? .52 : .44),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: size.width * (premium ? .74 : .60),
+                height: size.width * (premium ? .74 : .60),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(
+                        0xFF9D55FF,
+                      ).withValues(alpha: premium ? .44 : .30),
+                      const Color(0xFF5C22A7).withValues(alpha: .16),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: .72, end: 1),
+                duration: const Duration(milliseconds: 560),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) =>
+                    Transform.scale(scale: value, child: child),
+                child: Text(
+                  playback.gift.symbol,
+                  style: TextStyle(
+                    fontSize: premium ? 132 : 104,
+                    shadows: const [
+                      Shadow(color: Color(0xAA8F46E8), blurRadius: 28),
+                      Shadow(color: Colors.black87, blurRadius: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final playback = widget.playback;
 
-    if (playback.gift.id == 'pocket-comet') {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          NativePocketCometGift(sender: playback.sender),
-          if (playback.quantity > 1)
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 92,
-              child: Text(
-                '×${playback.quantity}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFFFE7A2),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  shadows: [Shadow(blurRadius: 10, color: Colors.black)],
-                ),
-              ),
-            ),
-        ],
-      );
+    if (playback.gift.cost < 100) {
+      return _lightweightGift(playback);
+    }
+
+    if (!playback.gift.cinematic) {
+      return _largeNativeGift(context, playback);
     }
 
     final controller = _controller;
-    if (playback.gift.cinematic &&
-        controller != null &&
-        controller.value.isInitialized) {
+    if (controller != null && controller.value.isInitialized) {
+      final size = MediaQuery.sizeOf(context);
       return IgnorePointer(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(color: Colors.black.withValues(alpha: .28)),
-            Center(
-              child: AspectRatio(
-                aspectRatio: controller.value.aspectRatio == 0
-                    ? 1
-                    : controller.value.aspectRatio,
+        child: Center(
+          child: SizedBox(
+            key: Key('cinematic-gift-presentation-${playback.gift.id}'),
+            width: size.width,
+            height: size.height * .76,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              clipBehavior: Clip.none,
+              child: SizedBox(
+                width: controller.value.size.width <= 0
+                    ? size.width
+                    : controller.value.size.width,
+                height: controller.value.size.height <= 0
+                    ? size.height * .76
+                    : controller.value.size.height,
                 child: VideoPlayer(controller),
               ),
             ),
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 110,
-              child: Text(
-                '${playback.sender} sent ${playback.gift.label}${playback.quantity > 1 ? ' ×${playback.quantity}' : ''}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  shadows: [Shadow(blurRadius: 8, color: Colors.black)],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       );
     }
 
+    final size = MediaQuery.sizeOf(context);
     return IgnorePointer(
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+          key: Key(
+            _videoFailed
+                ? 'cinematic-gift-media-failed-${playback.gift.id}'
+                : 'cinematic-gift-media-loading-${playback.gift.id}',
+          ),
+          width: size.width * .90,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
           decoration: BoxDecoration(
-            color: const Color(0xDD1C1227),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0x669D55FF)),
+            color: const Color(0xE617101F),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0x665F37A1)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(playback.gift.symbol, style: const TextStyle(fontSize: 54)),
-              const SizedBox(height: 8),
-              Text(
-                '${playback.sender} sent ${playback.gift.label}',
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              if (playback.quantity > 1)
-                Text(
-                  '×${playback.quantity}',
-                  style: const TextStyle(
-                    color: Color(0xFFCEB9FF),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
+              if (_videoLoading)
+                const SizedBox.square(
+                  dimension: 30,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                )
+              else
+                const Icon(
+                  Icons.movie_filter_outlined,
+                  color: Color(0xFFB98CFF),
+                  size: 34,
                 ),
+              const SizedBox(height: 12),
+              Text(
+                _videoFailed
+                    ? 'Premium gift media could not load'
+                    : 'Loading premium gift…',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _videoFailed
+                    ? 'The premium gift was recorded, but Fameverse will not replace its animation with an emoji.'
+                    : 'Preparing the original premium gift animation.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFB9ACBE),
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+              ),
             ],
           ),
         ),
@@ -215,38 +449,120 @@ class NativeGiftTray extends StatefulWidget {
     required this.canRefill,
     required this.onSend,
     required this.onRefill,
+    this.onBuyCoins,
+    this.onExchange,
+    this.recipientSelector,
     super.key,
   });
 
   final int coins;
   final bool canRefill;
   final Future<bool> Function(FvGiftDefinition gift, int quantity) onSend;
-  final Future<void> Function() onRefill;
+  final Future<int> Function() onRefill;
+  final VoidCallback? onBuyCoins;
+  final VoidCallback? onExchange;
+  final Widget? recipientSelector;
 
   @override
   State<NativeGiftTray> createState() => _NativeGiftTrayState();
 }
 
 class _NativeGiftTrayState extends State<NativeGiftTray> {
-  String _category = 'all';
-  String _selectedId = fvGiftCatalog.first.id;
+  static const _categories = <(String, String)>[
+    ('trending', 'Trending'),
+    ('support', 'Support'),
+    ('fun', 'Fun'),
+    ('luxury', 'Luxury'),
+    ('fameverse', 'Fameverse'),
+  ];
+
+  static const _trendingIds = <String>{
+    'rose',
+    'heart',
+    'fire',
+    'star',
+    'planet',
+    'galaxy',
+    'welcome-to-fameverse',
+    'fame-burst',
+  };
+
+  String _category = 'trending';
+  String _selectedId = 'rose';
   bool _sending = false;
+  bool _refilling = false;
+  late int _coins;
 
-  List<FvGiftDefinition> get _visible => _category == 'all'
-      ? fvGiftCatalog
-      : fvGiftCatalog.where((gift) => gift.category == _category).toList();
+  bool _matchesCategory(FvGiftDefinition gift, String category) {
+    switch (category) {
+      case 'trending':
+        return _trendingIds.contains(gift.id);
+      case 'support':
+        return gift.cost <= 10;
+      case 'fun':
+        return const <String>{
+          'reactions',
+          'snacks',
+          'flowers',
+          'celebrate',
+          'creator',
+          'sports',
+          'animals',
+        }.contains(gift.category);
+      case 'luxury':
+        return gift.cost >= 40 && gift.cost < 1000;
+      case 'fameverse':
+        return gift.category == 'fameverse';
+      default:
+        return false;
+    }
+  }
 
-  FvGiftDefinition get _selected =>
-      fvGiftById(_selectedId) ?? fvGiftCatalog.first;
+  List<FvGiftDefinition> get _visible =>
+      fvGiftCatalog.where((gift) => _matchesCategory(gift, _category)).toList();
+
+  FvGiftDefinition get _selected {
+    final selected = fvGiftById(_selectedId);
+    if (selected != null) return selected;
+    final visible = _visible;
+    return visible.isNotEmpty ? visible.first : fvGiftCatalog.first;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _coins = widget.coins;
+  }
+
+  @override
+  void didUpdateWidget(covariant NativeGiftTray oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.coins != widget.coins && widget.coins != _coins) {
+      _coins = widget.coins;
+    }
+  }
 
   Future<void> _send(int quantity) async {
     if (_sending) return;
+    final gift = _selected;
     setState(() => _sending = true);
+    final sent = await widget.onSend(gift, quantity);
+    if (!mounted) return;
+    if (sent) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() => _sending = false);
+  }
+
+  Future<void> _refill() async {
+    if (_refilling) return;
+    setState(() => _refilling = true);
     try {
-      final accepted = await widget.onSend(_selected, quantity);
-      if (accepted && mounted) Navigator.of(context).pop();
+      final balance = await widget.onRefill();
+      if (mounted) setState(() => _coins = balance);
     } finally {
-      if (mounted) setState(() => _sending = false);
+      if (mounted) setState(() => _refilling = false);
     }
   }
 
@@ -409,23 +725,45 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   ],
                 ),
                 const Spacer(),
-                Chip(label: Text('🪙 ${widget.coins}')),
+                Chip(label: Text('🪙 $_coins')),
               ],
             ),
             const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'all', label: Text('All')),
-                ButtonSegment(value: 'classic', label: Text('Classic')),
-                ButtonSegment(value: 'fameverse', label: Text('Fameverse')),
-              ],
-              selected: {_category},
-              onSelectionChanged: (value) =>
-                  setState(() => _category = value.first),
+            if (widget.recipientSelector != null) ...[
+              widget.recipientSelector!,
+              const SizedBox(height: 8),
+            ],
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 7),
+                itemBuilder: (context, index) {
+                  final item = _categories[index];
+                  return ChoiceChip(
+                    key: Key('gift-category-${item.$1}'),
+                    label: Text(item.$2),
+                    selected: _category == item.$1,
+                    onSelected: (_) {
+                      final visible = fvGiftCatalog
+                          .where((gift) => _matchesCategory(gift, item.$1))
+                          .toList();
+                      setState(() {
+                        _category = item.$1;
+                        if (visible.isNotEmpty &&
+                            !visible.any((gift) => gift.id == _selectedId)) {
+                          _selectedId = visible.first.id;
+                        }
+                      });
+                    },
+                  );
+                },
+              ),
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 210,
+              height: 220,
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -438,6 +776,7 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                   final gift = _visible[index];
                   final selected = gift.id == _selectedId;
                   return InkWell(
+                    key: Key('gift-tile-${gift.id}'),
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => setState(() => _selectedId = gift.id),
                     child: Container(
@@ -505,18 +844,30 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               children: [
                 const Text(
-                  'Beta tester balance',
+                  'Fame Coin balance',
                   style: TextStyle(color: Color(0xFFAFA4B6), fontSize: 12),
                 ),
                 const Spacer(),
+                if (widget.onBuyCoins != null)
+                  TextButton(
+                    key: const Key('gift-tray-buy-coins'),
+                    onPressed: _sending ? null : widget.onBuyCoins,
+                    child: const Text('Buy coins'),
+                  ),
+                if (widget.onExchange != null)
+                  TextButton(
+                    key: const Key('gift-tray-coin-exchange'),
+                    onPressed: _sending ? null : widget.onExchange,
+                    child: const Text('Exchange earnings'),
+                  ),
                 if (widget.canRefill)
                   TextButton(
-                    onPressed: _sending ? null : widget.onRefill,
-                    child: const Text('+10K'),
+                    onPressed: _sending || _refilling ? null : _refill,
+                    child: Text(_refilling ? 'Adding…' : '+10K QA'),
                   ),
               ],
             ),
