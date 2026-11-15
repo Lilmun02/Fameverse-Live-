@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: fameverse-native-preflight-${{ github.ref }}
@@ -188,12 +188,17 @@ jobs:
             build
 
   physical-release-gate:
-    name: Physical iPhone release gate
+    name: Physical Android and iPhone release gate
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout
+      - name: Checkout full history for exact tested commit verification
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Block release until owner and external tester pass
+      - name: Validate Build 48 release laws (without simulating physical passes)
+        run: node --test tests/ci/build48_native_release_gate.test.mjs
+
+      - name: Block release until Android and iPhone device acceptance passes
         run: node scripts/check-native-physical-acceptance.mjs
