@@ -8,10 +8,11 @@ IOS_ROOT="$PROJECT_ROOT/ios"
 PLIST="$IOS_ROOT/Runner/Info.plist"
 ICON_DIR="$IOS_ROOT/Runner/Assets.xcassets/AppIcon.appiconset"
 CONTENTS_JSON="$ICON_DIR/Contents.json"
+LAUNCH_STORYBOARD="$IOS_ROOT/Runner/Base.lproj/LaunchScreen.storyboard"
 SOURCE_SVG="$REPO_ROOT/public/icon.svg"
 PLIST_BUDDY="/usr/libexec/PlistBuddy"
 
-for required in "$PLIST" "$CONTENTS_JSON" "$SOURCE_SVG"; do
+for required in "$PLIST" "$CONTENTS_JSON" "$SOURCE_SVG" "$LAUNCH_STORYBOARD"; do
   test -f "$required" || {
     echo "Branding law failed: missing $required"
     exit 1
@@ -20,6 +21,7 @@ done
 
 display_name="$($PLIST_BUDDY -c 'Print :CFBundleDisplayName' "$PLIST")"
 bundle_name="$($PLIST_BUDDY -c 'Print :CFBundleName' "$PLIST")"
+launch_storyboard_name="$($PLIST_BUDDY -c 'Print :UILaunchStoryboardName' "$PLIST")"
 
 if [ "$display_name" != "$EXPECTED_NAME" ]; then
   echo "Branding law failed: CFBundleDisplayName='$display_name', expected '$EXPECTED_NAME'"
@@ -28,6 +30,26 @@ fi
 
 if [ "$bundle_name" != "$EXPECTED_NAME" ]; then
   echo "Branding law failed: CFBundleName='$bundle_name', expected '$EXPECTED_NAME'"
+  exit 1
+fi
+
+if [ "$launch_storyboard_name" != "LaunchScreen" ]; then
+  echo "Branding law failed: UILaunchStoryboardName='$launch_storyboard_name', expected LaunchScreen"
+  exit 1
+fi
+
+if ! grep -Fq 'FAMEVERSE_NATIVE_LAUNCH_DARK' "$LAUNCH_STORYBOARD"; then
+  echo "Branding law failed: deterministic Fameverse dark native launch marker is missing"
+  exit 1
+fi
+
+if grep -Eq 'key="backgroundColor"[^>]*(red="1(\.0*)?"[^>]*green="1(\.0*)?"[^>]*blue="1(\.0*)?")' "$LAUNCH_STORYBOARD"; then
+  echo "Branding law failed: white native LaunchScreen background returned"
+  exit 1
+fi
+
+if ! grep -Fq 'red="0.01960784314" green="0.01960784314" blue="0.02745098039"' "$LAUNCH_STORYBOARD"; then
+  echo "Branding law failed: Fameverse native launch background color changed"
   exit 1
 fi
 
@@ -73,4 +95,4 @@ if grep -Eq '<string>(Live|live)</string>' "$PLIST"; then
   exit 1
 fi
 
-echo "Fameverse iOS branding law passed: '$EXPECTED_NAME' with canonical crown AppIcon set."
+echo "Fameverse iOS branding law passed: '$EXPECTED_NAME', dark native launch, canonical crown AppIcon set."
