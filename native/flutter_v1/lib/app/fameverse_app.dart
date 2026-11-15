@@ -128,7 +128,10 @@ class _FameverseAppState extends State<FameverseApp>
     });
   }
 
-  Future<void> _submitPolicyDecision({required bool accept}) async {
+  Future<void> _submitPolicyDecision({
+    required bool accept,
+    bool checkboxChecked = false,
+  }) async {
     final identity = _identity;
     if (identity == null || _policyBusy) return;
     setState(() {
@@ -138,7 +141,10 @@ class _FameverseAppState extends State<FameverseApp>
     try {
       final verified = await FvPolicyAcceptanceService(
         Supabase.instance.client,
-      ).submitDecision(accept: accept);
+      ).submitDecision(
+        accept: accept,
+        checkboxChecked: checkboxChecked,
+      );
       if (!mounted || _identity?.id != identity.id) return;
       if (verified.accountId != identity.id) {
         throw StateError('Policy account mismatch');
@@ -330,7 +336,9 @@ class _FameverseAppState extends State<FameverseApp>
         busy: _policyBusy,
         access: policy,
         error: _policyError,
-        onAccept: () => unawaited(_submitPolicyDecision(accept: true)),
+        onAccept: (checked) => unawaited(
+          _submitPolicyDecision(accept: true, checkboxChecked: checked),
+        ),
         onDecline: () => unawaited(_submitPolicyDecision(accept: false)),
       );
     }
