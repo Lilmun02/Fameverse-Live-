@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:fameverse_live/features/live/native_live_components.dart';
 
 void main() {
-  testWidgets('custom quantity +/- and presets update visible field and send count', (
+  testWidgets('custom gift quantity stays synchronized through submission', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(900, 1700);
@@ -11,7 +12,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final unitCost = fvGiftById('rose')!.cost;
     int? sentQuantity;
+    var sendCalls = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -20,7 +23,9 @@ void main() {
             canRefill: false,
             onSend: (gift, quantity) async {
               expect(gift.id, 'rose');
+              expect(gift.cost, unitCost);
               sentQuantity = quantity;
+              sendCalls++;
               return false;
             },
             onRefill: () async => 100000,
@@ -33,6 +38,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final input = find.byType(TextFormField);
+    final sheet = find.byType(BottomSheet);
     String visibleQuantity() => tester
         .widget<TextField>(
           find.descendant(of: input, matching: find.byType(TextField)),
@@ -40,37 +46,64 @@ void main() {
         .controller!
         .text;
 
-    expect(visibleQuantity(), '1');
+    void expectQuantity(int quantity) {
+      expect(visibleQuantity(), '$quantity');
+      expect(
+        find.descendant(of: sheet, matching: find.text('Send ×$quantity')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: sheet,
+          matching: find.text('🪙 ${unitCost * quantity}'),
+        ),
+        findsOneWidget,
+      );
+      expect(sendCalls, 0);
+    }
+
+    expectQuantity(1);
+    await tester.tap(find.byKey(const Key('gift-quantity-decrease')));
+    await tester.pump();
+    expectQuantity(1);
 
     await tester.tap(find.byKey(const Key('gift-quantity-increase')));
     await tester.pump();
-    expect(visibleQuantity(), '2');
-    expect(find.text('Send ×2'), findsOneWidget);
-
+    expectQuantity(2);
     await tester.tap(find.byKey(const Key('gift-quantity-decrease')));
     await tester.pump();
-    expect(visibleQuantity(), '1');
-    expect(find.text('Send ×1'), findsOneWidget);
+    expectQuantity(1);
 
-    await tester.tap(find.text('×10'));
-    await tester.pump();
-    expect(visibleQuantity(), '10');
-    expect(find.text('Send ×10'), findsOneWidget);
+    for (final quantity in [5, 10, 25, 50]) {
+      await tester.tap(find.text('×$quantity'));
+      await tester.pump();
+      expectQuantity(quantity);
+    }
 
-    await tester.enterText(input, '');
+    for (final value in ['', 'invalid', '1.5']) {
+      await tester.enterText(input, value);
+      await tester.pump();
+      final submit = find.descendant(
+        of: sheet,
+        matching: find.byType(FilledButton),
+      );
+      expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+      expect(sendCalls, 0);
+    }
+
+    await tester.enterText(input, '100000');
     await tester.pump();
-    expect(
-      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Send ×10')).onPressed,
-      isNull,
-    );
+    expectQuantity(100000);
+    await tester.tap(find.byKey(const Key('gift-quantity-increase')));
+    await tester.pump();
+    expectQuantity(100000);
 
     await tester.enterText(input, '3');
     await tester.pump();
-    expect(visibleQuantity(), '3');
-    expect(find.text('Send ×3'), findsOneWidget);
-
+    expectQuantity(3);
     await tester.tap(find.text('Send ×3'));
     await tester.pumpAndSettle();
     expect(sentQuantity, 3);
+    expect(sendCalls, 1);
   });
 }
