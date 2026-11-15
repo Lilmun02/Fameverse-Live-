@@ -875,28 +875,43 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   Future<void> _acceptInvite() async {
     final activity = _activity;
-    if (activity == null) return;
+    if (activity == null || !mounted || _selfCohostState != 'invited') {
+      return;
+    }
     setState(() {
       _incomingInvite = null;
       _selfCohostState = 'connecting';
     });
-    await activity.send('cohost-invite-accepted', {
-      'viewerId': widget.identity.id,
-      'userId': widget.identity.id,
-    });
+    try {
+      await activity.send('cohost-invite-accepted', {
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+      });
+    } catch (_) {
+      if (!mounted) return;
+      if (_selfCohostState == 'connecting') {
+        setState(() => _selfCohostState = null);
+        _showMessage('Could not accept co-host invite. Try again.');
+      }
+    }
   }
 
   Future<void> _declineInvite() async {
     final activity = _activity;
-    if (activity == null) return;
+    if (!mounted) return;
     setState(() {
       _incomingInvite = null;
       _selfCohostState = null;
     });
-    await activity.send('cohost-invite-declined', {
-      'viewerId': widget.identity.id,
-      'userId': widget.identity.id,
-    });
+    if (activity == null) return;
+    try {
+      await activity.send('cohost-invite-declined', {
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+      });
+    } catch (_) {
+      if (mounted) _showMessage('Could not notify host of declined invite.');
+    }
   }
 
   Future<void> _activateSelfCohost() async {
