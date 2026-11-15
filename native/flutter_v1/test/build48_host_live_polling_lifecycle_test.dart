@@ -4,9 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Build 48 host Live performance — Android and iOS', () {
-    final host = File(
-      'lib/features/live/stream_host_live_screen.dart',
-    ).readAsStringSync();
+    final host = File('lib/features/live/stream_host_live_screen.dart')
+        .readAsStringSync();
 
     test('host lifecycle observer is registered and removed', () {
       expect(host, contains('with WidgetsBindingObserver {'));
@@ -42,8 +41,11 @@ void main() {
       expect(starter, contains('_ending'));
       expect(starter, contains('_ended'));
       expect(starter, contains('const Duration(seconds: 2)'));
-      final connect = host.split('Future<void> _connect() async {').last
-          .split('Future<void> _refreshTapTotal() async {').first;
+      final connect = host
+          .split('Future<void> _connect() async {')
+          .last
+          .split('Future<void> _refreshTapTotal() async {')
+          .first;
       expect(
         connect.indexOf('setState(() => _connecting = false);'),
         lessThan(connect.indexOf('_startTapRefresh();')),
