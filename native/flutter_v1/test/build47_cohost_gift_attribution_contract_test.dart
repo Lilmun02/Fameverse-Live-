@@ -5,9 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Build 47 co-host gifts', () {
     test('existing host gifts remain source-compatible', () {
-      final backend = File(
-        'lib/data/fameverse_live_backend.dart',
-      ).readAsStringSync();
+      final backend = File('lib/data/fameverse_live_backend.dart')
+          .readAsStringSync();
 
       expect(backend, contains('Future<FvGiftSendResult> recordGift({'));
       expect(backend, contains("required int quantity,"));
@@ -20,12 +19,10 @@ void main() {
     });
 
     test('co-host activation is gated by the server after media starts', () {
-      final host = File(
-        'lib/features/live/stream_host_live_screen.dart',
-      ).readAsStringSync();
-      final viewer = File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
+      final host = File('lib/features/live/stream_host_live_screen.dart')
+          .readAsStringSync();
+      final viewer = File('lib/features/live/stream_viewer_live_screen.dart')
+          .readAsStringSync();
 
       expect(
         host.indexOf('prepareCohostGiftSession('),
@@ -40,15 +37,12 @@ void main() {
     });
 
     test('co-host total is read from backend, not broadcast', () {
-      final stage = File(
-        'lib/features/live/native_live_stage.dart',
-      ).readAsStringSync();
-      final viewer = File(
-        'lib/features/live/stream_viewer_live_screen.dart',
-      ).readAsStringSync();
-      final host = File(
-        'lib/features/live/stream_host_live_screen.dart',
-      ).readAsStringSync();
+      final stage = File('lib/features/live/native_live_stage.dart')
+          .readAsStringSync();
+      final viewer = File('lib/features/live/stream_viewer_live_screen.dart')
+          .readAsStringSync();
+      final host = File('lib/features/live/stream_host_live_screen.dart')
+          .readAsStringSync();
 
       expect(stage, contains('if (cohostGiftCoins != null)'));
       expect(stage, contains('right: 8,'));
