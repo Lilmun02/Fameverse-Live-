@@ -55,8 +55,6 @@ class NativeProfileBuild23Screen extends StatelessWidget {
           profile: profile,
           isOwner: isOwner,
           betaStatus: betaStatus,
-          avatarBusy: avatarBusy,
-          onChangePhoto: onChangePhoto,
           onEdit: onEdit,
           onCreatorStudio: onCreatorStudio,
           onFirstVerse: onFirstVerse,
@@ -118,8 +116,6 @@ class NativeProfileBuild23Screen extends StatelessWidget {
           _PremiumHero(
             profile: profile,
             isOwner: isOwner,
-            avatarBusy: avatarBusy,
-            onChangePhoto: onChangePhoto,
           ),
           const SizedBox(height: 18),
           Row(
@@ -185,76 +181,15 @@ class NativeProfileBuild23Screen extends StatelessWidget {
             friends: _friends,
           ),
           const SizedBox(height: 14),
-          _WalletCard(userId: identity.id),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  key: const Key('edit-profile-button'),
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_rounded, size: 18),
-                  label: const Text('Edit profile'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 9),
-              IconButton.filledTonal(
-                onPressed: onCreatorStudio,
-                tooltip: 'Creator Studio',
-                icon: const Icon(Icons.workspace_premium_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          InkWell(
-            key: const Key('open-creator-studio'),
-            onTap: onCreatorStudio,
-            borderRadius: BorderRadius.circular(20),
-            child: Ink(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF54366B)),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2B1738), Color(0xFF130E17)],
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.workspace_premium_rounded,
-                    color: Color(0xFFD49CFF),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isOwner ? 'Owner Studio' : 'Creator Studio',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          isOwner
-                              ? 'Premium tools, earnings and payout controls'
-                              : 'Earnings, payouts and creator tools',
-                          style: const TextStyle(
-                            color: Color(0xFFAA9DAE),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded),
-                ],
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const Key('edit-profile-button'),
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_rounded, size: 18),
+              label: const Text('Edit profile'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
               ),
             ),
           ),
@@ -268,14 +203,10 @@ class _PremiumHero extends StatelessWidget {
   const _PremiumHero({
     required this.profile,
     required this.isOwner,
-    required this.avatarBusy,
-    required this.onChangePhoto,
   });
 
   final FvProfile profile;
   final bool isOwner;
-  final bool avatarBusy;
-  final VoidCallback onChangePhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -361,40 +292,7 @@ class _PremiumHero extends StatelessWidget {
                 ),
                 child: ClipOval(child: _Avatar(profile: profile)),
               ),
-              Positioned(
-                right: -3,
-                bottom: 5,
-                child: Material(
-                  color: isOwner
-                      ? const Color(0xFFB77B2D)
-                      : const Color(0xFF913CE6),
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    onTap: avatarBusy ? null : onChangePhoto,
-                    customBorder: const CircleBorder(),
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: Center(
-                        child: avatarBusy
-                            ? const SizedBox(
-                                width: 17,
-                                height: 17,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.camera_alt_rounded,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+
             ],
           ),
         ],
@@ -570,83 +468,22 @@ class _WalletCardState extends State<_WalletCard> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      key: const Key('profile-fame-coins-card'),
-      behavior: HitTestBehavior.opaque,
+    return _RowItem(
+      label: 'Fame Coins',
+      value: _loading && _balance == null
+          ? 'Loading coin balance…'
+          : '${_balance ?? 0} coins · Balance, purchases and gifting',
+      icon: Icons.toll_rounded,
       onTap: _loading ? null : _openStore,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFF5C3470)),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF271334), Color(0xFF151019)],
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.toll_rounded, color: Color(0xFFD7A5FF)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Fame Coins',
-                    style: TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  Text(
-                    _loading && _balance == null
-                        ? 'Loading…'
-                        : '${_balance ?? 0}',
-                    style: const TextStyle(
-                      color: Color(0xFFE2BCFF),
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const Text(
-                    'Gifting balance. Creator cash earnings remain separate.',
-                    style: TextStyle(color: Color(0xFF9F92A4), fontSize: 10),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FilledButton.tonal(
-                  key: const Key('profile-buy-fame-coins'),
-                  onPressed: _loading ? null : _openStore,
-                  child: const Text('Buy'),
-                ),
-                IconButton(
-                  onPressed: _loading ? null : _load,
-                  tooltip: 'Refresh Fame Coins',
-                  icon: _loading
-                      ? const SizedBox(
-                          width: 17,
-                          height: 17,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.refresh_rounded),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
 
-class _Build23SettingsScreen extends StatelessWidget {
+class _Build23SettingsScreen extends StatefulWidget {
   const _Build23SettingsScreen({
     required this.profile,
     required this.isOwner,
     required this.betaStatus,
-    required this.avatarBusy,
-    required this.onChangePhoto,
     required this.onEdit,
     required this.onCreatorStudio,
     required this.onFirstVerse,
@@ -657,46 +494,80 @@ class _Build23SettingsScreen extends StatelessWidget {
   final FvProfile profile;
   final bool isOwner;
   final FvBetaProgramStatus betaStatus;
-  final bool avatarBusy;
-  final VoidCallback onChangePhoto;
   final VoidCallback onEdit;
   final VoidCallback onCreatorStudio;
   final VoidCallback? onFirstVerse;
   final VoidCallback onPolicies;
   final Future<void> Function() onSignOut;
 
-  Future<void> _signOut(BuildContext context) async {
+  @override
+  State<_Build23SettingsScreen> createState() =>
+      _Build23SettingsScreenState();
+}
+
+class _Build23SettingsScreenState extends State<_Build23SettingsScreen> {
+  String _search = '';
+
+  bool _matches(String section, String label) {
+    return _search.isEmpty ||
+        section.toLowerCase().contains(_search) ||
+        label.toLowerCase().contains(_search);
+  }
+
+  Widget _section(
+    String title,
+    List<({String label, Widget child})> entries,
+  ) {
+    final visible = entries
+        .where((entry) => _matches(title, entry.label))
+        .map((entry) => entry.child)
+        .toList();
+    if (visible.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22),
+      child: _Section(title: title, children: visible),
+    );
+  }
+
+  Future<void> _signOut() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sign out?'),
         content: const Text('You can sign back in to Fameverse at any time.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Sign out'),
           ),
         ],
       ),
     );
     if (confirmed != true) return;
-    await onSignOut();
-    if (context.mounted) {
+    await widget.onSignOut();
+    if (mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final profile = widget.profile;
+    final isOwner = widget.isOwner;
+    final showFirstVerse =
+        !isOwner &&
+        widget.onFirstVerse != null &&
+        _matches('FIRST VERSE', 'First Verse');
+
     return Scaffold(
       key: const Key('build23-settings-screen'),
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF100D16),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF100D16),
         title: const Text('Settings'),
         centerTitle: true,
       ),
@@ -704,114 +575,168 @@ class _Build23SettingsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 34),
           children: [
-            if (isOwner) ...[
-              Container(
-                key: const Key('settings-owner-premium-card'),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFB47B32)),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF3F2715), Color(0xFF1B111D)],
-                  ),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.workspace_premium_rounded,
-                      color: Color(0xFFFFD17F),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Owner Premium',
-                            style: TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'Owner previews are shown clearly — no blurred or fake locked cards.',
-                            style: TextStyle(
-                              color: Color(0xFFC5B7C8),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            TextField(
+              key: const Key('settings-search-field'),
+              autocorrect: false,
+              onChanged: (value) {
+                setState(() => _search = value.trim().toLowerCase());
+              },
+              decoration: InputDecoration(
+                hintText: 'Search settings',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: const Color(0xFF292331),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              const SizedBox(height: 22),
-            ],
-            _Section(
-              title: 'PROFILE',
+            ),
+            const SizedBox(height: 18),
+            Row(
               children: [
-                _RowItem(
-                  label: 'Edit profile',
-                  value: '${profile.displayName} · ${profile.handle}',
-                  icon: Icons.person_outline_rounded,
-                  onTap: onEdit,
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF423052),
+                  child: Text(profile.initial),
                 ),
-                _RowItem(
-                  label: 'Profile photo',
-                  value: avatarBusy ? 'Updating…' : 'Change your public image',
-                  icon: Icons.photo_camera_outlined,
-                  onTap: avatarBusy ? null : onChangePhoto,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      Text(
+                        profile.handle,
+                        style: const TextStyle(
+                          color: Color(0xFFAFA0BA),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 22),
-            _Section(
-              title: 'CREATOR',
-              children: [
-                _RowItem(
-                  label: isOwner ? 'Owner Studio' : 'Creator Studio',
-                  value: isOwner
-                      ? 'Moderation, payouts, platform finance and your creator account'
-                      : 'Earnings, payouts and creator tools',
-                  icon: Icons.workspace_premium_outlined,
-                  onTap: onCreatorStudio,
+            _section('ACCOUNT', [
+              (
+                label: 'Edit profile name username photo bio',
+                child: _RowItem(
+                  label: 'Edit profile',
+                  value: 'Name, photo, username and bio',
+                  icon: Icons.person_outline_rounded,
+                  onTap: widget.onEdit,
                 ),
-              ],
-            ),
-            // First Verse is an external beta-tester milestone, never an
-            // owner-profile reward. Preserve the card for eligible testers.
-            if (!isOwner && onFirstVerse != null) ...[
-              const SizedBox(height: 22),
-              const Text(
-                'FIRST VERSE',
-                style: TextStyle(
-                  color: Color(0xFF8D8191),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.15,
+              ),
+              (
+                label: 'Account and security',
+                child: const _RowItem(
+                  label: 'Account & security',
+                  value: 'Coming soon · Account protection',
+                  icon: Icons.lock_outline_rounded,
+                  onTap: null,
+                ),
+              ),
+              (
+                label: 'Privacy',
+                child: const _RowItem(
+                  label: 'Privacy',
+                  value: 'Coming soon · Account privacy controls',
+                  icon: Icons.shield_outlined,
+                  onTap: null,
+                ),
+              ),
+            ]),
+            _section('CREATOR & WALLET', [
+              (
+                label: 'Fame Coins wallet balance purchases gifts',
+                child: _WalletCard(userId: profile.id),
+              ),
+              (
+                label: 'Creator Studio earnings verification withdrawal',
+                child: _RowItem(
+                  label: isOwner ? 'My Creator Account' : 'Creator Studio',
+                  value: 'Earnings, verification and payouts',
+                  icon: Icons.workspace_premium_outlined,
+                  onTap: widget.onCreatorStudio,
+                ),
+              ),
+            ]),
+            _section('PREFERENCES', [
+              (
+                label: 'Notifications',
+                child: const _RowItem(
+                  label: 'Notifications',
+                  value: 'Coming soon · Alert preferences',
+                  icon: Icons.notifications_none_rounded,
+                  onTap: null,
+                ),
+              ),
+              (
+                label: 'Live preferences camera microphone co-host chat',
+                child: const _RowItem(
+                  label: 'Live preferences',
+                  value: 'Coming soon · Hosting and chat controls',
+                  icon: Icons.tune_rounded,
+                  onTap: null,
+                ),
+              ),
+            ]),
+            if (showFirstVerse) ...[
+              const Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Text(
+                  'FIRST VERSE',
+                  style: TextStyle(
+                    color: Color(0xFF8D8191),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.15,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
-              _FirstVerseSettingsCard(status: betaStatus, onTap: onFirstVerse),
+              _FirstVerseSettingsCard(
+                status: widget.betaStatus,
+                onTap: widget.onFirstVerse,
+              ),
+              const SizedBox(height: 22),
             ],
-            const SizedBox(height: 22),
-            _Section(
-              title: 'SAFETY & ACCOUNT',
-              children: [
-                _RowItem(
+            _section('SAFETY & ACCOUNT', [
+              (
+                label: 'Safety and legal policy terms community guidelines',
+                child: _RowItem(
                   label: 'Safety & legal',
                   value: 'Terms, privacy, community and creator rules',
                   icon: Icons.shield_outlined,
-                  onTap: onPolicies,
+                  onTap: widget.onPolicies,
                 ),
-                _RowItem(
+              ),
+              (
+                label: 'Help and support',
+                child: const _RowItem(
+                  label: 'Help & support',
+                  value: 'Coming soon · Support center',
+                  icon: Icons.help_outline_rounded,
+                  onTap: null,
+                ),
+              ),
+              (
+                label: 'Sign out',
+                child: _RowItem(
                   label: 'Sign out',
                   value: 'Sign out of this Fameverse account',
                   icon: Icons.logout_rounded,
                   danger: true,
-                  onTap: () => _signOut(context),
+                  onTap: _signOut,
                 ),
-              ],
-            ),
+              ),
+            ]),
           ],
         ),
       ),

@@ -22,7 +22,7 @@ void main() {
       expect(store, contains('serverVerificationData'));
       expect(store, contains("'iap-purchase'"));
       expect(store, contains('completePurchase(purchase)'));
-      expect(profile, contains("Key('profile-buy-fame-coins')"));
+      expect(profile, contains('_WalletCard(userId: profile.id)'));
       expect(profile, contains('FameCoinStoreScreen('));
       expect(tray, contains("Key('gift-tray-buy-coins')"));
       expect(viewer, contains('onBuyCoins: ()'));
