@@ -6,11 +6,14 @@ on:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - build48/performance-live-stability-android-ios-nov15
+      - 'fix/build48-*'
   pull_request:
     branches:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - build48/performance-live-stability-android-ios-nov15
   workflow_dispatch:
 
 permissions:
