@@ -11,7 +11,13 @@ class FvPolicyAcceptanceService {
 
   static const requiredPolicyVersion = '2026-10';
 
-  Future<FvPolicyAccess> submitDecision({required bool accept}) async {
+  Future<FvPolicyAccess> submitDecision({
+    required bool accept,
+    bool checkboxChecked = false,
+  }) async {
+    if (accept && !checkboxChecked) {
+      throw StateError('Agreement checkbox acknowledgment is required.');
+    }
     final user = client.auth.currentUser;
     if (user == null) {
       throw StateError('Sign in before responding to the policy.');
@@ -22,9 +28,31 @@ class FvPolicyAcceptanceService {
       'user_id': user.id,
       'policy_version': requiredPolicyVersion,
       'decision': accept ? 'accepted' : 'declined',
+      // Client assertion only; server trigger supplies the audit timestamp.
+      'checkbox_acknowledged': accept ? checkboxChecked : null,
     }, onConflict: 'user_id,policy_version');
 
     final verified = await loadCurrent();
+    if (accept) {
+      final evidence = await client
+          .from('policy_acceptances')
+          .select(
+            'user_id,policy_version,checkbox_acknowledged,checkbox_acknowledged_at',
+          )
+          .eq('user_id', user.id)
+          .eq('policy_version', requiredPolicyVersion)
+          .maybeSingle();
+      if (evidence == null ||
+          evidence['user_id'] != user.id ||
+          evidence['policy_version'] != requiredPolicyVersion ||
+          evidence['checkbox_acknowledged'] != true ||
+          DateTime.tryParse(
+                evidence['checkbox_acknowledged_at']?.toString() ?? '',
+              ) ==
+              null) {
+        throw StateError('Checkbox evidence could not be verified.');
+      }
+    }
     if (!verified.verifiedForAccount ||
         verified.decision !=
             (accept ? FvPolicyDecision.accepted : FvPolicyDecision.declined)) {

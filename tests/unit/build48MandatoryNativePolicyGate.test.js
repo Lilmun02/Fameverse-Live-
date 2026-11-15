@@ -10,7 +10,7 @@ const inbox = read('native/flutter_v1/lib/features/profile/fameverse_inbox_scree
 describe('Build 48 native policy choice is mandatory', () => {
   it('requires explicit acceptance or decline and has no continue/browse escape', () => {
     expect(app).toContain('if (!policy.hasAccepted && !_policyPromptDismissed)')
-    expect(app).toContain('onAccept: () => unawaited(_submitPolicyDecision(accept: true))')
+    expect(app).toContain('_submitPolicyDecision(accept: true, checkboxChecked: checked)')
     expect(app).toContain('onDecline: () => unawaited(_submitPolicyDecision(accept: false))')
     expect(app).not.toContain('onBrowseRestricted')
     expect(consent).not.toContain('onBrowseRestricted')

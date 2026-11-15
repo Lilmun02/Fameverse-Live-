@@ -23,7 +23,7 @@ describe('Build 47 policy update source safety contract', () => {
     expect(identity).toBeGreaterThan(notice)
     expect(gate).toBeGreaterThan(identity)
     expect(app).toContain('FameversePolicyConsentScreen(')
-    expect(app).toContain('onAccept: () => unawaited(_submitPolicyDecision(accept: true))')
+    expect(app).toContain('_submitPolicyDecision(accept: true, checkboxChecked: checked)')
     expect(app).toContain('onDecline: () => unawaited(_submitPolicyDecision(accept: false))')
     expect(app).toContain('if (changedAccount) unawaited(_loadPolicyForIdentity(identity));')
   })
