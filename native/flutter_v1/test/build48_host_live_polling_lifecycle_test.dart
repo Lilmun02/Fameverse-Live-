@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Build 48 host Live performance — Android and iOS', () {
-    final path = 'lib/features/live/stream_host_live_screen.dart';
+    const path = 'lib/features/live/stream_host_live_screen.dart';
     final host = File(path).readAsStringSync();
 
     test('host lifecycle observer is registered and removed', () {
@@ -14,8 +14,8 @@ void main() {
     });
 
     test('backgrounding pauses only cosmetic polling, not Live heartbeat', () {
-      final start = 'void didChangeAppLifecycleState(';
-      final end = 'Future<void> _refreshTapTotal()';
+      const start = 'void didChangeAppLifecycleState(';
+      const end = 'Future<void> _refreshTapTotal()';
       final lifecycle = host.split(start).last.split(end).first;
       expect(lifecycle, contains('state == AppLifecycleState.resumed'));
       expect(lifecycle, contains('_tapRefresh?.cancel();'));
@@ -28,8 +28,8 @@ void main() {
     });
 
     test('resume refresh does not start duplicate polling timers', () {
-      final start = 'void _startTapRefresh() {';
-      final end = 'void didChangeAppLifecycleState(';
+      const start = 'void _startTapRefresh() {';
+      const end = 'void didChangeAppLifecycleState(';
       final starter = host.split(start).last.split(end).first;
       expect(starter, contains('_tapRefresh?.isActive == true'));
       expect(starter, contains('!_appIsForeground'));
@@ -37,8 +37,8 @@ void main() {
       expect(starter, contains('_ending'));
       expect(starter, contains('_ended'));
       expect(starter, contains('const Duration(seconds: 2)'));
-      final connectStart = 'Future<void> _connect() async {';
-      final connectEnd = 'Future<void> _refreshTapTotal() async {';
+      const connectStart = 'Future<void> _connect() async {';
+      const connectEnd = 'Future<void> _refreshTapTotal() async {';
       final connect = host.split(connectStart).last.split(connectEnd).first;
       expect(
         connect.indexOf('setState(() => _connecting = false);'),
@@ -47,8 +47,8 @@ void main() {
     });
 
     test('slow backend responses cannot pile up parallel tap reads', () {
-      final start = 'Future<void> _refreshTapTotal() async {';
-      final end = 'void _onViewerRosterChanged(';
+      const start = 'Future<void> _refreshTapTotal() async {';
+      const end = 'void _onViewerRosterChanged(';
       final refresh = host.split(start).last.split(end).first;
       expect(refresh, contains('_tapRefreshBusy || !mounted'));
       expect(refresh, contains('_tapRefreshBusy = true;'));
