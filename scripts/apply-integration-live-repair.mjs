@@ -1,7 +1,10 @@
 import fs from 'node:fs'
 
 // One-time legacy patch is obsolete: do not rewrite files or tests.
-throw new Error('RETIRED: do not execute the legacy integration repair script.')
+function refuseRetiredRepair() {
+  throw new Error('RETIRED: do not execute the legacy integration repair script.')
+}
+refuseRetiredRepair()
 
 function read(path) {
   return fs.readFileSync(path, 'utf8')
