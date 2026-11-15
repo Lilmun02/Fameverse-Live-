@@ -28,6 +28,10 @@ workflows:
         - pattern: 'build47/backend-utc-rankings-nov05'
           include: true
           source: true
+        # Build 48 unsigned iOS + Android foundation builds, no TestFlight publishing.
+        - pattern: 'build48/performance-live-stability-android-ios-nov15'
+          include: true
+          source: true
       cancel_previous_builds: true
 
     scripts:
