@@ -17,8 +17,9 @@ create or replace function public.fv_policy_checkbox_timestamp()
 returns trigger language plpgsql set search_path = '' as $function$
 begin
   if new.decision = 'accepted' and new.checkbox_acknowledged is true then
-    if tg_op = 'INSERT'
-       or old.checkbox_acknowledged is distinct from true
+    if tg_op = 'INSERT' then
+      new.checkbox_acknowledged_at := now();
+    elsif old.checkbox_acknowledged is distinct from true
        or old.decision is distinct from 'accepted' then
       new.checkbox_acknowledged_at := now();
     else
