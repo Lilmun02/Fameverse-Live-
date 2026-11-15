@@ -199,6 +199,24 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action === "create") {
+    // The recharge session identifies the account; service-role reads its
+    // server-stored policy decision BEFORE any new order or PayPal request.
+    const { data: acceptance, error: policyError } = await admin
+      .from("policy_acceptances")
+      .select("user_id,policy_version,decision")
+      .eq("user_id", session.user_id)
+      .eq("policy_version", "2026-10")
+      .maybeSingle();
+    if (policyError) return json(503, { error: "policy-status-unavailable" });
+    if (
+      !acceptance ||
+      acceptance.user_id !== session.user_id ||
+      acceptance.policy_version !== "2026-10" ||
+      acceptance.decision !== "accepted"
+    ) {
+      return json(403, { error: "policy-restricted-purchase" });
+    }
+
     const packId = String(body.pack_id ?? "");
     let pack: RechargePack | null = null;
 
