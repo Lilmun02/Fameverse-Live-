@@ -40,45 +40,9 @@ class FvGiftDefinition {
   String get symbol => activityEmoji ?? emoji ?? '✦';
 }
 
+// Lightweight gifts intentionally stay below 100 coins and do not carry
+// cinematic video/audio. Premium Fameverse gifts remain visually distinct.
 const fvGiftCatalog = <FvGiftDefinition>[
-  FvGiftDefinition(
-    id: 'welcome-to-fameverse',
-    label: 'Welcome to Fameverse',
-    cost: 100,
-    category: 'fameverse',
-    activityEmoji: '✦',
-    videoUrl:
-        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4',
-    cinematic: true,
-  ),
-  FvGiftDefinition(
-    id: 'ember-dragon',
-    label: 'Ember Dragon',
-    cost: 1000,
-    category: 'fameverse',
-    activityEmoji: '🐉',
-    videoUrl:
-        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/6ef5d526-e0d8-42ca-a382-28d53d3fe2aa.mp4',
-    cinematic: true,
-  ),
-  FvGiftDefinition(
-    id: 'celestial-phoenix',
-    label: 'Celestial Phoenix',
-    cost: 1000,
-    category: 'fameverse',
-    activityEmoji: '🔥',
-    videoUrl:
-        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/e4da59e7-2d55-4ee2-b546-cae61cf56de3.mp4',
-    cinematic: true,
-  ),
-  FvGiftDefinition(
-    id: 'pocket-comet',
-    label: 'Pocket Comet',
-    cost: 1000,
-    category: 'fameverse',
-    activityEmoji: '☄️',
-    cinematic: true,
-  ),
   FvGiftDefinition(
     id: 'rose',
     label: 'Rose',
@@ -113,6 +77,424 @@ const fvGiftCatalog = <FvGiftDefinition>[
     cost: 1,
     category: 'classic',
     emoji: '👑',
+  ),
+  FvGiftDefinition(
+    id: 'sparkle',
+    label: 'Sparkle',
+    cost: 2,
+    category: 'reactions',
+    emoji: '✨',
+  ),
+  FvGiftDefinition(
+    id: 'clap',
+    label: 'Clap',
+    cost: 2,
+    category: 'reactions',
+    emoji: '👏',
+  ),
+  FvGiftDefinition(
+    id: 'smile',
+    label: 'Smile',
+    cost: 2,
+    category: 'reactions',
+    emoji: '😊',
+  ),
+  FvGiftDefinition(
+    id: 'cool',
+    label: 'Cool',
+    cost: 3,
+    category: 'reactions',
+    emoji: '😎',
+  ),
+  FvGiftDefinition(
+    id: 'laugh',
+    label: 'Laugh',
+    cost: 3,
+    category: 'reactions',
+    emoji: '😂',
+  ),
+  FvGiftDefinition(
+    id: 'party',
+    label: 'Party',
+    cost: 3,
+    category: 'reactions',
+    emoji: '🎉',
+  ),
+  FvGiftDefinition(
+    id: 'coffee',
+    label: 'Coffee',
+    cost: 5,
+    category: 'snacks',
+    emoji: '☕',
+  ),
+  FvGiftDefinition(
+    id: 'cookie',
+    label: 'Cookie',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🍪',
+  ),
+  FvGiftDefinition(
+    id: 'cupcake',
+    label: 'Cupcake',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🧁',
+  ),
+  FvGiftDefinition(
+    id: 'donut',
+    label: 'Donut',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🍩',
+  ),
+  FvGiftDefinition(
+    id: 'pizza',
+    label: 'Pizza',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🍕',
+  ),
+  FvGiftDefinition(
+    id: 'taco',
+    label: 'Taco',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🌮',
+  ),
+  FvGiftDefinition(
+    id: 'popcorn',
+    label: 'Popcorn',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🍿',
+  ),
+  FvGiftDefinition(
+    id: 'strawberry',
+    label: 'Strawberry',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🍓',
+  ),
+  FvGiftDefinition(
+    id: 'cherry',
+    label: 'Cherries',
+    cost: 5,
+    category: 'snacks',
+    emoji: '🍒',
+  ),
+  FvGiftDefinition(
+    id: 'sunflower',
+    label: 'Sunflower',
+    cost: 7,
+    category: 'flowers',
+    emoji: '🌻',
+  ),
+  FvGiftDefinition(
+    id: 'tulip',
+    label: 'Tulip',
+    cost: 7,
+    category: 'flowers',
+    emoji: '🌷',
+  ),
+  FvGiftDefinition(
+    id: 'bouquet',
+    label: 'Bouquet',
+    cost: 10,
+    category: 'flowers',
+    emoji: '💐',
+  ),
+  FvGiftDefinition(
+    id: 'balloon',
+    label: 'Balloon',
+    cost: 10,
+    category: 'celebrate',
+    emoji: '🎈',
+  ),
+  FvGiftDefinition(
+    id: 'confetti',
+    label: 'Confetti',
+    cost: 10,
+    category: 'celebrate',
+    emoji: '🎊',
+  ),
+  FvGiftDefinition(
+    id: 'music',
+    label: 'Music',
+    cost: 10,
+    category: 'creator',
+    emoji: '🎵',
+  ),
+  FvGiftDefinition(
+    id: 'headphones',
+    label: 'Headphones',
+    cost: 12,
+    category: 'creator',
+    emoji: '🎧',
+  ),
+  FvGiftDefinition(
+    id: 'microphone',
+    label: 'Microphone',
+    cost: 12,
+    category: 'creator',
+    emoji: '🎤',
+  ),
+  FvGiftDefinition(
+    id: 'gamepad',
+    label: 'Gamepad',
+    cost: 12,
+    category: 'creator',
+    emoji: '🎮',
+  ),
+  FvGiftDefinition(
+    id: 'camera',
+    label: 'Camera',
+    cost: 12,
+    category: 'creator',
+    emoji: '📸',
+  ),
+  FvGiftDefinition(
+    id: 'football',
+    label: 'Football',
+    cost: 15,
+    category: 'sports',
+    emoji: '🏈',
+  ),
+  FvGiftDefinition(
+    id: 'basketball',
+    label: 'Basketball',
+    cost: 15,
+    category: 'sports',
+    emoji: '🏀',
+  ),
+  FvGiftDefinition(
+    id: 'soccer',
+    label: 'Soccer Ball',
+    cost: 15,
+    category: 'sports',
+    emoji: '⚽',
+  ),
+  FvGiftDefinition(
+    id: 'baseball',
+    label: 'Baseball',
+    cost: 15,
+    category: 'sports',
+    emoji: '⚾',
+  ),
+  FvGiftDefinition(
+    id: 'gem',
+    label: 'Gem',
+    cost: 20,
+    category: 'fame',
+    emoji: '💎',
+  ),
+  FvGiftDefinition(
+    id: 'rocket',
+    label: 'Rocket',
+    cost: 20,
+    category: 'fame',
+    emoji: '🚀',
+  ),
+  FvGiftDefinition(
+    id: 'moon',
+    label: 'Moon',
+    cost: 20,
+    category: 'fame',
+    emoji: '🌙',
+  ),
+  FvGiftDefinition(
+    id: 'rainbow',
+    label: 'Rainbow',
+    cost: 20,
+    category: 'fame',
+    emoji: '🌈',
+  ),
+  FvGiftDefinition(
+    id: 'butterfly',
+    label: 'Butterfly',
+    cost: 20,
+    category: 'fame',
+    emoji: '🦋',
+  ),
+  FvGiftDefinition(
+    id: 'unicorn',
+    label: 'Unicorn',
+    cost: 25,
+    category: 'fame',
+    emoji: '🦄',
+  ),
+  FvGiftDefinition(
+    id: 'panda',
+    label: 'Panda',
+    cost: 25,
+    category: 'animals',
+    emoji: '🐼',
+  ),
+  FvGiftDefinition(
+    id: 'lion',
+    label: 'Lion',
+    cost: 25,
+    category: 'animals',
+    emoji: '🦁',
+  ),
+  FvGiftDefinition(
+    id: 'dolphin',
+    label: 'Dolphin',
+    cost: 25,
+    category: 'animals',
+    emoji: '🐬',
+  ),
+  FvGiftDefinition(
+    id: 'sunglasses',
+    label: 'Sunglasses',
+    cost: 30,
+    category: 'fame',
+    emoji: '🕶️',
+  ),
+  FvGiftDefinition(
+    id: 'gold-medal',
+    label: 'Gold Medal',
+    cost: 30,
+    category: 'fame',
+    emoji: '🥇',
+  ),
+  FvGiftDefinition(
+    id: 'trophy',
+    label: 'Trophy',
+    cost: 35,
+    category: 'fame',
+    emoji: '🏆',
+  ),
+  FvGiftDefinition(
+    id: 'party-face',
+    label: 'Party Face',
+    cost: 35,
+    category: 'celebrate',
+    emoji: '🥳',
+  ),
+  FvGiftDefinition(
+    id: 'crystal-ball',
+    label: 'Crystal Ball',
+    cost: 40,
+    category: 'fame',
+    emoji: '🔮',
+  ),
+  FvGiftDefinition(
+    id: 'purple-heart',
+    label: 'Purple Heart',
+    cost: 40,
+    category: 'fame',
+    emoji: '💜',
+  ),
+  FvGiftDefinition(
+    id: 'lightning',
+    label: 'Lightning',
+    cost: 45,
+    category: 'fame',
+    emoji: '⚡',
+  ),
+  FvGiftDefinition(
+    id: 'planet',
+    label: 'Planet',
+    cost: 50,
+    category: 'fame',
+    emoji: '🪐',
+  ),
+  FvGiftDefinition(
+    id: 'shooting-star',
+    label: 'Shooting Star',
+    cost: 60,
+    category: 'fame',
+    emoji: '🌠',
+  ),
+  FvGiftDefinition(
+    id: 'castle',
+    label: 'Castle',
+    cost: 70,
+    category: 'fame',
+    emoji: '🏰',
+  ),
+  FvGiftDefinition(
+    id: 'race-car',
+    label: 'Race Car',
+    cost: 75,
+    category: 'fame',
+    emoji: '🏎️',
+  ),
+  FvGiftDefinition(
+    id: 'airplane',
+    label: 'Airplane',
+    cost: 80,
+    category: 'fame',
+    emoji: '✈️',
+  ),
+  FvGiftDefinition(
+    id: 'helicopter',
+    label: 'Helicopter',
+    cost: 85,
+    category: 'fame',
+    emoji: '🚁',
+  ),
+  FvGiftDefinition(
+    id: 'yacht',
+    label: 'Yacht',
+    cost: 90,
+    category: 'fame',
+    emoji: '🛥️',
+  ),
+  FvGiftDefinition(
+    id: 'galaxy',
+    label: 'Galaxy',
+    cost: 99,
+    category: 'fame',
+    emoji: '🌌',
+  ),
+  FvGiftDefinition(
+    id: 'fame-burst',
+    label: 'Fame Burst',
+    cost: 100,
+    category: 'fameverse',
+    activityEmoji: '✦',
+  ),
+  FvGiftDefinition(
+    id: 'welcome-to-fameverse',
+    label: 'Welcome to Fameverse',
+    cost: 100,
+    category: 'fameverse',
+    activityEmoji: '✦',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4',
+    cinematic: true,
+  ),
+  FvGiftDefinition(
+    id: 'ember-dragon',
+    label: 'Ember Dragon',
+    cost: 1000,
+    category: 'fameverse',
+    activityEmoji: '🐉',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/6ef5d526-e0d8-42ca-a382-28d53d3fe2aa.mp4',
+    cinematic: true,
+  ),
+  FvGiftDefinition(
+    id: 'celestial-phoenix',
+    label: 'Celestial Phoenix',
+    cost: 1000,
+    category: 'fameverse',
+    activityEmoji: '🔥',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/e4da59e7-2d55-4ee2-b546-cae61cf56de3.mp4',
+    cinematic: true,
+  ),
+  FvGiftDefinition(
+    id: 'abyssal-leviathan',
+    label: 'Abyssal Leviathan',
+    cost: 5000,
+    category: 'fameverse',
+    activityEmoji: '🐋',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/ee94db8e-08fe-4028-a641-47e8b0dc3b89.mp4',
+    cinematic: true,
   ),
 ];
 
@@ -331,7 +713,29 @@ abstract class FameverseLiveBackend {
   });
 }
 
-class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
+// Co-host gift support is additive. Existing fake backends and the released
+// host-only recordGift contract remain source-compatible.
+abstract class FvCohostGiftBackend implements FameverseLiveBackend {
+  Future<void> prepareCohostGiftSession({
+    required String roomId,
+    required String cohostUserId,
+  });
+  Future<void> activateCohostGiftSession({required String roomId});
+  Future<void> renewCohostGiftSession({required String roomId});
+  Future<void> clearCohostGiftSession({required String roomId});
+  Future<int> loadCohostGiftCoins({
+    required String roomId,
+    required String cohostUserId,
+  });
+  Future<FvGiftSendResult> recordGiftToCohost({
+    required String roomId,
+    required String giftId,
+    required int quantity,
+    required String cohostUserId,
+  });
+}
+
+class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
   SupabaseFameverseLiveBackend(this._client);
 
   final SupabaseClient _client;
@@ -550,20 +954,7 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
     return const {};
   }
 
-  @override
-  Future<FvGiftSendResult> recordGift({
-    required String roomId,
-    required String giftId,
-    required int quantity,
-  }) async {
-    final data = await _client.rpc(
-      'record_beta_gift',
-      params: {
-        'p_room_id': roomId,
-        'p_gift_id': giftId,
-        'p_quantity': quantity,
-      },
-    );
+  FvGiftSendResult _giftResult(dynamic data) {
     final row = _firstRpcRow(data);
     if (row.isEmpty) throw Exception('gift-result-missing');
     return FvGiftSendResult(
@@ -572,6 +963,89 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
       level: (row['level'] as num?)?.toInt() ?? 1,
       walletBalance: (row['wallet_balance'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  @override
+  Future<FvGiftSendResult> recordGift({
+    required String roomId,
+    required String giftId,
+    required int quantity,
+  }) async {
+    final data = await _client.rpc(
+      'send_fameverse_gift',
+      params: {
+        'p_room_id': roomId,
+        'p_gift_id': giftId,
+        'p_quantity': quantity,
+      },
+    );
+    return _giftResult(data);
+  }
+
+  @override
+  Future<FvGiftSendResult> recordGiftToCohost({
+    required String roomId,
+    required String giftId,
+    required int quantity,
+    required String cohostUserId,
+  }) async {
+    final data = await _client.rpc(
+      'send_fameverse_gift',
+      params: {
+        'p_room_id': roomId,
+        'p_gift_id': giftId,
+        'p_quantity': quantity,
+        'p_recipient_user_id': cohostUserId,
+      },
+    );
+    return _giftResult(data);
+  }
+
+  @override
+  Future<void> prepareCohostGiftSession({
+    required String roomId,
+    required String cohostUserId,
+  }) async {
+    await _client.rpc(
+      'prepare_fameverse_live_cohost',
+      params: {'p_room_id': roomId, 'p_cohost_user_id': cohostUserId},
+    );
+  }
+
+  @override
+  Future<void> activateCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'activate_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<void> renewCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'renew_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<void> clearCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'clear_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<int> loadCohostGiftCoins({
+    required String roomId,
+    required String cohostUserId,
+  }) async {
+    final data = await _client.rpc(
+      'get_fameverse_cohost_gift_coins',
+      params: {'p_room_id': roomId, 'p_cohost_user_id': cohostUserId},
+    );
+    return (data as num?)?.toInt() ?? 0;
   }
 
   @override
@@ -711,7 +1185,7 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
   }) {
     final channel = _client.channel(
       'live-activity:$roomId',
-      opts: const RealtimeChannelConfig(ack: false, self: false),
+      opts: const RealtimeChannelConfig(ack: true, self: false),
     );
     if (onComment != null) {
       channel.onBroadcast(
@@ -735,8 +1209,11 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
         'cohost-accept',
         'cohost-decline',
         'cohost-active',
+        'cohost-gift-ready',
         'cohost-source-left',
         'cohost-ended',
+        // Temporary profile-photo fallback while a lens is switching.
+        'camera-flip',
       ];
       for (final event in cohostEvents) {
         channel.onBroadcast(
