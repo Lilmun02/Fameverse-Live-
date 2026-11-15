@@ -60,6 +60,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   Timer? _tapFlushTimer;
   Timer? _giftTimer;
   Timer? _cohostGiftRefreshTimer;
+  Timer? _cohostGiftLeaseTimer;
   FvGiftPlayback? _giftPlayback;
   bool _connecting = true;
   bool _leaving = false;
@@ -71,6 +72,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   bool _cohostCameraEnabled = true;
   bool _cohostFlipBusy = false;
   bool _cohostMicEnabled = true;
+  bool _cohostGiftLeaseRenewing = false;
   int _walletBalance = 0;
   int _gifterLevel = 1;
   int _fameTaps = 0;
@@ -320,6 +322,34 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       }
     } catch (_) {
       // Never display a guessed total when the authoritative RPC fails.
+    }
+  }
+
+  void _startCohostGiftLease() {
+    _cohostGiftLeaseTimer?.cancel();
+    _cohostGiftLeaseTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => unawaited(_renewCohostGiftLease()),
+    );
+  }
+
+  Future<void> _renewCohostGiftLease() async {
+    if (!mounted ||
+        _cohostGiftLeaseRenewing ||
+        !_selfIsCohost ||
+        _selfCohostState != 'active') {
+      return;
+    }
+    final backend = widget.liveBackend;
+    if (backend is! FvCohostGiftBackend) return;
+    _cohostGiftLeaseRenewing = true;
+    try {
+      await backend.renewCohostGiftSession(roomId: widget.room.id);
+    } catch (_) {
+      // Server-side lease expires after 60 seconds if this client cannot
+      // confirm its active co-host session. Never extend credit in the UI.
+    } finally {
+      _cohostGiftLeaseRenewing = false;
     }
   }
 
@@ -912,6 +942,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           _cohostCameraEnabled = true;
           _cohostMicEnabled = true;
         });
+        _startCohostGiftLease();
       }
     } catch (_) {
       await _deactivateSelfCohost();
@@ -924,6 +955,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   }
 
   Future<void> _deactivateSelfCohost({bool notify = true}) async {
+    _cohostGiftLeaseTimer?.cancel();
+    _cohostGiftLeaseTimer = null;
     final call = _call;
     if (call != null) {
       try {
@@ -1348,6 +1381,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
     _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftLeaseTimer?.cancel();
     await _callStateSubscription?.cancel();
     _callStateSubscription = null;
     final activity = _activity;
@@ -1381,6 +1415,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
     _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftLeaseTimer?.cancel();
     for (final timer in _cameraFallbackTimers.values) {
       timer.cancel();
     }
