@@ -1,0 +1,83 @@
+name: Integration Public Fame Coin Store
+
+on:
+  push:
+    branches:
+      - integration/sep27-big-update
+    paths:
+      - scripts/apply-public-coin-store.mjs
+      - scripts/fix-owner-finance-copy.mjs
+      - scripts/fix-public-store-analysis.mjs
+      - scripts/fix-paypal-recharge-regression-contract.mjs
+      - native/flutter_v1/test/public_fame_coin_funding_contract_test.dart
+      - supabase/migrations/20261001_public_fame_coin_store*.sql
+      - supabase/functions/iap-purchase/**
+      - .github/workflows/integration-public-coin-store.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: integration-public-fame-coin-store
+  cancel-in-progress: true
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical integration source
+        uses: actions/checkout@v4
+        with:
+          ref: integration/sep27-big-update
+          fetch-depth: 0
+
+      - name: Repair owner finance copy
+        run: node scripts/fix-owner-finance-copy.mjs
+
+      - name: Apply public Fame Coin store wiring
+        run: node scripts/apply-public-coin-store.mjs
+
+      - name: Remove dead public store code
+        run: node scripts/fix-public-store-analysis.mjs
+
+      - name: Align PayPal recharge regression contract
+        run: node scripts/fix-paypal-recharge-regression-contract.mjs
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve packages
+        working-directory: native/flutter_v1
+        run: flutter pub get
+
+      - name: Format
+        working-directory: native/flutter_v1
+        run: dart format lib test tool
+
+      - name: Analyze
+        working-directory: native/flutter_v1
+        run: flutter analyze
+
+      - name: Test
+        working-directory: native/flutter_v1
+        run: flutter test
+
+      - name: Reject whitespace errors
+        run: git diff --check
+
+      - name: Persist verified repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add native/flutter_v1
+          git commit -m "feat(payments): wire public Fame Coin purchases"
+          git push origin HEAD:integration/sep27-big-update

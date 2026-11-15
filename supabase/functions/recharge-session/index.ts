@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const headers = {
-  "Content-Type": "application/json",
+  "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
 };
 
@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  // Build 16 real-money recharge is intentionally owner-QA-only until the
+  // Native Build 18 PayPal recharge is intentionally owner-QA-only until the
   // public pack economics and storefront rules are approved.
   const { data: roleRow, error: roleError } = await admin
     .from("account_roles")
@@ -79,6 +79,10 @@ Deno.serve(async (req: Request) => {
   });
   if (sessionError) return json(500, { error: "session-create-failed" });
 
-  const url = `${supabaseUrl}/functions/v1/recharge?session=${encodeURIComponent(token)}`;
-  return json(201, { url, expires_at: expiresAt, mode: "owner-qa" });
+  return json(201, {
+    session: token,
+    expires_at: expiresAt,
+    mode: "owner-qa",
+    checkout: "native",
+  });
 });

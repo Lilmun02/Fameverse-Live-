@@ -33,18 +33,27 @@ class _FvLiveWakeLockState extends State<_FvLiveWakeLock> {
   Widget build(BuildContext context) => widget.child;
 }
 
-// V2 stage contract: solo is full-canvas; active co-hosting is two equal tiles.
+// Approved V2 contract:
+// - solo = full-canvas camera
+// - active co-host = two equal square camera boxes side-by-side
+// - never convert co-host into tall stacked rectangles
 class NativeHostV2Stage extends StatelessWidget {
   const NativeHostV2Stage({
     required this.call,
     required this.cameraEnabled,
     required this.activeCohostUserId,
+    this.hostCameraTransitioning = false,
+    this.cohostCameraTransitioning = false,
+    this.cohostGiftCoins,
     super.key,
   });
 
   final Call call;
   final bool cameraEnabled;
   final String? activeCohostUserId;
+  final bool hostCameraTransitioning;
+  final bool cohostCameraTransitioning;
+  final int? cohostGiftCoins;
 
   @override
   Widget build(BuildContext context) {
@@ -69,34 +78,30 @@ class NativeHostV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
-                  cameraOff: true,
+                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
+                  transitioning: hostCameraTransitioning,
                 );
               }
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: host,
-                      videoEnabled:
-                          cameraEnabled && (host?.isVideoEnabled ?? false),
-                      cameraOff: true,
-                      label: 'You',
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: cohost,
-                      videoEnabled: cohost?.isVideoEnabled ?? false,
-                      label: cohost?.name.isNotEmpty == true
-                          ? cohost!.name
-                          : 'Co-host',
-                    ),
-                  ),
-                ],
+              return _V2CohostStage(
+                cohostGiftCoins: cohostGiftCoins,
+                left: _V2ParticipantSurface(
+                  call: call,
+                  participant: host,
+                  videoEnabled:
+                      cameraEnabled && (host?.isVideoEnabled ?? false),
+                  label: 'Host',
+                  transitioning: hostCameraTransitioning,
+                ),
+                right: _V2ParticipantSurface(
+                  call: call,
+                  participant: cohost,
+                  videoEnabled: cohost?.isVideoEnabled ?? false,
+                  label: cohost?.name.isNotEmpty == true
+                      ? cohost!.name
+                      : 'Co-host',
+                  transitioning: cohostCameraTransitioning,
+                ),
               );
             },
       ),
@@ -109,12 +114,18 @@ class NativeViewerV2Stage extends StatelessWidget {
     required this.call,
     required this.hostUserId,
     required this.activeCohostUserId,
+    this.hostCameraTransitioning = false,
+    this.cohostCameraTransitioning = false,
+    this.cohostGiftCoins,
     super.key,
   });
 
   final Call call;
   final String hostUserId;
   final String? activeCohostUserId;
+  final bool hostCameraTransitioning;
+  final bool cohostCameraTransitioning;
+  final int? cohostGiftCoins;
 
   @override
   Widget build(BuildContext context) {
@@ -138,36 +149,123 @@ class NativeViewerV2Stage extends StatelessWidget {
                   call: call,
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
+                  label: host?.name.isNotEmpty == true ? host!.name : 'Host',
+                  transitioning: hostCameraTransitioning,
                 );
               }
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: host,
-                      videoEnabled: host?.isVideoEnabled ?? false,
-                      label: host?.name.isNotEmpty == true
-                          ? host!.name
-                          : 'Host',
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Expanded(
-                    child: _V2ParticipantSurface(
-                      call: call,
-                      participant: cohost,
-                      videoEnabled: cohost?.isVideoEnabled ?? false,
-                      label: cohost?.name.isNotEmpty == true
-                          ? cohost!.name
-                          : 'Co-host',
-                    ),
-                  ),
-                ],
+              return _V2CohostStage(
+                cohostGiftCoins: cohostGiftCoins,
+                left: _V2ParticipantSurface(
+                  call: call,
+                  participant: host,
+                  videoEnabled: host?.isVideoEnabled ?? false,
+                  label: 'Host',
+                  transitioning: hostCameraTransitioning,
+                ),
+                right: _V2ParticipantSurface(
+                  call: call,
+                  participant: cohost,
+                  videoEnabled: cohost?.isVideoEnabled ?? false,
+                  label: cohost?.name.isNotEmpty == true
+                      ? cohost!.name
+                      : 'Co-host',
+                  transitioning: cohostCameraTransitioning,
+                ),
               );
             },
       ),
+    );
+  }
+}
+
+class _V2CohostStage extends StatelessWidget {
+  const _V2CohostStage({
+    required this.left,
+    required this.right,
+    this.cohostGiftCoins,
+  });
+
+  final Widget left;
+  final Widget right;
+  final int? cohostGiftCoins;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const FvLiveBackground(),
+        SafeArea(
+          bottom: false,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 70, 8, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: left,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            right,
+                            if (cohostGiftCoins != null)
+                              Positioned(
+                                right: 8,
+                                bottom: 8,
+                                child: IgnorePointer(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.diamond_rounded,
+                                        color: Color(0xFFAD73FF),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        '$cohostGiftCoins',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFD9C4FF),
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -177,28 +275,34 @@ class _V2ParticipantSurface extends StatelessWidget {
     required this.call,
     required this.participant,
     required this.videoEnabled,
-    this.cameraOff = false,
+    this.transitioning = false,
     this.label,
   });
 
   final Call call;
   final CallParticipantState? participant;
   final bool videoEnabled;
-  final bool cameraOff;
+  final bool transitioning;
   final String? label;
 
   @override
   Widget build(BuildContext context) {
     final participant = this.participant;
-    if (participant == null || !videoEnabled) {
+    if (participant == null) {
       return Stack(
         fit: StackFit.expand,
         children: [
-          FvLiveBackground(
-            icon: cameraOff ? Icons.videocam_off_rounded : Icons.person_rounded,
-          ),
+          const FvLiveBackground(icon: Icons.person_rounded),
           if (label != null) _V2StageLabel(text: label!),
         ],
+      );
+    }
+
+    if (!videoEnabled || transitioning) {
+      return _V2CameraOffSurface(
+        participant: participant,
+        label: label,
+        transitioning: transitioning,
       );
     }
 
@@ -219,6 +323,117 @@ class _V2ParticipantSurface extends StatelessWidget {
   }
 }
 
+class _V2CameraOffSurface extends StatelessWidget {
+  const _V2CameraOffSurface({
+    required this.participant,
+    this.label,
+    this.transitioning = false,
+  });
+
+  final CallParticipantState participant;
+  final String? label;
+  final bool transitioning;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = participant.image?.trim();
+    final displayName = participant.name.trim().isEmpty
+        ? 'Fameverse creator'
+        : participant.name.trim();
+    final initial = displayName.characters.first.toUpperCase();
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0, -.25),
+              radius: 1.1,
+              colors: [Color(0xFF3A1B52), Color(0xFF170D22), Colors.black],
+            ),
+          ),
+        ),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 78,
+                height: 78,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF9B55FF), width: 2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x559B55FF),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  foregroundImage: image != null && image.isNotEmpty
+                      ? NetworkImage(image)
+                      : null,
+                  backgroundColor: const Color(0xFF2B1838),
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .42),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      transitioning
+                          ? Icons.cameraswitch_rounded
+                          : Icons.videocam_off_rounded,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      transitioning ? 'Switching camera…' : 'Camera off',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (label != null) _V2StageLabel(text: label!),
+      ],
+    );
+  }
+}
+
 class _V2StageLabel extends StatelessWidget {
   const _V2StageLabel({required this.text});
 
@@ -227,11 +442,11 @@ class _V2StageLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: 10,
-      bottom: 10,
+      left: 8,
+      bottom: 8,
       child: IgnorePointer(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 180),
+          constraints: const BoxConstraints(maxWidth: 140),
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: .46),
