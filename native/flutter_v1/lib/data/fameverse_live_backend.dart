@@ -713,7 +713,29 @@ abstract class FameverseLiveBackend {
   });
 }
 
-class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
+// Co-host gift support is additive. Existing fake backends and the released
+// host-only recordGift contract remain source-compatible.
+abstract class FvCohostGiftBackend implements FameverseLiveBackend {
+  Future<void> prepareCohostGiftSession({
+    required String roomId,
+    required String cohostUserId,
+  });
+  Future<void> activateCohostGiftSession({required String roomId});
+  Future<void> renewCohostGiftSession({required String roomId});
+  Future<void> clearCohostGiftSession({required String roomId});
+  Future<int> loadCohostGiftCoins({
+    required String roomId,
+    required String cohostUserId,
+  });
+  Future<FvGiftSendResult> recordGiftToCohost({
+    required String roomId,
+    required String giftId,
+    required int quantity,
+    required String cohostUserId,
+  });
+}
+
+class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
   SupabaseFameverseLiveBackend(this._client);
 
   final SupabaseClient _client;
@@ -932,6 +954,17 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
     return const {};
   }
 
+  FvGiftSendResult _giftResult(dynamic data) {
+    final row = _firstRpcRow(data);
+    if (row.isEmpty) throw Exception('gift-result-missing');
+    return FvGiftSendResult(
+      totalCoinsSent: (row['total_coins_sent'] as num?)?.toInt() ?? 0,
+      giftCount: (row['gift_count'] as num?)?.toInt() ?? 0,
+      level: (row['level'] as num?)?.toInt() ?? 1,
+      walletBalance: (row['wallet_balance'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   @override
   Future<FvGiftSendResult> recordGift({
     required String roomId,
@@ -946,14 +979,73 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
         'p_quantity': quantity,
       },
     );
-    final row = _firstRpcRow(data);
-    if (row.isEmpty) throw Exception('gift-result-missing');
-    return FvGiftSendResult(
-      totalCoinsSent: (row['total_coins_sent'] as num?)?.toInt() ?? 0,
-      giftCount: (row['gift_count'] as num?)?.toInt() ?? 0,
-      level: (row['level'] as num?)?.toInt() ?? 1,
-      walletBalance: (row['wallet_balance'] as num?)?.toInt() ?? 0,
+    return _giftResult(data);
+  }
+
+  @override
+  Future<FvGiftSendResult> recordGiftToCohost({
+    required String roomId,
+    required String giftId,
+    required int quantity,
+    required String cohostUserId,
+  }) async {
+    final data = await _client.rpc(
+      'send_fameverse_gift',
+      params: {
+        'p_room_id': roomId,
+        'p_gift_id': giftId,
+        'p_quantity': quantity,
+        'p_recipient_user_id': cohostUserId,
+      },
     );
+    return _giftResult(data);
+  }
+
+  @override
+  Future<void> prepareCohostGiftSession({
+    required String roomId,
+    required String cohostUserId,
+  }) async {
+    await _client.rpc(
+      'prepare_fameverse_live_cohost',
+      params: {'p_room_id': roomId, 'p_cohost_user_id': cohostUserId},
+    );
+  }
+
+  @override
+  Future<void> activateCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'activate_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<void> renewCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'renew_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<void> clearCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'clear_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<int> loadCohostGiftCoins({
+    required String roomId,
+    required String cohostUserId,
+  }) async {
+    final data = await _client.rpc(
+      'get_fameverse_cohost_gift_coins',
+      params: {'p_room_id': roomId, 'p_cohost_user_id': cohostUserId},
+    );
+    return (data as num?)?.toInt() ?? 0;
   }
 
   @override
@@ -1117,6 +1209,7 @@ class SupabaseFameverseLiveBackend implements FameverseLiveBackend {
         'cohost-accept',
         'cohost-decline',
         'cohost-active',
+        'cohost-gift-ready',
         'cohost-source-left',
         'cohost-ended',
         // Temporary profile-photo fallback while a lens is switching.

@@ -44,6 +44,7 @@ class NativeHostV2Stage extends StatelessWidget {
     required this.activeCohostUserId,
     this.hostCameraTransitioning = false,
     this.cohostCameraTransitioning = false,
+    this.cohostGiftCoins,
     super.key,
   });
 
@@ -52,6 +53,7 @@ class NativeHostV2Stage extends StatelessWidget {
   final String? activeCohostUserId;
   final bool hostCameraTransitioning;
   final bool cohostCameraTransitioning;
+  final int? cohostGiftCoins;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +84,7 @@ class NativeHostV2Stage extends StatelessWidget {
               }
 
               return _V2CohostStage(
+                cohostGiftCoins: cohostGiftCoins,
                 left: _V2ParticipantSurface(
                   call: call,
                   participant: host,
@@ -113,6 +116,7 @@ class NativeViewerV2Stage extends StatelessWidget {
     required this.activeCohostUserId,
     this.hostCameraTransitioning = false,
     this.cohostCameraTransitioning = false,
+    this.cohostGiftCoins,
     super.key,
   });
 
@@ -121,6 +125,7 @@ class NativeViewerV2Stage extends StatelessWidget {
   final String? activeCohostUserId;
   final bool hostCameraTransitioning;
   final bool cohostCameraTransitioning;
+  final int? cohostGiftCoins;
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +155,7 @@ class NativeViewerV2Stage extends StatelessWidget {
               }
 
               return _V2CohostStage(
+                cohostGiftCoins: cohostGiftCoins,
                 left: _V2ParticipantSurface(
                   call: call,
                   participant: host,
@@ -174,10 +180,15 @@ class NativeViewerV2Stage extends StatelessWidget {
 }
 
 class _V2CohostStage extends StatelessWidget {
-  const _V2CohostStage({required this.left, required this.right});
+  const _V2CohostStage({
+    required this.left,
+    required this.right,
+    this.cohostGiftCoins,
+  });
 
   final Widget left;
   final Widget right;
+  final int? cohostGiftCoins;
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +220,46 @@ class _V2CohostStage extends StatelessWidget {
                       aspectRatio: 1,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: right,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Positioned.fill(
+                              key: const Key('cohost-right-camera'),
+                              child: right,
+                            ),
+                            if (cohostGiftCoins != null)
+                              Positioned(
+                                right: 8,
+                                bottom: 8,
+                                child: IgnorePointer(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.diamond_rounded,
+                                        color: Color(0xFFAD73FF),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        '$cohostGiftCoins',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFD9C4FF),
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 5,
+                                              color: Colors.black,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

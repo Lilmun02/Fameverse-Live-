@@ -59,6 +59,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   StreamSubscription<CallState>? _callStateSubscription;
   Timer? _tapFlushTimer;
   Timer? _giftTimer;
+  Timer? _cohostGiftRefreshTimer;
+  Timer? _cohostGiftLeaseTimer;
   FvGiftPlayback? _giftPlayback;
   bool _connecting = true;
   bool _leaving = false;
@@ -70,11 +72,13 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
   bool _cohostCameraEnabled = true;
   bool _cohostFlipBusy = false;
   bool _cohostMicEnabled = true;
+  bool _cohostGiftLeaseRenewing = false;
   int _walletBalance = 0;
   int _gifterLevel = 1;
   int _fameTaps = 0;
   int _localTapCount = 0;
   int _giftSerial = 0;
+  int? _cohostGiftCoins;
   String? _accountRole;
   String? _selfCohostState;
   String? _activeCohostUserId;
@@ -292,6 +296,61 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         completionMessage: quantity > 1 ? receipt : null,
       ),
     );
+    _scheduleCohostGiftRefresh();
+  }
+
+  void _scheduleCohostGiftRefresh() {
+    if (_activeCohostUserId == null) return;
+    _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftRefreshTimer = Timer(
+      const Duration(milliseconds: 400),
+      () => unawaited(_refreshCohostGiftCoins()),
+    );
+  }
+
+  Future<void> _refreshCohostGiftCoins() async {
+    final userId = _activeCohostUserId;
+    final backend = widget.liveBackend;
+    if (userId == null || backend is! FvCohostGiftBackend) return;
+    try {
+      final coins = await backend.loadCohostGiftCoins(
+        roomId: widget.room.id,
+        cohostUserId: userId,
+      );
+      if (mounted && _activeCohostUserId == userId) {
+        setState(() => _cohostGiftCoins = coins);
+      }
+    } catch (_) {
+      // Never display a guessed total when the authoritative RPC fails.
+    }
+  }
+
+  void _startCohostGiftLease() {
+    _cohostGiftLeaseTimer?.cancel();
+    _cohostGiftLeaseTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => unawaited(_renewCohostGiftLease()),
+    );
+  }
+
+  Future<void> _renewCohostGiftLease() async {
+    if (!mounted ||
+        _cohostGiftLeaseRenewing ||
+        !_selfIsCohost ||
+        _selfCohostState != 'active') {
+      return;
+    }
+    final backend = widget.liveBackend;
+    if (backend is! FvCohostGiftBackend) return;
+    _cohostGiftLeaseRenewing = true;
+    try {
+      await backend.renewCohostGiftSession(roomId: widget.room.id);
+    } catch (_) {
+      // Server-side lease expires after 60 seconds if this client cannot
+      // confirm its active co-host session. Never extend credit in the UI.
+    } finally {
+      _cohostGiftLeaseRenewing = false;
+    }
   }
 
   void _enqueueGift(FvGiftPlayback playback) {
@@ -383,7 +442,11 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
   }
 
-  Future<bool> _sendGift(FvGiftDefinition gift, int quantity) async {
+  Future<bool> _sendGift(
+    FvGiftDefinition gift,
+    int quantity, {
+    String? recipientUserId,
+  }) async {
     if (_giftSending) return false;
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_walletReady) {
@@ -398,6 +461,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       _showMessage('Gift amount must be between 1 and 100,000.');
       return false;
     }
+    if (recipientUserId != null &&
+        (recipientUserId != _activeCohostUserId ||
+            recipientUserId == widget.identity.id)) {
+      _showMessage('That co-host is not available to receive gifts.');
+      return false;
+    }
     final total = gift.cost * quantity;
     if (_walletBalance < total) {
       _showMessage(
@@ -409,11 +478,24 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
     setState(() => _giftSending = true);
     try {
-      final result = await widget.liveBackend.recordGift(
-        roomId: widget.room.id,
-        giftId: gift.id,
-        quantity: quantity,
-      );
+      final backend = widget.liveBackend;
+      late final FvGiftSendResult result;
+      if (recipientUserId == null) {
+        result = await backend.recordGift(
+          roomId: widget.room.id,
+          giftId: gift.id,
+          quantity: quantity,
+        );
+      } else if (backend is FvCohostGiftBackend) {
+        result = await backend.recordGiftToCohost(
+          roomId: widget.room.id,
+          giftId: gift.id,
+          quantity: quantity,
+          cohostUserId: recipientUserId,
+        );
+      } else {
+        throw StateError('Co-host gifting is unavailable.');
+      }
       final eventId = 'gift-${DateTime.now().microsecondsSinceEpoch}';
       // This receipt is presented locally; do not replay its own echo.
       _giftEventGate.shouldRender(eventId);
@@ -452,7 +534,9 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         'giftId': gift.id,
         'quantity': quantity,
         'totalCoins': total,
+        'recipientId': recipientUserId ?? widget.room.hostUserId,
       });
+      _scheduleCohostGiftRefresh();
       return true;
     } catch (error) {
       final text = error.toString().toLowerCase();
@@ -515,21 +599,63 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
 
   void _showGiftTray() {
     FocusManager.instance.primaryFocus?.unfocus();
+    // The recipient selector lives inside the gift tray, never over Live.
+    final cohostId = _activeCohostUserId == widget.identity.id
+        ? null
+        : _activeCohostUserId;
+    String? recipientId;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF140D1B),
-      builder: (sheetContext) => NativeGiftTray(
-        coins: _walletBalance,
-        canRefill: _canRefill,
-        onSend: _sendGift,
-        onRefill: _refillWallet,
-        onBuyCoins: () {
-          Navigator.of(sheetContext).pop();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) unawaited(_openCoinStore());
-          });
-        },
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => NativeGiftTray(
+          coins: _walletBalance,
+          canRefill: _canRefill,
+          recipientSelector: cohostId == null
+              ? null
+              : Row(
+                  children: [
+                    const Text('Gift to'),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      key: const Key('gift-recipient-host'),
+                      onPressed: () => setSheetState(() => recipientId = null),
+                      child: Text(
+                        'Host',
+                        style: TextStyle(
+                          color: recipientId == null
+                              ? const Color(0xFFAD73FF)
+                              : Colors.white70,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('gift-recipient-cohost'),
+                      onPressed: () {
+                        setSheetState(() => recipientId = cohostId);
+                      },
+                      child: Text(
+                        'Co-host',
+                        style: TextStyle(
+                          color: recipientId == cohostId
+                              ? const Color(0xFFAD73FF)
+                              : Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+          onSend: (gift, quantity) =>
+              _sendGift(gift, quantity, recipientUserId: recipientId),
+          onRefill: _refillWallet,
+          onBuyCoins: () {
+            Navigator.of(sheetContext).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) unawaited(_openCoinStore());
+            });
+          },
+        ),
       ),
     ).then((_) {
       if (mounted) setState(() {});
@@ -659,13 +785,26 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     }
 
     if (event == 'cohost-active') {
-      if (mounted) setState(() => _activeCohostUserId = viewerId);
+      if (mounted) {
+        setState(() {
+          _activeCohostUserId = viewerId;
+          _cohostGiftCoins = null;
+        });
+      }
       if (viewerId == widget.identity.id) await _activateSelfCohost();
+      _scheduleCohostGiftRefresh();
+      return;
+    }
+    if (event == 'cohost-gift-ready') {
+      if (viewerId == _activeCohostUserId) _scheduleCohostGiftRefresh();
       return;
     }
     if (event == 'cohost-ended') {
       if (_activeCohostUserId == viewerId && mounted) {
-        setState(() => _activeCohostUserId = null);
+        setState(() {
+          _activeCohostUserId = null;
+          _cohostGiftCoins = null;
+        });
       }
       if (viewerId == widget.identity.id) {
         await _deactivateSelfCohost(notify: false);
@@ -787,21 +926,37 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         await call.setCameraEnabled(enabled: true),
         'Could not enable co-host camera',
       );
+      final gifting = widget.liveBackend;
+      if (gifting is! FvCohostGiftBackend) {
+        throw StateError('Co-host gift authorization unavailable');
+      }
+      await gifting.activateCohostGiftSession(roomId: widget.room.id);
+      await _activity?.send('cohost-gift-ready', {
+        'viewerId': widget.identity.id,
+        'userId': widget.identity.id,
+      });
+      _scheduleCohostGiftRefresh();
       if (mounted) {
         setState(() {
           _selfCohostState = 'active';
           _cohostCameraEnabled = true;
           _cohostMicEnabled = true;
         });
+        _startCohostGiftLease();
       }
     } catch (_) {
+      await _deactivateSelfCohost();
       if (mounted) {
-        _showMessage('Co-host camera or microphone could not start.');
+        _showMessage(
+          'Co-host activation failed. Gift routing was not enabled.',
+        );
       }
     }
   }
 
   Future<void> _deactivateSelfCohost({bool notify = true}) async {
+    _cohostGiftLeaseTimer?.cancel();
+    _cohostGiftLeaseTimer = null;
     final call = _call;
     if (call != null) {
       try {
@@ -813,6 +968,12 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         await call
             .setMicrophoneEnabled(enabled: false)
             .timeout(const Duration(milliseconds: 900));
+      } catch (_) {}
+    }
+    final gifting = widget.liveBackend;
+    if (gifting is FvCohostGiftBackend) {
+      try {
+        await gifting.clearCohostGiftSession(roomId: widget.room.id);
       } catch (_) {}
     }
     if (notify) {
@@ -830,6 +991,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
         _selfCohostState = null;
         if (_activeCohostUserId == widget.identity.id) {
           _activeCohostUserId = null;
+          _cohostGiftCoins = null;
         }
       });
     }
@@ -1218,6 +1380,23 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     await _connectFinished.future;
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftLeaseTimer?.cancel();
+    _cohostGiftLeaseTimer = null;
+    // Revoke gift attribution before leaving media. If the network is gone,
+    // the server's 60-second lease remains the fail-closed fallback.
+    if (_selfIsCohost) {
+      final gifting = widget.liveBackend;
+      if (gifting is FvCohostGiftBackend) {
+        try {
+          await gifting
+              .clearCohostGiftSession(roomId: widget.room.id)
+              .timeout(const Duration(milliseconds: 800));
+        } catch (_) {
+          // Leave cannot be held hostage by a disconnected gift backend.
+        }
+      }
+    }
     await _callStateSubscription?.cancel();
     _callStateSubscription = null;
     final activity = _activity;
@@ -1250,6 +1429,8 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     _comment.dispose();
     _tapFlushTimer?.cancel();
     _giftTimer?.cancel();
+    _cohostGiftRefreshTimer?.cancel();
+    _cohostGiftLeaseTimer?.cancel();
     for (final timer in _cameraFallbackTimers.values) {
       timer.cancel();
     }
@@ -1287,6 +1468,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
                   call: call,
                   hostUserId: widget.room.hostUserId,
                   activeCohostUserId: _activeCohostUserId,
+                  cohostGiftCoins: _cohostGiftCoins,
                   hostCameraTransitioning: _cameraFallbackUsers.contains(
                     widget.room.hostUserId,
                   ),
