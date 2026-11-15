@@ -715,7 +715,7 @@ abstract class FameverseLiveBackend {
 
 // Co-host gift support is additive. Existing fake backends and the released
 // host-only recordGift contract remain source-compatible.
-abstract class FvCohostGiftBackend {
+abstract class FvCohostGiftBackend implements FameverseLiveBackend {
   Future<void> prepareCohostGiftSession({
     required String roomId,
     required String cohostUserId,
@@ -734,8 +734,7 @@ abstract class FvCohostGiftBackend {
   });
 }
 
-class SupabaseFameverseLiveBackend
-    implements FameverseLiveBackend, FvCohostGiftBackend {
+class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
   SupabaseFameverseLiveBackend(this._client);
 
   final SupabaseClient _client;
