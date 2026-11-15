@@ -29,8 +29,10 @@ class NativeCameraScreen extends StatefulWidget {
 class _NativeCameraScreenState extends State<NativeCameraScreen> {
   final TextEditingController _title = TextEditingController();
   final TextEditingController _goal = TextEditingController();
-  final Set<String> _wishlist = <String>{};
   CameraController? _permissionProbe;
+  CameraController? _previewController;
+  Future<void>? _previewInitialization;
+  String? _previewError;
   bool _loadingDraft = true;
   bool _liveBusy = false;
   String? _error;
@@ -48,6 +50,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     final controller = _permissionProbe;
     _permissionProbe = null;
     if (controller != null) unawaited(controller.dispose());
+    final preview = _previewController;
+    _previewController = null;
+    if (preview != null) unawaited(preview.dispose());
     super.dispose();
   }
 
@@ -57,14 +62,26 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       if (!mounted) return;
       _title.text = draft.title;
       _goal.text = draft.goal;
-      _wishlist
-        ..clear()
-        ..addAll(draft.wishlistGiftIds);
     } catch (_) {
       // Draft recovery never blocks Live setup.
     } finally {
       if (mounted) setState(() => _loadingDraft = false);
     }
+  }
+
+  Future<void> _resetLiveSetupAfterEnd() async {
+    try {
+      await widget.liveBackend.saveLiveDraft(
+        userId: widget.identity.id,
+        draft: FvLiveDraft.empty,
+      );
+    } catch (_) {
+      // The creator must still be able to leave the ended Live cleanly.
+    }
+    if (!mounted) return;
+    _title.clear();
+    _goal.clear();
+    setState(() => _error = null);
   }
 
   Future<void> _verifyCameraAccess() async {
@@ -82,12 +99,110 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     final controller = CameraController(
       selected,
       ResolutionPreset.high,
-      enableAudio: false,
+      enableAudio: true,
     );
     _permissionProbe = controller;
     await controller.initialize();
     _permissionProbe = null;
     await controller.dispose();
+  }
+
+  // Preview is opt-in: the Live tab lives inside an IndexedStack, so camera
+  // permission must never be requested simply because the app has launched.
+  Future<void> _startPreview() async {
+    if (_liveBusy || _previewController?.value.isInitialized == true) return;
+    final pending = _previewInitialization;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final task = _initializePreview();
+    _previewInitialization = task;
+    try {
+      await task;
+    } finally {
+      _previewInitialization = null;
+    }
+  }
+
+  Future<void> _initializePreview() async {
+    CameraController? controller;
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) throw StateError('no-camera-available');
+      var selected = cameras.first;
+      for (final camera in cameras) {
+        if (camera.lensDirection == CameraLensDirection.front) {
+          selected = camera;
+          break;
+        }
+      }
+      controller = CameraController(
+        selected,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+      _previewController = controller;
+      await controller.initialize();
+      if (!mounted || _liveBusy) {
+        _previewController = null;
+        await controller.dispose();
+        return;
+      }
+      setState(() => _previewError = null);
+    } catch (_) {
+      if (_previewController == controller) _previewController = null;
+      if (controller != null) {
+        try {
+          await controller.dispose();
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(
+          () => _previewError =
+              'Camera preview is unavailable. Check camera permission.',
+        );
+      }
+    }
+  }
+
+  Future<void> _stopPreview() async {
+    try {
+      await _previewInitialization;
+    } catch (_) {}
+    final controller = _previewController;
+    _previewController = null;
+    if (controller != null) await controller.dispose();
+    if (mounted) setState(() {});
+  }
+
+  Future<bool> _confirmGoLive() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Go live now?'),
+        content: const Text(
+          'Fameverse will turn on your camera and microphone and open this room to viewers.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('cancel-go-live-confirmation'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Not yet'),
+          ),
+          FilledButton(
+            key: const Key('confirm-go-live'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF315F),
+            ),
+            child: const Text('Go Live'),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
   }
 
   Future<void> _goLive() async {
@@ -96,6 +211,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       setState(() => _error = 'Add a live title before you go live.');
       return;
     }
+
+    final confirmed = await _confirmGoLive();
+    if (!confirmed || !mounted) return;
 
     setState(() {
       _liveBusy = true;
@@ -107,13 +225,16 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       final draft = FvLiveDraft(
         title: _title.text,
         goal: _goal.text,
-        wishlistGiftIds: _wishlist.toList(),
+        wishlistGiftIds: const [],
       );
       await widget.liveBackend.saveLiveDraft(
         userId: widget.identity.id,
         draft: draft,
       );
 
+      // Release the preview before Stream Video acquires the camera.
+      await _stopPreview();
+      // Request/check both camera and microphone before any Live room is opened.
       await _verifyCameraAccess();
 
       room = await widget.liveBackend.startLiveRoom(
@@ -121,13 +242,21 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         profile: widget.profile,
         title: _title.text,
         goal: _goal.text,
-        wishlistGiftIds: _wishlist.toList(),
+        wishlistGiftIds: const [],
       );
       final credentials = await widget.liveBackend.issueLiveCredentials(
         roomId: room.id,
         role: 'host',
       );
-      if (!mounted) return;
+      if (!mounted) {
+        // The room was created, but navigation never opened. Close it
+        // immediately instead of leaving a ghost Live room in discovery.
+        await widget.liveBackend.endLiveRoom(
+          roomId: room.id,
+          hostUserId: widget.identity.id,
+        );
+        return;
+      }
 
       final ended = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
@@ -142,6 +271,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       );
       if (!mounted) return;
 
+      if (ended == true) {
+        await _resetLiveSetupAfterEnd();
+      }
       await widget.onLiveEnded();
       if (ended == true && mounted) {
         await _showLastLiveSummary();
@@ -163,7 +295,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
           _error = 'Stream Video server credentials are not configured.';
         } else if (text.contains('permission') || text.contains('denied')) {
           _error =
-              'Camera permission is off. Allow camera access in iPhone Settings.';
+              'Camera or microphone permission is off. Allow access in iPhone Settings.';
         } else if (text.contains('no-camera')) {
           _error = 'No camera was found on this device.';
         } else {
@@ -247,6 +379,46 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                     ),
                     const SizedBox(height: 24),
                     Container(
+                      key: const Key('native-live-camera-preview'),
+                      height: 208,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFF654580)),
+                      ),
+                      child: _previewController?.value.isInitialized == true
+                          ? CameraPreview(_previewController!)
+                          : const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.videocam_off_outlined, size: 32),
+                                  SizedBox(height: 8),
+                                  Text('Camera preview is off'),
+                                ],
+                              ),
+                            ),
+                    ),
+                    if (_previewController?.value.isInitialized != true)
+                      TextButton.icon(
+                        key: const Key('native-enable-camera-preview'),
+                        onPressed: _liveBusy
+                            ? null
+                            : () => unawaited(_startPreview()),
+                        icon: const Icon(Icons.camera_front_rounded),
+                        label: const Text('Preview camera'),
+                      ),
+                    if (_previewError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _previewError!,
+                          style: const TextStyle(color: Color(0xFFFFCFDF)),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: const Color(0xFF17101F),
@@ -306,97 +478,6 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                         hintText: 'Example: 1,000 likes or 20 gifts',
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const Text(
-                          'Wishlist gifts',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Optional · ${_wishlist.length} selected',
-                          style: const TextStyle(
-                            color: Color(0xFFBBA9C6),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Pick only gifts that actually exist in Fameverse.',
-                      style: TextStyle(color: Color(0xFF958A9E), fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-                    ...fvGiftCatalog.map((gift) {
-                      final selected = _wishlist.contains(gift.id);
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () => setState(() {
-                            if (selected) {
-                              _wishlist.remove(gift.id);
-                            } else {
-                              _wishlist.add(gift.id);
-                            }
-                          }),
-                          child: Container(
-                            padding: const EdgeInsets.all(13),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? const Color(0xFF322047)
-                                  : const Color(0xFF17101F),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: selected
-                                    ? const Color(0xFF9D55FF)
-                                    : Colors.white10,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  gift.symbol,
-                                  style: const TextStyle(fontSize: 26),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        gift.label,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${gift.cost} coin${gift.cost == 1 ? '' : 's'}',
-                                        style: const TextStyle(
-                                          color: Color(0xFFACA1B4),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  selected
-                                      ? Icons.check_circle
-                                      : Icons.add_circle_outline,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
                     if (_error != null) ...[
                       const SizedBox(height: 12),
                       Container(
@@ -414,7 +495,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                     ],
                     const SizedBox(height: 18),
                     const Text(
-                      'Camera and microphone permission is requested only after you tap Go Live.',
+                      'Camera and microphone permission is checked before your room opens. You will also confirm before Fameverse starts the broadcast.',
                       style: TextStyle(color: Color(0xFF9D92A6), fontSize: 11),
                     ),
                     const SizedBox(height: 12),

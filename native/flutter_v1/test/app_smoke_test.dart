@@ -27,8 +27,22 @@ void main() {
       ),
     );
     await _continuePastStartupGate(tester);
+    final restrictedBrowse = find.byKey(const Key('build47-limited-browsing'));
+    if (find
+        .byKey(const Key('build47-startup-policy-gate'))
+        .evaluate()
+        .isNotEmpty) {
+      await tester.scrollUntilVisible(
+        restrictedBrowse,
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(restrictedBrowse);
+      await tester.pumpAndSettle();
+    }
 
-    expect(find.byKey(const Key('native-product-wordmark')), findsOneWidget);
+    expect(find.byKey(const Key('build23-home')), findsOneWidget);
     expect(find.byKey(const Key('fameverse-bottom-nav')), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Discover'), findsOneWidget);
@@ -42,17 +56,17 @@ void main() {
 }
 
 Future<void> _continuePastStartupGate(WidgetTester tester) async {
-  for (var attempt = 0; attempt < 14; attempt++) {
-    await tester.pump(const Duration(milliseconds: 500));
-    final continueButton = find.text('Continue to App');
-    if (continueButton.evaluate().isNotEmpty) {
-      await tester.tap(continueButton);
+  expect(find.byKey(FameverseApp.splashKey), findsOneWidget);
+
+  for (var attempt = 0; attempt < 12; attempt++) {
+    await tester.pump(const Duration(milliseconds: 250));
+    if (find.byKey(FameverseApp.splashKey).evaluate().isEmpty) {
       await tester.pumpAndSettle();
       return;
     }
   }
 
-  fail('Fameverse startup gate did not become ready within the test window.');
+  fail('Fameverse brand splash did not finish within the test window.');
 }
 
 class _FakeBackend implements FameverseBackend {
