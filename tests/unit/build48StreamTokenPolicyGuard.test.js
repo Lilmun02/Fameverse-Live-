@@ -30,7 +30,8 @@ describe('Build 48 Stream token host policy fail-closed contract', () => {
     expect(hostGuard).not.toContain('if (status &&')
   })
 
-  it('requires backend-authorized access and preserves the 7+3-day server window', () => {
+  it('requires accepted backend authorization and never grants unsigned host tokens', () => {
+    expect(hostGuard).toContain('status.decision !== "accepted"')
     expect(hostGuard).toContain('status.can_use_restricted !== true')
     expect(hostGuard).toContain('{ p_policy_version: "2026-10" }')
     expect(hostGuard).not.toContain('Date.now()')
