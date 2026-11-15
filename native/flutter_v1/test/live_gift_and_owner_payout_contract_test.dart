@@ -121,13 +121,15 @@ void main() {
 
         expect(tray, contains('for (var attempt = 0; attempt < 2; attempt++)'));
         expect(tray, contains("timeout(const Duration(seconds: 10))"));
+        // No legacy framed loading subtitles or emoji stand-ins.
         expect(
           tray,
-          contains('Preparing the original premium gift animation.'),
+          isNot(contains('Preparing the original premium gift animation.')),
         );
-        expect(tray, contains('will not replace its animation with an emoji'));
+        expect(tray, isNot(contains('will not replace its animation with an emoji')));
         expect(tray, contains('cinematic-gift-media-failed-'));
         expect(tray, contains('cinematic-gift-media-loading-'));
+        expect(tray, contains('child: VideoPlayer(controller)'));
       },
     );
 
