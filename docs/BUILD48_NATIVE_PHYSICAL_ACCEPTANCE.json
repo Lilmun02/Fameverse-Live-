@@ -1,0 +1,82 @@
+{
+  "build": 48,
+  "status": "pending",
+  "tested_commit": null,
+  "fingerprint": null,
+  "artifacts": {
+    "ios": {
+      "build_id": null,
+      "source_commit": null
+    },
+    "android": {
+      "build_id": null,
+      "source_commit": null
+    }
+  },
+  "owner_iphone": {
+    "status": "pending",
+    "device_model": null,
+    "os_version": null,
+    "build_id": null,
+    "source_commit": null,
+    "tested_at": null,
+    "evidence_ref": null,
+    "session_minutes": null,
+    "battery_start_percent": null,
+    "battery_end_percent": null,
+    "thermal_observation": null,
+    "checks": {
+      "live_video_audio_stable": false,
+      "cohost_invite_accept_and_leave": false,
+      "camera_switch_and_mic": false,
+      "gifts_play_once_with_audio": false,
+      "background_and_foreground_recovery": false,
+      "tap_chat_and_feed_responsive": false,
+      "battery_and_thermal_review": false
+    }
+  },
+  "external_tester_iphone": {
+    "status": "pending",
+    "device_model": null,
+    "os_version": null,
+    "build_id": null,
+    "source_commit": null,
+    "tested_at": null,
+    "evidence_ref": null,
+    "session_minutes": null,
+    "battery_start_percent": null,
+    "battery_end_percent": null,
+    "thermal_observation": null,
+    "checks": {
+      "live_video_audio_stable": false,
+      "cohost_invite_accept_and_leave": false,
+      "camera_switch_and_mic": false,
+      "gifts_play_once_with_audio": false,
+      "background_and_foreground_recovery": false,
+      "tap_chat_and_feed_responsive": false,
+      "battery_and_thermal_review": false
+    }
+  },
+  "android_tester": {
+    "status": "pending",
+    "device_model": null,
+    "os_version": null,
+    "build_id": null,
+    "source_commit": null,
+    "tested_at": null,
+    "evidence_ref": null,
+    "session_minutes": null,
+    "battery_start_percent": null,
+    "battery_end_percent": null,
+    "thermal_observation": null,
+    "checks": {
+      "live_video_audio_stable": false,
+      "cohost_invite_accept_and_leave": false,
+      "camera_switch_and_mic": false,
+      "gifts_play_once_with_audio": false,
+      "background_and_foreground_recovery": false,
+      "tap_chat_and_feed_responsive": false,
+      "battery_and_thermal_review": false
+    }
+  }
+}
