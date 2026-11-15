@@ -311,7 +311,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final backend = widget.liveBackend;
     if (userId == null || backend is! FvCohostGiftBackend) return;
     try {
-      final coins = await (backend as FvCohostGiftBackend).loadCohostGiftCoins(
+      final coins = await backend.loadCohostGiftCoins(
         roomId: widget.room.id,
         cohostUserId: userId,
       );
@@ -457,7 +457,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
           quantity: quantity,
         );
       } else if (backend is FvCohostGiftBackend) {
-        result = await (backend as FvCohostGiftBackend).recordGiftToCohost(
+        result = await backend.recordGiftToCohost(
           roomId: widget.room.id,
           giftId: gift.id,
           quantity: quantity,
@@ -903,7 +903,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
       if (gifting is! FvCohostGiftBackend) {
         throw StateError('Co-host gift authorization unavailable');
       }
-      await (gifting as FvCohostGiftBackend).activateCohostGiftSession(
+      await gifting.activateCohostGiftSession(
         roomId: widget.room.id,
       );
       await _activity?.send('cohost-gift-ready', {
@@ -945,7 +945,7 @@ class _NativeViewerLiveScreenState extends State<NativeViewerLiveScreen> {
     final gifting = widget.liveBackend;
     if (gifting is FvCohostGiftBackend) {
       try {
-        await (gifting as FvCohostGiftBackend).clearCohostGiftSession(
+        await gifting.clearCohostGiftSession(
           roomId: widget.room.id,
         );
       } catch (_) {}
