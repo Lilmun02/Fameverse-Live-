@@ -55,7 +55,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
   Timer? _tapRefresh;
   Timer? _giftTimer;
   Timer? _cohostGiftRefreshTimer;
-  Timer? _cohostInviteTimeout;
   FvGiftPlayback? _giftPlayback;
 
   bool _connecting = true;
@@ -536,8 +535,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
       case 'cohost-invite-declined':
       case 'cohost-invite-cancelled':
         if (_pendingInviteUserId == viewerId && mounted) {
-          _cohostInviteTimeout?.cancel();
-          _cohostInviteTimeout = null;
           setState(() => _pendingInviteUserId = null);
         }
         break;
@@ -562,33 +559,14 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         participant.isLocal) {
       return;
     }
-    if (!mounted) return;
     setState(() => _pendingInviteUserId = participant.userId);
-    _cohostInviteTimeout?.cancel();
-    _cohostInviteTimeout = Timer(const Duration(seconds: 45), () {
-      if (mounted && _pendingInviteUserId == participant.userId) {
-        unawaited(_cancelInvite());
-      }
+    await activity.send('cohost-invite', <String, dynamic>{
+      'inviteId': 'invite-${DateTime.now().microsecondsSinceEpoch}',
+      'viewerId': participant.userId,
+      'userId': participant.userId,
+      'displayName': participant.name,
     });
-    try {
-      await activity.send('cohost-invite', <String, dynamic>{
-        'inviteId': 'invite-${DateTime.now().microsecondsSinceEpoch}',
-        'viewerId': participant.userId,
-        'userId': participant.userId,
-        'displayName': participant.name,
-      });
-      if (mounted && _pendingInviteUserId == participant.userId) {
-        _showMessage('Co-host invite sent to ${participant.name}.');
-      }
-    } catch (_) {
-      _cohostInviteTimeout?.cancel();
-      _cohostInviteTimeout = null;
-      if (!mounted) return;
-      if (_pendingInviteUserId == participant.userId) {
-        setState(() => _pendingInviteUserId = null);
-      }
-      _showMessage('Co-host invite failed to send. Try again.');
-    }
+    if (mounted) _showMessage('Co-host invite sent to ${participant.name}.');
   }
 
   Future<void> _acceptCohostRequest(Map<String, dynamic> request) async {
@@ -668,8 +646,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
           _cohostGiftCoins = null;
           _pendingInviteUserId = null;
         });
-        _cohostInviteTimeout?.cancel();
-        _cohostInviteTimeout = null;
         _scheduleCohostGiftRefresh();
       }
     } catch (_) {
@@ -735,20 +711,13 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
 
   Future<void> _cancelInvite() async {
     final userId = _pendingInviteUserId;
-    _cohostInviteTimeout?.cancel();
-    _cohostInviteTimeout = null;
-    if (userId == null) return;
-    if (mounted) setState(() => _pendingInviteUserId = null);
     final activity = _activity;
-    if (activity == null) return;
-    try {
-      await activity.send('cohost-invite-cancelled', <String, dynamic>{
-        'viewerId': userId,
-        'userId': userId,
-      });
-    } catch (_) {
-      if (mounted) _showMessage('Invite cleared locally. Reconnect to retry.');
-    }
+    if (userId == null || activity == null) return;
+    await activity.send('cohost-invite-cancelled', <String, dynamic>{
+      'viewerId': userId,
+      'userId': userId,
+    });
+    if (mounted) setState(() => _pendingInviteUserId = null);
   }
 
   Future<void> _shareLive() async {
@@ -778,7 +747,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
     _cohostGiftRefreshTimer?.cancel();
-    _cohostInviteTimeout?.cancel();
     final activity = _activity;
     _activity = null;
     if (activity != null) {
@@ -1176,7 +1144,6 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
     _tapRefresh?.cancel();
     _giftTimer?.cancel();
     _cohostGiftRefreshTimer?.cancel();
-    _cohostInviteTimeout?.cancel();
     for (final timer in _cameraFallbackTimers.values) {
       timer.cancel();
     }
