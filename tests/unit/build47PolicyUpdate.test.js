@@ -30,7 +30,7 @@ describe('Build 47 policy update source safety contract', () => {
 
   it('requires deliberate consent and offers full terms and restricted browsing', () => {
     expect(consent).toContain("Key('build47-policy-checkbox')")
-    expect(consent).toContain('_readAndAgree && !widget.busy')
+    expect(consent).toMatch(/_readAndAgree\s*&&\s*!widget\.busy\s*&&\s*!widget\.access\.requiresSupport\s*&&\s*widget\.access\.verifiedForAccount/)
     expect(consent).toContain("Key('build47-read-full-policy')")
     expect(consent).toContain('FameversePolicyScreen()')
     expect(consent).toContain("Key('build47-accept-policy')")
