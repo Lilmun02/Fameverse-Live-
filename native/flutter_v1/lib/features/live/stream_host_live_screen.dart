@@ -559,14 +559,25 @@ class _NativeHostLiveScreenState extends State<NativeHostLiveScreen> {
         participant.isLocal) {
       return;
     }
+    if (!mounted) return;
     setState(() => _pendingInviteUserId = participant.userId);
-    await activity.send('cohost-invite', <String, dynamic>{
-      'inviteId': 'invite-${DateTime.now().microsecondsSinceEpoch}',
-      'viewerId': participant.userId,
-      'userId': participant.userId,
-      'displayName': participant.name,
-    });
-    if (mounted) _showMessage('Co-host invite sent to ${participant.name}.');
+    try {
+      await activity.send('cohost-invite', <String, dynamic>{
+        'inviteId': 'invite-${DateTime.now().microsecondsSinceEpoch}',
+        'viewerId': participant.userId,
+        'userId': participant.userId,
+        'displayName': participant.name,
+      });
+      if (mounted && _pendingInviteUserId == participant.userId) {
+        _showMessage('Co-host invite sent to ${participant.name}.');
+      }
+    } catch (_) {
+      if (!mounted) return;
+      if (_pendingInviteUserId == participant.userId) {
+        setState(() => _pendingInviteUserId = null);
+      }
+      _showMessage('Co-host invite failed to send. Try again.');
+    }
   }
 
   Future<void> _acceptCohostRequest(Map<String, dynamic> request) async {
