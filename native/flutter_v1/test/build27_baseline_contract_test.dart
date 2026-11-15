@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Build 27 baseline contract', () {
-    test('owner control center stays wired to authoritative identity', () {
+    test('owner opens personal Creator Studio with authoritative identity', () {
       final shell = File(
         'lib/features/shell/fameverse_shell_build23.dart',
       ).readAsStringSync();
@@ -13,7 +13,9 @@ void main() {
       ).readAsStringSync();
 
       expect(shell, contains('get_my_fameverse_identity'));
-      expect(shell, contains('Build23OwnerControlCenterScreen'));
+      expect(shell, contains('Future<void> _openCreatorStudio('));
+      expect(shell, contains('_openPersonalCreatorStudio(currentProfile);'));
+      expect(shell, isNot(contains('Build23OwnerControlCenterScreen(')));
       expect(profile, contains('Owner Studio'));
     });
 
@@ -36,13 +38,15 @@ void main() {
       );
     });
 
-    test('host Live keeps the visible End control', () {
+    test('host Live End control preserves confirmation', () {
       final host = File(
         'lib/features/live/stream_host_live_screen.dart',
       ).readAsStringSync();
 
       expect(host, contains("Key('native-end-live')"));
-      expect(host, contains('onPressed: _ending ? null : _endLive'));
+      expect(host, contains(': _confirmEndLive,'));
+      expect(host, contains('Future<void> _confirmEndLive() async'));
+      expect(host, isNot(contains('onPressed: _ending ? null : _endLive')));
       expect(host, contains("Text(_ending ? 'Ending…' : 'End')"));
     });
 

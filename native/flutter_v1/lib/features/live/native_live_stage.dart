@@ -42,12 +42,16 @@ class NativeHostV2Stage extends StatelessWidget {
     required this.call,
     required this.cameraEnabled,
     required this.activeCohostUserId,
+    this.hostCameraTransitioning = false,
+    this.cohostCameraTransitioning = false,
     super.key,
   });
 
   final Call call;
   final bool cameraEnabled;
   final String? activeCohostUserId;
+  final bool hostCameraTransitioning;
+  final bool cohostCameraTransitioning;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +77,7 @@ class NativeHostV2Stage extends StatelessWidget {
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
                   label: host?.name.isNotEmpty == true ? host!.name : 'Host',
+                  transitioning: hostCameraTransitioning,
                 );
               }
 
@@ -83,6 +88,7 @@ class NativeHostV2Stage extends StatelessWidget {
                   videoEnabled:
                       cameraEnabled && (host?.isVideoEnabled ?? false),
                   label: 'Host',
+                  transitioning: hostCameraTransitioning,
                 ),
                 right: _V2ParticipantSurface(
                   call: call,
@@ -91,6 +97,7 @@ class NativeHostV2Stage extends StatelessWidget {
                   label: cohost?.name.isNotEmpty == true
                       ? cohost!.name
                       : 'Co-host',
+                  transitioning: cohostCameraTransitioning,
                 ),
               );
             },
@@ -104,12 +111,16 @@ class NativeViewerV2Stage extends StatelessWidget {
     required this.call,
     required this.hostUserId,
     required this.activeCohostUserId,
+    this.hostCameraTransitioning = false,
+    this.cohostCameraTransitioning = false,
     super.key,
   });
 
   final Call call;
   final String hostUserId;
   final String? activeCohostUserId;
+  final bool hostCameraTransitioning;
+  final bool cohostCameraTransitioning;
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +145,7 @@ class NativeViewerV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
                   label: host?.name.isNotEmpty == true ? host!.name : 'Host',
+                  transitioning: hostCameraTransitioning,
                 );
               }
 
@@ -143,6 +155,7 @@ class NativeViewerV2Stage extends StatelessWidget {
                   participant: host,
                   videoEnabled: host?.isVideoEnabled ?? false,
                   label: 'Host',
+                  transitioning: hostCameraTransitioning,
                 ),
                 right: _V2ParticipantSurface(
                   call: call,
@@ -151,6 +164,7 @@ class NativeViewerV2Stage extends StatelessWidget {
                   label: cohost?.name.isNotEmpty == true
                       ? cohost!.name
                       : 'Co-host',
+                  transitioning: cohostCameraTransitioning,
                 ),
               );
             },
@@ -214,12 +228,14 @@ class _V2ParticipantSurface extends StatelessWidget {
     required this.call,
     required this.participant,
     required this.videoEnabled,
+    this.transitioning = false,
     this.label,
   });
 
   final Call call;
   final CallParticipantState? participant;
   final bool videoEnabled;
+  final bool transitioning;
   final String? label;
 
   @override
@@ -235,8 +251,12 @@ class _V2ParticipantSurface extends StatelessWidget {
       );
     }
 
-    if (!videoEnabled) {
-      return _V2CameraOffSurface(participant: participant, label: label);
+    if (!videoEnabled || transitioning) {
+      return _V2CameraOffSurface(
+        participant: participant,
+        label: label,
+        transitioning: transitioning,
+      );
     }
 
     return Stack(
@@ -257,10 +277,15 @@ class _V2ParticipantSurface extends StatelessWidget {
 }
 
 class _V2CameraOffSurface extends StatelessWidget {
-  const _V2CameraOffSurface({required this.participant, this.label});
+  const _V2CameraOffSurface({
+    required this.participant,
+    this.label,
+    this.transitioning = false,
+  });
 
   final CallParticipantState participant;
   final String? label;
+  final bool transitioning;
 
   @override
   Widget build(BuildContext context) {
@@ -333,14 +358,19 @@ class _V2CameraOffSurface extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: Colors.white12),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.videocam_off_rounded, size: 13),
-                    SizedBox(width: 5),
+                    Icon(
+                      transitioning
+                          ? Icons.cameraswitch_rounded
+                          : Icons.videocam_off_rounded,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 5),
                     Text(
-                      'Camera off',
-                      style: TextStyle(
+                      transitioning ? 'Switching camera…' : 'Camera off',
+                      style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
