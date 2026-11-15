@@ -97,9 +97,8 @@ Deno.serve(async (req: Request) => {
   }
 
   if (role === "host") {
-    // Cross-check authorization with an authenticated per-user policy RPC.
-    // No notice row means a legacy client has not received the update yet.
-    // An explicit decline or expired notice is denied before token signing.
+    // Host access requires exactly one verified, account-bound policy row.
+    // Missing, mismatched, declined, or expired records fail closed.
     const { data: statusRows, error: policyError } = await userClient.rpc(
       "get_my_fameverse_policy_status",
       { p_policy_version: "2026-10" },
@@ -107,8 +106,15 @@ Deno.serve(async (req: Request) => {
     if (policyError) {
       return response(503, { error: "policy-status-unavailable" });
     }
-    const status = Array.isArray(statusRows) ? statusRows[0] : statusRows;
-    if (status && status.can_use_restricted !== true) {
+    const status = Array.isArray(statusRows)
+      ? (statusRows.length === 1 ? statusRows[0] : null)
+      : statusRows;
+    if (
+      !status ||
+      status.user_id !== user.id ||
+      status.policy_version !== "2026-10" ||
+      status.can_use_restricted !== true
+    ) {
       return response(403, { error: "policy-restricted-host" });
     }
   }
