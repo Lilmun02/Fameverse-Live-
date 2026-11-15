@@ -33,7 +33,13 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(onAccept: (checked) { expect(checked, isTrue); accepts++; }, onDecline: () => declines++),
+      screen(
+        onAccept: (checked) {
+          expect(checked, isTrue);
+          accepts++;
+        },
+        onDecline: () => declines++,
+      ),
     );
 
     final accept = find.byKey(const Key('build47-accept-policy'));
@@ -55,7 +61,13 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(onAccept: (checked) { expect(checked, isTrue); accepts++; }, onDecline: () => declines++),
+      screen(
+        onAccept: (checked) {
+          expect(checked, isTrue);
+          accepts++;
+        },
+        onDecline: () => declines++,
+      ),
     );
     final decline = find.byKey(const Key('build47-decline-policy'));
     await tester.ensureVisible(decline);
