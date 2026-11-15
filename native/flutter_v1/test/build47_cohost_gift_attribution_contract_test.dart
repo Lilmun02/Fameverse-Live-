@@ -78,8 +78,11 @@ void main() {
       expect(backend, contains('renew_fameverse_live_cohost'));
       expect(sql, contains("c.updated_at > now() - interval '60 seconds'"));
       expect(sql, contains('co-host lease expired or session ended'));
-      final exitCleanup = viewer.split('Future<void> _performTransportCleanup() async {').last
-          .split('void _showMessage(').first;
+      final exitCleanup = viewer
+          .split('Future<void> _performTransportCleanup() async {')
+          .last
+          .split('void _showMessage(')
+          .first;
       expect(exitCleanup, contains('if (_selfIsCohost) {'));
       expect(exitCleanup, contains('clearCohostGiftSession('));
       expect(exitCleanup, contains('Duration(milliseconds: 800)'));
