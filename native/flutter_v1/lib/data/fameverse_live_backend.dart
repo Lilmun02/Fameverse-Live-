@@ -462,7 +462,8 @@ const fvGiftCatalog = <FvGiftDefinition>[
     cost: 100,
     category: 'fameverse',
     activityEmoji: '✦',
-    videoUrl: 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/8d3fd7e2-9073-4e1b-8ef6-843a1514aae6.mp4',
     cinematic: true,
   ),
   FvGiftDefinition(
@@ -471,7 +472,8 @@ const fvGiftCatalog = <FvGiftDefinition>[
     cost: 1000,
     category: 'fameverse',
     activityEmoji: '🐉',
-    videoUrl: 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/6ef5d526-e0d8-42ca-a382-28d53d3fe2aa.mp4',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/6ef5d526-e0d8-42ca-a382-28d53d3fe2aa.mp4',
     cinematic: true,
   ),
   FvGiftDefinition(
@@ -480,7 +482,8 @@ const fvGiftCatalog = <FvGiftDefinition>[
     cost: 1000,
     category: 'fameverse',
     activityEmoji: '🔥',
-    videoUrl: 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/e4da59e7-2d55-4ee2-b546-cae61cf56de3.mp4',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/e4da59e7-2d55-4ee2-b546-cae61cf56de3.mp4',
     cinematic: true,
   ),
   FvGiftDefinition(
@@ -489,7 +492,8 @@ const fvGiftCatalog = <FvGiftDefinition>[
     cost: 5000,
     category: 'fameverse',
     activityEmoji: '🐋',
-    videoUrl: 'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/ee94db8e-08fe-4028-a641-47e8b0dc3b89.mp4',
+    videoUrl:
+        'https://d2ol7oe51mr4n9.cloudfront.net/user_3IL6AXXAqcrsLZJmbjvrquIP0Bd/ee94db8e-08fe-4028-a641-47e8b0dc3b89.mp4',
     cinematic: true,
   ),
 ];
