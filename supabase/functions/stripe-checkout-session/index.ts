@@ -126,6 +126,27 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action !== "create") return json(400, { error: "unknown-action" });
+
+  // Only a verified policy acceptance can start a NEW payment order.
+  // Do not gate config or existing webhook/refund/settlement paths.
+  const { data: statusRows, error: policyError } = await userClient.rpc(
+    "get_my_fameverse_policy_status",
+    { p_policy_version: "2026-10" },
+  );
+  if (policyError) return json(503, { error: "policy-status-unavailable" });
+  const status = Array.isArray(statusRows)
+    ? (statusRows.length === 1 ? statusRows[0] : null)
+    : statusRows;
+  if (
+    !status ||
+    status.user_id !== user.id ||
+    status.policy_version !== "2026-10" ||
+    status.decision !== "accepted" ||
+    status.can_use_restricted !== true
+  ) {
+    return json(403, { error: "policy-restricted-purchase" });
+  }
+
   if (!secretKey || !validSecretForEnvironment(secretKey, environment)) {
     return json(503, { error: "stripe-not-configured", environment });
   }

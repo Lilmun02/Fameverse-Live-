@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+
+const read = path => readFileSync(new URL('../../' + path, import.meta.url), 'utf8')
+const stripe = read('supabase/functions/stripe-checkout-session/index.ts')
+const paypal = read('supabase/functions/recharge/index.ts')
+
+describe('Build 48: no new coin orders without signed policy', () => {
+  it('Stripe checks an authenticated, account-matched accepted decision before order creation', () => {
+    const createAction = stripe.indexOf('if (action !== "create")')
+    const rpc = stripe.indexOf('"get_my_fameverse_policy_status"', createAction)
+    const deny = stripe.indexOf('"policy-restricted-purchase"', rpc)
+    const newOrder = stripe.indexOf('.from("coin_recharge_orders")', deny)
+    const provider = stripe.indexOf('fetch("https://api.stripe.com/', deny)
+    expect(createAction).toBeGreaterThan(0)
+    expect(rpc).toBeGreaterThan(createAction)
+    expect(deny).toBeGreaterThan(rpc)
+    expect(newOrder).toBeGreaterThan(deny)
+    expect(provider).toBeGreaterThan(newOrder)
+    expect(stripe).toContain('statusRows.length === 1')
+    expect(stripe).toContain('status.user_id !== user.id')
+    expect(stripe).toContain('status.policy_version !== "2026-10"')
+    expect(stripe).toContain('status.decision !== "accepted"')
+    expect(stripe).toContain('status.can_use_restricted !== true')
+  })
+
+  it('PayPal checks service-role stored decision before new order without touching capture', () => {
+    const create = paypal.indexOf('if (action === "create")')
+    const lookup = paypal.indexOf('.from("policy_acceptances")', create)
+    const denied = paypal.indexOf('"policy-restricted-purchase"', lookup)
+    const order = paypal.indexOf('.from("coin_recharge_orders")', denied)
+    const provider = paypal.indexOf('paypalAccessToken(', order)
+    const capture = paypal.indexOf('if (action === "capture")', provider)
+    expect(create).toBeGreaterThan(0)
+    expect(lookup).toBeGreaterThan(create)
+    expect(denied).toBeGreaterThan(lookup)
+    expect(order).toBeGreaterThan(denied)
+    expect(provider).toBeGreaterThan(order)
+    expect(capture).toBeGreaterThan(provider)
+    expect(paypal).toContain('.eq("user_id", session.user_id)')
+    expect(paypal).toContain('.eq("policy_version", "2026-10")')
+    expect(paypal).toContain('acceptance.user_id !== session.user_id')
+    expect(paypal).toContain('acceptance.decision !== "accepted"')
+  })
+})
