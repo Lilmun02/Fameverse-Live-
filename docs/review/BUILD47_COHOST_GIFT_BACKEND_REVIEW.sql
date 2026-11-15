@@ -60,6 +60,36 @@ begin
 end;
 $function$;
 
+-- Fail-closed 60-second co-host lease: a disconnected client cannot
+-- remain a gift recipient forever. Only the activated co-host can renew it.
+create or replace function public.renew_fameverse_live_cohost(
+  p_room_id uuid
+) returns void language plpgsql security definer
+set search_path to public, pg_temp as $function$
+declare v_updated integer;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+  update public.live_room_cohosts c
+     set updated_at = now()
+   where c.room_id = p_room_id
+     and c.cohost_user_id = auth.uid()
+     and c.activated_at is not null
+     and c.updated_at > now() - interval '60 seconds'
+     and exists(
+       select 1 from public.live_rooms r
+       where r.id = p_room_id and r.status = 'live'
+         and r.ended_at is null
+     );
+  get diagnostics v_updated = row_count;
+  if v_updated <> 1 then
+    raise exception 'co-host lease expired or session ended'
+      using errcode = '42501';
+  end if;
+end;
+$function$;
+
 -- Either participant can revoke a co-host session; idempotent cleanup.
 create or replace function public.clear_fameverse_live_cohost(
   p_room_id uuid
@@ -78,9 +108,11 @@ $function$;
 revoke all on function public.prepare_fameverse_live_cohost(uuid,uuid) from public,anon;
 revoke all on function public.activate_fameverse_live_cohost(uuid) from public,anon;
 revoke all on function public.clear_fameverse_live_cohost(uuid) from public,anon;
+revoke all on function public.renew_fameverse_live_cohost(uuid) from public,anon;
 grant execute on function public.prepare_fameverse_live_cohost(uuid,uuid) to authenticated;
 grant execute on function public.activate_fameverse_live_cohost(uuid) to authenticated;
 grant execute on function public.clear_fameverse_live_cohost(uuid) to authenticated;
+grant execute on function public.renew_fameverse_live_cohost(uuid) to authenticated;
 
 -- Authoritative total. Never accumulate unverified broadcast totals as money.
 create or replace function public.get_fameverse_cohost_gift_coins(
@@ -98,6 +130,7 @@ begin
     where c.room_id = p_room_id
       and c.cohost_user_id = p_cohost_user_id
       and c.activated_at is not null
+      and c.updated_at > now() - interval '60 seconds'
       and r.status = 'live' and r.ended_at is null
   ) then
     return 0;
@@ -166,6 +199,7 @@ begin
     where c.room_id = p_room_id
       and c.cohost_user_id = p_recipient_user_id
       and c.activated_at is not null
+      and c.updated_at > now() - interval '60 seconds'
     for share;
     if not found then
       raise exception 'gift recipient is not the active co-host'
