@@ -6,7 +6,7 @@ import 'package:fameverse_live/features/profile/fameverse_policy_consent_screen.
 
 void main() {
   Widget screen({
-    required VoidCallback onAccept,
+    required ValueChanged<bool> onAccept,
     required VoidCallback onDecline,
     bool busy = false,
     FvPolicyAccess access = const FvPolicyAccess(
@@ -33,7 +33,7 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(onAccept: () => accepts++, onDecline: () => declines++),
+      screen(onAccept: (checked) { expect(checked, isTrue); accepts++; }, onDecline: () => declines++),
     );
 
     final accept = find.byKey(const Key('build47-accept-policy'));
@@ -55,7 +55,7 @@ void main() {
     var accepts = 0;
     var declines = 0;
     await tester.pumpWidget(
-      screen(onAccept: () => accepts++, onDecline: () => declines++),
+      screen(onAccept: (checked) { expect(checked, isTrue); accepts++; }, onDecline: () => declines++),
     );
     final decline = find.byKey(const Key('build47-decline-policy'));
     await tester.ensureVisible(decline);
@@ -71,7 +71,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       screen(
-        onAccept: () {},
+        onAccept: (_) {},
         onDecline: () {},
         access: const FvPolicyAccess(
           accountId: 'test-account',
@@ -89,7 +89,7 @@ void main() {
 
   testWidgets('busy state disables every decision control', (tester) async {
     await tester.pumpWidget(
-      screen(onAccept: () {}, onDecline: () {}, busy: true),
+      screen(onAccept: (_) {}, onDecline: () {}, busy: true),
     );
     final accept = find.byKey(const Key('build47-accept-policy'));
     final decline = find.byKey(const Key('build47-decline-policy'));
