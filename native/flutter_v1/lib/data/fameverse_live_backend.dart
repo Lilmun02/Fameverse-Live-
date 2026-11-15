@@ -721,6 +721,7 @@ abstract class FvCohostGiftBackend implements FameverseLiveBackend {
     required String cohostUserId,
   });
   Future<void> activateCohostGiftSession({required String roomId});
+  Future<void> renewCohostGiftSession({required String roomId});
   Future<void> clearCohostGiftSession({required String roomId});
   Future<int> loadCohostGiftCoins({
     required String roomId,
@@ -1015,6 +1016,14 @@ class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
   Future<void> activateCohostGiftSession({required String roomId}) async {
     await _client.rpc(
       'activate_fameverse_live_cohost',
+      params: {'p_room_id': roomId},
+    );
+  }
+
+  @override
+  Future<void> renewCohostGiftSession({required String roomId}) async {
+    await _client.rpc(
+      'renew_fameverse_live_cohost',
       params: {'p_room_id': roomId},
     );
   }
