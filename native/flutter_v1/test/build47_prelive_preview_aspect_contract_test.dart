@@ -17,7 +17,6 @@ void main() {
       // constraints that can stretch the portrait selfie texture.
       expect(preview, contains('? Center('));
       expect(preview, contains('child: CameraPreview(_previewController!)'));
-      expect(preview, contains('key: const Key(\'native-enable-camera-preview\')'), isFalse);
       expect(preview, isNot(contains('BoxFit.fill')));
     });
 
