@@ -76,10 +76,7 @@ void main() {
       expect(viewer, contains('renewCohostGiftSession('));
       expect(viewer, contains('_cohostGiftLeaseTimer?.cancel();'));
       expect(backend, contains('renew_fameverse_live_cohost'));
-      expect(
-        sql,
-        contains("c.updated_at > now() - interval '60 seconds'"),
-      );
+      expect(sql, contains("c.updated_at > now() - interval '60 seconds'"));
       expect(sql, contains('co-host lease expired or session ended'));
     });
   });
