@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -27,13 +28,16 @@ void main() {
       expect(tray, contains('setState(() => _sending = false);'));
     });
 
-    test('100 coin Fame Burst is client-visible and server-authoritative', () {
+    test('owner-retired Fame Burst cannot return to the native catalog', () {
       final backend = File(
         'lib/data/fameverse_live_backend.dart',
       ).readAsStringSync();
-      expect(backend, contains("id: 'fame-burst'"));
-      expect(backend, contains("label: 'Fame Burst'"));
-      expect(backend, contains('cost: 100'));
+      final tray = File(
+        'lib/features/live/native_live_components.dart',
+      ).readAsStringSync();
+      expect(backend, isNot(contains("id: 'fame-burst'")));
+      expect(tray, isNot(contains("'fame-burst',")));
+      expect(fvGiftById('fame-burst'), isNull);
     });
 
     test('Abyssal Leviathan stays wired as the 5000 coin cinematic gift', () {
