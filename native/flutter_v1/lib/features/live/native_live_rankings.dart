@@ -117,7 +117,7 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
     return switch (_kind) {
       'supporters' => '${_compact(entry.secondary)} gifts',
       'pulse' => '${_compact(entry.secondary)} total taps',
-      'creators' => '+${_compact(entry.secondary)} followers',
+      'creators' => '',
       _ => '',
     };
   }
