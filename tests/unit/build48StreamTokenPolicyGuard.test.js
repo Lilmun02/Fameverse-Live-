@@ -19,7 +19,7 @@ describe('Build 48 Stream token host policy fail-closed contract', () => {
     expect(signStart).toBeGreaterThan(denyStart)
     expect(source).toContain('role === "host" && !isHost')
     expect(source).toContain('error: "policy-status-unavailable"')
-    expect(source).toContain('role === "viewer"')
+    expect(source).toContain('["host", "viewer"].includes(role)')
   })
 
   it('rejects absent, multiple, and account/version-mismatched policy rows', () => {
