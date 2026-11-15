@@ -27,7 +27,6 @@ export const gifts = [
     video: EMBER_DRAGON_VIDEO,
     thumbnailTime: 4.2,
     cinematic: true,
-    singleSendOnly: true,
   },
   {
     id: 'celestial-phoenix',
@@ -39,7 +38,6 @@ export const gifts = [
     video: CELESTIAL_PHOENIX_VIDEO,
     thumbnailTime: 7,
     cinematic: true,
-    singleSendOnly: true,
   },
   { id: 'rose', emoji: '🌹', label: 'Rose', cost: 1, category: 'classic' },
   { id: 'heart', emoji: '💜', label: 'Heart', cost: 1, category: 'classic' },
