@@ -223,7 +223,9 @@ class _V2CohostStage extends StatelessWidget {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            right,
+                            Positioned.fill(
+                              child: right,
+                            ),
                             if (cohostGiftCoins != null)
                               Positioned(
                                 right: 8,
