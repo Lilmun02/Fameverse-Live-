@@ -10,7 +10,6 @@ class FameversePolicyConsentScreen extends StatefulWidget {
   const FameversePolicyConsentScreen({
     required this.onAccept,
     required this.onDecline,
-    required this.onBrowseRestricted,
     required this.busy,
     required this.access,
     this.error,
@@ -19,7 +18,6 @@ class FameversePolicyConsentScreen extends StatefulWidget {
 
   final VoidCallback onAccept;
   final VoidCallback onDecline;
-  final VoidCallback onBrowseRestricted;
   final bool busy;
   final FvPolicyAccess access;
   final String? error;
@@ -53,7 +51,7 @@ class _FameversePolicyConsentScreenState
     if (access.withinNoticeWindow) {
       return 'You have 7 days of notice followed by 3 days of grace. '
           'Your deadline is ${_displayDate(access.noticeEndsAt)}. '
-          'You can continue using Fameverse during this period.';
+          'You must choose Accept or Decline before continuing.';
     }
     return 'Your account policy status could not be verified. '
         'Restricted features are temporarily unavailable.';
@@ -85,7 +83,7 @@ class _FameversePolicyConsentScreenState
             ),
             const SizedBox(height: 8),
             const Text(
-              'Please review and sign the policy within the 10-day notice window.',
+              'Review the agreement and choose Accept or Decline before continuing.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Color(0xFFC5B5CE)),
             ),
@@ -156,24 +154,15 @@ class _FameversePolicyConsentScreenState
               onPressed: widget.busy ? null : widget.onDecline,
               child: const Text('Decline agreement'),
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              key: const Key('build47-limited-browsing'),
-              onPressed: widget.busy ? null : widget.onBrowseRestricted,
-              child: Text(
-                widget.access.withinNoticeWindow
-                    ? 'Continue during notice period'
-                    : 'Browse with restricted access',
-              ),
-            ),
             const SizedBox(height: 12),
             const Text(
-              'During the first 7 days and 3-day grace, unsigned accounts '
-              'retain temporary access. Explicitly declining immediately '
-              'restricts Go Live, purchases, beta badges and badge transfers. '
-              'After 10 days, unsigned accounts lose those features until '
-              'reviewed by support Monday–Friday. Browsing, profiles, '
-              'watching lives, search and support remain available. '
+              'Accept or Decline before entering Fameverse. '
+              'Unsigned accounts cannot use restricted features, including '
+              'Go Live, purchases, beta badges and badge transfers. '
+              'Declining limits those features but preserves browsing, '
+              'profiles, watching lives, search, inbox and support. '
+              'The existing 7-day notice and 3-day grace period still '
+              'determine the support review deadline. '
               'A failed save never counts as acceptance.',
               style: TextStyle(color: Color(0xFFB2A5BB), fontSize: 12),
               textAlign: TextAlign.center,
