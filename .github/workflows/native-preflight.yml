@@ -4,13 +4,17 @@ on:
   push:
     branches:
       - native/flutter-v1
+      - build18/live-repair
+      - integration/sep27-big-update
   pull_request:
     branches:
       - native/flutter-v1
+      - build18/live-repair
+      - integration/sep27-big-update
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: fameverse-native-preflight-${{ github.ref }}
@@ -26,6 +30,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -43,13 +49,8 @@ jobs:
       - name: Enforce Fameverse native foundation law
         run: dart run tool/check_native_contract.dart
 
-      - name: Verify Dart formatting
-        run: |
-          dart format lib test tool
-          if ! git diff --exit-code -- lib test tool; then
-            echo "Dart formatting changed tracked files. Commit the formatted output before Codemagic."
-            exit 1
-          fi
+      - name: Enforce deterministic Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
 
       - name: Static analysis
         run: flutter analyze
@@ -185,3 +186,14 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
+
+  physical-release-gate:
+    name: Physical iPhone release gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Block release until owner and external tester pass
+        run: node scripts/check-native-physical-acceptance.mjs
