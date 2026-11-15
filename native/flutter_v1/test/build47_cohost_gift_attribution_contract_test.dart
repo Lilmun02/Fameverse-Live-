@@ -60,5 +60,27 @@ void main() {
       expect(viewer, isNot(contains('_cohostGiftCoins += total')));
       expect(host, isNot(contains('_cohostGiftCoins += total')));
     });
+    test('disconnected co-host gifting expires without a fresh lease', () {
+      final viewer = File(
+        'lib/features/live/stream_viewer_live_screen.dart',
+      ).readAsStringSync();
+      final backend = File(
+        'lib/data/fameverse_live_backend.dart',
+      ).readAsStringSync();
+      final sql = File(
+        '../../docs/review/BUILD47_COHOST_GIFT_BACKEND_REVIEW.sql',
+      ).readAsStringSync();
+
+      expect(viewer, contains('Timer? _cohostGiftLeaseTimer;'));
+      expect(viewer, contains('Duration(seconds: 20)'));
+      expect(viewer, contains('renewCohostGiftSession('));
+      expect(viewer, contains('_cohostGiftLeaseTimer?.cancel();'));
+      expect(backend, contains('renew_fameverse_live_cohost'));
+      expect(
+        sql,
+        contains("c.updated_at > now() - interval '60 seconds'"),
+      );
+      expect(sql, contains('co-host lease expired or session ended'));
+    });
   });
 }
