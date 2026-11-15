@@ -101,8 +101,8 @@ class _NativeLiveRankingsSheetState extends State<NativeLiveRankingsSheet> {
   }
 
   String _windowCopy() => _window == '24h'
-      ? 'Daily ranking · resets at 00:00 UTC'
-      : 'Weekly ranking · resets Sunday at 00:00 UTC';
+      ? 'Resets every day'
+      : 'Resets every week';
 
   String _scoreCopy(_RankingEntry entry) {
     return switch (_kind) {
