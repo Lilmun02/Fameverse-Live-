@@ -85,6 +85,19 @@ The isolated draft PR also adds `shorebird-android-dry-run` to `codemagic.yaml`,
 - The first real `shorebird release` is a separate, explicitly owner-approved operation and will upload release metadata/artifacts to Shorebird; do not add it to this dry-run workflow.
 - iOS TestFlight signing, native shell consistency, production Android keystore and real-device OTA tests remain separate approval gates.
 
+## iOS unsigned Shorebird release dry-run candidate (manual, no signing/upload)
+
+The owner elected to prioritize iOS preflight while the Android physical device is unavailable. This does not waive the Android physical acceptance gate.
+
+- New isolated `shorebird-ios-dry-run` workflow in `codemagic.yaml`, with no `triggering`, `publishing`, signing credentials, or exported IPA artifacts. It is restricted to manual Codemagic runs on the reviewed OTA branch with matching `CM_COMMIT` and a nonempty secret `SHOREBIRD_TOKEN`.
+- Flutter 3.47.9 and Xcode 26.0 are chosen for the dry-run; Shorebird's current Flutter 3.47.9/Xcode 27 Dart-symbol caveat motivates Xcode 26 for this non-obfuscated preflight. A later signed release must reconcile toolchain, symbols and the approved signing/export setup.
+- `tool/bootstrap_shorebird_ios.sh` generates the same ephemeral iOS shell inputs as the existing `native-testflight` bootstrap: `--org com.fameverse --project-name live`, verified `com.fameverse.live` bundle ID, camera and microphone usage strings, the existing iOS icon/dark-launch branding scripts and safety check against overwriting tracked native directories.
+- Flutter package resolution, native contract, formatting, static analysis, widget tests and CocoaPods run before the compile check.
+- The compile-only command is `shorebird release ios --dry-run --no-codesign --flutter-version=3.47.9`; **dry-run** avoids uploading a Shorebird release, and **no-codesign** avoids generating a signed, distributable IPA.
+- Regression file `tests/unit/shorebirdIosDryRunWorkflow.test.js` asserts these constraints; its actual Vitest run and the new Codemagic iOS dry-run have **not yet executed**. Source-level static review is not native build verification.
+- Signed Shorebird iOS release for TestFlight is still **OPEN**: first confirm a unique App Store Connect build/version, source identity, Apple distribution provisioning, privacy manifest, physical iPhone acceptance, no unapproved runtime/UI/commerce changes, and owner authorization. The store upload must use the Shorebird-generated release artifact rather than a separate ordinary `flutter build ipa`.
+- The existing `native-testflight` workflow remains unchanged and keeps its original release identity/signing gates; none are bypassed.
+
 ## Stop conditions
 
 - Missing real Shorebird app registration or CI credentials.
