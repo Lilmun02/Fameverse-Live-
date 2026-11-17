@@ -69,9 +69,21 @@ The first compatible OTA-enabled app must itself be created with `shorebird rele
 
 The new `shorebird-ota-readiness` workflow imports the secure `shorebird` environment group, targets Flutter 3.47.9, and contains **no** `triggering`, `publishing`, `shorebird release`, or `shorebird patch` step. It exits unless Codemagic identifies a manual run, the exact isolated source branch, matching `CM_COMMIT`, the real Shorebird app ID, and nonempty `SHOREBIRD_TOKEN` (never echoed). It installs the official CLI and verifies the service-account credential using the read-only `GET https://api.shorebird.dev/api/v1/apps` endpoint (without logging its value), then runs `flutter pub get`, `flutter analyze`, and `flutter test`. The initial CI attempt was blocked before Flutter checks because `shorebird auth status` requested a person-only account route and returned `service_account_forbidden`; this was corrected in isolated commit `2e5e605` and requires a fresh manual CI run for verification.
 
-**Verification pending:** The workflow has not been executed in Codemagic. A manual preflight run may expose existing Flutter test failures or CI environment differences; do not label it PASS until exact Codemagic output is reviewed. This check does not create signed/installed binaries and does not prove OTA viability on a phone.
+**Owner-reported status:** After correcting the service-account authentication command, the owner reported a green manual Codemagic readiness build. An exact run ID, commit SHA and full log have not yet been independently reviewed in this report; do not call that run an independently verified PASS. The workflow does not create signed/installed binaries and does not prove OTA viability on a phone.
 
 The first signed Shorebird release, separately reviewed iOS/Android native-shell/signing workflow, matching release/patch toolchains, and testing-track patch remain separately authorized follow-up work.
+
+## Android Shorebird release dry-run candidate (manual, non-publishing)
+
+The isolated draft PR also adds `shorebird-android-dry-run` to `codemagic.yaml`, a one-purpose generated Android shell script at `native/flutter_v1/tool/bootstrap_shorebird_android.sh`, and contract tests at `tests/unit/shorebirdAndroidDryRunWorkflow.test.js`.
+
+- **No triggers, publishing, or distributable artifacts** in the new workflow. Only the owner can select the manual build; it rejects unexpected branch, commit, and missing CI token.
+- Reconstructs an ephemeral Android shell via the existing Flutter tooling, using `--org com.fameverse --project-name live` for application ID `com.fameverse.live`; checks the identifier, retains minSdk 24 and the original Fameverse branding law, and fails rather than replacing tracked native files.
+- Runs the existing native contract, Dart formatting, Flutter analysis and widget tests *before* Shorebird compilation.
+- Uses `shorebird release android --dry-run --flutter-version=3.47.9`. Official Shorebird docs say `--dry-run` builds/checks without uploading a release. No public app update, Shorebird baseline, Google Play distribution, or TestFlight submission is authorized or attempted.
+- **Not yet CI verified**: This newly added workflow has not run, nor have its static contract tests been observed passing. A dry-run result is not a signed/store-ready binary. The ephemeral Android shell and eventual production signing must be reconciled with the intended release version, current version code, keystore and package name before a real release.
+- The first real `shorebird release` is a separate, explicitly owner-approved operation and will upload release metadata/artifacts to Shorebird; do not add it to this dry-run workflow.
+- iOS TestFlight signing, native shell consistency, production Android keystore and real-device OTA tests remain separate approval gates.
 
 ## Stop conditions
 
