@@ -24,7 +24,7 @@ describe('Shorebird Android dry-run release candidate gate', () => {
 
   it('reuses an isolated deterministic native shell with the real Fameverse package', () => {
     expect(section).toContain('bash tool/bootstrap_shorebird_android.sh')
-    expect(section).toContain('bash tool/verify_android_branding.sh')
+    expect(bootstrap).toContain('bash tool/verify_android_branding.sh')
     expect(section).toContain('dart run tool/check_native_contract.dart')
     expect(section).toContain('flutter analyze')
     expect(section).toContain('flutter test')
