@@ -127,6 +127,79 @@ workflows:
           shorebird release android --dry-run --flutter-version=3.47.9
           echo "Android Shorebird dry-run finished; no release or patch uploaded."
 
+  shorebird-ios-dry-run:
+    name: Fameverse Shorebird iOS (Manual Unsigned Dry Run, No Upload)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    working_directory: native/flutter_v1
+
+    # No automatic trigger, publishing, signing, or distributable IPA.
+    environment:
+      flutter: 3.47.9
+      xcode: 26.0
+      cocoapods: default
+      groups:
+        - shorebird
+      vars:
+        FAMEVERSE_OTA_STAGE: "ios-dry-run"
+        FAMEVERSE_APP_NAME: "Fameverse"
+
+    scripts:
+      - name: Enforce manual-only iOS source and secure token gates
+        script: |
+          set -euo pipefail
+          if [ "${CM_TRIGGER_SOURCE:-}" != "api" ]; then
+            echo "BLOCKED: Shorebird iOS dry-run must be started manually."
+            exit 1
+          fi
+          if [ "${CM_BRANCH:-}" != "chore/build48-shorebird-ota-readiness-nov15" ]; then
+            echo "BLOCKED: unapproved iOS dry-run source branch."
+            exit 1
+          fi
+          : "${CM_COMMIT:?BLOCKED: exact source commit missing}"
+          if [ "$(git rev-parse HEAD)" != "$CM_COMMIT" ]; then
+            echo "BLOCKED: source SHA does not match Codemagic commit."
+            exit 1
+          fi
+          if [ -z "${SHOREBIRD_TOKEN:-}" ]; then
+            echo "BLOCKED: Shorebird service-account token unavailable."
+            exit 1
+          fi
+          grep -Fxq 'name: fameverse_live' pubspec.yaml
+          grep -Fxq 'app_id: ea33cadb-6ccd-4491-af48-6a617223a462' shorebird.yaml
+          grep -Fxq '    - shorebird.yaml' pubspec.yaml
+          echo "Approved iOS dry-run source, registration and secret presence verified."
+
+      - name: Generate ephemeral Fameverse iOS shell and verify native contracts
+        script: |
+          set -euo pipefail
+          bash tool/bootstrap_shorebird_ios.sh
+          flutter pub get
+          dart run tool/check_native_contract.dart
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+          flutter test
+
+      - name: Install iOS CocoaPods
+        script: |
+          set -euo pipefail
+          cd ios
+          pod install
+
+      - name: Install Shorebird on ephemeral Mac builder
+        script: |
+          set -euo pipefail
+          curl -fsSL https://shorebird.dev/install.sh | bash
+          echo "PATH=$HOME/.shorebird/bin:$PATH" >> "$CM_ENV"
+
+      - name: Compile unsigned Shorebird iOS archive without publishing
+        script: |
+          set -euo pipefail
+          shorebird --version
+          # Both flags required: no Shorebird release upload and no IPA signing.
+          shorebird release ios --dry-run --no-codesign --flutter-version=3.47.9
+          echo "Unsigned iOS dry-run only; NO Shorebird upload, App Store, or TestFlight publishing."
+
   native-foundation:
     name: Fameverse Native Foundation
     instance_type: mac_mini_m2
