@@ -98,6 +98,23 @@ The owner elected to prioritize iOS preflight while the Android physical device 
 - Signed Shorebird iOS release for TestFlight is still **OPEN**: first confirm a unique App Store Connect build/version, source identity, Apple distribution provisioning, privacy manifest, physical iPhone acceptance, no unapproved runtime/UI/commerce changes, and owner authorization. The store upload must use the Shorebird-generated release artifact rather than a separate ordinary `flutter build ipa`.
 - The existing `native-testflight` workflow remains unchanged and keeps its original release identity/signing gates; none are bypassed.
 
+## iOS signed Shorebird dry-run candidate (manual, no release registration or TestFlight upload)
+
+Owner asked to continue iOS after reporting that the unsigned iOS dry-run was green. This is owner-reported CI status, not independent confirmation of the exact Codemagic run and full logs.
+
+**Purpose:** Check whether the existing manual Apple distribution certificate/profile can export a signed, identity-consistent Shorebird IPA. This job does **not** create a Shorebird baseline release and does **not** publish to TestFlight.
+
+- New `shorebird-ios-signed-dry-run` workflow in `codemagic.yaml`, manually run only on the exact OTA branch/triggering SHA. No automatic triggers or `publishing` block. Uses the existing `manual_signing` group and separate `shorebird` group. App Store Connect API credentials are not loaded.
+- Reuses `tool/bootstrap_shorebird_ios.sh` with an additional exact permitted stage `ios-signed-dry-run`. Same ephemeral `com.fameverse.live` iOS platform generation, permissions, branding, and native foundation contract as the iOS unsigned preflight and existing TestFlight workflow.
+- New `tool/prepare_shorebird_ios_signing.sh` reuses the existing `CM_CERTIFICATE`, `CM_CERTIFICATE_PASSWORD`, and `CM_PROVISIONING_PROFILE`, rejects wrong/expired/development provisioning profiles and imports signing assets only on the ephemeral Codemagic builder.
+- Calls `xcode-project use-profiles --custom-export-options='{"manageAppVersionAndBuildNumber":false}'` and verifies that the generated `/Users/builder/export_options.plist` really has **false**. Xcode must not rewrite the IPA version/build or patch eligibility is lost.
+- Pins Flutter 3.47.9, Xcode 26.0, CocoaPods 1.16.2 for this signed dry-run. A real baseline and every subsequent patch must use compatible toolchains and the same native shell / Dart defines.
+- After format/analyze/tests/Pods, runs `shorebird release ios --dry-run --flutter-version=3.47.9 --build-number="$BUILD_NUMBER" --dart-define="FAMEVERSE_BUILD_FAMILY=47" --dart-define="FAMEVERSE_SOURCE_SHA=$CM_COMMIT" --export-options-plist=/Users/builder/export_options.plist`. This retains the **current TestFlight Build 47 Dart runtime define** deliberately; changing the feature flag to 48 is a separate release decision and not authorized here.
+- If an IPA is produced, extracts its bundle identifier and build number and compares with `com.fameverse.live` and Codemagic's `BUILD_NUMBER`. The signed IPA and a non-secret source identity receipt become Codemagic artifacts; **artifact retention is not Apple publication**.
+- New `tests/unit/shorebirdIosSignedDryRunWorkflow.test.js` is a regression-contract candidate. **Neither its Vitest run nor this signed Codemagic workflow has yet executed**; the source-level review is not a successful signed build.
+
+**Before any actual OTA-enabled iOS release:** Query actual App Store Connect build/version occupancy, select a unique build number, review and approve exact source commit and native shell, confirm store/export identity & app/privacy requirements, obtain explicit owner authorization to run real `shorebird release ios` (which registers a baseline), explicitly authorize uploading **that same Shorebird-built IPA** to TestFlight, install on physical iPhone and validate Live/co-host/gifts/policies/performance. The existing automatic-publishing `native-testflight` workflow must remain separate; never substitute its ordinary `flutter build ipa` artifact for a Shorebird-enabled baseline.
+
 ## Stop conditions
 
 - Missing real Shorebird app registration or CI credentials.
