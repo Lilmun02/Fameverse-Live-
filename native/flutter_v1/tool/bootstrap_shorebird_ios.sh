@@ -3,10 +3,14 @@ set -euo pipefail
 
 # Prepare a fresh, unsigned, non-publishing iOS project for Shorebird CI.
 # For a future approved release/patch, reuse this exact shell-generation logic.
-if [ "${FAMEVERSE_OTA_STAGE:-}" != "ios-dry-run" ]; then
-  echo "BLOCKED: Shorebird iOS bootstrap is restricted to dry-run preflight."
-  exit 1
-fi
+case "${FAMEVERSE_OTA_STAGE:-}" in
+  ios-dry-run|ios-signed-dry-run)
+    ;;
+  *)
+    echo "BLOCKED: Shorebird iOS bootstrap only permits manual dry-run stages."
+    exit 1
+    ;;
+esac
 
 if git ls-files -- ios | grep -q .; then
   echo "BLOCKED: tracked iOS platform files exist; cannot replace them."
