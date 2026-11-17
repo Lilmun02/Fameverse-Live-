@@ -61,6 +61,72 @@ workflows:
           flutter test
           echo "Preflight only: NO Shorebird release, patch, store upload, or app publication."
 
+  shorebird-android-dry-run:
+    name: Fameverse Shorebird Android (Manual Dry Run, No Release)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    working_directory: native/flutter_v1
+
+    # NO automatic triggers, publishing, release upload, or distributable artifacts.
+    environment:
+      flutter: 3.47.9
+      groups:
+        - shorebird
+      vars:
+        FAMEVERSE_OTA_STAGE: "android-dry-run"
+        FAMEVERSE_APP_NAME: "Fameverse"
+
+    scripts:
+      - name: Enforce owner-run source and credential gate
+        script: |
+          set -euo pipefail
+          if [ "${CM_TRIGGER_SOURCE:-}" != "api" ]; then
+            echo "BLOCKED: run Android Shorebird dry-run manually."
+            exit 1
+          fi
+          if [ "${CM_BRANCH:-}" != "chore/build48-shorebird-ota-readiness-nov15" ]; then
+            echo "BLOCKED: unapproved source branch."
+            exit 1
+          fi
+          : "${CM_COMMIT:?BLOCKED: source commit is missing}"
+          if [ "$(git rev-parse HEAD)" != "$CM_COMMIT" ]; then
+            echo "BLOCKED: mismatched GitHub source SHA."
+            exit 1
+          fi
+          if [ -z "${SHOREBIRD_TOKEN:-}" ]; then
+            echo "BLOCKED: secure Shorebird token is missing."
+            exit 1
+          fi
+          grep -Fxq 'name: fameverse_live' pubspec.yaml
+          grep -Fxq 'app_id: ea33cadb-6ccd-4491-af48-6a617223a462' shorebird.yaml
+          grep -Fxq '    - shorebird.yaml' pubspec.yaml
+          echo "Dry-run source verified (secret value not logged)."
+
+      - name: Generate locked Android shell and run native checks
+        script: |
+          set -euo pipefail
+          bash tool/bootstrap_shorebird_android.sh
+          flutter pub get
+          dart run tool/check_native_contract.dart
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+          flutter test
+
+      - name: Install Shorebird CLI
+        script: |
+          set -euo pipefail
+          curl -fsSL https://shorebird.dev/install.sh | bash
+          echo "PATH=$HOME/.shorebird/bin:$PATH" >> "$CM_ENV"
+
+      - name: Compile Android Shorebird release dry-run WITHOUT upload
+        script: |
+          set -euo pipefail
+          shorebird --version
+          # --dry-run compiles and checks the baseline, but never creates a
+          # Shorebird release. This is NOT a signed distribution candidate.
+          shorebird release android --dry-run --flutter-version=3.47.9
+          echo "Android Shorebird dry-run finished; no release or patch uploaded."
+
   native-foundation:
     name: Fameverse Native Foundation
     instance_type: mac_mini_m2
