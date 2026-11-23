@@ -45,8 +45,9 @@ describe('Shorebird iOS unsigned dry-run release gate', () => {
   it('only invokes CocoaPods when a generated Podfile exists', () => {
     const podStep = section.split('      - name: Install iOS CocoaPods')[1]?.split('      - name: Install Shorebird')[0] ?? ''
     expect(podStep).not.toBe('')
-    expect(podStep).toContain('find ios -type f -name Podfile -execdir pod install')
-    expect(podStep).not.toContain('cd ios')
+    expect(podStep).toContain('if [ -f ios/Podfile ]; then')
+    expect(podStep).toContain('(cd ios && pod install)')
+    expect(podStep).not.toContain('-execdir pod install')
     expect(podStep).toContain('No Podfile in the generated iOS shell')
   })
 
