@@ -184,9 +184,9 @@ workflows:
         script: |
           set -euo pipefail
           test -f ios/Runner.xcodeproj/project.pbxproj
-          if find ios -type f -name Podfile -print -quit | grep -q .; then
-            # A real Podfile means CocoaPods is required; preserve its exit status.
-            find ios -type f -name Podfile -execdir pod install \;
+          if [ -f ios/Podfile ]; then
+            # Propagate pod install failure instead of masking it through find.
+            (cd ios && pod install)
           else
             # Flutter can use Swift Package Manager without a Podfile.
             # The Shorebird compile step remains mandatory and will fail if
