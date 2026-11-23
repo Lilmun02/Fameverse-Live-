@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8')
 const source = read('codemagic.yaml')
 const bootstrap = read('native/flutter_v1/tool/bootstrap_shorebird_android.sh')
-const section = source.split('  shorebird-android-dry-run:\n')[1]?.split('  native-foundation:\n')[0] ?? ''
+const section = source.split('  shorebird-android-dry-run:\n')[1]?.split(/^  [a-z0-9-]+:\n/m)[0] ?? ''
 
 describe('Shorebird Android dry-run release candidate gate', () => {
   it('remains manual, pinned to isolated OTA source, and cannot publish', () => {
