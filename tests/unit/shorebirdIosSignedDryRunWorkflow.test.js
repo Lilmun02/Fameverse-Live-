@@ -28,7 +28,8 @@ describe('Shorebird iOS signed preflight (no release upload)', () => {
   })
 
   it('preserves Fameverse release identity, preflight tests and signed export settings', () => {
-    expect(workflow).toContain('xcode: 26.0')
+    expect(workflow).toContain('xcode: 26.1')
+    expect(workflow).not.toContain('xcode: 26.0')
     expect(workflow).toContain('flutter: 3.47.9')
     expect(workflow).toContain('bash tool/bootstrap_shorebird_ios.sh')
     expect(workflow).toContain('bash tool/prepare_shorebird_ios_signing.sh')
