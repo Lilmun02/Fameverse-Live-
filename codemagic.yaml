@@ -136,7 +136,7 @@ workflows:
     # No automatic trigger, publishing, signing, or distributable IPA.
     environment:
       flutter: 3.47.9
-      xcode: 26.0
+      xcode: 26.1
       cocoapods: default
       groups:
         - shorebird
@@ -217,7 +217,7 @@ workflows:
     # Signature check only: no automatic trigger, Apple publishing, or Shorebird upload.
     environment:
       flutter: 3.47.9
-      xcode: 26.0
+      xcode: 26.1
       cocoapods: 1.16.2
       groups:
         - shorebird
