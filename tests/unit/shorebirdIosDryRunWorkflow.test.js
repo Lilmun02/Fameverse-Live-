@@ -25,7 +25,8 @@ describe('Shorebird iOS unsigned dry-run release gate', () => {
   })
 
   it('must preserve locked iOS source identity, branding, and Flutter checks', () => {
-    expect(section).toContain('xcode: 26.0')
+    expect(section).toContain('xcode: 26.1')
+    expect(section).not.toContain('xcode: 26.0')
     expect(section).toContain('bash tool/bootstrap_shorebird_ios.sh')
     expect(section).toContain('dart run tool/check_native_contract.dart')
     expect(section).toContain('flutter analyze')
