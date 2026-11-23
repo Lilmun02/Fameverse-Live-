@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8')
 const yaml = read('codemagic.yaml')
-const section = yaml.split('  shorebird-ios-dry-run:\n')[1]?.split('  native-foundation:\n')[0] ?? ''
+const section = yaml.split('  shorebird-ios-dry-run:\n')[1]?.split(/^  [a-z0-9-]+:\n/m)[0] ?? ''
 const bootstrap = read('native/flutter_v1/tool/bootstrap_shorebird_ios.sh')
 
 describe('Shorebird iOS unsigned dry-run release gate', () => {
