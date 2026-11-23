@@ -52,4 +52,13 @@ describe('Shorebird iOS signed preflight (no release upload)', () => {
     expect(signing).not.toContain('APP_STORE_CONNECT_PRIVATE_KEY')
     expect(signing).not.toContain('app-store-connect publish')
   })
+  it('only runs CocoaPods when an iOS Podfile exists without masking failures', () => {
+    const podStep = workflow.split('      - name: Resolve iOS CocoaPods')[1]?.split('      - name: Install and verify existing Fameverse Apple signing assets')[0] ?? ''
+    expect(podStep).not.toBe('')
+    expect(podStep).toContain('if [ -f ios/Podfile ]; then')
+    expect(podStep).toContain('(cd ios && pod install)')
+    expect(podStep).not.toContain('-execdir pod install')
+    expect(podStep).toContain('No Podfile in the generated iOS shell')
+  })
+
 })
