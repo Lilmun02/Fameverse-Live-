@@ -274,11 +274,18 @@ workflows:
           flutter analyze
           flutter test
 
-      - name: Resolve iOS CocoaPods
+      - name: Resolve iOS CocoaPods if generated Podfile exists
         script: |
           set -euo pipefail
-          cd ios
-          pod install
+          test -f ios/Runner.xcodeproj/project.pbxproj
+          if [ -f ios/Podfile ]; then
+            # Do not mask a genuine CocoaPods installation failure.
+            (cd ios && pod install)
+          else
+            # The Flutter-generated project may use Swift Package Manager.
+            # Shorebird compilation remains mandatory and must resolve plugins.
+            echo "No Podfile in the generated iOS shell; CocoaPods step not applicable."
+          fi
 
       - name: Install and verify existing Fameverse Apple signing assets
         script: |
