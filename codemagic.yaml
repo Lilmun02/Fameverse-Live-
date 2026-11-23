@@ -180,11 +180,19 @@ workflows:
           flutter analyze
           flutter test
 
-      - name: Install iOS CocoaPods
+      - name: Install iOS CocoaPods only if the generated shell has a Podfile
         script: |
           set -euo pipefail
-          cd ios
-          pod install
+          test -f ios/Runner.xcodeproj/project.pbxproj
+          if find ios -type f -name Podfile -print -quit | grep -q .; then
+            # A real Podfile means CocoaPods is required; preserve its exit status.
+            find ios -type f -name Podfile -execdir pod install \\;
+          else
+            # Flutter can use Swift Package Manager without a Podfile.
+            # The Shorebird compile step remains mandatory and will fail if
+            # the generated iOS project cannot resolve plugin dependencies.
+            echo "No Podfile in the generated iOS shell; CocoaPods step not applicable."
+          fi
 
       - name: Install Shorebird on ephemeral Mac builder
         script: |
