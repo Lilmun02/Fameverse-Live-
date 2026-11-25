@@ -27,6 +27,8 @@ describe('Build 48 idle policy refresh fail-closed routing', () => {
     expect(app).toContain('if (_acceptedBeforeRefreshFailure) {')
     expect(app).toContain('_policyPromptDismissed = refreshed.decision == FvPolicyDecision.declined;')
     expect(app).toContain('_acceptedBeforeRefreshFailure = false;')
+    expect(app).toContain('final request = ++_policyRefreshRequest;')
+    expect(app).toContain('request != _policyRefreshRequest ||')
     expect(app).toContain('if (changedAccount) unawaited(_loadPolicyForIdentity(identity));')
   })
 })
