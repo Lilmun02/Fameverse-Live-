@@ -52,10 +52,12 @@ class _FameverseAppState extends State<FameverseApp>
   bool _noticeAcknowledged = false;
   bool _policyLoaded = false;
   bool _policyPromptDismissed = false;
+  bool _acceptedBeforeRefreshFailure = false;
   bool _policyBusy = false;
   String? _policyError;
   FvPolicyAccess? _policyAccess;
   int _policyLoadEpoch = 0;
+  int _policyRefreshRequest = 0;
 
   @override
   void initState() {
@@ -90,11 +92,13 @@ class _FameverseAppState extends State<FameverseApp>
 
   Future<void> _loadPolicyForIdentity(FvIdentity? identity) async {
     final epoch = ++_policyLoadEpoch;
+    ++_policyRefreshRequest;
     if (mounted) {
       setState(() {
         _policyLoaded = false;
         _policyAccess = null;
         _policyPromptDismissed = false;
+        _acceptedBeforeRefreshFailure = false;
         _policyError = null;
       });
     }
@@ -131,6 +135,7 @@ class _FameverseAppState extends State<FameverseApp>
   Future<void> _submitPolicyDecision({required bool accept}) async {
     final identity = _identity;
     if (identity == null || _policyBusy) return;
+    ++_policyRefreshRequest;
     setState(() {
       _policyBusy = true;
       _policyError = null;
@@ -146,6 +151,7 @@ class _FameverseAppState extends State<FameverseApp>
       setState(() {
         _policyAccess = verified;
         _policyPromptDismissed = !accept;
+        _acceptedBeforeRefreshFailure = false;
       });
     } catch (_) {
       if (mounted && _identity?.id == identity.id) {
@@ -164,19 +170,45 @@ class _FameverseAppState extends State<FameverseApp>
     final identity = _identity;
     final epoch = _policyLoadEpoch;
     if (identity == null || _policyBusy || !_policyLoaded) return;
+    final request = ++_policyRefreshRequest;
     final access = await FvPolicyAcceptanceService(
       Supabase.instance.client,
     ).loadCurrent();
     if (!mounted ||
+        request != _policyRefreshRequest ||
         epoch != _policyLoadEpoch ||
-        _identity?.id != identity.id ||
-        access.accountId != identity.id) {
+        _identity?.id != identity.id) {
       return;
     }
+
+    // A missing, mismatched, or unreachable policy record cannot grant
+    // restricted rights based on a previously accepted decision.
+    final refreshed = access.accountId == identity.id
+        ? access
+        : _unavailablePolicy(identity.id);
+    final previouslyAccepted = _policyAccess?.hasAccepted == true;
+    if (!refreshed.verifiedForAccount ||
+        refreshed.decision == FvPolicyDecision.unavailable) {
+      setState(() {
+        _policyAccess = _unavailablePolicy(identity.id);
+        if (previouslyAccepted) {
+          // Allow basic browsing, not Live/purchases/badges, on a failed check.
+          _acceptedBeforeRefreshFailure = true;
+          _policyPromptDismissed = true;
+        }
+      });
+      return;
+    }
+
     setState(() {
       final previouslyExpired = _policyAccess?.requiresSupport == true;
-      _policyAccess = access;
-      if (access.requiresSupport && !previouslyExpired) {
+      _policyAccess = refreshed;
+      if (_acceptedBeforeRefreshFailure) {
+        // A verified revocation or unsigned status requires a new decision.
+        _policyPromptDismissed = refreshed.decision == FvPolicyDecision.declined;
+        _acceptedBeforeRefreshFailure = false;
+      }
+      if (refreshed.requiresSupport && !previouslyExpired) {
         // Surface the support-only restriction on first expiry.
         _policyPromptDismissed = false;
       }
