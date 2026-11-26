@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:fameverse_live/data/fameverse_live_backend.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   group('Live gifting and owner payout repair', () {
@@ -38,6 +39,32 @@ void main() {
       expect(backend, isNot(contains("id: 'fame-burst'")));
       expect(tray, isNot(contains("'fame-burst',")));
       expect(fvGiftById('fame-burst'), isNull);
+    });
+
+    test('retired gift is rejected before either native RPC', () async {
+      final client = SupabaseClient('https://example.invalid', 'test-key');
+      addTearDown(client.dispose);
+      final backend = SupabaseFameverseLiveBackend(client);
+      final retired = throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          'gift-retired',
+        ),
+      );
+      await expectLater(
+        backend.recordGift(roomId: 'room', giftId: 'fame-burst', quantity: 1),
+        retired,
+      );
+      await expectLater(
+        backend.recordGiftToCohost(
+          roomId: 'room',
+          giftId: 'fame-burst',
+          quantity: 1,
+          cohostUserId: 'cohost',
+        ),
+        retired,
+      );
     });
 
     test('Abyssal Leviathan stays wired as the 5000 coin cinematic gift', () {
