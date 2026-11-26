@@ -8,6 +8,7 @@ on:
       - '.github/workflows/build48-policy-refresh-tests.yml'
       - 'native/flutter_v1/lib/app/fameverse_app.dart'
       - 'native/flutter_v1/lib/data/fv_policy_refresh.dart'
+      - 'native/flutter_v1/lib/data/fv_policy_acceptance_service.dart'
       - 'native/flutter_v1/test/fv_policy_refresh_test.dart'
   workflow_dispatch:
 
@@ -46,7 +47,7 @@ jobs:
         run: flutter pub get
 
       - name: Verify source formatting (read-only)
-        run: dart format --output=none --set-exit-if-changed lib/app/fameverse_app.dart lib/data/fv_policy_refresh.dart test/fv_policy_refresh_test.dart
+        run: dart format --output=none --set-exit-if-changed lib/app/fameverse_app.dart lib/data/fv_policy_refresh.dart lib/data/fv_policy_acceptance_service.dart test/fv_policy_refresh_test.dart
 
       - name: Show exact Dart formatter output on failure
         if: failure()
