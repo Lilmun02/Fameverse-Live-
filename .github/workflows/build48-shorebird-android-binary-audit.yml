@@ -1,0 +1,99 @@
+name: Build 48 Shorebird Android Binary Audit (No Upload)
+
+on:
+  push:
+    branches:
+      - chore/build48-shorebird-ota-readiness-nov15
+    paths:
+      - '.github/workflows/build48-shorebird-android-binary-audit.yml'
+      - 'native/flutter_v1/lib/**'
+      - 'native/flutter_v1/test/**'
+      - 'native/flutter_v1/tool/bootstrap_shorebird_android.sh'
+      - 'native/flutter_v1/tool/apply_android_branding.sh'
+      - 'native/flutter_v1/tool/verify_android_branding.sh'
+      - 'native/flutter_v1/pubspec.yaml'
+      - 'native/flutter_v1/pubspec.lock'
+      - 'native/flutter_v1/shorebird.yaml'
+      - 'tests/unit/shorebirdAndroidBinaryAuditWorkflow.test.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build48-shorebird-android-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-debug-identity-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: native/flutter_v1
+    env:
+      FAMEVERSE_OTA_STAGE: android-dry-run
+      FAMEVERSE_APP_NAME: Fameverse
+
+    steps:
+      - name: Checkout exact OTA source
+        uses: actions/checkout@v4
+
+      - name: Require source branch and exact commit
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "chore/build48-shorebird-ota-readiness-nov15"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          grep -Fxq 'app_id: ea33cadb-6ccd-4491-af48-6a617223a462' shorebird.yaml
+
+      - name: Install Flutter SDK matching Shorebird iOS and Android
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+
+      - name: Install launcher SVG renderer
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin
+
+      - name: Bootstrap the approved Fameverse Android native shell
+        run: |
+          set -euo pipefail
+          bash tool/bootstrap_shorebird_android.sh
+          flutter pub get
+
+      - name: Enforce native law and Dart checks
+        run: |
+          set -euo pipefail
+          dart run tool/check_native_contract.dart
+          dart format --output=none --set-exit-if-changed lib test tool
+          flutter analyze
+          flutter test
+
+      - name: Build debug APK only (not a Shorebird release or store upgrade)
+        run: |
+          set -euo pipefail
+          flutter build apk --debug
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+
+      - name: Verify compiled APK package and debug signing
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-debug.apk"
+          test -s "$APK"
+          : "${ANDROID_HOME:?Android SDK required}"
+          TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -n "$TOOLS_DIR"
+          test -x "$TOOLS_DIR/aapt"
+          test -x "$TOOLS_DIR/apksigner"
+          export PATH="$TOOLS_DIR:$PATH"
+          BADGING="$(aapt dump badging "$APK")"
+          grep -Fq "package: name='com.fameverse.live'" <<< "$BADGING"
+          apksigner verify --print-certs "$APK"
+          echo "Android debug APK builds with canonical com.fameverse.live identity; NOT an installable store update proof."
+
+# Deliberately no release signing, upload-artifact, publishing, Shorebird
+# release registration, OTA patch, Google Play upload, or store distribution.
