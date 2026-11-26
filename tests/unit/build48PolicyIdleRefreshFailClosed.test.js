@@ -26,7 +26,7 @@ describe('Build 48 idle policy refresh: native test integration contract', () =>
     expect(reducer).toContain('incoming.accountId == accountId')
     expect(reducer).toContain('incoming.policyVersion == policyVersion')
     expect(reducer).toContain('FvPolicyDecision.unavailable')
-    expect(reducer).toContain('current.access.hasAccepted')
+    expect(reducer).toContain('previous.access.hasAccepted')
     expect(policy).toContain('decision == FvPolicyDecision.accepted')
     expect(policy).toContain('verifiedForAccount &&')
   })
