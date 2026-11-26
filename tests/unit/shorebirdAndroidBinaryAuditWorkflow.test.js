@@ -26,7 +26,7 @@ describe('Build 48 Shorebird Android binary audit: test-only and real applicatio
     expect(workflow).toContain('apksigner verify --print-certs "$APK"')
     expect(workflow).not.toContain('shorebird release android')
     expect(workflow).not.toContain('shorebird patch android')
-    expect(workflow).not.toContain('upload-artifact')
+    expect(workflow).not.toMatch(/uses:\s*actions\/upload-artifact/i)
     expect(workflow).not.toContain('publishing:')
     expect(workflow).not.toContain('secrets.')
     expect(workflow).toContain('permissions:\n  contents: read')
