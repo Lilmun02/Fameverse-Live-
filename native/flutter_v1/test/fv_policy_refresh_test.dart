@@ -1,8 +1,82 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fameverse_live/data/fv_policy_access.dart';
+import 'package:fameverse_live/data/fv_policy_acceptance_service.dart';
 import 'package:fameverse_live/data/fv_policy_refresh.dart';
 
 void main() {
+  test('stored acceptance is read without a notice write', () async {
+    final row = {'decision': 'accepted'};
+    var writes = 0;
+    final result = await readOrStartPolicyNotice(
+      read: () async => [row],
+      startNotice: () async {
+        writes++;
+      },
+      isCurrentAccount: () => true,
+    );
+    expect(result, [row]);
+    expect(writes, 0);
+  });
+
+  test('only a confirmed empty response starts a notice', () async {
+    var reads = 0;
+    var writes = 0;
+    final row = {'decision': 'unsigned'};
+    final result = await readOrStartPolicyNotice(
+      read: () async => ++reads == 1 ? [] : [row],
+      startNotice: () async {
+        writes++;
+      },
+      isCurrentAccount: () => true,
+    );
+    expect(result, [row]);
+    expect(reads, 2);
+    expect(writes, 1);
+  });
+
+  test('failed lookup cannot start or reset a notice', () async {
+    var writes = 0;
+    await expectLater(
+      readOrStartPolicyNotice(
+        read: () async => throw StateError('offline'),
+        startNotice: () async {
+          writes++;
+        },
+        isCurrentAccount: () => true,
+      ),
+      throwsStateError,
+    );
+    expect(writes, 0);
+  });
+
+  test('malformed response does not start a notice', () async {
+    var writes = 0;
+    final result = await readOrStartPolicyNotice(
+      read: () async => null,
+      startNotice: () async {
+        writes++;
+      },
+      isCurrentAccount: () => true,
+    );
+    expect(result, isNull);
+    expect(writes, 0);
+  });
+
+  test('account switch before notice creation prevents a write', () async {
+    var writes = 0;
+    await expectLater(
+      readOrStartPolicyNotice(
+        read: () async => [],
+        startNotice: () async {
+          writes++;
+        },
+        isCurrentAccount: () => false,
+      ),
+      throwsStateError,
+    );
+    expect(writes, 0);
+  });
+
   const accepted = FvPolicyAccess(
     accountId: 'account-a',
     policyVersion: '2026-10',
