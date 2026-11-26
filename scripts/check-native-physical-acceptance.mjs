@@ -18,6 +18,8 @@ const criticalFiles = [
   'native/flutter_v1/lib/data/fameverse_live_backend.dart',
   'native/flutter_v1/lib/features/shell/fameverse_shell_build23.dart',
   'native/flutter_v1/lib/features/profile/native_profile_build23.dart',
+  'native/flutter_v1/lib/features/profile/native_profile_screen.dart',
+  'native/flutter_v1/lib/features/profile/creator_studio_screen.dart',
 ]
 const requiredChecks = [
   'live_video_audio_stable',
@@ -75,6 +77,14 @@ assert.match(manifest.tested_commit || '', /^[0-9a-f]{40}$/i,
   'Release blocked: exact physically tested source commit missing.')
 assert.match(manifest.fingerprint || '', /^[0-9a-f]{64}$/i,
   'Release blocked: device acceptance source fingerprint missing.')
+
+const ownerAcceptance = manifest.owner_acceptance
+assert.equal(ownerAcceptance?.status, 'approved',
+  'Release blocked: explicit owner acceptance is still pending.')
+assert.equal(ownerAcceptance.source_commit, manifest.tested_commit,
+  'Release blocked: owner accepted a different source commit.')
+requireText(ownerAcceptance.evidence_ref, 'owner acceptance evidence reference')
+requireText(ownerAcceptance.accepted_at, 'owner acceptance timestamp')
 
 for (const platform of ['ios', 'android']) {
   const artifact = manifest.artifacts?.[platform]
