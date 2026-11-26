@@ -3,6 +3,12 @@
   "status": "pending",
   "tested_commit": null,
   "fingerprint": null,
+  "owner_acceptance": {
+    "status": "pending",
+    "source_commit": null,
+    "evidence_ref": null,
+    "accepted_at": null
+  },
   "artifacts": {
     "ios": {
       "build_id": null,
