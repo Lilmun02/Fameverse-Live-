@@ -2,6 +2,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'fv_policy_access.dart';
 
+/// Read existing consent first. A write is needed only for a confirmed empty
+/// response, never for an RPC error, malformed response or signed account.
+Future<dynamic> readOrStartPolicyNotice({
+  required Future<dynamic> Function() read,
+  required Future<void> Function() startNotice,
+  required bool Function() isCurrentAccount,
+}) async {
+  final existing = await read();
+  if (!isCurrentAccount()) throw StateError('Policy account changed');
+  if (existing is! List || existing.isNotEmpty) return existing;
+
+  await startNotice();
+  if (!isCurrentAccount()) throw StateError('Policy account changed');
+  final created = await read();
+  if (!isCurrentAccount()) throw StateError('Policy account changed');
+  return created;
+}
+
 /// Per-account notice and policy decision. The first notice, 7-day warning,
 /// 3-day grace and 10-day restriction are calculated in Supabase server time.
 class FvPolicyAcceptanceService {
@@ -25,7 +43,8 @@ class FvPolicyAcceptanceService {
     }, onConflict: 'user_id,policy_version');
 
     final verified = await loadCurrent();
-    if (!verified.verifiedForAccount ||
+    if (verified.accountId != user.id ||
+        !verified.verifiedForAccount ||
         verified.decision !=
             (accept ? FvPolicyDecision.accepted : FvPolicyDecision.declined)) {
       throw StateError('Policy decision could not be verified.');
@@ -44,26 +63,28 @@ class FvPolicyAcceptanceService {
       );
     }
     try {
-      // Inserts only if the account has never received this notice.
-      // A subsequent login can never restart the 10-day countdown.
-      await client
-          .from('policy_acceptances')
-          .upsert(
-            {
-              'user_id': user.id,
-              'policy_version': requiredPolicyVersion,
-              'decision': 'unsigned',
-            },
-            onConflict: 'user_id,policy_version',
-            ignoreDuplicates: true,
-          );
-
-      final raw = await client.rpc(
-        'get_my_fameverse_policy_status',
-        params: {'p_policy_version': requiredPolicyVersion},
+      final raw = await readOrStartPolicyNotice(
+        read: () async => client.rpc(
+          'get_my_fameverse_policy_status',
+          params: {'p_policy_version': requiredPolicyVersion},
+        ),
+        startNotice: () async {
+          await client
+              .from('policy_acceptances')
+              .upsert(
+                {
+                  'user_id': user.id,
+                  'policy_version': requiredPolicyVersion,
+                  'decision': 'unsigned',
+                },
+                onConflict: 'user_id,policy_version',
+                ignoreDuplicates: true,
+              );
+        },
+        isCurrentAccount: () => client.auth.currentUser?.id == user.id,
       );
       Map<String, dynamic>? record;
-      if (raw is List && raw.isNotEmpty && raw.first is Map) {
+      if (raw is List && raw.length == 1 && raw.first is Map) {
         record = Map<String, dynamic>.from(raw.first as Map);
       } else if (raw is Map) {
         record = Map<String, dynamic>.from(raw);
@@ -84,7 +105,7 @@ class FvPolicyAcceptanceService {
         accountId: user.id,
         policyVersion: requiredPolicyVersion,
         decision: decision,
-        verifiedForAccount: matched,
+        verifiedForAccount: matched && decision != FvPolicyDecision.unavailable,
         withinNoticeWindow:
             matched &&
             decision == FvPolicyDecision.unsigned &&
