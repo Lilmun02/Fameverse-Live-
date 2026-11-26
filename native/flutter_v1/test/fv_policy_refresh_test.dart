@@ -27,21 +27,24 @@ void main() {
     incoming: incoming,
   );
 
-  test('offline refresh retains browsing but immediately revokes permissions', () {
-    final result = refresh(
-      const FvPolicyRefreshState(access: accepted, promptDismissed: false),
-      unavailable,
-    );
+  test(
+    'offline refresh retains browsing but immediately revokes permissions',
+    () {
+      final result = refresh(
+        const FvPolicyRefreshState(access: accepted, promptDismissed: false),
+        unavailable,
+      );
 
-    expect(result.promptDismissed, isTrue);
-    expect(result.acceptedBeforeRefreshFailure, isTrue);
-    expect(result.access.verifiedForAccount, isFalse);
-    expect(result.access.decision, FvPolicyDecision.unavailable);
-    expect(result.access.permits(FvPolicyFeature.watchLive), isTrue);
-    expect(result.access.permits(FvPolicyFeature.goLive), isFalse);
-    expect(result.access.permits(FvPolicyFeature.purchaseCoins), isFalse);
-    expect(result.access.permits(FvPolicyFeature.betaBadges), isFalse);
-  });
+      expect(result.promptDismissed, isTrue);
+      expect(result.acceptedBeforeRefreshFailure, isTrue);
+      expect(result.access.verifiedForAccount, isFalse);
+      expect(result.access.decision, FvPolicyDecision.unavailable);
+      expect(result.access.permits(FvPolicyFeature.watchLive), isTrue);
+      expect(result.access.permits(FvPolicyFeature.goLive), isFalse);
+      expect(result.access.permits(FvPolicyFeature.purchaseCoins), isFalse);
+      expect(result.access.permits(FvPolicyFeature.betaBadges), isFalse);
+    },
+  );
 
   test('repeated offline refresh cannot re-prompt or restore access', () {
     final first = refresh(
@@ -55,18 +58,21 @@ void main() {
     expect(second.access.permits(FvPolicyFeature.goLive), isFalse);
   });
 
-  test('fresh verified acceptance restores permissions without another prompt', () {
-    final offline = refresh(
-      const FvPolicyRefreshState(access: accepted, promptDismissed: false),
-      unavailable,
-    );
-    final recovered = refresh(offline, accepted);
+  test(
+    'fresh verified acceptance restores permissions without another prompt',
+    () {
+      final offline = refresh(
+        const FvPolicyRefreshState(access: accepted, promptDismissed: false),
+        unavailable,
+      );
+      final recovered = refresh(offline, accepted);
 
-    expect(recovered.access.hasAccepted, isTrue);
-    expect(recovered.access.permits(FvPolicyFeature.goLive), isTrue);
-    expect(recovered.acceptedBeforeRefreshFailure, isFalse);
-    expect(recovered.promptDismissed, isFalse);
-  });
+      expect(recovered.access.hasAccepted, isTrue);
+      expect(recovered.access.permits(FvPolicyFeature.goLive), isTrue);
+      expect(recovered.acceptedBeforeRefreshFailure, isFalse);
+      expect(recovered.promptDismissed, isFalse);
+    },
+  );
 
   test('verified revoked/unsigned result reopens the agreement', () {
     final offline = refresh(
@@ -86,23 +92,26 @@ void main() {
     expect(revoked.acceptedBeforeRefreshFailure, isFalse);
   });
 
-  test('verified decline stays in limited browsing without claiming consent', () {
-    final offline = refresh(
-      const FvPolicyRefreshState(access: accepted, promptDismissed: false),
-      unavailable,
-    );
-    const declined = FvPolicyAccess(
-      accountId: 'account-a',
-      policyVersion: '2026-10',
-      decision: FvPolicyDecision.declined,
-      verifiedForAccount: true,
-    );
-    final result = refresh(offline, declined);
+  test(
+    'verified decline stays in limited browsing without claiming consent',
+    () {
+      final offline = refresh(
+        const FvPolicyRefreshState(access: accepted, promptDismissed: false),
+        unavailable,
+      );
+      const declined = FvPolicyAccess(
+        accountId: 'account-a',
+        policyVersion: '2026-10',
+        decision: FvPolicyDecision.declined,
+        verifiedForAccount: true,
+      );
+      final result = refresh(offline, declined);
 
-    expect(result.promptDismissed, isTrue);
-    expect(result.access.hasAccepted, isFalse);
-    expect(result.access.permits(FvPolicyFeature.goLive), isFalse);
-  });
+      expect(result.promptDismissed, isTrue);
+      expect(result.access.hasAccepted, isFalse);
+      expect(result.access.permits(FvPolicyFeature.goLive), isFalse);
+    },
+  );
 
   test('unverified accounts are never treated as previously accepted', () {
     final result = refresh(
