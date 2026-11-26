@@ -91,6 +91,17 @@ void main() {
       expect(sendCalls, 0);
     }
 
+    // Manually entered out-of-range values must also update the visible
+    // quantity and total to the same bounded value.
+    for (final value in ['0', '-1']) {
+      await tester.enterText(input, value);
+      await tester.pump();
+      expectQuantity(1);
+    }
+    await tester.enterText(input, '100001');
+    await tester.pump();
+    expectQuantity(100000);
+
     await tester.enterText(input, '100000');
     await tester.pump();
     expectQuantity(100000);
