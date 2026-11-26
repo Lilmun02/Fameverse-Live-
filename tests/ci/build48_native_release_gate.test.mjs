@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 
 const script = readFileSync('scripts/check-native-physical-acceptance.mjs', 'utf8')
@@ -38,5 +40,34 @@ test('a pending physical manifest fails closed instead of claiming a release pas
     assert.match(result.stderr, /physical acceptance is still pending on Android and iOS/)
   } else {
     assert.equal(result.status, 0, result.stderr)
+  }
+})
+
+test('device status cannot substitute for explicit owner acceptance', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'build48-acceptance-'))
+  try {
+    mkdirSync(join(dir, 'docs'))
+    writeFileSync(join(dir, 'gate.mjs'), script)
+    const fixture = {
+      ...manifest,
+      status: 'passed',
+      tested_commit: 'a'.repeat(40),
+      fingerprint: 'b'.repeat(64),
+      owner_acceptance: { status: 'pending' },
+    }
+    const run = () => {
+      writeFileSync(join(dir, 'docs/BUILD48_NATIVE_PHYSICAL_ACCEPTANCE.json'),
+        JSON.stringify(fixture))
+      return spawnSync(process.execPath, ['gate.mjs'], { cwd: dir, encoding: 'utf8' })
+    }
+    const pending = run()
+    assert.notEqual(pending.status, 0)
+    assert.match(pending.stderr, /explicit owner acceptance is still pending/)
+    fixture.owner_acceptance = { status: 'approved', source_commit: 'c'.repeat(40) }
+    const mismatched = run()
+    assert.notEqual(mismatched.status, 0)
+    assert.match(mismatched.stderr, /owner accepted a different source commit/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
   }
 })
