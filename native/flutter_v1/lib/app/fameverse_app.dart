@@ -127,8 +127,11 @@ class _FameverseAppState extends State<FameverseApp>
     setState(() {
       _policyAccess = access;
       _policyLoaded = true;
+      // An unavailable lookup is not evidence that consent is needed.
+      // Keep basic browsing available while restricted actions fail closed.
       _policyPromptDismissed =
-          access.verifiedForAccount &&
+          !access.verifiedForAccount ||
+          access.decision == FvPolicyDecision.unavailable ||
           access.decision == FvPolicyDecision.declined;
     });
   }
