@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+
+const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8')
+const yaml = read('codemagic.yaml')
+const workflow = yaml.split('  shorebird-ios-signed-dry-run:\n')[1]?.split('  native-foundation:\n')[0] ?? ''
+const signing = read('native/flutter_v1/tool/prepare_shorebird_ios_signing.sh')
+const shell = read('native/flutter_v1/tool/bootstrap_shorebird_ios.sh')
+
+describe('Shorebird iOS signed preflight (no release upload)', () => {
+  it('requires exact owner-manual source and keeps OTA and store publishing disabled', () => {
+    expect(workflow).not.toBe('')
+    expect(workflow).not.toMatch(/^\s+triggering:/m)
+    expect(workflow).not.toMatch(/^\s+publishing:/m)
+    expect(workflow).toContain('CM_TRIGGER_SOURCE:-')
+    expect(workflow).toContain('chore/build48-shorebird-ota-readiness-nov15')
+    expect(workflow).toContain('CM_COMMIT')
+    expect(workflow).toContain('git rev-parse HEAD')
+    expect(workflow).toContain('SHOREBIRD_TOKEN:-')
+    expect(workflow).toContain('manual_signing')
+    expect(workflow).toContain('shorebird')
+    expect(workflow).not.toContain('appstore_credentials')
+    expect(workflow).not.toContain('app_store_connect:')
+    expect(workflow).not.toContain('flutter build ipa')
+    expect(workflow).not.toContain('shorebird patch ')
+    expect(workflow).toContain('shorebird release ios --dry-run')
+    expect(workflow).not.toContain('shorebird release ios --no-codesign')
+  })
+
+  it('preserves Fameverse release identity, preflight tests and signed export settings', () => {
+    expect(workflow).toContain('xcode: 26.1')
+    expect(workflow).not.toContain('xcode: 26.0')
+    expect(workflow).toContain('flutter: 3.47.9')
+    expect(workflow).toContain('bash tool/bootstrap_shorebird_ios.sh')
+    expect(workflow).toContain('bash tool/prepare_shorebird_ios_signing.sh')
+    expect(workflow).toContain('dart run tool/check_native_contract.dart')
+    expect(workflow).toContain('flutter analyze')
+    expect(workflow).toContain('flutter test')
+    expect(workflow).toContain('--build-number="$BUILD_NUMBER"')
+    expect(workflow).toContain('--dart-define="FAMEVERSE_BUILD_FAMILY=47"')
+    expect(workflow).toContain('--dart-define="FAMEVERSE_SOURCE_SHA=$CM_COMMIT"')
+    expect(workflow).toContain('--export-options-plist=/Users/builder/export_options.plist')
+    expect(shell).toContain('ios-signed-dry-run')
+    expect(signing).toContain('FAMEVERSE_OTA_STAGE:-')
+    expect(signing).toContain('CM_CERTIFICATE')
+    expect(signing).toContain('CM_CERTIFICATE_PASSWORD')
+    expect(signing).toContain('CM_PROVISIONING_PROFILE')
+    expect(signing).toContain('com.fameverse.live')
+    expect(signing).toContain('keychain add-certificates')
+    expect(signing).toContain('xcode-project use-profiles')
+    expect(signing).toContain('manageAppVersionAndBuildNumber')
+    expect(signing).toContain('is not False')
+    expect(signing).not.toContain('APP_STORE_CONNECT_PRIVATE_KEY')
+    expect(signing).not.toContain('app-store-connect publish')
+  })
+  it('only runs CocoaPods when an iOS Podfile exists without masking failures', () => {
+    const podStep = workflow.split('      - name: Resolve iOS CocoaPods')[1]?.split('      - name: Install and verify existing Fameverse Apple signing assets')[0] ?? ''
+    expect(podStep).not.toBe('')
+    expect(podStep).toContain('if [ -f ios/Podfile ]; then')
+    expect(podStep).toContain('(cd ios && pod install)')
+    expect(podStep).not.toContain('-execdir pod install')
+    expect(podStep).toContain('No Podfile in the generated iOS shell')
+  })
+
+})
