@@ -126,7 +126,10 @@ void main() {
           tray,
           isNot(contains('Preparing the original premium gift animation.')),
         );
-        expect(tray, isNot(contains('will not replace its animation with an emoji')));
+        expect(
+          tray,
+          isNot(contains('will not replace its animation with an emoji')),
+        );
         expect(tray, contains('cinematic-gift-media-failed-'));
         expect(tray, contains('cinematic-gift-media-loading-'));
         expect(tray, contains('child: VideoPlayer(controller)'));
