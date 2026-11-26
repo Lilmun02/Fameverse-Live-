@@ -450,13 +450,6 @@ const fvGiftCatalog = <FvGiftDefinition>[
     emoji: '🌌',
   ),
   FvGiftDefinition(
-    id: 'fame-burst',
-    label: 'Fame Burst',
-    cost: 100,
-    category: 'fameverse',
-    activityEmoji: '✦',
-  ),
-  FvGiftDefinition(
     id: 'welcome-to-fameverse',
     label: 'Welcome to Fameverse',
     cost: 100,
@@ -954,6 +947,10 @@ class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
     return const {};
   }
 
+  void _rejectRetiredGift(String giftId) {
+    if (giftId == 'fame-burst') throw StateError('gift-retired');
+  }
+
   FvGiftSendResult _giftResult(dynamic data) {
     final row = _firstRpcRow(data);
     if (row.isEmpty) throw Exception('gift-result-missing');
@@ -971,6 +968,7 @@ class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
     required String giftId,
     required int quantity,
   }) async {
+    _rejectRetiredGift(giftId);
     final data = await _client.rpc(
       'send_fameverse_gift',
       params: {
@@ -989,6 +987,7 @@ class SupabaseFameverseLiveBackend extends FvCohostGiftBackend {
     required int quantity,
     required String cohostUserId,
   }) async {
+    _rejectRetiredGift(giftId);
     final data = await _client.rpc(
       'send_fameverse_gift',
       params: {

@@ -484,7 +484,6 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
     'planet',
     'galaxy',
     'welcome-to-fameverse',
-    'fame-burst',
   };
 
   String _category = 'trending';
