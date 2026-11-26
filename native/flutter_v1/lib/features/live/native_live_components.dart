@@ -568,6 +568,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
 
   Future<void> _customAmount() async {
     var quantity = 1;
+    var quantityValid = true;
+    final quantityFieldKey = GlobalKey<FormFieldState<String>>();
     final accepted = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -576,7 +578,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             void setQuantity(int value) {
-              setModalState(() => quantity = value.clamp(1, 100000));
+              final next = value.clamp(1, 100000);
+              setModalState(() {
+                quantity = next;
+                quantityValid = true;
+              });
+              // Keep the visible text synchronized with +/- and preset buttons.
+              quantityFieldKey.currentState?.didChange('$next');
             }
 
             return SafeArea(
@@ -619,12 +627,14 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     Row(
                       children: [
                         IconButton.filledTonal(
+                          key: const Key('gift-quantity-decrease'),
                           onPressed: () => setQuantity(quantity - 1),
                           icon: const Icon(Icons.remove),
                         ),
                         Expanded(
                           child: TextFormField(
-                            initialValue: '$quantity',
+                            key: quantityFieldKey,
+                            initialValue: '1',
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
@@ -632,11 +642,21 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             ),
                             onChanged: (value) {
                               final parsed = int.tryParse(value);
-                              if (parsed != null) setQuantity(parsed);
+                              if (parsed == null) {
+                                setModalState(() => quantityValid = false);
+                              } else if (parsed < 1 || parsed > 100000) {
+                                setQuantity(parsed);
+                              } else {
+                                setModalState(() {
+                                  quantity = parsed;
+                                  quantityValid = true;
+                                });
+                              }
                             },
                           ),
                         ),
                         IconButton.filledTonal(
+                          key: const Key('gift-quantity-increase'),
                           onPressed: () => setQuantity(quantity + 1),
                           icon: const Icon(Icons.add),
                         ),
@@ -667,7 +687,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: () => Navigator.of(context).pop(quantity),
+                      onPressed: quantityValid
+                          ? () => Navigator.of(context).pop(quantity)
+                          : null,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                       ),
