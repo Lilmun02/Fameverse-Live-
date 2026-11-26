@@ -6,15 +6,19 @@ on:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - build48/performance-live-stability-android-ios-nov15
+      - 'fix/build48-*'
+      - 'hardening/build48-*'
   pull_request:
     branches:
       - native/flutter-v1
       - build18/live-repair
       - integration/sep27-big-update
+      - build48/performance-live-stability-android-ios-nov15
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: fameverse-native-preflight-${{ github.ref }}
@@ -30,8 +34,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -109,6 +111,14 @@ jobs:
 
       - name: Compile Android debug artifact
         run: flutter build apk --debug
+
+      - name: Upload Android debug APK for owner device QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: fameverse-build48-android-debug
+          path: native/flutter_v1/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
 
   ios-preflight:
     runs-on: macos-latest
@@ -188,12 +198,17 @@ jobs:
             build
 
   physical-release-gate:
-    name: Physical iPhone release gate
+    name: Physical Android and iPhone release gate
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout
+      - name: Checkout full history for exact tested commit verification
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Block release until owner and external tester pass
+      - name: Validate Build 48 release laws (without simulating physical passes)
+        run: node --test tests/ci/build48_native_release_gate.test.mjs
+
+      - name: Block release until Android and iPhone device acceptance passes
         run: node scripts/check-native-physical-acceptance.mjs
