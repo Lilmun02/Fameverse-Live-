@@ -8,6 +8,7 @@ import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
 import '../data/fv_policy_access.dart';
 import '../data/fv_policy_acceptance_service.dart';
+import '../data/fv_policy_refresh.dart';
 import '../data/startup_update_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/profile/fameverse_policy_consent_screen.dart';
@@ -171,9 +172,16 @@ class _FameverseAppState extends State<FameverseApp>
     final epoch = _policyLoadEpoch;
     if (identity == null || _policyBusy || !_policyLoaded) return;
     final request = ++_policyRefreshRequest;
-    final access = await FvPolicyAcceptanceService(
-      Supabase.instance.client,
-    ).loadCurrent();
+
+    FvPolicyAccess access;
+    try {
+      access = await FvPolicyAcceptanceService(
+        Supabase.instance.client,
+      ).loadCurrent();
+    } catch (_) {
+      // Unexpected backend failures also deny restricted features.
+      access = _unavailablePolicy(identity.id);
+    }
     if (!mounted ||
         request != _policyRefreshRequest ||
         epoch != _policyLoadEpoch ||
@@ -181,37 +189,21 @@ class _FameverseAppState extends State<FameverseApp>
       return;
     }
 
-    // A missing, mismatched, or unreachable policy record cannot grant
-    // restricted rights based on a previously accepted decision.
-    final refreshed = access.accountId == identity.id
-        ? access
-        : _unavailablePolicy(identity.id);
-    final previouslyAccepted = _policyAccess?.hasAccepted == true;
-    if (!refreshed.verifiedForAccount ||
-        refreshed.decision == FvPolicyDecision.unavailable) {
-      setState(() {
-        _policyAccess = _unavailablePolicy(identity.id);
-        if (previouslyAccepted) {
-          // Allow basic browsing, not Live/purchases/badges, on a failed check.
-          _acceptedBeforeRefreshFailure = true;
-          _policyPromptDismissed = true;
-        }
-      });
-      return;
-    }
+    final next = reconcilePolicyRefresh(
+      accountId: identity.id,
+      policyVersion: FvPolicyAcceptanceService.requiredPolicyVersion,
+      previous: FvPolicyRefreshState(
+        access: _policyAccess ?? _unavailablePolicy(identity.id),
+        promptDismissed: _policyPromptDismissed,
+        acceptedBeforeRefreshFailure: _acceptedBeforeRefreshFailure,
+      ),
+      incoming: access,
+    );
 
     setState(() {
-      final previouslyExpired = _policyAccess?.requiresSupport == true;
-      _policyAccess = refreshed;
-      if (_acceptedBeforeRefreshFailure) {
-        // A verified revocation or unsigned status requires a new decision.
-        _policyPromptDismissed = refreshed.decision == FvPolicyDecision.declined;
-        _acceptedBeforeRefreshFailure = false;
-      }
-      if (refreshed.requiresSupport && !previouslyExpired) {
-        // Surface the support-only restriction on first expiry.
-        _policyPromptDismissed = false;
-      }
+      _policyAccess = next.access;
+      _policyPromptDismissed = next.promptDismissed;
+      _acceptedBeforeRefreshFailure = next.acceptedBeforeRefreshFailure;
     });
   }
 
