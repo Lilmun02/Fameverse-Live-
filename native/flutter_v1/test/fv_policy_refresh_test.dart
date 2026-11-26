@@ -120,6 +120,25 @@ void main() {
     },
   );
 
+  test('cold-start unavailable status never implies consent', () {
+    const initial = FvPolicyRefreshState(
+      access: unavailable,
+      promptDismissed: true,
+    );
+    final offline = refresh(initial, unavailable);
+    expect(offline.promptDismissed, isTrue);
+    expect(offline.access.hasAccepted, isFalse);
+    expect(offline.access.permits(FvPolicyFeature.goLive), isFalse);
+    const unsigned = FvPolicyAccess(
+      accountId: 'account-a',
+      policyVersion: '2026-10',
+      decision: FvPolicyDecision.unsigned,
+      verifiedForAccount: true,
+    );
+    expect(refresh(offline, unsigned).promptDismissed, isFalse);
+    expect(refresh(offline, accepted).access.hasAccepted, isTrue);
+  });
+
   test('repeated offline refresh cannot re-prompt or restore access', () {
     final first = refresh(
       const FvPolicyRefreshState(access: accepted, promptDismissed: false),
