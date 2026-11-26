@@ -48,6 +48,10 @@ jobs:
       - name: Verify source formatting (read-only)
         run: dart format --output=none --set-exit-if-changed lib/app/fameverse_app.dart lib/data/fv_policy_refresh.dart test/fv_policy_refresh_test.dart
 
+      - name: Show exact Dart formatter output on failure
+        if: failure()
+        run: dart format --output=show test/fv_policy_refresh_test.dart
+
       - name: Analyze native Flutter project
         run: flutter analyze
 
