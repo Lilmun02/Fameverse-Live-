@@ -1,5 +1,11 @@
 import fs from 'node:fs'
 
+// One-time legacy patch is obsolete: do not rewrite files or tests.
+function refuseRetiredRepair() {
+  throw new Error('RETIRED: do not execute the legacy integration repair script.')
+}
+refuseRetiredRepair()
+
 function read(path) {
   return fs.readFileSync(path, 'utf8')
 }
@@ -40,14 +46,11 @@ replaceOnce(
   "  FvGiftDefinition get _selected {\n    final selected = fvGiftById(_selectedId);\n    if (selected != null) return selected;\n    final visible = _visible;\n    return visible.isNotEmpty ? visible.first : fvGiftCatalog.first;\n  }",
 )
 
+// Legacy repair must not restore an owner-retired gift.
 const catalog = 'native/flutter_v1/lib/data/fameverse_live_backend.dart'
 const catalogSource = read(catalog)
-if (!catalogSource.includes("id: 'fame-burst'")) {
-  replaceOnce(
-    catalog,
-    "  FvGiftDefinition(\n    id: 'welcome-to-fameverse',",
-    "  FvGiftDefinition(\n    id: 'fame-burst',\n    label: 'Fame Burst',\n    cost: 100,\n    category: 'fameverse',\n    activityEmoji: '✦',\n  ),\n  FvGiftDefinition(\n    id: 'welcome-to-fameverse',",
-  )
+if (catalogSource.includes("id: 'fame-burst'")) {
+  throw new Error('Retired Fame Burst found; abort legacy integration repair.')
 }
 
 const host = 'native/flutter_v1/lib/features/live/stream_host_live_screen.dart'
@@ -141,13 +144,11 @@ void main() {
       expect(tray, isNot(contains("('sports', 'Sports')")));
     });
 
-    test('100 coin Fame Burst is client-visible and server-authoritative', () {
+    test('owner-retired gift cannot be restored by the legacy contract', () {
       final backend = File(
         'lib/data/fameverse_live_backend.dart',
       ).readAsStringSync();
-      expect(backend, contains("id: 'fame-burst'"));
-      expect(backend, contains("label: 'Fame Burst'"));
-      expect(backend, contains('cost: 100'));
+      expect(backend, isNot(contains("id: 'fame-burst'")));
     });
 
     test('viewer gifting is not owner-refill gated', () {
