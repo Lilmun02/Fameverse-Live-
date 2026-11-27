@@ -257,10 +257,6 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
             key: Key('lightweight-gift-${playback.gift.id}'),
             constraints: const BoxConstraints(maxWidth: 260),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xD91B1029),
-              borderRadius: BorderRadius.circular(16),
-            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -290,6 +286,23 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     );
   }
 
+  // Identity floats over the gift; no subtitle panel or painted background.
+  Widget _senderOverlay(FvGiftPlayback playback) {
+    return Text(
+      '${playback.sender} sent ${playback.gift.label}${playback.visualCountLabel}',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
+        decoration: TextDecoration.none,
+        shadows: [Shadow(color: Colors.black87, blurRadius: 9)],
+      ),
+    );
+  }
+
   Widget _largeNativeGift(BuildContext context, FvGiftPlayback playback) {
     final size = MediaQuery.sizeOf(context);
     final premium = playback.gift.cost >= 100;
@@ -303,26 +316,16 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Container(
-                width: size.width * (premium ? .74 : .60),
-                height: size.width * (premium ? .74 : .60),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(
-                        0xFF9D55FF,
-                      ).withValues(alpha: premium ? .44 : .30),
-                      const Color(0xFF5C22A7).withValues(alpha: .16),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _senderOverlay(playback),
               ),
               TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: .72, end: 1),
-                duration: const Duration(milliseconds: 560),
-                curve: Curves.easeOutBack,
+                tween: Tween<double>(begin: .92, end: 1),
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
                 builder: (context, value, child) =>
                     Transform.scale(scale: value, child: child),
                 child: Text(
@@ -362,20 +365,31 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
         child: Center(
           child: SizedBox(
             key: Key('cinematic-gift-presentation-${playback.gift.id}'),
-            width: size.width,
-            height: size.height * .76,
-            child: FittedBox(
-              fit: BoxFit.contain,
-              clipBehavior: Clip.none,
-              child: SizedBox(
-                width: controller.value.size.width <= 0
-                    ? size.width
-                    : controller.value.size.width,
-                height: controller.value.size.height <= 0
-                    ? size.height * .76
-                    : controller.value.size.height,
-                child: VideoPlayer(controller),
-              ),
+            width: size.width * .88,
+            height: size.height * .58,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                FittedBox(
+                  fit: BoxFit.contain,
+                  clipBehavior: Clip.none,
+                  child: SizedBox(
+                    width: controller.value.size.width <= 0
+                        ? size.width * .88
+                        : controller.value.size.width,
+                    height: controller.value.size.height <= 0
+                        ? size.height * .58
+                        : controller.value.size.height,
+                    child: VideoPlayer(controller),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _senderOverlay(playback),
+                ),
+              ],
             ),
           ),
         ),
@@ -385,55 +399,27 @@ class _NativeGiftOverlayState extends State<NativeGiftOverlay> {
     final size = MediaQuery.sizeOf(context);
     return IgnorePointer(
       child: Center(
-        child: Container(
+        child: SizedBox(
           key: Key(
             _videoFailed
                 ? 'cinematic-gift-media-failed-${playback.gift.id}'
                 : 'cinematic-gift-media-loading-${playback.gift.id}',
           ),
-          width: size.width * .90,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          decoration: BoxDecoration(
-            color: const Color(0xE617101F),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0x665F37A1)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          width: size.width * .88,
+          height: size.height * .58,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
               if (_videoLoading)
                 const SizedBox.square(
                   dimension: 30,
                   child: CircularProgressIndicator(strokeWidth: 2.5),
-                )
-              else
-                const Icon(
-                  Icons.movie_filter_outlined,
-                  color: Color(0xFFB98CFF),
-                  size: 34,
                 ),
-              const SizedBox(height: 12),
-              Text(
-                _videoFailed
-                    ? 'Premium gift media could not load'
-                    : 'Loading premium gift…',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _videoFailed
-                    ? 'The premium gift was recorded, but Fameverse will not replace its animation with an emoji.'
-                    : 'Preparing the original premium gift animation.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFB9ACBE),
-                  fontSize: 11,
-                  height: 1.35,
-                ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _senderOverlay(playback),
               ),
             ],
           ),
@@ -568,6 +554,8 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
 
   Future<void> _customAmount() async {
     var quantity = 1;
+    var quantityValid = true;
+    final quantityFieldKey = GlobalKey<FormFieldState<String>>();
     final accepted = await showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
@@ -576,7 +564,13 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             void setQuantity(int value) {
-              setModalState(() => quantity = value.clamp(1, 100000));
+              final next = value.clamp(1, 100000);
+              setModalState(() {
+                quantity = next;
+                quantityValid = true;
+              });
+              // Keep the visible text synchronized with +/- and preset buttons.
+              quantityFieldKey.currentState?.didChange('$next');
             }
 
             return SafeArea(
@@ -619,12 +613,14 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     Row(
                       children: [
                         IconButton.filledTonal(
+                          key: const Key('gift-quantity-decrease'),
                           onPressed: () => setQuantity(quantity - 1),
                           icon: const Icon(Icons.remove),
                         ),
                         Expanded(
                           child: TextFormField(
-                            initialValue: '$quantity',
+                            key: quantityFieldKey,
+                            initialValue: '1',
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
@@ -632,11 +628,21 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                             ),
                             onChanged: (value) {
                               final parsed = int.tryParse(value);
-                              if (parsed != null) setQuantity(parsed);
+                              if (parsed == null) {
+                                setModalState(() => quantityValid = false);
+                              } else if (parsed < 1 || parsed > 100000) {
+                                setQuantity(parsed);
+                              } else {
+                                setModalState(() {
+                                  quantity = parsed;
+                                  quantityValid = true;
+                                });
+                              }
                             },
                           ),
                         ),
                         IconButton.filledTonal(
+                          key: const Key('gift-quantity-increase'),
                           onPressed: () => setQuantity(quantity + 1),
                           icon: const Icon(Icons.add),
                         ),
@@ -667,7 +673,9 @@ class _NativeGiftTrayState extends State<NativeGiftTray> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: () => Navigator.of(context).pop(quantity),
+                      onPressed: quantityValid
+                          ? () => Navigator.of(context).pop(quantity)
+                          : null,
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                       ),
