@@ -10,6 +10,9 @@ on:
       - 'native/flutter_v1/lib/data/fv_policy_refresh.dart'
       - 'native/flutter_v1/lib/data/fv_policy_acceptance_service.dart'
       - 'native/flutter_v1/test/fv_policy_refresh_test.dart'
+  pull_request:
+    branches:
+      - build48/performance-live-stability-android-ios-nov15
   workflow_dispatch:
 
 permissions:
@@ -21,6 +24,7 @@ concurrency:
 
 jobs:
   flutter-policy-test:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'fix/build48-policy-idle-refresh-failclosed-nov25')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -29,12 +33,16 @@ jobs:
     steps:
       - name: Verify manually scoped source commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Enforce source identity
         run: |
           set -euo pipefail
-          test "$GITHUB_REF_NAME" = "fix/build48-policy-idle-refresh-failclosed-nov25"
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" = "fix/build48-policy-idle-refresh-failclosed-nov25"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install pinned Flutter SDK
         uses: subosito/flutter-action@v2
