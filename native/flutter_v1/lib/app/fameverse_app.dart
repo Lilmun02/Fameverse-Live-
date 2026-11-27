@@ -8,6 +8,7 @@ import '../data/fameverse_backend.dart';
 import '../data/fameverse_live_backend.dart';
 import '../data/fv_policy_access.dart';
 import '../data/fv_policy_acceptance_service.dart';
+import '../data/fv_policy_refresh.dart';
 import '../data/startup_update_service.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/profile/fameverse_policy_consent_screen.dart';
@@ -52,10 +53,12 @@ class _FameverseAppState extends State<FameverseApp>
   bool _noticeAcknowledged = false;
   bool _policyLoaded = false;
   bool _policyPromptDismissed = false;
+  bool _acceptedBeforeRefreshFailure = false;
   bool _policyBusy = false;
   String? _policyError;
   FvPolicyAccess? _policyAccess;
   int _policyLoadEpoch = 0;
+  int _policyRefreshRequest = 0;
 
   @override
   void initState() {
@@ -90,11 +93,13 @@ class _FameverseAppState extends State<FameverseApp>
 
   Future<void> _loadPolicyForIdentity(FvIdentity? identity) async {
     final epoch = ++_policyLoadEpoch;
+    ++_policyRefreshRequest;
     if (mounted) {
       setState(() {
         _policyLoaded = false;
         _policyAccess = null;
         _policyPromptDismissed = false;
+        _acceptedBeforeRefreshFailure = false;
         _policyError = null;
       });
     }
@@ -122,8 +127,11 @@ class _FameverseAppState extends State<FameverseApp>
     setState(() {
       _policyAccess = access;
       _policyLoaded = true;
+      // An unavailable lookup is not evidence that consent is needed.
+      // Keep basic browsing available while restricted actions fail closed.
       _policyPromptDismissed =
-          access.verifiedForAccount &&
+          !access.verifiedForAccount ||
+          access.decision == FvPolicyDecision.unavailable ||
           access.decision == FvPolicyDecision.declined;
     });
   }
@@ -131,6 +139,7 @@ class _FameverseAppState extends State<FameverseApp>
   Future<void> _submitPolicyDecision({required bool accept}) async {
     final identity = _identity;
     if (identity == null || _policyBusy) return;
+    ++_policyRefreshRequest;
     setState(() {
       _policyBusy = true;
       _policyError = null;
@@ -146,6 +155,7 @@ class _FameverseAppState extends State<FameverseApp>
       setState(() {
         _policyAccess = verified;
         _policyPromptDismissed = !accept;
+        _acceptedBeforeRefreshFailure = false;
       });
     } catch (_) {
       if (mounted && _identity?.id == identity.id) {
@@ -164,22 +174,39 @@ class _FameverseAppState extends State<FameverseApp>
     final identity = _identity;
     final epoch = _policyLoadEpoch;
     if (identity == null || _policyBusy || !_policyLoaded) return;
-    final access = await FvPolicyAcceptanceService(
-      Supabase.instance.client,
-    ).loadCurrent();
+    final request = ++_policyRefreshRequest;
+
+    FvPolicyAccess access;
+    try {
+      access = await FvPolicyAcceptanceService(
+        Supabase.instance.client,
+      ).loadCurrent();
+    } catch (_) {
+      // Unexpected backend failures also deny restricted features.
+      access = _unavailablePolicy(identity.id);
+    }
     if (!mounted ||
+        request != _policyRefreshRequest ||
         epoch != _policyLoadEpoch ||
-        _identity?.id != identity.id ||
-        access.accountId != identity.id) {
+        _identity?.id != identity.id) {
       return;
     }
+
+    final next = reconcilePolicyRefresh(
+      accountId: identity.id,
+      policyVersion: FvPolicyAcceptanceService.requiredPolicyVersion,
+      previous: FvPolicyRefreshState(
+        access: _policyAccess ?? _unavailablePolicy(identity.id),
+        promptDismissed: _policyPromptDismissed,
+        acceptedBeforeRefreshFailure: _acceptedBeforeRefreshFailure,
+      ),
+      incoming: access,
+    );
+
     setState(() {
-      final previouslyExpired = _policyAccess?.requiresSupport == true;
-      _policyAccess = access;
-      if (access.requiresSupport && !previouslyExpired) {
-        // Surface the support-only restriction on first expiry.
-        _policyPromptDismissed = false;
-      }
+      _policyAccess = next.access;
+      _policyPromptDismissed = next.promptDismissed;
+      _acceptedBeforeRefreshFailure = next.acceptedBeforeRefreshFailure;
     });
   }
 
